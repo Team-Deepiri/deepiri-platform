@@ -1,172 +1,90 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add token to requests
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import axiosInstance from './axiosInstance';
 
 export const externalApi = {
-  getNearbyPlaces: async (location, radius = 5000, type = 'establishment', keyword = null) => {
-    try {
-      const params = {
-        lat: location.lat,
-        lng: location.lng,
-        radius,
-        type
-      };
-      if (keyword) params.keyword = keyword;
-      
-      const response = await api.get('/external/places/nearby', { params });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  getPlaceDetails: async (placeId) => {
-    try {
-      const response = await api.get(`/external/places/${placeId}`);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  getDirections: async (origin, destination, mode = 'walking') => {
-    try {
-      const response = await api.get('/external/directions', {
-        params: {
-          fromLat: origin.lat,
-          fromLng: origin.lng,
-          toLat: destination.lat,
-          toLng: destination.lng,
-          mode
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
+  // Get current weather for location
   getCurrentWeather: async (location) => {
     try {
-      const response = await api.get('/external/weather/current', {
-        params: {
-          lat: location.lat,
-          lng: location.lng
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  getWeatherForecast: async (location, days = 5) => {
-    try {
-      const response = await api.get('/external/weather/forecast', {
-        params: {
-          lat: location.lat,
-          lng: location.lng,
-          days
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  getNearbyEvents: async (location, radius = 5000, category = null) => {
-    try {
       const params = {
-        lat: location.lat,
-        lng: location.lng,
-        radius
+        latitude: location.latitude,
+        longitude: location.longitude
       };
-      if (category) params.category = category;
-      
-      const response = await api.get('/external/events/nearby', { params });
-      return response.data;
+      const response = await axiosInstance.get('/external/weather', { params });
+      return { success: true, data: response.data };
     } catch (error) {
-      throw error.response?.data || error;
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to get weather data',
+        error 
+      };
     }
   },
 
-  getNearbyBusinesses: async (location, radius = 5000, category = null, limit = 20) => {
+  // Get nearby events from external sources
+  getNearbyEvents: async (location, radius = 5000, interests = []) => {
     try {
       const params = {
-        lat: location.lat,
-        lng: location.lng,
+        latitude: location.latitude,
+        longitude: location.longitude,
         radius,
-        limit
+        interests: interests.join(',')
       };
-      if (category) params.category = category;
-      
-      const response = await api.get('/external/businesses/nearby', { params });
-      return response.data;
+      const response = await axiosInstance.get('/external/events/nearby', { params });
+      return { success: true, data: response.data };
     } catch (error) {
-      throw error.response?.data || error;
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to get external events',
+        error 
+      };
     }
   },
 
+  // Get travel directions
+  getDirections: async (origin, destination, mode = 'walking') => {
+    try {
+      const params = {
+        origin: `${origin.latitude},${origin.longitude}`,
+        destination: `${destination.latitude},${destination.longitude}`,
+        mode
+      };
+      const response = await axiosInstance.get('/external/directions', { params });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to get directions',
+        error 
+      };
+    }
+  },
+
+  // Geocode address to coordinates
   geocodeAddress: async (address) => {
     try {
-      const response = await api.get('/external/geocode', {
-        params: { address }
-      });
-      return response.data;
+      const params = { address };
+      const response = await axiosInstance.get('/external/geocode', { params });
+      return { success: true, data: response.data };
     } catch (error) {
-      throw error.response?.data || error;
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to geocode address',
+        error 
+      };
     }
   },
 
-  reverseGeocode: async (location) => {
+  // Reverse geocode coordinates to address
+  reverseGeocode: async (latitude, longitude) => {
     try {
-      const response = await api.get('/external/reverse-geocode', {
-        params: {
-          lat: location.lat,
-          lng: location.lng
-        }
-      });
-      return response.data;
+      const params = { latitude, longitude };
+      const response = await axiosInstance.get('/external/reverse-geocode', { params });
+      return { success: true, data: response.data };
     } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-
-  getAdventureData: async (location, radius = 5000, interests = []) => {
-    try {
-      const response = await api.get('/external/adventure-data', {
-        params: {
-          lat: location.lat,
-          lng: location.lng,
-          radius,
-          interests: interests.join(',')
-        }
-      });
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Failed to reverse geocode',
+        error 
+      };
     }
   }
 };

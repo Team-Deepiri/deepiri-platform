@@ -1,20 +1,54 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 
+const SearchBar = ({ onSearch, placeholder = "Search...", className = "" }) => {
+  const [searchTerm, setSearchTerm] = useState('');
 
-function SearchBar() {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (onSearch) {
+      onSearch(searchTerm);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setSearchTerm(e.target.value);
+    // Optional: Call onSearch on every keystroke for real-time search
+    // if (onSearch) {
+    //   onSearch(e.target.value);
+    // }
+  };
+
   return (
-    <div className="d-flex justify-content-center my-3">
-      <input
-        className="form-control me-2"
-        type="search"
-        placeholder="Search"
-        aria-label="Search"
-      />
-      <button className="btn btn-outline-primary" type="submit">
-        Search
-      </button>
-    </div>
+    <motion.form
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      onSubmit={handleSubmit}
+      className={`relative ${className}`}
+    >
+      <div className="relative">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={handleInputChange}
+          placeholder={placeholder}
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <span className="text-gray-400">🔍</span>
+        </div>
+        {searchTerm && (
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <span className="text-gray-400 hover:text-gray-600">✕</span>
+          </button>
+        )}
+      </div>
+    </motion.form>
   );
-}
+};
 
 export default SearchBar;

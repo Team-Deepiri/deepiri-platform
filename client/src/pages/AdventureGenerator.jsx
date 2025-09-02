@@ -3,325 +3,490 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdventure } from '../contexts/AdventureContext';
-import { userApi } from '../api/userApi';
+import { adventureApi } from '../api/adventureApi';
+import { externalApi } from '../api/externalApi';
 import toast from 'react-hot-toast';
 
 const AdventureGenerator = () => {
   const { user } = useAuth();
-  const { generateAdventure, loading, userLocation } = useAdventure();
+  const { userLocation, setUserLocation } = useAdventure();
   const navigate = useNavigate();
 
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     interests: [],
     duration: 60,
-    maxDistance: 5000,
-    socialMode: 'solo',
-    friends: [],
-    startTime: null
+    socialOption: 'solo',
+    skillLevel: 'beginner',
+    budget: 'medium',
+    transportation: 'walking'
   });
-
-  const [availableFriends, setAvailableFriends] = useState([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const interestOptions = [
-    { id: 'bars', label: 'Bars & Nightlife', icon: '🍻', color: 'bg-purple-100 text-purple-700' },
-    { id: 'music', label: 'Music & Concerts', icon: '🎵', color: 'bg-pink-100 text-pink-700' },
-    { id: 'food', label: 'Food & Dining', icon: '🍽️', color: 'bg-orange-100 text-orange-700' },
-    { id: 'outdoors', label: 'Outdoor Activities', icon: '🌲', color: 'bg-green-100 text-green-700' },
-    { id: 'art', label: 'Art & Culture', icon: '🎨', color: 'bg-blue-100 text-blue-700' },
-    { id: 'sports', label: 'Sports & Fitness', icon: '⚽', color: 'bg-red-100 text-red-700' },
-    { id: 'social', label: 'Social Events', icon: '👥', color: 'bg-indigo-100 text-indigo-700' },
-    { id: 'nightlife', label: 'Nightlife', icon: '🌃', color: 'bg-gray-100 text-gray-700' },
-    { id: 'culture', label: 'Cultural Events', icon: '🎭', color: 'bg-yellow-100 text-yellow-700' }
-  ];
+  const [availableInterests, setAvailableInterests] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [locationPermission, setLocationPermission] = useState(null);
 
   useEffect(() => {
-    loadFriends();
-    if (user?.preferences) {
-      setFormData(prev => ({
-        ...prev,
-        interests: user.preferences.interests || [],
-        duration: user.preferences.preferredDuration || 60,
-        maxDistance: user.preferences.maxDistance || 5000,
-        socialMode: user.preferences.socialMode || 'solo'
-      }));
-    }
-  }, [user]);
+    loadInitialData();
+  }, []);
 
-  const loadFriends = async () => {
+  const loadInitialData = async () => {
     try {
-      const response = await userApi.getFriends();
-      if (response.success) {
-        setAvailableFriends(response.data);
+      // Load available interests
+      const interestsResponse = await adventureApi.getAvailableInterests();
+      if (interestsResponse.success) {
+        setAvailableInterests(interestsResponse.data);
+      }
+
+      // Request location permission
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            };
+            setUserLocation(location);
+            setLocationPermission('granted');
+            loadWeatherData(location);
+          },
+          (error) => {
+            console.error('Location error:', error);
+            setLocationPermission('denied');
+          }
+        );
+      } else {
+        setLocationPermission('not-supported');
       }
     } catch (error) {
-      console.error('Failed to load friends:', error);
+      console.error('Failed to load initial data:', error);
     }
   };
 
-  const handleInterestToggle = (interestId) => {
+  const loadWeatherData = async (location) => {
+    try {
+      const weatherResponse = await externalApi.getCurrentWeather(location);
+      if (weatherResponse.success) {
+        setWeather(weatherResponse.data);
+      }
+    } catch (error) {
+      console.error('Failed to load weather:', error);
+    }
+  };
+
+  const handleInterestToggle = (interest) => {
     setFormData(prev => ({
       ...prev,
-      interests: prev.interests.includes(interestId)
-        ? prev.interests.filter(id => id !== interestId)
-        : [...prev.interests, interestId]
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter(i => i !== interest)
+        : [...prev.interests, interest]
     }));
   };
 
-  const handleFriendToggle = (friendId) => {
+  const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
-      friends: prev.friends.includes(friendId)
-        ? prev.friends.filter(id => id !== friendId)
-        : [...prev.friends, friendId]
+      [field]: value
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (formData.interests.length === 0) {
-      toast.error('Please select at least one interest');
+  const canProceed = () => {
+    switch (step) {
+      case 1:
+        return formData.interests.length > 0;
+      case 2:
+        return formData.duration >= 30 && formData.duration <= 90;
+      case 3:
+        return true; // Social option always has a default
+      case 4:
+        return true; // Skill level always has a default
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = () => {
+    if (canProceed()) {
+      setStep(prev => prev + 1);
+    }
+  };
+
+  const handleBack = () => {
+    setStep(prev => prev - 1);
+  };
+
+  const handleGenerate = async () => {
+    if (!userLocation) {
+      toast.error('Location is required to generate an adventure');
       return;
     }
 
-    setIsGenerating(true);
-    
+    setLoading(true);
     try {
-      const result = await generateAdventure(formData);
-      if (result.success) {
-        navigate(`/adventure/${result.adventure._id}`);
+      const requestData = {
+        location: userLocation,
+        interests: formData.interests,
+        duration: formData.duration,
+        socialOption: formData.socialOption,
+        skillLevel: formData.skillLevel,
+        budget: formData.budget,
+        transportation: formData.transportation,
+        weather: weather
+      };
+
+      const response = await adventureApi.generateAdventure(requestData);
+      if (response.success) {
+        toast.success('Adventure generated successfully!');
+        navigate(`/adventure/${response.data._id}`);
+      } else {
+        toast.error(response.message || 'Failed to generate adventure');
       }
     } catch (error) {
-      console.error('Adventure generation failed:', error);
+      console.error('Adventure generation error:', error);
+      toast.error('Failed to generate adventure. Please try again.');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+  const renderStep1 = () => (
+    <motion.div
+      key="step1"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          What interests you? 🎯
+        </h2>
+        <p className="text-gray-600">
+          Select your interests to personalize your adventure
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {availableInterests.map((interest) => (
+          <button
+            key={interest}
+            onClick={() => handleInterestToggle(interest)}
+            className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+              formData.interests.includes(interest)
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-200 hover:border-gray-300 text-gray-700'
+            }`}
+          >
+            <div className="text-2xl mb-2">
+              {interest === 'food' ? '🍕' :
+               interest === 'music' ? '🎵' :
+               interest === 'art' ? '🎨' :
+               interest === 'nature' ? '🌿' :
+               interest === 'nightlife' ? '🌃' :
+               interest === 'culture' ? '🏛️' :
+               interest === 'sports' ? '⚽' :
+               interest === 'shopping' ? '🛍️' :
+               interest === 'entertainment' ? '🎭' :
+               '🎯'}
+            </div>
+            <div className="font-medium capitalize">{interest}</div>
+          </button>
+        ))}
+      </div>
+
+      {formData.interests.length > 0 && (
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Selected: {formData.interests.join(', ')}
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+
+  const renderStep2 = () => (
+    <motion.div
+      key="step2"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          How much time do you have? ⏰
+        </h2>
+        <p className="text-gray-600">
+          Choose your adventure duration
+        </p>
+      </div>
+
+      <div className="max-w-md mx-auto">
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Duration: {formData.duration} minutes
+          </label>
+          <input
+            type="range"
+            min="30"
+            max="90"
+            step="15"
+            value={formData.duration}
+            onChange={(e) => handleInputChange('duration', parseInt(e.target.value))}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>30 min</span>
+            <span>90 min</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          {[30, 45, 60, 75, 90].map((duration) => (
+            <button
+              key={duration}
+              onClick={() => handleInputChange('duration', duration)}
+              className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                formData.duration === duration
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-gray-300 text-gray-700'
+              }`}
+            >
+              <div className="font-medium">{duration}m</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  const renderStep3 = () => (
+    <motion.div
+      key="step3"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          Adventure style? 👥
+        </h2>
+        <p className="text-gray-600">
+          How would you like to experience this adventure?
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        {[
+          { value: 'solo', label: 'Solo Adventure', icon: '🚶', desc: 'Explore on your own' },
+          { value: 'friends', label: 'With Friends', icon: '👥', desc: 'Invite friends to join' },
+          { value: 'host_event', label: 'Host Event', icon: '🎉', desc: 'Create a public event' }
+        ].map((option) => (
+          <button
+            key={option.value}
+            onClick={() => handleInputChange('socialOption', option.value)}
+            className={`p-6 rounded-lg border-2 transition-all duration-200 ${
+              formData.socialOption === option.value
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-200 hover:border-gray-300 text-gray-700'
+            }`}
+          >
+            <div className="text-3xl mb-3">{option.icon}</div>
+            <div className="font-semibold mb-2">{option.label}</div>
+            <div className="text-sm opacity-75">{option.desc}</div>
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+
+  const renderStep4 = () => (
+    <motion.div
+      key="step4"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          Adventure level? 🎯
+        </h2>
+        <p className="text-gray-600">
+          Choose your comfort level for this adventure
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        {[
+          { value: 'beginner', label: 'Beginner', icon: '🌱', desc: 'Easy and relaxed' },
+          { value: 'intermediate', label: 'Intermediate', icon: '🚀', desc: 'Moderate challenge' },
+          { value: 'advanced', label: 'Advanced', icon: '⚡', desc: 'Full adventure mode' }
+        ].map((option) => (
+          <button
+            key={option.value}
+            onClick={() => handleInputChange('skillLevel', option.value)}
+            className={`p-6 rounded-lg border-2 transition-all duration-200 ${
+              formData.skillLevel === option.value
+                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                : 'border-gray-200 hover:border-gray-300 text-gray-700'
+            }`}
+          >
+            <div className="text-3xl mb-3">{option.icon}</div>
+            <div className="font-semibold mb-2">{option.label}</div>
+            <div className="text-sm opacity-75">{option.desc}</div>
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+
+  const renderStep5 = () => (
+    <motion.div
+      key="step5"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          Ready to generate? 🎉
+        </h2>
+        <p className="text-gray-600">
+          Review your preferences and generate your adventure
+        </p>
+      </div>
+
+      <div className="bg-gray-50 rounded-lg p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600">Interests:</span>
+          <span className="font-medium">{formData.interests.join(', ')}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600">Duration:</span>
+          <span className="font-medium">{formData.duration} minutes</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600">Style:</span>
+          <span className="font-medium capitalize">{formData.socialOption.replace('_', ' ')}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600">Level:</span>
+          <span className="font-medium capitalize">{formData.skillLevel}</span>
+        </div>
+        {weather && (
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Weather:</span>
+            <span className="font-medium">
+              {weather.temperature}°F • {weather.condition}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {!userLocation && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <span className="text-yellow-600 mr-2">⚠️</span>
+            <span className="text-yellow-800">
+              Location access is required to generate personalized adventures.
+            </span>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+
+  const renderStep = () => {
+    switch (step) {
+      case 1: return renderStep1();
+      case 2: return renderStep2();
+      case 3: return renderStep3();
+      case 4: return renderStep4();
+      case 5: return renderStep5();
+      default: return null;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Generate Your Adventure
-          </h1>
-          <p className="text-xl text-gray-600">
-            {getGreeting()}, {user?.name}! Let's create your perfect adventure.
-          </p>
-          {userLocation && (
-            <p className="text-sm text-gray-500 mt-2">
-              📍 Location detected: {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-            </p>
-          )}
-        </motion.div>
-
-        <motion.form
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          onSubmit={handleSubmit}
-          className="bg-white rounded-xl shadow-lg p-8"
-        >
-          {/* Interests Section */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              What interests you? ✨
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Select all that apply to help us create the perfect adventure for you.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {interestOptions.map((interest) => (
-                <motion.button
-                  key={interest.id}
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleInterestToggle(interest.id)}
-                  className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                    formData.interests.includes(interest.id)
-                      ? `${interest.color} border-current`
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="text-3xl mb-2">{interest.icon}</div>
-                    <div className="font-medium">{interest.label}</div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Step {step} of 5
+            </span>
+            <span className="text-sm text-gray-500">
+              {Math.round((step / 5) * 100)}% Complete
+            </span>
           </div>
-
-          {/* Duration & Distance */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <label className="block text-lg font-semibold text-gray-900 mb-3">
-                Adventure Duration ⏰
-              </label>
-              <div className="space-y-3">
-                {[30, 45, 60, 75, 90].map((duration) => (
-                  <label key={duration} className="flex items-center">
-                    <input
-                      type="radio"
-                      name="duration"
-                      value={duration}
-                      checked={formData.duration === duration}
-                      onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                      className="mr-3 text-blue-600"
-                    />
-                    <span className="text-gray-700">{duration} minutes</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-lg font-semibold text-gray-900 mb-3">
-                Max Distance 🚶‍♂️
-              </label>
-              <div className="space-y-3">
-                {[
-                  { value: 1000, label: '1 km (15 min walk)' },
-                  { value: 2500, label: '2.5 km (30 min walk)' },
-                  { value: 5000, label: '5 km (1 hour walk)' },
-                  { value: 10000, label: '10 km (2 hour walk)' }
-                ].map((option) => (
-                  <label key={option.value} className="flex items-center">
-                    <input
-                      type="radio"
-                      name="maxDistance"
-                      value={option.value}
-                      checked={formData.maxDistance === option.value}
-                      onChange={(e) => setFormData(prev => ({ ...prev, maxDistance: parseInt(e.target.value) }))}
-                      className="mr-3 text-blue-600"
-                    />
-                    <span className="text-gray-700">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <motion.div
+              className="bg-blue-600 h-2 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${(step / 5) * 100}%` }}
+              transition={{ duration: 0.3 }}
+            />
           </div>
+        </div>
 
-          {/* Social Mode */}
-          <div className="mb-8">
-            <label className="block text-lg font-semibold text-gray-900 mb-3">
-              Social Preference 👥
-            </label>
-            <div className="grid md:grid-cols-3 gap-4">
-              {[
-                { value: 'solo', label: 'Solo Adventure', icon: '🚶‍♂️', description: 'Explore on your own' },
-                { value: 'friends', label: 'With Friends', icon: '👥', description: 'Invite your friends' },
-                { value: 'meet_new_people', label: 'Meet New People', icon: '🤝', description: 'Join community events' }
-              ].map((mode) => (
-                <label key={mode.value} className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="socialMode"
-                    value={mode.value}
-                    checked={formData.socialMode === mode.value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, socialMode: e.target.value }))}
-                    className="mr-3 text-blue-600"
-                  />
-                  <div>
-                    <div className="flex items-center">
-                      <span className="text-2xl mr-2">{mode.icon}</span>
-                      <span className="font-medium text-gray-900">{mode.label}</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{mode.description}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
+        {/* Main Content */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <AnimatePresence mode="wait">
+            {renderStep()}
+          </AnimatePresence>
 
-          {/* Friends Selection */}
-          {formData.socialMode === 'friends' && availableFriends.length > 0 && (
-            <div className="mb-8">
-              <label className="block text-lg font-semibold text-gray-900 mb-3">
-                Invite Friends 👫
-              </label>
-              <div className="grid md:grid-cols-2 gap-3">
-                {availableFriends.map((friend) => (
-                  <label key={friend._id} className="flex items-center p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      checked={formData.friends.includes(friend._id)}
-                      onChange={() => handleFriendToggle(friend._id)}
-                      className="mr-3 text-blue-600"
-                    />
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-sm font-semibold">
-                          {friend.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <span className="text-gray-900">{friend.name}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Navigation */}
+          <div className="flex justify-between mt-8">
+            <button
+              onClick={handleBack}
+              disabled={step === 1}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                step === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Back
+            </button>
 
-          {/* Generate Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            disabled={isGenerating || formData.interests.length === 0}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isGenerating ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                Generating your adventure...
-              </div>
+            {step < 5 ? (
+              <button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className={`px-6 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                  canProceed()
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Next
+              </button>
             ) : (
-              <div className="flex items-center justify-center">
-                <span className="mr-2">🎯</span>
-                Generate Adventure
-              </div>
+              <button
+                onClick={handleGenerate}
+                disabled={loading || !userLocation}
+                className={`px-6 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                  loading || !userLocation
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Generating...
+                  </div>
+                ) : (
+                  'Generate Adventure'
+                )}
+              </button>
             )}
-          </motion.button>
-
-          {formData.interests.length === 0 && (
-            <p className="text-center text-red-500 mt-4">
-              Please select at least one interest to continue
-            </p>
-          )}
-        </motion.form>
-
-        {/* Quick Tips */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-8 bg-blue-50 rounded-lg p-6"
-        >
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">
-            💡 Pro Tips
-          </h3>
-          <ul className="space-y-2 text-blue-800">
-            <li>• Select multiple interests for more diverse adventures</li>
-            <li>• Shorter durations work great for quick breaks</li>
-            <li>• Invite friends to make it a social experience</li>
-            <li>• Our AI considers weather and local events automatically</li>
-          </ul>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   );
