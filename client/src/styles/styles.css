@@ -1,0 +1,104 @@
+.app {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: black;
+  }
+
+  .JaxK {
+    text-align: center;
+    font-family: "Roboto" ,Arial, sans-serif;
+    color: purple;
+    font-weight: bold;
+    font-size: 100pt;
+
+  }
+
+
+  .JaxKLogo {
+    display: block;              /* Ensures the image behaves as a block element (for centering) */
+    margin: 0 auto;              /* Centers the image horizontally */
+    border-radius: 50%;          /* Makes the edges transparent (rounds the corners) */
+    max-width: 200px;            /* Makes the image bigger (you can adjust the size as needed) */
+    height: auto;                /* Maintains aspect ratio */
+    filter: opacity(0.9);        /* Optionally, you can adjust the opacity for transparency effect */
+  }
+
+
+  .Claire {
+    text-align: center;
+    color: lavender;
+    font-size: 38pt;
+    font-family: "Roboto", Arial, sans-serif;
+    font-weight: bold;
+
+  }
+
+
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .form input,
+  .form textarea {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .form textarea {
+    min-height: 100px;
+  }
+  
+  .form button {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .form button[type="button"] {
+    background-color: #f44336;
+    margin-top: 5px;
+  }
+  
+  .data-list {
+    margin-top: 20px;
+  }
+  
+  .data-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+  }
+  
+  .data-item h3 {
+    margin-top: 0;
+  }
+  
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .actions button {
+    padding: 5px 10px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .actions button:last-child {
+    background-color: #f44336;
+  }

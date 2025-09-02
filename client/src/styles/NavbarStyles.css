@@ -1,0 +1,122 @@
+/* --- Navbar Styles --- */
+.navbar {
+    background: linear-gradient(90deg, #6a0dad, #ff6f61, #ff69b4); /* Purple → Coral → Pink gradient */
+    border-bottom: none;
+    padding: 0.3rem 0.8rem; /* EVEN tighter */
+    font-family: 'Tagesschrift', system-ui, sans-serif;
+    min-height: 50px; /* Smaller height */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  
+  .navbar-brand {
+    font-size: 1.4rem;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+    font-family: "Tagesschrift", system-ui;
+
+  }
+  
+  .navbar-brand:hover {
+    color: #ffd6ec; /* Soft light pink on hover */
+  }
+  
+  .navbar-nav .nav-link {
+    color: #f8f9fa;
+    margin-right: 15px;
+    font-size: 0.95rem;
+    transition: color 0.3s ease;
+  }
+  
+  .navbar-nav .nav-link:hover {
+    color: #ffd6ec;
+  }
+  
+  .navbar-toggler {
+    border: none;
+    outline: none;
+  }
+  
+  .navbar-toggler-icon {
+    background-image: none;
+    width: 22px;
+    height: 2px;
+    background-color: #ffffff;
+    display: block;
+    position: relative;
+  }
+  
+  .navbar-toggler-icon::before,
+  .navbar-toggler-icon::after {
+    content: '';
+    width: 22px;
+    height: 2px;
+    background-color: #ffffff;
+    position: absolute;
+    left: 0;
+  }
+  
+  .navbar-toggler-icon::before {
+    top: -7px;
+  }
+  
+  .navbar-toggler-icon::after {
+    top: 7px;
+  }
+  
+  /* --- SearchBar Styles inside Navbar --- */
+  .d-flex {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .form-control {
+    border-radius: 20px;
+    width: 250px;
+    padding: 6px 12px;
+    font-size: 14px;
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly see-through white */
+    color: #fff;
+    border: 1px solid #ff69b4;
+    box-shadow: none;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .form-control:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: #ffd6ec;
+    color: #fff;
+    box-shadow: 0 0 5px rgba(255, 105, 180, 0.5); /* soft pink glow */
+    outline: none;
+  }
+  
+  .form-control:hover {
+    border-color: #ffd6ec;
+  }
+
+  .form-control::placeholder {
+    color: #ffd6ec; /* Light soft pink */
+    opacity: 1; /* Make sure it's fully visible */
+  }
+  
+  
+  /* Search Button (Optional) */
+  .btn-outline-primary {
+    border-radius: 20px;
+    padding: 6px 20px;
+    font-size: 14px;
+    margin-left: 10px;
+    background-color: transparent;
+    color:  #ffd6ec;;
+    border: 1px solid #ffd6ec;
+    transition: background-color 0.3s ease-in-out, transform 0.2s;
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: purple;
+    color: pink;
+    border-color: #ffd6ec;
+    transform: scale(1.05);
+  }
+  
