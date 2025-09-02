@@ -1,135 +1,369 @@
 import React, { useState, useEffect } from 'react';
-import {
-  createData,
-  getAllData,
-  updateData,
-  deleteData,
-} from '../api/firebaseApi';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import { useAdventure } from '../contexts/AdventureContext';
+import { userApi } from '../api/userApi';
+import { adventureApi } from '../api/adventureApi';
+import { externalApi } from '../api/externalApi';
+import toast from 'react-hot-toast';
 
-import jaxklogo from '../assets/images/jaxklogo.png';
-import clairelogo from '../assets/images/cute.jpg';
-import logo from '../assets/images/logo.svg';
-import Navbar from '../components/Navbar';
-import SearchBar from '../components/SearchBar';
-import "../styles/styles.css"
+const Dashboard = () => {
+  const { user } = useAuth();
+  const { userLocation } = useAdventure();
+  const navigate = useNavigate();
 
-function Dashboard() {
-  const [data, setData] = useState([]);
-  const [formData, setFormData] = useState({ title: '', content: '' });
-  const [editingId, setEditingId] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [recentAdventures, setRecentAdventures] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [nearbyEvents, setNearbyEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
+    loadDashboardData();
   }, []);
 
-  const fetchData = async () => {
+  const loadDashboardData = async () => {
     try {
-      const allData = await getAllData();
-      if (Array.isArray(allData)) setData(allData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
+      setLoading(true);
+      
+      const [statsResponse, adventuresResponse] = await Promise.all([
+        userApi.getStats(),
+        adventureApi.getUserAdventures(null, 5, 0)
+      ]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingId) {
-        await updateData(editingId, formData);
-        setEditingId(null);
-      } else {
-        await createData(formData);
+      if (statsResponse.success) {
+        setStats(statsResponse.data);
       }
-      setFormData({ title: '', content: '' });
-      fetchData();
+
+      if (adventuresResponse.success) {
+        setRecentAdventures(adventuresResponse.data);
+      }
+
+      // Load weather if location is available
+      if (userLocation) {
+        try {
+          const weatherResponse = await externalApi.getCurrentWeather(userLocation);
+          if (weatherResponse.success) {
+            setWeather(weatherResponse.data);
+          }
+        } catch (error) {
+          console.error('Failed to load weather:', error);
+        }
+      }
+
+      // Load nearby events
+      if (userLocation) {
+        try {
+          const eventsResponse = await externalApi.getNearbyEvents(userLocation, 5000);
+          if (eventsResponse.success) {
+            setNearbyEvents(eventsResponse.data.slice(0, 3));
+          }
+        } catch (error) {
+          console.error('Failed to load events:', error);
+        }
+      }
+
     } catch (error) {
-      console.error('Error saving data:', error);
+      console.error('Failed to load dashboard data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEdit = (item) => {
-    setFormData({ title: item.title, content: item.content });
-    setEditingId(item.id);
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await deleteData(id);
-      fetchData();
-    } catch (error) {
-      console.error('Error deleting data:', error);
-    }
+  const getTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour < 6) return 'night';
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    if (hour < 22) return 'evening';
+    return 'night';
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-     <Navbar />
-      <h2 style={{ textAlign: 'center', color: 'purple', fontSize: '60pt' ,  fontFamily: '"Tagesschrift", system-ui'}}>
-        Dashboard
-      </h2>
-      {/* <p className="Claire">
-        UI designed by Claire Hudson and implemented by Joe Black
-      </p> */}
-      <img src={jaxklogo} alt="JaxK Logo" className="JaxKLogo" />
-      {/* <img src={clairelogo} alt="Claire Logo" /> */}
-      <img src={logo} alt="Logo" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mb-8"
+        >
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white">
+            <h1 className="text-3xl font-bold mb-2">
+              {getGreeting()}, {user?.name}! 👋
+            </h1>
+            <p className="text-blue-100 text-lg">
+              Ready for your next adventure? Let's explore what's around you.
+            </p>
+            {weather && (
+              <div className="mt-4 flex items-center space-x-4">
+                <span className="text-2xl">
+                  {weather.condition === 'Clear' ? '☀️' : 
+                   weather.condition === 'Clouds' ? '☁️' : 
+                   weather.condition === 'Rain' ? '🌧️' : '🌤️'}
+                </span>
+                <span className="text-lg">
+                  {weather.temperature}°F • {weather.condition}
+                </span>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
-      <form onSubmit={handleSubmit} className="form">
-        <input
-          type="text"
-          name="title"
-          value={formData.title}
-          onChange={handleInputChange}
-          placeholder="Title"
-          required
-        />
-        <textarea
-          name="content"
-          value={formData.content}
-          onChange={handleInputChange}
-          placeholder="Content"
-          required
-        />
-        <button type="submit">{editingId ? 'Update' : 'Create'}</button>
-        {editingId && (
-          <button
-            type="button"
-            onClick={() => {
-              setFormData({ title: '', content: '' });
-              setEditingId(null);
-            }}
-          >
-            Cancel
-          </button>
-        )}
-      </form>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Quick Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="bg-white rounded-xl shadow-lg p-6"
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Quick Actions 🚀
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Link
+                  to="/adventure/generate"
+                  className="group p-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-3xl">🎯</div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Generate Adventure</h3>
+                      <p className="text-blue-100">Create a new personalized adventure</p>
+                    </div>
+                  </div>
+                </Link>
 
-      <div className="data-list">
-        <h2>Data Items</h2>
-        {data.length === 0 ? (
-          <p>No data available</p>
-        ) : (
-          <ul>
-            {data.map((item) => (
-              <li key={item.id} className="data-item">
-                <h3>{item.title}</h3>
-                <p>{item.content}</p>
-                <div className="actions">
-                  <button onClick={() => handleEdit(item)}>Edit</button>
-                  <button onClick={() => handleDelete(item.id)}>Delete</button>
+                <Link
+                  to="/events"
+                  className="group p-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-3xl">📅</div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Browse Events</h3>
+                      <p className="text-purple-100">Discover local events and meetups</p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/friends"
+                  className="group p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-3xl">👥</div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Connect</h3>
+                      <p className="text-green-100">Find and invite friends</p>
+                    </div>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/adventures"
+                  className="group p-6 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-105"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-3xl">🗺️</div>
+                    <div>
+                      <h3 className="text-lg font-semibold">My Adventures</h3>
+                      <p className="text-orange-100">View your adventure history</p>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Recent Adventures */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="bg-white rounded-xl shadow-lg p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Recent Adventures 🗺️
+                </h2>
+                <Link
+                  to="/adventures"
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  View All
+                </Link>
+              </div>
+
+              {recentAdventures.length > 0 ? (
+                <div className="space-y-4">
+                  {recentAdventures.map((adventure) => (
+                    <div
+                      key={adventure._id}
+                      className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                      onClick={() => navigate(`/adventure/${adventure._id}`)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {adventure.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {adventure.totalDuration} minutes • {adventure.steps.length} stops
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            adventure.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            adventure.status === 'active' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {adventure.status}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(adventure.metadata.generatedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">🗺️</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No adventures yet
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Generate your first adventure to get started!
+                  </p>
+                  <Link
+                    to="/adventure/generate"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    Generate Adventure
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Stats */}
+            {stats && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="bg-white rounded-xl shadow-lg p-6"
+              >
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Your Stats 📊
+                </h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Adventures Completed</span>
+                    <span className="font-semibold text-gray-900">
+                      {stats.adventureStats?.completed || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Total Points</span>
+                    <span className="font-semibold text-gray-900">
+                      {stats.totalPoints || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Current Streak</span>
+                    <span className="font-semibold text-gray-900">
+                      {stats.streak || 0} days
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Friends</span>
+                    <span className="font-semibold text-gray-900">
+                      {stats.friendsCount || 0}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Nearby Events */}
+            {nearbyEvents.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                className="bg-white rounded-xl shadow-lg p-6"
+              >
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Nearby Events 📅
+                </h2>
+                <div className="space-y-4">
+                  {nearbyEvents.map((event, index) => (
+                    <div key={index} className="p-3 border border-gray-200 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 text-sm">
+                        {event.name}
+                      </h3>
+                      <p className="text-xs text-gray-600">
+                        {new Date(event.startTime).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <Link
+                  to="/events"
+                  className="block text-center mt-4 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  View All Events
+                </Link>
+              </motion.div>
+            )}
+
+            {/* Quick Tips */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200"
+            >
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                💡 Pro Tip
+              </h2>
+              <p className="text-gray-700 text-sm">
+                {getTimeOfDay() === 'morning' && "Perfect time for outdoor adventures and coffee shop visits!"}
+                {getTimeOfDay() === 'afternoon' && "Great time for food tours and cultural experiences!"}
+                {getTimeOfDay() === 'evening' && "Ideal for nightlife, concerts, and social events!"}
+                {getTimeOfDay() === 'night' && "Late night adventures await - bars and nightlife are calling!"}
+              </p>
+            </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default Dashboard;
