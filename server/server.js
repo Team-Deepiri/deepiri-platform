@@ -32,6 +32,8 @@ const externalRoutes = require('./routes/externalRoutes');
 const authenticateJWT = require('./middleware/authenticateJWT');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
+const promClient = require('prom-client');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = createServer(app);
@@ -59,7 +61,30 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Logging
-app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
+app.use((req, res, next) => {
+  req.requestId = uuidv4();
+  res.setHeader('x-request-id', req.requestId);
+  next();
+});
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :req[x-request-id]', {
+  stream: { write: message => logger.info(message.trim()) }
+}));
+
+// Metrics
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+collectDefaultMetrics();
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'code']
+});
+app.use((req, res, next) => {
+  const end = httpRequestDuration.startTimer();
+  res.on('finish', () => {
+    end({ method: req.method, route: req.path, code: res.statusCode });
+  });
+  next();
+});
 
 // CORS configuration
 app.use(cors({
@@ -134,6 +159,15 @@ app.get('/api/health', (req, res) => {
       ai: aiOrchestrator.isInitialized() ? 'ready' : 'initializing'
     }
   });
+});
+
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
+  } catch (err) {
+    res.status(500).end(err.message);
+  }
 });
 
 // Serve static files from the React app in production
