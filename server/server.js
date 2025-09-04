@@ -36,6 +36,8 @@ const promClient = require('prom-client');
 const { v4: uuidv4 } = require('uuid');
 const ipFilter = require('./middleware/ipFilter');
 const sanitize = require('./middleware/sanitize');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 const server = createServer(app);
@@ -99,6 +101,16 @@ app.use(cors({
 // Body parsing middleware
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+// OpenAPI docs
+const swaggerSpec = swaggerJsdoc({
+  definition: {
+    openapi: '3.0.0',
+    info: { title: 'Trailblip API', version: '2.0.0' }
+  },
+  apis: []
+});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/trailblip_mag', {
