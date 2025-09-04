@@ -1,5 +1,8 @@
 const axios = require('axios');
+const http = require('http');
+const https = require('https');
 const logger = require('../utils/logger');
+const cacheService = require('./cacheService');
 const cacheService = require('./cacheService');
 
 class ExternalApiService {
@@ -9,6 +12,33 @@ class ExternalApiService {
     this.openWeatherApiKey = process.env.OPENWEATHER_API_KEY;
     this.eventbriteApiKey = process.env.EVENTBRITE_API_KEY;
     this.yelpApiKey = process.env.YELP_API_KEY;
+  }
+
+  getHttpClient() {
+    if (!this.httpClient) {
+      const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 100 });
+      const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 100 });
+      this.httpClient = axios.create({
+        timeout: 10000,
+        httpAgent,
+        httpsAgent,
+        validateStatus: (s) => s >= 200 && s < 300
+      });
+    }
+    return this.httpClient;
+  }
+
+  async safeGet(url, options = {}, retries = 2) {
+    const client = this.getHttpClient();
+    let attempt = 0;
+    while (true) {
+      try {
+        return await client.get(url, options);
+      } catch (err) {
+        attempt++;
+        if (attempt > retries) throw err;
+      }
+    }
   }
 
   // Google Maps API methods
