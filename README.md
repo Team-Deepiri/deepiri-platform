@@ -1,8 +1,6 @@
-# Trailblip MAG 2.0 
+# TripBlip MAG 2.0 
 
-## Micro-Adventures Generator v2.0
-
-Welcome to Trailblip MAG 2.0, your AI-powered adventure companion that creates personalized local experiences, connects you with friends, and helps you discover the best your city has to offer.
+Welcome to TripBlip MAG 2.0, your AI-powered adventure companion that creates personalized local experiences, connects you with friends, and helps you discover the best your city (or the one you're at currently) has to offer.
 
 ## Features
 
@@ -69,7 +67,7 @@ MAG 2.0 follows a modern microservices architecture:
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd Trailblip
+   cd TripBlip
    ```
 
 2. **Run the setup script**
@@ -291,20 +289,16 @@ docker-compose down
 - Ensure MongoDB is running: `docker-compose up -d mongodb`
 - Check database credentials in `.env`
 
-### Getting Help
-
-- Check the [documentation](./docs/)
-- Report bugs via [GitHub Issues]
-- Join our [Discord community]
-- Email: support@trailblip.com
-
 ##  Acknowledgments
 
 - OpenAI for GPT-4 integration
 - React and Node.js communities
-- All our beta testers and contributors
 
 ---
+
+
+
+
 
 
 
