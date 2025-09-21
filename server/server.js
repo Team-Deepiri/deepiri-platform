@@ -30,7 +30,7 @@ const externalRoutes = require('./routes/externalRoutes');
 
 // Import middleware
 const authenticateJWT = require('./middleware/authenticateJWT');
-const errorHandler = require('./middleware/errorHandler');
+const { errorHandler, notFoundHandler, gracefulShutdown } = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 const promClient = require('prom-client');
 const { v4: uuidv4 } = require('uuid');
@@ -209,27 +209,15 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// 404 handler for unmatched routes
+app.use(notFoundHandler);
+
 // Error handling middleware
 app.use(errorHandler);
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    mongoose.connection.close();
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    mongoose.connection.close();
-    process.exit(0);
-  });
-});
+// Graceful shutdown handlers
+process.on('SIGTERM', gracefulShutdown(server));
+process.on('SIGINT', gracefulShutdown(server));
 
 server.listen(PORT, () => {
   logger.info(`MAG 2.0 Server is running on port ${PORT}`);
