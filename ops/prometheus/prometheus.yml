@@ -1,15 +1,44 @@
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
 
 scrape_configs:
-  - job_name: 'node-backend'
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'trailblip-backend'
     static_configs:
       - targets: ['backend:5000']
-    metrics_path: /metrics
+    metrics_path: '/metrics'
+    scrape_interval: 30s
 
-  - job_name: 'python-agent'
+  - job_name: 'trailblip-pyagent'
     static_configs:
       - targets: ['pyagent:8000']
-    metrics_path: /metrics
+    metrics_path: '/metrics'
+    scrape_interval: 30s
 
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb:27017']
+    scrape_interval: 60s
 
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 60s
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
