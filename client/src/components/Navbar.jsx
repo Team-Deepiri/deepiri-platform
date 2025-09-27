@@ -85,7 +85,7 @@ const Navbar = () => {
                 🗺️
               </motion.div>
               <div>
-                <span className="text-2xl font-bold gradient-text">Trailblip</span>
+                <span className="text-2xl font-bold gradient-text">tripblip</span>
                 <br />
                 <span className="text-sm gradient-text-secondary font-medium">MAG 2.0</span>
               </div>

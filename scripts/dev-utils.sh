@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Trailblip MAG 2.0 - Development Utilities
+# tripblip MAG 2.0 - Development Utilities
 # Various development and maintenance scripts
 
 set -e
@@ -375,7 +375,7 @@ prod_build() {
 
 # Show help
 show_help() {
-    echo "Trailblip MAG 2.0 - Development Utilities"
+    echo "tripblip MAG 2.0 - Development Utilities"
     echo ""
     echo "Usage: $0 [COMMAND]"
     echo ""

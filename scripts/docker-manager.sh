@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Trailblip MAG 2.0 - Docker Management Scripts
+# tripblip MAG 2.0 - Docker Management Scripts
 # Comprehensive Docker utilities for development and production
 
 set -e
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="trailblip-mag"
+PROJECT_NAME="tripblip-mag"
 COMPOSE_FILE="docker-compose.yml"
 ENV_FILE=".env"
 
@@ -179,7 +179,7 @@ backup_database() {
     log_info "Creating database backup: $backup_file"
     
     docker-compose -f "$COMPOSE_FILE" exec mongodb mongodump --out /backup
-    docker-compose -f "$COMPOSE_FILE" exec mongodb tar -czf "/backup/$backup_file" /backup/trailblip_mag
+    docker-compose -f "$COMPOSE_FILE" exec mongodb tar -czf "/backup/$backup_file" /backup/tripblip_mag
     docker cp "$(docker-compose -f "$COMPOSE_FILE" ps -q mongodb):/backup/$backup_file" "./$backup_file"
     
     log_success "Database backup created: $backup_file"
@@ -202,7 +202,7 @@ restore_database() {
     
     docker cp "$backup_file" "$(docker-compose -f "$COMPOSE_FILE" ps -q mongodb):/backup/"
     docker-compose -f "$COMPOSE_FILE" exec mongodb tar -xzf "/backup/$backup_file" -C /
-    docker-compose -f "$COMPOSE_FILE" exec mongodb mongorestore /backup/trailblip_mag
+    docker-compose -f "$COMPOSE_FILE" exec mongodb mongorestore /backup/tripblip_mag
     
     log_success "Database restored successfully!"
 }
@@ -283,7 +283,7 @@ update_images() {
 
 # Show help
 show_help() {
-    echo "Trailblip MAG 2.0 - Docker Management Script"
+    echo "tripblip MAG 2.0 - Docker Management Script"
     echo ""
     echo "Usage: $0 [COMMAND]"
     echo ""

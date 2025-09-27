@@ -62,7 +62,7 @@ async def agent_message(req: MessageRequest, request: Request):
         messages = [
             {
                 "role": "system", 
-                "content": "You are Trailblip Agent, an AI assistant that helps users discover and plan local adventures. Be concise, helpful, and encouraging. Focus on outdoor activities, local events, and unique experiences."
+                "content": "You are tripblip Agent, an AI assistant that helps users discover and plan local adventures. Be concise, helpful, and encouraging. Focus on outdoor activities, local events, and unique experiences."
             },
             {"role": "user", "content": req.content}
         ]
@@ -151,7 +151,7 @@ async def agent_message_stream(req: MessageRequest, request: Request):
             messages = [
                 {
                     "role": "system", 
-                    "content": "You are Trailblip Agent, an AI assistant that helps users discover and plan local adventures. Be concise, helpful, and encouraging. Focus on outdoor activities, local events, and unique experiences."
+                    "content": "You are tripblip Agent, an AI assistant that helps users discover and plan local adventures. Be concise, helpful, and encouraging. Focus on outdoor activities, local events, and unique experiences."
                 },
                 {"role": "user", "content": req.content}
             ]

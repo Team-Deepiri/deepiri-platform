@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Trailblip MAG 2.0 - Comprehensive Test Runner
+# tripblip MAG 2.0 - Comprehensive Test Runner
 # Runs all tests across the entire application
 
 set -e
@@ -303,7 +303,7 @@ generate_report() {
     local report_file="test-report-$(date +%Y%m%d_%H%M%S).txt"
     
     {
-        echo "Trailblip MAG 2.0 - Test Report"
+        echo "tripblip MAG 2.0 - Test Report"
         echo "Generated: $(date)"
         echo "=================================="
         echo ""
@@ -325,7 +325,7 @@ generate_report() {
 
 # Main test runner
 main() {
-    log_info "Starting comprehensive test suite for Trailblip MAG 2.0"
+    log_info "Starting comprehensive test suite for tripblip MAG 2.0"
     echo "=================================================="
     
     # Check dependencies
@@ -392,7 +392,7 @@ case "${1:-all}" in
         main
         ;;
     help|--help|-h)
-        echo "Trailblip MAG 2.0 - Test Runner"
+        echo "tripblip MAG 2.0 - Test Runner"
         echo ""
         echo "Usage: $0 [COMMAND]"
         echo ""

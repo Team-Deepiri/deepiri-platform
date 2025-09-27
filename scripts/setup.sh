@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Trailblip MAG 2.0 Setup Script
-echo "🗺️ Setting up Trailblip MAG 2.0..."
+# tripblip MAG 2.0 Setup Script
+echo "🗺️ Setting up tripblip MAG 2.0..."
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then

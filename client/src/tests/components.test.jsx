@@ -80,9 +80,9 @@ describe('Home Component', () => {
   test('renders home page with correct content', () => {
     renderWithProviders(<Home />);
     
-    expect(screen.getByText('Welcome to Trailblip MAG 2.0')).toBeInTheDocument();
+    expect(screen.getByText('Welcome to tripblip MAG 2.0')).toBeInTheDocument();
     expect(screen.getByText(/Your AI-powered adventure companion/)).toBeInTheDocument();
-    expect(screen.getByText('Why Choose Trailblip MAG 2.0?')).toBeInTheDocument();
+    expect(screen.getByText('Why Choose tripblip MAG 2.0?')).toBeInTheDocument();
     expect(screen.getByText('How It Works')).toBeInTheDocument();
   });
 
@@ -104,7 +104,7 @@ describe('Home Component', () => {
     
     // This would need the auth context to be properly mocked
     // For now, we'll test the basic rendering
-    expect(screen.getByText('Welcome to Trailblip MAG 2.0')).toBeInTheDocument();
+    expect(screen.getByText('Welcome to tripblip MAG 2.0')).toBeInTheDocument();
   });
 });
 
@@ -112,7 +112,7 @@ describe('Navbar Component', () => {
   test('renders navbar with logo and navigation', () => {
     renderWithProviders(<Navbar />);
     
-    expect(screen.getByText('Trailblip MAG 2.0')).toBeInTheDocument();
+    expect(screen.getByText('tripblip MAG 2.0')).toBeInTheDocument();
     expect(screen.getByText('🗺️')).toBeInTheDocument();
   });
 

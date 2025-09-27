@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="Trailblip Python Agent API", 
+    title="tripblip Python Agent API", 
     version="0.1.0",
     lifespan=lifespan
 )
@@ -148,7 +148,7 @@ def metrics():
 def root():
     """Root endpoint with API information."""
     return {
-        "message": "Trailblip Python Agent API",
+        "message": "tripblip Python Agent API",
         "version": "0.1.0",
         "docs": "/docs",
         "health": "/health",

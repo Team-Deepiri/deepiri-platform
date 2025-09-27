@@ -113,7 +113,7 @@ if (swaggerEnabled) {
   const swaggerSpec = swaggerJsdoc({
     definition: {
       openapi: '3.0.0',
-      info: { title: 'Trailblip API', version: '2.0.0' }
+      info: { title: 'tripblip API', version: '2.0.0' }
     },
     apis: []
   });
@@ -127,7 +127,7 @@ if (swaggerEnabled) {
 }
 
 // Database connection
-const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/trailblip_mag';
+const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/tripblip_mag';
 mongoose.connect(mongoUri, {
   // Removed deprecated options: useNewUrlParser and useUnifiedTopology
 })
@@ -187,7 +187,7 @@ app.get('/api/health', (req, res) => {
     services: {
       database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       cache: cacheService.getConnectionStatus() ? 'connected' : 'disconnected',
-      ai: aiOrchestrator.isInitialized() ? 'ready' : 'initializing'
+      ai: aiOrchestrator.isReady() ? 'ready' : 'initializing'
     }
   });
 });

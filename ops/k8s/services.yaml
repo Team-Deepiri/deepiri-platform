@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: trailblip-backend
+  name: tripblip-backend
 spec:
   selector:
-    app: trailblip-backend
+    app: tripblip-backend
     color: blue
   ports:
     - port: 80
@@ -14,10 +14,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: trailblip-pyagent
+  name: tripblip-pyagent
 spec:
   selector:
-    app: trailblip-pyagent
+    app: tripblip-pyagent
     color: blue
   ports:
     - port: 80

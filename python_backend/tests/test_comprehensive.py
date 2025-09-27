@@ -97,7 +97,7 @@ class TestRootEndpoint:
         assert response.status_code == 200
         
         data = response.json()
-        assert data["message"] == "Trailblip Python Agent API"
+        assert data["message"] == "tripblip Python Agent API"
         assert data["version"] == "0.1.0"
         assert "docs" in data
         assert "health" in data

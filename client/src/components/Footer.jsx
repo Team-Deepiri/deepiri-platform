@@ -47,7 +47,7 @@ const Footer = () => {
                 🗺️
               </motion.div>
               <div>
-                <span className="text-2xl font-bold gradient-text">Trailblip</span>
+                <span className="text-2xl font-bold gradient-text">tripblip</span>
                 <br />
                 <span className="text-sm gradient-text-secondary font-medium">MAG 2.0</span>
               </div>
@@ -58,7 +58,7 @@ const Footer = () => {
             </p>
             <div className="flex space-x-4">
               {[
-                { icon: '📧', label: 'Email', href: 'mailto:hello@trailblip.com' },
+                { icon: '📧', label: 'Email', href: 'mailto:hello@tripblip.com' },
                 { icon: '📘', label: 'Facebook', href: '#' },
                 { icon: '🐦', label: 'Twitter', href: '#' },
                 { icon: '📷', label: 'Instagram', href: '#' },
@@ -183,7 +183,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center space-x-6 mb-4 md:mb-0">
               <p className="text-gray-400 text-sm">
-                © 2024 Trailblip MAG 2.0. All rights reserved.
+                © 2024 tripblip MAG 2.0. All rights reserved.
               </p>
               <div className="flex items-center space-x-2 text-sm text-gray-400">
                 <span>Made with</span>

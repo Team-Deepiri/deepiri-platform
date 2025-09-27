@@ -1,5 +1,5 @@
 // MongoDB initialization script
-db = db.getSiblingDB('trailblip_mag');
+db = db.getSiblingDB('tripblip_mag');
 
 // Create collections
 db.createCollection('users');
@@ -29,7 +29,7 @@ print('Database initialized with collections and indexes');
 // Create a sample admin user (optional)
 db.users.insertOne({
   name: "Admin User",
-  email: "admin@trailblip.com",
+  email: "admin@tripblip.com",
   passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password: password
   preferences: {
     nightlife: "high",

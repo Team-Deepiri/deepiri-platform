@@ -32,7 +32,7 @@ class AIOrchestrator {
     }
   }
 
-  isInitialized() {
+  isReady() {
     return this.isInitialized;
   }
 

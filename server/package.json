@@ -1,5 +1,5 @@
 {
-  "name": "trailblip-mag-server",
+  "name": "tripblip-mag-server",
   "version": "2.0.0",
   "description": "MAG 2.0 Backend - Microservices for Adventure Generation",
   "main": "server.js",
@@ -13,7 +13,7 @@
     "seed": "node scripts/seed.js"
   },
   "keywords": ["adventure", "ai", "microservices", "local-events"],
-  "author": "Trailblip Team",
+  "author": "tripblip Team",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.8.4",

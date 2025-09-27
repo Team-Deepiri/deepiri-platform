@@ -4,20 +4,20 @@ services:
   # MongoDB Database
   mongodb:
     image: mongo:7.0
-    container_name: trailblip-mongodb
+    container_name: tripblip-mongodb
     restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:-trailblip_mag}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-tripblip_mag}
     volumes:
       - mongodb_data:/data/db
       - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - ./scripts/mongo-backup.sh:/usr/local/bin/backup.sh:ro
     networks:
-      - trailblip-network
+      - tripblip-network
     deploy:
       resources:
         limits:
@@ -36,7 +36,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7.2-alpine
-    container_name: trailblip-redis
+    container_name: tripblip-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -44,7 +44,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - trailblip-network
+      - tripblip-network
     deploy:
       resources:
         limits:
@@ -66,7 +66,7 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_ENV: ${NODE_ENV:-development}
-    container_name: trailblip-backend
+    container_name: tripblip-backend
     restart: unless-stopped
     ports:
       - "5000:5000"
@@ -75,7 +75,7 @@ services:
       PORT: 5000
       
       # Database
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-trailblip_mag}?authSource=admin
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-tripblip_mag}?authSource=admin
       
       # Redis
       REDIS_HOST: redis
@@ -111,7 +111,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - trailblip-network
+      - tripblip-network
     deploy:
       resources:
         limits:
@@ -134,7 +134,7 @@ services:
       dockerfile: Dockerfile
       args:
         PYTHON_ENV: ${NODE_ENV:-development}
-    container_name: trailblip-pyagent
+    container_name: tripblip-pyagent
     restart: unless-stopped
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -149,7 +149,7 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - trailblip-network
+      - tripblip-network
     deploy:
       resources:
         limits:
@@ -179,7 +179,7 @@ services:
         VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
         VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
         VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID}
-    container_name: trailblip-frontend
+    container_name: tripblip-frontend
     restart: unless-stopped
     ports:
       - "3000:80"
@@ -187,7 +187,7 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - trailblip-network
+      - tripblip-network
     deploy:
       resources:
         limits:
@@ -205,7 +205,7 @@ services:
   # Prometheus Monitoring
   prometheus:
     image: prom/prometheus:latest
-    container_name: trailblip-prometheus
+    container_name: tripblip-prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
@@ -213,7 +213,7 @@ services:
       - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     networks:
-      - trailblip-network
+      - tripblip-network
     depends_on:
       - backend
       - pyagent
@@ -236,7 +236,7 @@ services:
   # Grafana Dashboard
   grafana:
     image: grafana/grafana:latest
-    container_name: trailblip-grafana
+    container_name: tripblip-grafana
     restart: unless-stopped
     ports:
       - "3001:3000"
@@ -248,7 +248,7 @@ services:
       - ./ops/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./ops/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     networks:
-      - trailblip-network
+      - tripblip-network
     depends_on:
       - prometheus
     deploy:
@@ -263,14 +263,14 @@ services:
   # Log Aggregation with Fluentd
   fluentd:
     image: fluent/fluentd:v1.16-debian-1
-    container_name: trailblip-fluentd
+    container_name: tripblip-fluentd
     restart: unless-stopped
     volumes:
       - ./ops/fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
       - ./server/logs:/var/log/app:ro
       - fluentd_data:/var/log/fluentd
     networks:
-      - trailblip-network
+      - tripblip-network
     depends_on:
       - backend
       - pyagent
@@ -286,7 +286,7 @@ services:
   # Elasticsearch for Log Storage
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: trailblip-elasticsearch
+    container_name: tripblip-elasticsearch
     restart: unless-stopped
     environment:
       - discovery.type=single-node
@@ -295,7 +295,7 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - trailblip-network
+      - tripblip-network
     deploy:
       resources:
         limits:
@@ -310,14 +310,14 @@ services:
   # Kibana for Log Visualization
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
-    container_name: trailblip-kibana
+    container_name: tripblip-kibana
     restart: unless-stopped
     ports:
       - "5601:5601"
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     networks:
-      - trailblip-network
+      - tripblip-network
     depends_on:
       - elasticsearch
     deploy:
@@ -334,7 +334,7 @@ services:
   # NGINX Reverse Proxy (Production)
   nginx:
     image: nginx:alpine
-    container_name: trailblip-nginx
+    container_name: tripblip-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -347,7 +347,7 @@ services:
       - frontend
       - backend
     networks:
-      - trailblip-network
+      - tripblip-network
     deploy:
       resources:
         limits:
@@ -362,15 +362,15 @@ services:
   # Backup Service
   backup:
     image: mongo:7.0
-    container_name: trailblip-backup
+    container_name: tripblip-backup
     restart: "no"
     environment:
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-trailblip_mag}?authSource=admin
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-tripblip_mag}?authSource=admin
     volumes:
       - ./backups:/backups
       - ./scripts/mongo-backup.sh:/backup.sh:ro
     networks:
-      - trailblip-network
+      - tripblip-network
     depends_on:
       - mongodb
     command: /bin/bash -c "while true; do sleep 86400; /backup.sh; done"
@@ -392,7 +392,7 @@ volumes:
     driver: local
 
 networks:
-  trailblip-network:
+  tripblip-network:
     driver: bridge
     ipam:
       config:

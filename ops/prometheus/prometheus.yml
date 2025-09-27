@@ -16,13 +16,13 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'trailblip-backend'
+  - job_name: 'tripblip-backend'
     static_configs:
       - targets: ['backend:5000']
     metrics_path: '/metrics'
     scrape_interval: 30s
 
-  - job_name: 'trailblip-pyagent'
+  - job_name: 'tripblip-pyagent'
     static_configs:
       - targets: ['pyagent:8000']
     metrics_path: '/metrics'

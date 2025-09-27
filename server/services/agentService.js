@@ -34,7 +34,7 @@ class AgentService {
       messages: [
         {
           role: 'system',
-          content: 'You are Trailblip Agent. Help with adventures, events, and user planning. Keep answers concise and actionable.'
+          content: 'You are tripblip Agent. Help with adventures, events, and user planning. Keep answers concise and actionable.'
         }
       ]
     });

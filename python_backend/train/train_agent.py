@@ -25,7 +25,7 @@ def to_openai_format(examples: List[TrainingExample]) -> Dict[str, Any]:
     for ex in examples:
         records.append({
             "messages": [
-                {"role": "system", "content": "You are Trailblip Agent."},
+                {"role": "system", "content": "You are tripblip Agent."},
                 {"role": "user", "content": ex.prompt},
                 {"role": "assistant", "content": ex.completion},
             ]

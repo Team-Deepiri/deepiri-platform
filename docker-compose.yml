@@ -4,24 +4,24 @@ services:
   # MongoDB Database
   mongodb:
     image: mongo:7.0
-    container_name: trailblip-mongodb
+    container_name: tripblip-mongodb
     restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:-trailblip_mag}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-tripblip_mag}
     volumes:
       - mongodb_data:/data/db
       - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
-      - trailblip-network
+      - tripblip-network
 
   # Redis Cache
   redis:
     image: redis:7.2-alpine
-    container_name: trailblip-redis
+    container_name: tripblip-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -29,14 +29,14 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - trailblip-network
+      - tripblip-network
 
   # Backend API
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: trailblip-backend
+    container_name: tripblip-backend
     restart: unless-stopped
     ports:
       - "5000:5000"
@@ -45,12 +45,14 @@ services:
       PORT: 5000
       
       # Database
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-trailblip_mag}?authSource=admin
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-tripblip_mag}?authSource=admin
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-tripblip_mag}?authSource=admin
       
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
       
       # JWT
       JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here}
@@ -76,7 +78,7 @@ services:
       - mongodb
       - redis
     networks:
-      - trailblip-network
+      - tripblip-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 30s
@@ -88,7 +90,7 @@ services:
     build:
       context: ./python_backend
       dockerfile: Dockerfile
-    container_name: trailblip-pyagent
+    container_name: tripblip-pyagent
     restart: unless-stopped
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -101,7 +103,7 @@ services:
     depends_on:
       - backend
     networks:
-      - trailblip-network
+      - tripblip-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -122,46 +124,46 @@ services:
         VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
         VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
         VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID}
-    container_name: trailblip-frontend
+    container_name: tripblip-frontend
     restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
       - backend
     networks:
-      - trailblip-network
+      - tripblip-network
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: trailblip-prometheus
+    container_name: tripblip-prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
     volumes:
       - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
-      - trailblip-network
+      - tripblip-network
     depends_on:
       - backend
       - pyagent
 
   grafana:
     image: grafana/grafana:latest
-    container_name: trailblip-grafana
+    container_name: tripblip-grafana
     restart: unless-stopped
     ports:
       - "3001:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     networks:
-      - trailblip-network
+      - tripblip-network
     depends_on:
       - prometheus
 
   # NGINX Reverse Proxy (Optional for production)
   nginx:
     image: nginx:alpine
-    container_name: trailblip-nginx
+    container_name: tripblip-nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -173,7 +175,7 @@ services:
       - frontend
       - backend
     networks:
-      - trailblip-network
+      - tripblip-network
     profiles:
       - production
 
@@ -184,5 +186,5 @@ volumes:
     driver: local
 
 networks:
-  trailblip-network:
+  tripblip-network:
     driver: bridge

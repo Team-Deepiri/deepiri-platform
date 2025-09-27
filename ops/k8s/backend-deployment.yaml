@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: trailblip-backend-blue
+  name: tripblip-backend-blue
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: trailblip-backend
+      app: tripblip-backend
       color: blue
   template:
     metadata:
       labels:
-        app: trailblip-backend
+        app: tripblip-backend
         color: blue
     spec:
       containers:
         - name: backend
-          image: yourrepo/trailblip-backend:latest
+          image: yourrepo/tripblip-backend:latest
           ports:
             - containerPort: 5000
           env:
@@ -25,17 +25,17 @@ spec:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: trailblip-secrets
+                  name: tripblip-secrets
                   key: jwt_secret
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: trailblip-secrets
+                  name: tripblip-secrets
                   key: openai_api_key
             - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
-                  name: trailblip-secrets
+                  name: tripblip-secrets
                   key: mongo_uri
           resources:
             requests:
@@ -48,12 +48,12 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: trailblip-backend-hpa
+  name: tripblip-backend-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: trailblip-backend-blue
+    name: tripblip-backend-blue
   minReplicas: 2
   maxReplicas: 10
   metrics:

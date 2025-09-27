@@ -97,7 +97,7 @@ const Home = () => {
                 animate={{ scale: 1 }}
                 transition={{ duration: 1, ease: "easeOut" }}
               >
-                <span className="gradient-text">Trailblip</span>
+                <span className="gradient-text">tripblip</span>
                 <br />
                 <span className="gradient-text-secondary">MAG 2.0</span>
               </motion.h1>
@@ -211,7 +211,7 @@ const Home = () => {
               <h2 className="text-5xl md:text-6xl font-bold mb-8">
                 <span className="gradient-text-accent">Why Choose</span>
                 <br />
-                <span className="gradient-text-secondary">Trailblip?</span>
+                <span className="gradient-text-secondary">tripblip?</span>
               </h2>
               <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
                 Experience the future of adventure planning with cutting-edge technology, 
