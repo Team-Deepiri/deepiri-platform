@@ -84,7 +84,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <motion.div variants={itemVariants} className="col">
-            <h3 className="text-xl font-bold mb-6 gradient-text">Quick Links</h3>
+            <h3 className="text-xl font-black mb-6 gradient-text" style={{ fontFamily: 'Poppins, sans-serif' }}>Quick Links</h3>
             <ul className="space-y-3">
               {[
                 { to: '/adventure/generate', label: 'Generate Adventure', icon: '✨' },
@@ -106,7 +106,7 @@ const Footer = () => {
                     <span className="text-sm group-hover:scale-110 transition-transform duration-300">
                       {link.icon}
                     </span>
-                    <span>{link.label}</span>
+                    <span className="font-black" style={{ fontFamily: 'Poppins, sans-serif' }}>{link.label}</span>
                   </Link>
                 </motion.li>
               ))}
@@ -115,7 +115,7 @@ const Footer = () => {
 
           {/* Support */}
           <motion.div variants={itemVariants} className="col">
-            <h3 className="text-xl font-bold mb-6 gradient-text-secondary">Support</h3>
+            <h3 className="text-xl font-black mb-6 gradient-text-secondary" style={{ fontFamily: 'Poppins, sans-serif' }}>Support</h3>
             <ul className="space-y-3">
               {[
                 { label: 'Help Center', icon: '❓', href: '#' },
@@ -137,7 +137,7 @@ const Footer = () => {
                     <span className="text-sm group-hover:scale-110 transition-transform duration-300">
                       {item.icon}
                     </span>
-                    <span>{item.label}</span>
+                    <span className="font-black" style={{ fontFamily: 'Poppins, sans-serif' }}>{item.label}</span>
                   </a>
                 </motion.li>
               ))}

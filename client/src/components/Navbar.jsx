@@ -8,6 +8,7 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -79,14 +80,14 @@ const Navbar = () => {
           >
             <Link to="/" className="flex items-center space-x-4 group">
               <motion.div
-                className="relative"
+                className="relative flex items-center justify-center w-12 h-12 mt-1"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <img 
                   src={logoIcon} 
                   alt="TripBlip Logo" 
-                  className="w-12 h-12 filter drop-shadow-lg group-hover:drop-shadow-xl transition-all duration-300"
+                  className="w-10 h-10 object-contain filter drop-shadow-lg group-hover:drop-shadow-xl transition-all duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
               </motion.div>
@@ -132,10 +133,12 @@ const Navbar = () => {
                 
                 {/* User Menu */}
                 <motion.div 
-                  className="position-relative group"
+                  className="position-relative"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.6 }}
+                  onMouseEnter={() => setIsDropdownOpen(true)}
+                  onMouseLeave={() => setIsDropdownOpen(false)}
                 >
                   <button className="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 group">
                     <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform duration-300">
@@ -149,19 +152,22 @@ const Navbar = () => {
                     </div>
                     <motion.span 
                       className="text-gray-400 group-hover:text-white transition-colors duration-300"
-                      animate={{ rotate: isMenuOpen ? 180 : 0 }}
+                      animate={{ rotate: isDropdownOpen ? 180 : 0 }}
                     >
                       ▼
                     </motion.span>
                   </button>
                   
                   {/* Dropdown Menu */}
-                  <motion.div 
-                    className="position-absolute end-0 mt-2 w-56 glass rounded-2xl border border-white/20 overflow-hidden"
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    whileHover={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
+                  <AnimatePresence>
+                    {isDropdownOpen && (
+                      <motion.div 
+                        className="position-absolute end-0 top-full w-56 glass rounded-2xl border border-white/20 overflow-hidden z-50"
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                      >
                     <div className="py-2">
                       {[
                         { to: '/profile', label: 'Profile', icon: '👤' },
@@ -192,22 +198,24 @@ const Navbar = () => {
                           Sign Out
                         </span>
                       </button>
-                    </div>
-                  </motion.div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               </>
             ) : (
               <>
                 <Link
                   to="/login"
-                  className="px-8 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 font-bold text-lg text-white hover:text-purple-300"
+                  className="px-8 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 font-bold text-lg text-white hover:text-purple-300 no-underline"
                 >
                   <span className="text-xl mr-2">🔑</span>
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="btn-modern btn-primary px-8 py-3 text-lg font-bold glow"
+                  className="btn-modern btn-primary px-8 py-3 text-lg font-bold glow no-underline"
                 >
                   <span className="text-2xl mr-3">🌟</span>
                   Get Started
@@ -312,7 +320,7 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/login"
-                      className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group"
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group no-underline"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🔑</span>
@@ -322,7 +330,7 @@ const Navbar = () => {
                     </Link>
                     <Link
                       to="/register"
-                      className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group mx-4 mt-2 btn-modern btn-primary justify-center"
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group mx-4 mt-2 btn-modern btn-primary justify-center no-underline"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🌟</span>

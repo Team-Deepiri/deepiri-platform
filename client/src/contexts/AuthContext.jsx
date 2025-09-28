@@ -15,31 +15,98 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false); // CHANGED: Start as false to stop loading
-  const [token, setToken] = useState(null); // CHANGED: Force null to clear any token
+  const [loading, setLoading] = useState(true); // Start with loading to check for existing session
+  const [token, setToken] = useState(() => {
+    // Initialize token from localStorage if it exists
+    const storedToken = localStorage.getItem('token');
+    return storedToken && storedToken !== 'null' && storedToken !== 'undefined' ? storedToken : null;
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
-    // EMERGENCY: Clear all tokens and disable everything
+    // Check for existing session on app load
+    initializeAuth();
+  }, []);
+
+  const initializeAuth = async () => {
+    try {
+      // Check if we have a token in localStorage
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedToken && storedUser) {
+        try {
+          // Try to parse stored user data
+          const userData = JSON.parse(storedUser);
+          setUser(userData);
+          setToken(storedToken);
+          console.log('✅ Session restored from localStorage');
+        } catch (parseError) {
+          console.warn('Invalid stored user data, clearing session');
+          clearSession();
+        }
+      } else {
+        console.log('ℹ️ No existing session found');
+      }
+    } catch (error) {
+      console.error('Error initializing auth:', error);
+      clearSession();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearSession = () => {
+    setUser(null);
+    setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('refreshToken');
-    console.log('🚨 AUTH SYSTEM DISABLED - All tokens cleared');
-    setLoading(false);
-    setUser(null);
-    setToken(null);
-  }, []);
+  };
 
   const tryRefresh = async () => {
-    // EMERGENCY: Completely disabled to stop infinite loops
-    console.log('🚨 tryRefresh() DISABLED');
+    try {
+      const res = await authApi.refreshToken();
+      if (res.success) {
+        const { user, token } = res.data;
+        setUser(user);
+        setToken(token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        return true;
+      }
+    } catch (error) {
+      console.warn('Token refresh failed:', error.message);
+    }
     return false;
   };
 
   const verifyToken = async () => {
-    // EMERGENCY: Completely disabled to stop infinite loops
-    console.log('🚨 verifyToken() DISABLED');
-    return;
+    if (!token) return;
+    
+    try {
+      const response = await authApi.verifyToken();
+      if (response.success) {
+        setUser(response.data.user);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        return true;
+      } else {
+        // Try to refresh the token
+        const refreshed = await tryRefresh();
+        if (!refreshed) {
+          clearSession();
+        }
+        return refreshed;
+      }
+    } catch (error) {
+      console.warn('Token verification failed:', error.message);
+      // Try to refresh the token
+      const refreshed = await tryRefresh();
+      if (!refreshed) {
+        clearSession();
+      }
+      return refreshed;
+    }
   };
 
   const login = async (email, password) => {
@@ -52,6 +119,7 @@ export const AuthProvider = ({ children }) => {
         setUser(user);
         setToken(token);
         localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
         toast.success('Welcome back!');
         navigate('/home');
         return { success: true };
@@ -81,6 +149,7 @@ export const AuthProvider = ({ children }) => {
         setUser(user);
         setToken(token);
         localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
         toast.success('Account created successfully!');
         navigate('/home');
         return { success: true };
@@ -98,9 +167,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
+    clearSession();
     // Don't navigate on logout if we're already on register/login pages
     const currentPath = window.location.pathname;
     if (!['/login', '/register', '/'].includes(currentPath)) {
@@ -114,6 +181,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = (updatedUser) => {
     setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
   const value = {

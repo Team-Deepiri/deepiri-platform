@@ -139,7 +139,7 @@ const Dashboard = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="bg-white rounded-xl shadow-lg p-4"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Quick Actions 🚀
               </h2>
               <div className="row g-3">
@@ -147,9 +147,9 @@ const Dashboard = () => {
                   to="/adventure/generate"
                   className="group p-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg text-white transition-all duration-200"
                 >
-                  <div className="flex items-center justify-center space-x-4">
+                  <div className="flex items-center space-x-4">
                     <div className="text-3xl">🎯</div>
-                    <div className="text-center">
+                    <div>
                       <h3 className="text-lg font-semibold">Generate Adventure</h3>
                       <p className="text-blue-100">Create a new personalized adventure</p>
                     </div>
@@ -160,9 +160,9 @@ const Dashboard = () => {
                   to="/events"
                   className="group p-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg text-white transition-all duration-200"
                 >
-                  <div className="flex items-center justify-center space-x-4">
+                  <div className="flex items-center space-x-4">
                     <div className="text-3xl">📅</div>
-                    <div className="text-center">
+                    <div>
                       <h3 className="text-lg font-semibold">Browse Events</h3>
                       <p className="text-purple-100">Discover local events and meetups</p>
                     </div>
@@ -173,9 +173,9 @@ const Dashboard = () => {
                   to="/friends"
                   className="group p-4 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white transition-all duration-200"
                 >
-                  <div className="flex items-center justify-center space-x-4">
+                  <div className="flex items-center space-x-4">
                     <div className="text-3xl">👥</div>
-                    <div className="text-center">
+                    <div>
                       <h3 className="text-lg font-semibold">Connect</h3>
                       <p className="text-green-100">Find and invite friends</p>
                     </div>
@@ -186,9 +186,9 @@ const Dashboard = () => {
                   to="/adventures"
                   className="group p-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg text-white transition-all duration-200"
                 >
-                  <div className="flex items-center justify-center space-x-4">
+                  <div className="flex items-center space-x-4">
                     <div className="text-3xl">🗺️</div>
-                    <div className="text-center">
+                    <div>
                       <h3 className="text-lg font-semibold">My Adventures</h3>
                       <p className="text-orange-100">View your adventure history</p>
                     </div>
@@ -204,12 +204,10 @@ const Dashboard = () => {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="bg-white rounded-xl shadow-lg p-4 lift"
             >
-              <div className="flex items-center justify-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 text-center">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
                   Recent Adventures 🗺️
                 </h2>
-              </div>
-              <div className="text-center mb-4">
                 <Link
                   to="/adventures"
                   className="text-blue-600 hover:text-blue-700 font-medium"
@@ -290,7 +288,7 @@ const Dashboard = () => {
                 transition={{ duration: 0.8, delay: 0.3 }}
                 className="bg-white rounded-xl shadow-lg p-4"
               >
-                <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
                   Your Stats 📊
                 </h2>
                 <div className="space-y-4">
@@ -330,7 +328,7 @@ const Dashboard = () => {
                 transition={{ duration: 0.8, delay: 0.5 }}
                 className="bg-white rounded-xl shadow-lg p-4"
               >
-                <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
                   Nearby Events 📅
                 </h2>
                 <div className="space-y-4">
@@ -361,10 +359,10 @@ const Dashboard = () => {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
                 💡 Pro Tip
               </h2>
-              <p className="text-gray-700 text-sm text-center">
+              <p className="text-gray-700 text-sm">
                 {getTimeOfDay() === 'morning' && "Perfect time for outdoor adventures and coffee shop visits!"}
                 {getTimeOfDay() === 'afternoon' && "Great time for food tours and cultural experiences!"}
                 {getTimeOfDay() === 'evening' && "Ideal for nightlife, concerts, and social events!"}
