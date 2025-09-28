@@ -88495,3 +88495,45 @@
     '    at async AIOrchestrator.initialize (/app/services/aiOrchestrator.js:26:7)',
   timestamp: '2025-09-28 05:26:12'
 }
+{
+  service: 'mag-2.0',
+  status: 401,
+  headers: {
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '986111effd04b324-PIT',
+    connection: 'keep-alive',
+    'content-length': '239',
+    'content-type': 'application/json',
+    date: 'Sun, 28 Sep 2025 06:09:06 GMT',
+    'openai-processing-ms': '2',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=4K4yLCUpJaSDCvj2pjKnigvitm6.t8mFR5mION0zu34-1759039746-1.0.1.1-mB9aLVYYJrw_fYeOUY1JS_jlVsaBG8DR7k128fWVwmn2V38Oxduo96MhtUCDdZpYQtYNrsVublTk1zhI6ntGkrLPa_HbXiSs5hLqxF35o5Y; path=/; expires=Sun, 28-Sep-25 06:39:06 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=s1uZ3nJWO2t6EeqJjoPXhDgIx4ej_HrEJ5HsSuVOonQ-1759039746724-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'www-authenticate': 'Bearer realm="OpenAI API"',
+    'x-content-type-options': 'nosniff',
+    'x-envoy-upstream-service-time': '3',
+    'x-openai-proxy-wasm': 'v0.1',
+    'x-request-id': 'b8044769185d07ca68cfe995c5429d21'
+  },
+  request_id: 'b8044769185d07ca68cfe995c5429d21',
+  error: {
+    message: 'Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.',
+    type: 'invalid_request_error',
+    param: null,
+    code: 'invalid_api_key'
+  },
+  code: 'invalid_api_key',
+  param: null,
+  type: 'invalid_request_error',
+  level: 'error',
+  message: 'Failed to initialize AI Orchestrator: 401 Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.',
+  stack: 'Error: 401 Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.\n' +
+    '    at APIError.generate (/app/node_modules/openai/error.js:48:20)\n' +
+    '    at OpenAI.makeStatusError (/app/node_modules/openai/core.js:302:33)\n' +
+    '    at OpenAI.makeRequest (/app/node_modules/openai/core.js:346:30)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async AIOrchestrator.initialize (/app/services/aiOrchestrator.js:26:7)',
+  timestamp: '2025-09-28 06:09:06'
+}
