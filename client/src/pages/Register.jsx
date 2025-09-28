@@ -80,7 +80,7 @@ const Register = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            Join the Adventure!
+            Join the Adventure
           </motion.h1>
           <motion.p 
             className="text-xl text-gray-300"
@@ -88,7 +88,7 @@ const Register = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Create your account and start exploring
+            Create your account and start your day!
           </motion.p>
         </motion.div>
 

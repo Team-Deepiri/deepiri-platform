@@ -14,7 +14,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    open: true, // Auto-open browser
+    open: false, // Disabled auto-open to prevent WSL errors
     
     // Optimized file watching for instant updates
     watch: {

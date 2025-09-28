@@ -24,36 +24,14 @@ api.interceptors.request.use(
   }
 );
 
-// Handle token expiration
+// DISABLED: Handle token expiration (causing infinite loops)
+// TODO: Re-enable when backend is properly running
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        const refreshResponse = await api.post('/auth/refresh');
-        const { token } = refreshResponse.data;
-        localStorage.setItem('token', token);
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
-    }
-    
-    return Promise.reject(error);
-  }
-);(
-  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+    // Just log the error and reject - no auto-refresh
+    if (!error.response) {
+      console.warn('Backend server not reachable');
     }
     return Promise.reject(error);
   }

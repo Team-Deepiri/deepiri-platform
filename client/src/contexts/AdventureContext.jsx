@@ -36,14 +36,38 @@ export const AdventureProvider = ({ children }) => {
             lng: position.coords.longitude
           };
           setUserLocation(location);
+          console.log('📍 Location obtained:', location);
         },
         (error) => {
-          console.error('Error getting location:', error);
-          // Default to New York City if location access is denied
+          console.warn('Location access denied or failed:', error.message);
+          
+          // Provide user-friendly feedback based on error type
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              console.log('📍 Using default location (New York City) - Location permission denied');
+              break;
+            case error.POSITION_UNAVAILABLE:
+              console.log('📍 Using default location (New York City) - Location unavailable');
+              break;
+            case error.TIMEOUT:
+              console.log('📍 Using default location (New York City) - Location request timeout');
+              break;
+            default:
+              console.log('📍 Using default location (New York City) - Unknown location error');
+              break;
+          }
+          
+          // Default to New York City if location access fails
           setUserLocation({ lat: 40.7128, lng: -74.0060 });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
         }
       );
     } else {
+      console.log('📍 Geolocation not supported - using default location (New York City)');
       // Default to New York City if geolocation is not supported
       setUserLocation({ lat: 40.7128, lng: -74.0060 });
     }

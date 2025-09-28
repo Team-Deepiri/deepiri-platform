@@ -20,10 +20,15 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+      // Extract base URL without /api suffix for Socket.IO
+      const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
+      const newSocket = io(baseUrl, {
         auth: {
           userId: user._id
-        }
+        },
+        transports: ['websocket', 'polling'],
+        timeout: 20000,
+        forceNew: true
       });
 
       newSocket.on('connect', () => {
@@ -38,8 +43,12 @@ export const SocketProvider = ({ children }) => {
       });
 
       newSocket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
+        console.warn('Socket connection error (backend may not be running):', error.message);
         setConnected(false);
+        // Don't show error toast for development - backend might not be running
+        if (import.meta.env.PROD) {
+          toast.error('Connection to server lost. Please refresh the page.');
+        }
       });
 
       // Adventure notifications

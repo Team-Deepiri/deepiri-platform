@@ -15,50 +15,31 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(() => {
-    const raw = localStorage.getItem('token');
-    return raw && raw !== 'null' && raw !== 'undefined' ? raw : null;
-  });
+  const [loading, setLoading] = useState(false); // CHANGED: Start as false to stop loading
+  const [token, setToken] = useState(null); // CHANGED: Force null to clear any token
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Always attempt to verify on load – token in localStorage or refresh cookie
-    verifyToken();
-  }, [token]);
+    // EMERGENCY: Clear all tokens and disable everything
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('refreshToken');
+    console.log('🚨 AUTH SYSTEM DISABLED - All tokens cleared');
+    setLoading(false);
+    setUser(null);
+    setToken(null);
+  }, []);
 
   const tryRefresh = async () => {
-    try {
-      const res = await authApi.refreshToken();
-      if (res.success) {
-        const { user, token } = res.data;
-        setUser(user);
-        setToken(token);
-        localStorage.setItem('token', token);
-        return true;
-      }
-    } catch (_) {}
+    // EMERGENCY: Completely disabled to stop infinite loops
+    console.log('🚨 tryRefresh() DISABLED');
     return false;
   };
 
   const verifyToken = async () => {
-    try {
-      const response = await authApi.verifyToken();
-      if (response.success) {
-        setUser(response.data.user);
-      } else {
-        const refreshed = await tryRefresh();
-        if (!refreshed) logout();
-      }
-    } catch (error) {
-      const refreshed = await tryRefresh();
-      if (!refreshed) {
-        console.error('Token verification failed:', error);
-        logout();
-      }
-    } finally {
-      setLoading(false);
-    }
+    // EMERGENCY: Completely disabled to stop infinite loops
+    console.log('🚨 verifyToken() DISABLED');
+    return;
   };
 
   const login = async (email, password) => {
@@ -120,8 +101,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
-    navigate('/');
-    toast.success('Logged out successfully');
+    // Don't navigate on logout if we're already on register/login pages
+    const currentPath = window.location.pathname;
+    if (!['/login', '/register', '/'].includes(currentPath)) {
+      navigate('/');
+    }
+    // Only show toast if it's an intentional logout (when user exists)
+    if (user) {
+      toast.success('Logged out successfully');
+    }
   };
 
   const updateUser = (updatedUser) => {
