@@ -29,8 +29,9 @@
     "zustand": "^4.4.7"
   },
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5173",
-    "dev:fast": "vite --host 0.0.0.0 --port 5173 --force",
+    "dev": "vite --host 0.0.0.0 --port 5173 --open",
+    "dev:fast": "vite --host 0.0.0.0 --port 5173 --force --open",
+    "dev:turbo": "vite --host 0.0.0.0 --port 5173 --force --open --clearScreen false",
     "dev:debug": "vite --host 0.0.0.0 --port 5173 --debug",
     "build": "vite build",
     "preview": "vite preview",

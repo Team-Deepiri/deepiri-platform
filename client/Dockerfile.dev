@@ -1,0 +1,26 @@
+# Development Dockerfile with Vite HMR
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies for better file watching in Docker
+RUN apk add --no-cache inotify-tools
+
+# Copy package files first for better Docker layer caching
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy source code (this will be overridden by volume mount)
+COPY . .
+
+# Expose Vite dev server port
+EXPOSE 5173
+
+# Set environment for development
+ENV NODE_ENV=development
+
+# Start Vite development server with HMR
+CMD ["npm", "run", "dev:turbo"]

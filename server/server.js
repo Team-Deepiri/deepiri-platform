@@ -121,7 +121,13 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.method === 'OPTIONS'
+  // Skip preflight, auth routes, and all requests in non-production envs
+  skip: (req) => {
+    if (req.method === 'OPTIONS') return true;
+    if (process.env.NODE_ENV !== 'production') return true;
+    // when mounted at '/api/', req.path begins with '/auth' for auth endpoints
+    return req.path && req.path.startsWith('/auth');
+  }
 });
 app.use('/api/', limiter);
 

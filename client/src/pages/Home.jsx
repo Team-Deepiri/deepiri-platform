@@ -167,13 +167,13 @@ const Home = () => {
                 {
                   icon: '🌍',
                   title: 'Global Discovery',
-                  description: 'Explore hidden gems around the world',
+                  description: 'Explore hidden gems around the world and in your town!',
                   gradient: 'from-green-500 to-blue-500'
                 },
                 {
                   icon: '👥',
                   title: 'Social Adventure',
-                  description: 'Connect and adventure with friends',
+                  description: 'Connect and plan day trips with friends',
                   gradient: 'from-pink-500 to-red-500'
                 }
               ].map((feature, index) => (

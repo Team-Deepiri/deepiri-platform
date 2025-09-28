@@ -52,33 +52,56 @@ const Register = () => {
   };
 
   return (
-    <div className="center-page bg-gradient-to-br from-purple-50 to-green-50 py-4 px-3">
-      <div className="container-auth w-100 mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4">
+      <div className="w-full max-w-md space-y-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <div className="text-6xl mb-4">🚀</div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <motion.div 
+            className="text-6xl mb-6"
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 10, -10, 0]
+            }}
+            transition={{ 
+              duration: 2.5,
+              repeat: Infinity,
+              repeatDelay: 4
+            }}
+          >
+            
+          </motion.div>
+          <motion.h1 
+            className="text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-400 via-purple-500 to-pink-400 bg-clip-text text-transparent"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             Join the Adventure!
-          </h1>
-          <p className="text-gray-600 mt-2">
+          </motion.h1>
+          <motion.p 
+            className="text-xl text-gray-300"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
             Create your account and start exploring
-          </p>
+          </motion.p>
         </motion.div>
 
         {/* Registration Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-4 shadow-lg p-4 p-md-5 border border-purple-100 mx-auto" style={{ maxWidth: 520 }}
+          transition={{ delay: 0.3 }}
+          className="card-modern p-8"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Full Name
               </label>
               <input
@@ -86,14 +109,14 @@ const Register = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Enter your full name"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Email Address
               </label>
               <input
@@ -101,14 +124,14 @@ const Register = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Enter your email"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Password
               </label>
               <input
@@ -116,14 +139,14 @@ const Register = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Create a password"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Confirm Password
               </label>
               <input
@@ -131,25 +154,25 @@ const Register = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="input-modern"
                 placeholder="Confirm your password"
                 required
               />
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-start">
               <input
                 type="checkbox"
-              className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                className="h-4 w-4 mt-1 text-purple-500 bg-white/10 border-white/20 rounded focus:ring-purple-500"
                 required
               />
-              <label className="ml-2 block text-sm text-gray-700">
+              <label className="ml-3 block text-sm text-gray-300 leading-5">
                 I agree to the{' '}
-                <a href="#" className="text-purple-600 hover:text-purple-700">
+                <a href="#" className="text-purple-400 hover:text-purple-300">
                   Terms of Service
                 </a>{' '}
                 and{' '}
-                <a href="#" className="text-purple-600 hover:text-purple-700">
+                <a href="#" className="text-purple-400 hover:text-purple-300">
                   Privacy Policy
                 </a>
               </label>
@@ -158,30 +181,30 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-modern btn-primary btn-lgx focus-ring disabled:opacity-50"
+              className="btn-modern btn-primary w-full"
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-white/20" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-4 bg-gray-800 text-gray-400">Or continue with</span>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-purple-200 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-600 hover:bg-purple-50">
-                <span className="text-lg">📧</span>
-                <span className="ml-2">Google</span>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <button className="btn-modern btn-glass flex items-center justify-center gap-2">
+                <span className="text-xl">📧</span>
+                <span>Google</span>
               </button>
-              <button className="w-full inline-flex justify-center py-2 px-4 border border-green-200 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-600 hover:bg-green-50">
-                <span className="text-lg">📘</span>
-                <span className="ml-2">Facebook</span>
+              <button className="btn-modern btn-glass flex items-center justify-center gap-2">
+                <span className="text-xl">📘</span>
+                <span>Facebook</span>
               </button>
             </div>
           </div>
@@ -191,14 +214,14 @@ const Register = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-3"
+          transition={{ delay: 0.5 }}
+          className="text-center"
         >
-          <p className="text-gray-600">
+          <p className="text-gray-300">
             Already have an account?{' '}
             <Link
               to="/login"
-              className="text-purple-600 hover:text-purple-700 font-medium"
+              className="text-purple-400 hover:text-purple-300 font-medium"
             >
               Sign in here
             </Link>

@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import HMRStatus from './components/HMRStatus';
 import { setupGlobalErrorHandling, setupPerformanceMonitoring } from './utils/logger';
 
 // Pages
@@ -180,6 +181,7 @@ function App() {
                     },
                   }}
                 />
+                <HMRStatus />
               </div>
           </AdventureProvider>
         </SocketProvider>

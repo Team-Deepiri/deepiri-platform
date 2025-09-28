@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: tripblip-mongodb-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-tripblip_mag}
+    volumes:
+      - mongodb_dev_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - tripblip-dev-network
+
+  # Redis Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: tripblip-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - tripblip-dev-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: tripblip-backend-dev
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      
+      # Database
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-tripblip_mag}?authSource=admin
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-tripblip_mag}?authSource=admin
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here}
+      
+      # External APIs
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      EVENTBRITE_API_KEY: ${EVENTBRITE_API_KEY}
+      YELP_API_KEY: ${YELP_API_KEY}
+      
+      # Firebase
+      FIREBASE_SERVICE_ACCOUNT_PATH: /app/config/firebase-adminsdk.json
+      FIREBASE_DATABASE_URL: ${FIREBASE_DATABASE_URL}
+      
+      # Client URL (Vite dev server)
+      CLIENT_URL: http://localhost:5173
+    
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - ./server/config:/app/config:ro
+      - ./server/logs:/app/logs
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - tripblip-dev-network
+
+  # Python Agent API
+  pyagent:
+    build:
+      context: ./python_backend
+      dockerfile: Dockerfile
+    container_name: tripblip-pyagent-dev
+    restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      CORS_ORIGIN: http://localhost:5173
+      NODE_BACKEND_URL: http://backend:5000
+      PYAGENT_API_KEY: ${PYAGENT_API_KEY:-change-me}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - backend
+    networks:
+      - tripblip-dev-network
+
+  # Frontend with Vite HMR
+  frontend-dev:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: tripblip-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"  # Vite dev server port
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:5000/api
+      VITE_PYAGENT_URL: http://localhost:8000
+      CHOKIDAR_USEPOLLING: true  # Enable polling for file changes in Docker
+      WATCHPACK_POLLING: true    # Additional polling for better file watching
+    volumes:
+      # Mount source code for real-time updates
+      - ./client:/app
+      - /app/node_modules  # Prevent node_modules from being overwritten
+    depends_on:
+      - backend
+    networks:
+      - tripblip-dev-network
+    # Enable host networking for better HMR performance (optional)
+    network_mode: "bridge"
+
+volumes:
+  mongodb_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  tripblip-dev-network:
+    driver: bridge
