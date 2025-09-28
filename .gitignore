@@ -10,12 +10,13 @@ secrets.yaml
 # testing
 /coverage
 */assets
-client/dist/assets
+*/dist/
+/dist/
 
 # production
 /build
 
-# misc
+# misc 
 .DS_Store
 .env.local
 .env.development.local
