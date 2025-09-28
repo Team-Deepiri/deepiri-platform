@@ -24,10 +24,10 @@ const HMRStatus = () => {
       <div className="bg-green-500/90 backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg text-sm">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
-          <span className="font-medium">🔥 HMR TURBO Active</span>
+          {/* <span className="font-medium">🔥 HMR TURBO Active</span> */}
         </div>
         <div className="text-xs opacity-80">
-          Updates: {updateCount} | {lastUpdate.toLocaleTimeString()}
+          {/* Updates: {updateCount} | {lastUpdate.toLocaleTimeString()} */}
         </div>
       </div>
     </motion.div>

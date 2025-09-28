@@ -92,18 +92,18 @@ const Home = () => {
           <div className="container text-center">
             <motion.div variants={itemVariants} className="mb-8">
               <motion.h1 
-                className="display-title mb-3" style={{ fontSize: 'clamp(42px, 6vw, 88px)' }}
+                className="display-title mb-4" style={{ fontSize: 'clamp(48px, 8vw, 120px)', fontWeight: '900', letterSpacing: '-0.02em' }}
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 1, ease: "easeOut" }}
               >
                 <span className="gradient-text">tripblip</span>
                 <br />
-                <span className="gradient-text-secondary">MAG 2.0</span>
+                <span className="gradient-text-secondary" style={{ fontSize: 'clamp(24px, 4vw, 48px)', fontWeight: '700' }}>MAG 2.0</span>
               </motion.h1>
               
               <motion.p 
-                className="subtitle mb-4 mx-auto" style={{ maxWidth: 900, fontSize: 'clamp(16px, 2.2vw, 24px)' }}
+                className="subtitle mb-6 mx-auto" style={{ maxWidth: 900, fontSize: 'clamp(18px, 2.5vw, 28px)', fontWeight: '500', lineHeight: '1.4' }}
                 variants={itemVariants}
               >
                 Your AI-powered adventure companion. Discover extraordinary experiences, 
@@ -119,16 +119,16 @@ const Home = () => {
                 <>
                   <Link
                     to="/adventure/generate"
-                    className="btn-modern btn-primary text-lg px-8 py-4 glow"
+                    className="btn-modern btn-primary text-xl px-10 py-5 glow font-bold"
                   >
-                    <span className="text-2xl mr-2">✨</span>
+                    <span className="text-3xl mr-3">✨</span>
                     Generate Adventure
                   </Link>
                   <Link
                     to="/dashboard"
-                    className="btn-modern btn-glass text-lg px-8 py-4"
+                    className="btn-modern btn-glass text-xl px-10 py-5 font-bold"
                   >
-                    <span className="text-2xl mr-2">🚀</span>
+                    <span className="text-3xl mr-3">🚀</span>
                     Go to Dashboard
                   </Link>
                 </>
@@ -136,16 +136,16 @@ const Home = () => {
                 <>
                   <Link
                     to="/register"
-                    className="btn-modern btn-primary text-lg px-8 py-4 glow"
+                    className="btn-modern btn-primary text-xl px-10 py-5 glow font-bold"
                   >
-                    <span className="text-2xl mr-2">🌟</span>
+                    <span className="text-3xl mr-3">🌟</span>
                     Start Your Journey
                   </Link>
                   <Link
                     to="/login"
-                    className="btn-modern btn-glass text-lg px-8 py-4"
+                    className="btn-modern btn-glass text-xl px-10 py-5 font-bold"
                   >
-                    <span className="text-2xl mr-2">🔑</span>
+                    <span className="text-3xl mr-3">🔑</span>
                     Sign In
                   </Link>
                 </>
@@ -185,13 +185,13 @@ const Home = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <motion.div 
-                    className={`text-6xl mb-4 float`}
+                    className={`text-7xl mb-6 float`}
                     style={{ animationDelay: `${index * 0.5}s` }}
                   >
                     {feature.icon}
                   </motion.div>
-                  <h3 className="text-2xl font-bold mb-4 gradient-text">{feature.title}</h3>
-                  <p className="text-gray-300 leading-relaxed">{feature.description}</p>
+                  <h3 className="text-3xl font-black mb-6 gradient-text tracking-tight">{feature.title}</h3>
+                  <p className="text-gray-300 leading-relaxed text-lg font-medium">{feature.description}</p>
                   
                   {/* Hover Effect */}
                   <div className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
@@ -208,12 +208,12 @@ const Home = () => {
               variants={itemVariants}
               className="text-center mb-20"
             >
-              <h2 className="text-5xl md:text-6xl font-bold mb-8">
+              <h2 className="text-6xl md:text-7xl font-black mb-10 tracking-tight">
                 <span className="gradient-text-accent">Why Choose</span>
                 <br />
                 <span className="gradient-text-secondary">tripblip?</span>
               </h2>
-              <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
+              <p className="text-2xl text-gray-300 max-w-4xl mx-auto leading-relaxed font-medium">
                 Experience the future of adventure planning with cutting-edge technology, 
                 real-time updates, and a vibrant community of explorers.
               </p>
@@ -249,12 +249,12 @@ const Home = () => {
                     className="d-flex align-items-start gap-3 group mb-3"
                     whileHover={{ x: 10 }}
                   >
-                    <div className="text-4xl group-hover:scale-110 transition-transform duration-300">
+                    <div className="text-5xl group-hover:scale-110 transition-transform duration-300">
                       {feature.icon}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold mb-2 gradient-text">{feature.title}</h3>
-                      <p className="text-gray-300 leading-relaxed">{feature.description}</p>
+                      <h3 className="text-2xl font-black mb-3 gradient-text tracking-tight">{feature.title}</h3>
+                      <p className="text-gray-300 leading-relaxed text-lg font-medium">{feature.description}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -266,34 +266,34 @@ const Home = () => {
               >
                 <div className="card-modern p-8 float">
                   <div className="text-center">
-                    <div className="text-8xl mb-4">🗺️</div>
-                    <h3 className="text-2xl font-bold mb-4 gradient-text">Interactive Map</h3>
-                    <p className="text-gray-300 mb-6">
+                    <div className="text-9xl mb-6">🗺️</div>
+                    <h3 className="text-3xl font-black mb-6 gradient-text tracking-tight">Interactive Map</h3>
+                    <p className="text-gray-300 mb-8 text-lg font-medium leading-relaxed">
                       Explore your adventure route with our interactive 3D map interface
                     </p>
                     <div className="row g-3">
                       <div className="col-6">
-                        <div className="card-modern p-4 text-center">
-                        <div className="text-2xl mb-2">📍</div>
-                        <div className="text-sm font-semibold">Locations</div>
+                        <div className="card-modern p-5 text-center">
+                        <div className="text-3xl mb-3">📍</div>
+                        <div className="text-base font-bold">Locations</div>
                         </div>
                       </div>
                       <div className="col-6">
-                        <div className="card-modern p-4 text-center">
-                        <div className="text-2xl mb-2">⏰</div>
-                        <div className="text-sm font-semibold">Timeline</div>
+                        <div className="card-modern p-5 text-center">
+                        <div className="text-3xl mb-3">⏰</div>
+                        <div className="text-base font-bold">Timeline</div>
                         </div>
                       </div>
                       <div className="col-6">
-                        <div className="card-modern p-4 text-center">
-                        <div className="text-2xl mb-2">🌤️</div>
-                        <div className="text-sm font-semibold">Weather</div>
+                        <div className="card-modern p-5 text-center">
+                        <div className="text-3xl mb-3">🌤️</div>
+                        <div className="text-base font-bold">Weather</div>
                         </div>
                       </div>
                       <div className="col-6">
-                        <div className="card-modern p-4 text-center">
-                        <div className="text-2xl mb-2">👥</div>
-                        <div className="text-sm font-semibold">Friends</div>
+                        <div className="card-modern p-5 text-center">
+                        <div className="text-3xl mb-3">👥</div>
+                        <div className="text-base font-bold">Friends</div>
                         </div>
                       </div>
                     </div>
@@ -308,12 +308,12 @@ const Home = () => {
         <section className="py-5 relative">
           <div className="container text-center px-3">
             <motion.div variants={itemVariants}>
-              <h2 className="text-5xl md:text-6xl font-bold mb-8">
+              <h2 className="text-6xl md:text-8xl font-black mb-10 tracking-tight">
                 <span className="gradient-text">Ready to</span>
                 <br />
                 <span className="gradient-text-secondary">Explore?</span>
               </h2>
-              <p className="text-xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed">
+              <p className="text-2xl text-gray-300 mb-16 max-w-4xl mx-auto leading-relaxed font-medium">
                 Join thousands of adventurers who are already discovering their cities 
                 with AI-powered recommendations and creating unforgettable memories.
               </p>
@@ -325,12 +325,12 @@ const Home = () => {
                 >
                   <Link
                     to="/register"
-                    className="btn-modern btn-primary text-xl px-12 py-6 glow-secondary pulse"
+                    className="btn-modern btn-primary text-2xl px-16 py-8 glow-secondary pulse font-black"
                   >
-                    <span className="text-3xl mr-3">🚀</span>
+                    <span className="text-4xl mr-4">🚀</span>
                     Start Your Adventure Now
                   </Link>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-gray-400 text-lg font-medium mt-4">
                     ✨ Free to join • 🎯 Instant setup • 🌍 Global community
                   </div>
                 </motion.div>

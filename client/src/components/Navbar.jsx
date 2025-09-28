@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import logoIcon from '../assets/images/tripblip_navbar_icon.jpg';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -76,18 +77,23 @@ const Navbar = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Link to="/" className="flex items-center space-x-3 group">
+            <Link to="/" className="flex items-center space-x-4 group">
               <motion.div
-                className="text-4xl"
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                className="relative"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
               >
-                🗺️
+                <img 
+                  src={logoIcon} 
+                  alt="TripBlip Logo" 
+                  className="w-12 h-12 filter drop-shadow-lg group-hover:drop-shadow-xl transition-all duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
               </motion.div>
-              <div>
-                <span className="text-2xl font-bold gradient-text">tripblip</span>
+              <div className="group-hover:translate-x-1 transition-transform duration-300">
+                <span className="text-3xl font-bold gradient-text tracking-wide">tripblip</span>
                 <br />
-                <span className="text-sm gradient-text-secondary font-medium">MAG 2.0</span>
+                <span className="text-lg gradient-text-secondary font-semibold tracking-widest">MAG 2.0</span>
               </div>
             </Link>
           </motion.div>
@@ -117,7 +123,7 @@ const Navbar = () => {
                       <span className="text-lg group-hover:scale-110 transition-transform duration-300">
                         {item.icon}
                       </span>
-                      <span className="font-medium text-white group-hover:text-purple-300 transition-colors duration-300">
+                      <span className="font-semibold text-lg text-white group-hover:text-purple-300 transition-colors duration-300">
                         {item.label}
                       </span>
                     </Link>
@@ -136,10 +142,10 @@ const Navbar = () => {
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="text-left">
-                      <div className="font-medium text-white group-hover:text-purple-300 transition-colors duration-300">
+                      <div className="font-bold text-lg text-gray-100 group-hover:text-purple-300 transition-colors duration-300">
                         {user?.name || 'User'}
                       </div>
-                      <div className="text-xs text-gray-400">Adventurer</div>
+                      <div className="text-sm text-gray-300 font-medium">Adventurer</div>
                     </div>
                     <motion.span 
                       className="text-gray-400 group-hover:text-white transition-colors duration-300"
@@ -168,10 +174,10 @@ const Navbar = () => {
                           to={item.to}
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group"
                         >
-                          <span className="text-lg group-hover:scale-110 transition-transform duration-300">
+                          <span className="text-xl group-hover:scale-110 transition-transform duration-300">
                             {item.icon}
                           </span>
-                          <span className="text-white group-hover:text-purple-300 transition-colors duration-300">
+                          <span className="text-white group-hover:text-purple-300 transition-colors duration-300 font-semibold text-lg">
                             {item.label}
                           </span>
                         </Link>
@@ -181,8 +187,8 @@ const Navbar = () => {
                         onClick={handleLogout}
                         className="flex items-center space-x-3 px-4 py-3 w-full text-left hover:bg-red-500/20 transition-colors duration-200 group"
                       >
-                        <span className="text-lg group-hover:scale-110 transition-transform duration-300">🚪</span>
-                        <span className="text-red-400 group-hover:text-red-300 transition-colors duration-300">
+                        <span className="text-xl group-hover:scale-110 transition-transform duration-300">🚪</span>
+                        <span className="text-red-400 group-hover:text-red-300 transition-colors duration-300 font-semibold text-lg">
                           Sign Out
                         </span>
                       </button>
@@ -194,15 +200,16 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="px-6 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 font-medium text-white hover:text-purple-300"
+                  className="px-8 py-3 rounded-lg hover:bg-white/10 transition-all duration-300 font-bold text-lg text-white hover:text-purple-300"
                 >
+                  <span className="text-xl mr-2">🔑</span>
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="btn-modern btn-primary px-6 py-2 glow"
+                  className="btn-modern btn-primary px-8 py-3 text-lg font-bold glow"
                 >
-                  <span className="text-lg mr-2">🌟</span>
+                  <span className="text-2xl mr-3">🌟</span>
                   Get Started
                 </Link>
               </>
@@ -247,8 +254,8 @@ const Navbar = () => {
                           {user?.name?.charAt(0).toUpperCase() || 'U'}
                         </div>
                         <div>
-                          <div className="font-medium text-white">{user?.name || 'User'}</div>
-                          <div className="text-sm text-gray-400">Adventurer</div>
+                          <div className="font-bold text-lg text-gray-100">{user?.name || 'User'}</div>
+                          <div className="text-base text-gray-300 font-medium">Adventurer</div>
                         </div>
                       </div>
                     </div>
@@ -277,10 +284,10 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group"
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          <span className="text-xl group-hover:scale-110 transition-transform duration-300">
+                          <span className="text-2xl group-hover:scale-110 transition-transform duration-300">
                             {item.icon}
                           </span>
-                          <span className="text-white group-hover:text-purple-300 transition-colors duration-300">
+                          <span className="text-white group-hover:text-purple-300 transition-colors duration-300 font-semibold text-lg">
                             {item.label}
                           </span>
                         </Link>
@@ -295,8 +302,8 @@ const Navbar = () => {
                       }}
                       className="flex items-center space-x-3 px-4 py-3 w-full text-left hover:bg-red-500/20 transition-colors duration-200 group"
                     >
-                      <span className="text-xl group-hover:scale-110 transition-transform duration-300">🚪</span>
-                      <span className="text-red-400 group-hover:text-red-300 transition-colors duration-300">
+                      <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🚪</span>
+                      <span className="text-red-400 group-hover:text-red-300 transition-colors duration-300 font-semibold text-lg">
                         Sign Out
                       </span>
                     </button>
@@ -308,8 +315,8 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <span className="text-xl group-hover:scale-110 transition-transform duration-300">🔑</span>
-                      <span className="text-white group-hover:text-purple-300 transition-colors duration-300">
+                      <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🔑</span>
+                      <span className="text-white group-hover:text-purple-300 transition-colors duration-300 font-semibold text-lg">
                         Sign In
                       </span>
                     </Link>
@@ -318,8 +325,8 @@ const Navbar = () => {
                       className="flex items-center space-x-3 px-4 py-3 hover:bg-white/10 transition-colors duration-200 group mx-4 mt-2 btn-modern btn-primary justify-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <span className="text-xl group-hover:scale-110 transition-transform duration-300">🌟</span>
-                      <span>Get Started</span>
+                      <span className="text-2xl group-hover:scale-110 transition-transform duration-300">🌟</span>
+                      <span className="font-bold text-lg">Get Started</span>
                     </Link>
                   </>
                 )}
