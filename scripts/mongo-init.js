@@ -3,6 +3,7 @@ db = db.getSiblingDB('tripblip_mag');
 
 // Create collections
 db.createCollection('users');
+db.createCollection('useritems');
 db.createCollection('adventures');
 db.createCollection('events');
 db.createCollection('notifications');
@@ -10,6 +11,17 @@ db.createCollection('notifications');
 // Create indexes for better performance
 db.users.createIndex({ "email": 1 }, { unique: true });
 db.users.createIndex({ "friends": 1 });
+
+// User items indexes
+db.useritems.createIndex({ "userId": 1 });
+db.useritems.createIndex({ "userId": 1, "category": 1 });
+db.useritems.createIndex({ "userId": 1, "metadata.isFavorite": 1 });
+db.useritems.createIndex({ "userId": 1, "status": 1 });
+db.useritems.createIndex({ "userId": 1, "location.source": 1 });
+db.useritems.createIndex({ "metadata.tags": 1 });
+db.useritems.createIndex({ "createdAt": -1 });
+db.useritems.createIndex({ "metadata.isPublic": 1 });
+db.useritems.createIndex({ "sharing.sharedWith.userId": 1 });
 
 db.adventures.createIndex({ "userId": 1 });
 db.adventures.createIndex({ "status": 1 });

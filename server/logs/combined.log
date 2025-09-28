@@ -95652,3 +95652,1357 @@
   service: 'mag-2.0',
   timestamp: '2025-09-27 17:19:38'
 }
+{
+  message: 'MAG 2.0 Server is running on port 5000',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:04'
+}
+{
+  message: 'Environment: development',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:04'
+}
+{
+  message: 'Redis client connected',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:04'
+}
+{
+  message: 'Redis client ready',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:04'
+}
+{
+  message: 'Connected to MongoDB',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:04'
+}
+{
+  service: 'mag-2.0',
+  status: 401,
+  headers: {
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '985cafd5dd7bb26e-PIT',
+    connection: 'keep-alive',
+    'content-length': '239',
+    'content-type': 'application/json',
+    date: 'Sat, 27 Sep 2025 17:23:05 GMT',
+    'openai-processing-ms': '1',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=yAEuRK18dLwb7WobC.RKuxeXbi0PhKRGjsZO5iSGJW4-1758993785-1.0.1.1-9.B_ICqo6mP3kCo7W0bi5h3Njb0GGP10Rq6gLT8PNsa9w_VGjlvkMKGX.beC1m8Ch2E..filznRAFgp0bHgguMZZAdbd_hGJOF2f3YOhG1k; path=/; expires=Sat, 27-Sep-25 17:53:05 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=Vt_mdIegQ34GhBYreINKJS.vBWkgs.45U6ZtYmLwhNc-1758993785407-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'www-authenticate': 'Bearer realm="OpenAI API"',
+    'x-content-type-options': 'nosniff',
+    'x-envoy-upstream-service-time': '3',
+    'x-openai-proxy-wasm': 'v0.1',
+    'x-request-id': '12220c6d2d47c485d3b8bc00ca0e6fa2'
+  },
+  request_id: '12220c6d2d47c485d3b8bc00ca0e6fa2',
+  error: {
+    message: 'Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.',
+    type: 'invalid_request_error',
+    param: null,
+    code: 'invalid_api_key'
+  },
+  code: 'invalid_api_key',
+  param: null,
+  type: 'invalid_request_error',
+  level: 'error',
+  message: 'Failed to initialize AI Orchestrator: 401 Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.',
+  stack: 'Error: 401 Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.\n' +
+    '    at APIError.generate (/app/node_modules/openai/error.js:48:20)\n' +
+    '    at OpenAI.makeStatusError (/app/node_modules/openai/core.js:302:33)\n' +
+    '    at OpenAI.makeRequest (/app/node_modules/openai/core.js:346:30)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async AIOrchestrator.initialize (/app/services/aiOrchestrator.js:26:7)',
+  timestamp: '2025-09-27 17:23:05'
+}
+{
+  message: 'GET /metrics 200 - - 31.835 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:16'
+}
+{
+  message: 'OPTIONS /api/auth/login 204 0 - 0.390 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  message: 'User logged in: claire@example.com',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  message: 'POST /api/auth/login 200 994 - 566.091 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  message: 'OPTIONS /api/auth/verify 204 0 - 0.233 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Token verification failed: user.getPublicProfile is not a function',
+  stack: 'TypeError: user.getPublicProfile is not a function\n' +
+    '    at /app/routes/authRoutes.js:180:20\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  message: 'GET /api/auth/verify 401 43 - 19.623 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  message: 'OPTIONS /api/adventures?limit=20&offset=0 204 0 - 0.236 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  message: 'GET /api/adventures?limit=20&offset=0 304 - - 46.054 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:24'
+}
+{
+  message: 'GET /api/health 200 153 - 2.621 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:30'
+}
+{
+  message: 'OPTIONS /api/auth/login 204 0 - 0.107 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  message: 'User logged in: claire@example.com',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  message: 'POST /api/auth/login 200 994 - 369.158 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  message: 'OPTIONS /api/adventures?limit=20&offset=0 204 0 - 0.208 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  message: 'OPTIONS /api/auth/verify 204 0 - 0.471 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Token verification failed: user.getPublicProfile is not a function',
+  stack: 'TypeError: user.getPublicProfile is not a function\n' +
+    '    at /app/routes/authRoutes.js:180:20\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  message: 'GET /api/auth/verify 401 43 - 13.981 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  message: 'GET /api/adventures?limit=20&offset=0 304 - - 22.435 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:33'
+}
+{
+  message: 'GET /metrics 200 - - 3.156 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:23:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.343 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:24:00'
+}
+{
+  message: 'GET /metrics 200 - - 1.853 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:24:16'
+}
+{
+  message: 'GET /api/health 200 153 - 0.428 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:24:31'
+}
+{
+  message: 'GET /metrics 200 - - 1.552 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:24:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.668 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:25:01'
+}
+{
+  message: 'GET /metrics 200 - - 3.564 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:25:16'
+}
+{
+  message: 'GET /api/health 200 153 - 0.971 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:25:31'
+}
+{
+  message: 'GET /metrics 200 - - 1.794 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:25:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.379 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:25:59'
+}
+{
+  message: 'GET /metrics 200 - - 2.954 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:26:14'
+}
+{
+  message: 'GET /api/health 200 153 - 0.353 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:26:31'
+}
+{
+  message: 'GET /metrics 200 - - 4.515 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:26:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.592 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:27:01'
+}
+{
+  message: 'GET /metrics 200 - - 4.287 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:27:16'
+}
+{
+  message: 'GET /api/health 200 153 - 0.566 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:27:31'
+}
+{
+  message: 'GET /metrics 200 - - 1.509 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:27:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.298 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:28:01'
+}
+{
+  message: 'GET /metrics 200 - - 5.738 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:28:16'
+}
+{
+  message: 'GET /api/health 200 153 - 0.282 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:28:31'
+}
+{
+  message: 'GET /metrics 200 - - 4.852 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:28:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.260 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:29:01'
+}
+{
+  message: 'GET /metrics 200 - - 1.282 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:29:16'
+}
+{
+  message: 'GET /api/health 200 153 - 0.258 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:29:31'
+}
+{
+  message: 'GET /metrics 200 - - 1.562 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:29:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.341 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:30:01'
+}
+{
+  message: 'GET /metrics 200 - - 1.963 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:30:16'
+}
+{
+  message: 'GET /api/health 200 153 - 0.426 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:30:31'
+}
+{
+  message: 'GET /metrics 200 - - 3.110 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:30:46'
+}
+{
+  message: 'GET /api/health 200 153 - 0.391 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:38:26'
+}
+{
+  message: 'GET /metrics 200 - - 1.935 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:38:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.397 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:38:56'
+}
+{
+  message: 'GET /metrics 200 - - 2.368 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:39:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.398 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:39:26'
+}
+{
+  message: 'GET /metrics 200 - - 1.299 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:39:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.568 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:39:56'
+}
+{
+  message: 'GET /metrics 200 - - 4.116 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:40:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.274 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:40:26'
+}
+{
+  message: 'GET /metrics 200 - - 3.217 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:40:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.280 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:40:56'
+}
+{
+  message: 'GET /metrics 200 - - 1.573 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:41:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.481 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:41:26'
+}
+{
+  message: 'GET /metrics 200 - - 5.246 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:41:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.269 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:41:56'
+}
+{
+  message: 'GET /metrics 200 - - 1.697 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:42:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.467 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:42:27'
+}
+{
+  message: 'GET /metrics 200 - - 1.668 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:42:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.315 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:42:57'
+}
+{
+  message: 'GET /metrics 200 - - 2.691 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:43:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.473 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:43:27'
+}
+{
+  message: 'GET /metrics 200 - - 1.246 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:43:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.329 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:43:57'
+}
+{
+  message: 'GET /metrics 200 - - 1.941 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:11'
+}
+{
+  message: 'OPTIONS /api/auth/register 204 0 - 0.234 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:12'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Failed to create user: User already exists with this email',
+  stack: 'Error: User already exists with this email\n' +
+    '    at UserService.createUser (/app/services/userService.js:14:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async /app/routes/authRoutes.js:54:18',
+  timestamp: '2025-09-27 17:44:12'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Registration failed: Failed to create user: User already exists with this email',
+  stack: 'Error: Failed to create user: User already exists with this email\n' +
+    '    at UserService.createUser (/app/services/userService.js:48:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async /app/routes/authRoutes.js:54:18',
+  timestamp: '2025-09-27 17:44:12'
+}
+{
+  message: 'POST /api/auth/register 400 88 - 6.599 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:12'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Failed to create user: User already exists with this email',
+  stack: 'Error: User already exists with this email\n' +
+    '    at UserService.createUser (/app/services/userService.js:14:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async /app/routes/authRoutes.js:54:18',
+  timestamp: '2025-09-27 17:44:13'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Registration failed: Failed to create user: User already exists with this email',
+  stack: 'Error: Failed to create user: User already exists with this email\n' +
+    '    at UserService.createUser (/app/services/userService.js:48:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async /app/routes/authRoutes.js:54:18',
+  timestamp: '2025-09-27 17:44:13'
+}
+{
+  message: 'POST /api/auth/register 400 88 - 4.059 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:13'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Failed to create user: User already exists with this email',
+  stack: 'Error: User already exists with this email\n' +
+    '    at UserService.createUser (/app/services/userService.js:14:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async /app/routes/authRoutes.js:54:18',
+  timestamp: '2025-09-27 17:44:14'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Registration failed: Failed to create user: User already exists with this email',
+  stack: 'Error: Failed to create user: User already exists with this email\n' +
+    '    at UserService.createUser (/app/services/userService.js:48:13)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async /app/routes/authRoutes.js:54:18',
+  timestamp: '2025-09-27 17:44:14'
+}
+{
+  message: 'POST /api/auth/register 400 88 - 7.094 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:14'
+}
+{
+  message: 'OPTIONS /api/auth/register 204 0 - 0.163 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:24'
+}
+{
+  message: 'New user created: kj@example.com',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'User registered: kj@example.com',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'POST /api/auth/register 201 1020 - 295.950 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'OPTIONS /api/adventures?limit=20&offset=0 204 0 - 0.224 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'OPTIONS /api/auth/verify 204 0 - 0.256 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'GET /api/adventures?limit=20&offset=0 304 - - 19.435 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'GET /api/auth/verify 200 763 - 19.418 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'GET /api/adventures?limit=20&offset=0 304 - - 11.403 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:25'
+}
+{
+  message: 'GET /api/health 200 153 - 0.296 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:27'
+}
+{
+  message: 'OPTIONS /api/events/user 204 0 - 0.350 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:32'
+}
+{
+  message: 'OPTIONS /api/external/events/nearby?radius=10000&interests= 204 0 - 0.218 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:32'
+}
+{
+  message: 'GET /api/external/events/nearby?radius=10000&interests= 400 65 - 1.467 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:32'
+}
+{
+  service: 'mag-2.0',
+  stringValue: '"user"',
+  messageFormat: undefined,
+  kind: 'ObjectId',
+  value: 'user',
+  path: '_id',
+  reason: BSONError: input must be a 24 character hex string, 12 byte Uint8Array, or an integer
+      at new ObjectId (/app/node_modules/bson/lib/bson.cjs:2538:23)
+      at castObjectId (/app/node_modules/mongoose/lib/cast/objectid.js:25:12)
+      at SchemaObjectId.cast (/app/node_modules/mongoose/lib/schema/objectId.js:249:12)
+      at SchemaType.applySetters (/app/node_modules/mongoose/lib/schemaType.js:1258:12)
+      at SchemaType.castForQuery (/app/node_modules/mongoose/lib/schemaType.js:1694:17)
+      at cast (/app/node_modules/mongoose/lib/cast.js:390:32)
+      at Query.cast (/app/node_modules/mongoose/lib/query.js:5060:12)
+      at Query._castConditions (/app/node_modules/mongoose/lib/query.js:2374:10)
+      at model.Query._findOne (/app/node_modules/mongoose/lib/query.js:2697:8)
+      at model.Query.exec (/app/node_modules/mongoose/lib/query.js:4627:80),
+  valueType: 'string',
+  level: 'error',
+  message: 'Failed to get event: Cast to ObjectId failed for value "user" (type string) at path "_id" for model "Event"',
+  stack: 'CastError: Cast to ObjectId failed for value "user" (type string) at path "_id" for model "Event"\n' +
+    '    at SchemaObjectId.cast (/app/node_modules/mongoose/lib/schema/objectId.js:251:11)\n' +
+    '    at SchemaType.applySetters (/app/node_modules/mongoose/lib/schemaType.js:1258:12)\n' +
+    '    at SchemaType.castForQuery (/app/node_modules/mongoose/lib/schemaType.js:1694:17)\n' +
+    '    at cast (/app/node_modules/mongoose/lib/cast.js:390:32)\n' +
+    '    at Query.cast (/app/node_modules/mongoose/lib/query.js:5060:12)\n' +
+    '    at Query._castConditions (/app/node_modules/mongoose/lib/query.js:2374:10)\n' +
+    '    at model.Query._findOne (/app/node_modules/mongoose/lib/query.js:2697:8)\n' +
+    '    at model.Query.exec (/app/node_modules/mongoose/lib/query.js:4627:80)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async /app/routes/eventRoutes.js:172:19',
+  timestamp: '2025-09-27 17:44:32'
+}
+{
+  message: 'GET /api/events/user 500 122 - 17.122 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:32'
+}
+{
+  message: 'OPTIONS /api/users/friends 204 0 - 0.142 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:34'
+}
+{
+  message: 'GET /api/users/friends 304 - - 14.166 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:34'
+}
+{
+  message: 'OPTIONS /api/users/leaderboard?timeRange=all&limit=points 204 0 - 0.668 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:35'
+}
+{
+  message: 'GET /api/users/leaderboard?timeRange=all&limit=points 304 - - 8.343 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:35'
+}
+{
+  message: 'POST /api/logs 204 - - 1.005 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:35'
+}
+{
+  message: 'OPTIONS /api/auth/verify 204 0 - 0.245 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:38'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Token verification failed: user.getPublicProfile is not a function',
+  stack: 'TypeError: user.getPublicProfile is not a function\n' +
+    '    at /app/routes/authRoutes.js:180:20\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  timestamp: '2025-09-27 17:44:38'
+}
+{
+  message: 'GET /api/auth/verify 401 43 - 3.993 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:38'
+}
+{
+  message: 'GET /metrics 200 - - 3.585 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:41'
+}
+{
+  message: 'OPTIONS /api/auth/login 204 0 - 0.203 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:41'
+}
+{
+  message: 'User logged in: kj@example.com',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:42'
+}
+{
+  message: 'POST /api/auth/login 200 985 - 295.003 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:42'
+}
+{
+  message: 'OPTIONS /api/adventures?limit=20&offset=0 204 0 - 0.206 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:42'
+}
+{
+  message: 'GET /api/adventures?limit=20&offset=0 304 - - 14.156 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:42'
+}
+{
+  service: 'mag-2.0',
+  level: 'error',
+  message: 'Token verification failed: user.getPublicProfile is not a function',
+  stack: 'TypeError: user.getPublicProfile is not a function\n' +
+    '    at /app/routes/authRoutes.js:180:20\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)',
+  timestamp: '2025-09-27 17:44:42'
+}
+{
+  message: 'GET /api/auth/verify 401 43 - 2.638 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:42'
+}
+{
+  message: 'GET /api/health 200 153 - 0.296 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:44:57'
+}
+{
+  message: 'GET /metrics 200 - - 3.485 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:45:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.304 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:45:27'
+}
+{
+  message: 'GET /metrics 200 - - 2.963 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:45:41'
+}
+{
+  message: 'GET /api/health 200 153 - 1.500 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:45:57'
+}
+{
+  message: 'GET /metrics 200 - - 3.632 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:46:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.967 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:46:27'
+}
+{
+  message: 'GET /metrics 200 - - 3.021 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:46:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.423 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:46:57'
+}
+{
+  message: 'GET /metrics 200 - - 3.829 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:47:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.354 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:47:28'
+}
+{
+  message: 'GET /metrics 200 - - 2.666 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:47:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.256 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:47:58'
+}
+{
+  message: 'GET /metrics 200 - - 2.483 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:48:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.242 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:48:28'
+}
+{
+  message: 'GET /metrics 200 - - 2.735 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:48:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.416 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:48:58'
+}
+{
+  message: 'GET /metrics 200 - - 5.867 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:49:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.551 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:49:28'
+}
+{
+  message: 'GET /metrics 200 - - 3.285 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:49:41'
+}
+{
+  message: 'GET /api/health 200 153 - 0.311 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:49:58'
+}
+{
+  message: 'GET /metrics 200 - - 6.033 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:50:11'
+}
+{
+  message: 'GET /api/health 200 153 - 0.257 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:50:28'
+}
+{
+  message: 'Received SIGTERM, shutting down gracefully',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-27 17:50:43'
+}
+{
+  message: 'MAG 2.0 Server is running on port 5000',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:40:28'
+}
+{
+  message: 'Environment: development',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:40:28'
+}
+{
+  message: 'Redis client connected',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:40:28'
+}
+{
+  message: 'Redis client ready',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:40:28'
+}
+{
+  message: 'Connected to MongoDB',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:40:28'
+}
+{
+  service: 'mag-2.0',
+  status: 401,
+  headers: {
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '986090185892b83f-PIT',
+    connection: 'keep-alive',
+    'content-length': '239',
+    'content-type': 'application/json',
+    date: 'Sun, 28 Sep 2025 04:40:28 GMT',
+    'openai-processing-ms': '4',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=LhI5Y5RENAA9Qd7T.lhjC6j4GrkZqdZCzvtbNfRzRzY-1759034428-1.0.1.1-hr_AWZ9dzvj9qgJQYMGz7UfOugU8xN0_BCOIeCk0eb8Jwk7lIqO9Vkia8jfo9fxVNtf7eBFRgKtmsfYTVg_E.f5vyE2GDxpLONORt6Pa0Tk; path=/; expires=Sun, 28-Sep-25 05:10:28 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=C9UDIrXKnic7u0k0jP7v.b1CO52CdcGD4RW0.9aavmY-1759034428461-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'www-authenticate': 'Bearer realm="OpenAI API"',
+    'x-content-type-options': 'nosniff',
+    'x-envoy-upstream-service-time': '7',
+    'x-openai-proxy-wasm': 'v0.1',
+    'x-request-id': 'a93c710689f298821ad99394457eca7e'
+  },
+  request_id: 'a93c710689f298821ad99394457eca7e',
+  error: {
+    message: 'Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.',
+    type: 'invalid_request_error',
+    param: null,
+    code: 'invalid_api_key'
+  },
+  code: 'invalid_api_key',
+  param: null,
+  type: 'invalid_request_error',
+  level: 'error',
+  message: 'Failed to initialize AI Orchestrator: 401 Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.',
+  stack: 'Error: 401 Incorrect API key provided: my_api_key. You can find your API key at https://platform.openai.com/account/api-keys.\n' +
+    '    at APIError.generate (/app/node_modules/openai/error.js:48:20)\n' +
+    '    at OpenAI.makeStatusError (/app/node_modules/openai/core.js:302:33)\n' +
+    '    at OpenAI.makeRequest (/app/node_modules/openai/core.js:346:30)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async AIOrchestrator.initialize (/app/services/aiOrchestrator.js:26:7)',
+  timestamp: '2025-09-28 04:40:28'
+}
+{
+  message: 'GET /metrics 200 - - 5.844 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:40:35'
+}
+{
+  message: 'GET /api/health 200 153 - 1.599 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:40:57'
+}
+{
+  message: 'GET /metrics 200 - - 5.395 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:41:05'
+}
+{
+  message: 'GET /api/health 200 153 - 2.066 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:41:27'
+}
+{
+  message: 'GET /metrics 200 - - 2.733 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:41:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.344 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:41:57'
+}
+{
+  message: 'GET /metrics 200 - - 3.424 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:42:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.606 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:42:27'
+}
+{
+  message: 'GET /metrics 200 - - 4.336 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:42:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.646 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:42:57'
+}
+{
+  message: 'GET /metrics 200 - - 2.210 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:43:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.529 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:43:27'
+}
+{
+  message: 'GET /metrics 200 - - 4.455 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:43:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.456 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:43:58'
+}
+{
+  message: 'GET /metrics 200 - - 2.534 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:44:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.560 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:44:28'
+}
+{
+  message: 'GET /metrics 200 - - 3.153 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:44:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.389 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:44:58'
+}
+{
+  message: 'GET /metrics 200 - - 1.628 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:45:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.423 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:45:28'
+}
+{
+  message: 'GET /metrics 200 - - 3.888 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:45:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.835 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:45:58'
+}
+{
+  message: 'GET /metrics 200 - - 2.897 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:46:05'
+}
+{
+  message: 'GET /api/health 200 153 - 1.628 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:46:28'
+}
+{
+  message: 'GET /metrics 200 - - 2.886 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:46:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.703 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:46:58'
+}
+{
+  message: 'GET /metrics 200 - - 2.234 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:47:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.325 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:47:28'
+}
+{
+  message: 'GET /metrics 200 - - 2.224 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:47:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.552 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:47:58'
+}
+{
+  message: 'GET /metrics 200 - - 1.274 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:48:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.962 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:48:28'
+}
+{
+  message: 'GET /metrics 200 - - 4.411 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:48:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.449 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:48:58'
+}
+{
+  message: 'GET /metrics 200 - - 1.891 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:49:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.578 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:49:28'
+}
+{
+  message: 'GET /metrics 200 - - 1.707 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:49:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.661 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:49:58'
+}
+{
+  message: 'GET /metrics 200 - - 1.492 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:50:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.435 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:50:28'
+}
+{
+  message: 'GET /metrics 200 - - 3.720 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:50:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.343 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:50:59'
+}
+{
+  message: 'GET /metrics 200 - - 2.698 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:51:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.503 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:51:29'
+}
+{
+  message: 'GET /metrics 200 - - 4.682 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:51:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.362 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:51:59'
+}
+{
+  message: 'GET /metrics 200 - - 2.272 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:52:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.429 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:52:29'
+}
+{
+  message: 'GET /metrics 200 - - 9.552 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:52:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.295 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:52:59'
+}
+{
+  message: 'GET /metrics 200 - - 1.954 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:53:05'
+}
+{
+  message: 'GET /api/health 200 153 - 0.302 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:53:29'
+}
+{
+  message: 'GET /metrics 200 - - 2.908 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:53:35'
+}
+{
+  message: 'GET /api/health 200 153 - 0.531 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:53:59'
+}
+{
+  message: 'GET /metrics 200 - - 2.208 ms -',
+  level: 'info',
+  service: 'mag-2.0',
+  timestamp: '2025-09-28 04:54:05'
+}

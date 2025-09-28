@@ -147,49 +147,49 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-vh-100 bg-gray-50">
+      <div className="container px-3 py-4" style={{ maxWidth: '960px' }}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-lg p-6 mb-8"
+          className="mb-4 text-white bg-gradient-to-r from-purple-600 to-emerald-500 header-hero"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-blue-600">
+              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="text-2xl font-bold">
                   {profile?.name?.charAt(0).toUpperCase() || 'U'}
                 </span>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold">
                   {profile?.name || 'User'}
                 </h1>
-                <p className="text-gray-600">{profile?.email}</p>
-                <p className="text-sm text-gray-500">
+                <p className="opacity-90">{profile?.email}</p>
+                <p className="text-sm opacity-80">
                   Member since {new Date(profile?.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
             <button
               onClick={() => setEditing(!editing)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              className="px-4 py-2 rounded-lg btn-secondary"
             >
               {editing ? 'Cancel' : 'Edit Profile'}
             </button>
           </div>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="row g-4">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="col-lg-8 d-flex flex-column gap-4">
             {/* Profile Information */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white rounded-xl shadow-lg p-4 lift"
             >
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Profile Information 👤
@@ -283,7 +283,7 @@ const Profile = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white rounded-xl shadow-lg p-4 lift"
             >
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Recent Adventures 🗺️
@@ -336,14 +336,14 @@ const Profile = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="col-lg-4 d-flex flex-column gap-3">
             {/* Stats */}
             {stats && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-xl shadow-lg p-6"
+                className="bg-white rounded-xl shadow-lg p-4 lift"
               >
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
                   Your Stats 📊
@@ -383,7 +383,7 @@ const Profile = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white rounded-xl shadow-lg p-6"
+                className="bg-white rounded-xl shadow-lg p-4 lift"
               >
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
                   Badges 🏆
@@ -409,7 +409,7 @@ const Profile = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white rounded-xl shadow-lg p-4 lift"
             >
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 Quick Actions 🚀

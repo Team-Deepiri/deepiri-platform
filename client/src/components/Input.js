@@ -13,9 +13,9 @@ const Input = ({
   className = '',
   ...props 
 }) => {
-  const baseClasses = 'w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200';
-  const errorClasses = error ? 'border-red-300 focus:ring-red-500' : 'border-gray-300';
-  const disabledClasses = disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white';
+  const baseClasses = 'input-modern';
+  const errorClasses = error ? 'border-red-500 focus:border-red-500' : '';
+  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
 
   const classes = `${baseClasses} ${errorClasses} ${disabledClasses} ${className}`;
 
@@ -26,9 +26,9 @@ const Input = ({
       className="space-y-1"
     >
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-white">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-red-400 ml-1">*</span>}
         </label>
       )}
       <input
@@ -45,7 +45,7 @@ const Input = ({
         <motion.p
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-red-600"
+          className="text-sm text-red-400"
         >
           {error}
         </motion.p>

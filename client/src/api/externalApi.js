@@ -3,7 +3,7 @@ import axiosInstance from './axiosInstance';
 export const externalApi = {
   pyAgentMessage: async (content, sessionId = null) => {
     try {
-      const base = process.env.VITE_PYAGENT_URL || 'http://localhost:8000';
+      const base = import.meta.env.VITE_PYAGENT_URL || 'http://localhost:8000';
       const res = await fetch(`${base}/agent/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

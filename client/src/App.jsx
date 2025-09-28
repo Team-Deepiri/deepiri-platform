@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
@@ -27,6 +27,7 @@ import Friends from './pages/Friends';
 import Leaderboard from './pages/Leaderboard';
 import Notifications from './pages/Notifications';
 import AgentChat from './pages/AgentChat';
+import PythonTools from './pages/PythonTools';
 
 
 
@@ -41,6 +42,9 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const location = useLocation();
+  const pathname = location?.pathname || '/';
+  const isAuthRoute = pathname === '/login' || pathname === '/register';
   useEffect(() => {
     // Setup global error handling and performance monitoring
     setupGlobalErrorHandling();
@@ -53,18 +57,20 @@ function App() {
         <AuthProvider>
           <SocketProvider>
             <AdventureProvider>
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 relative overflow-hidden">
-                  {/* Background Effects */}
-                  <div className="fixed inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20" />
-                  
+                <div className="min-h-screen relative overflow-hidden bg-gray-900">
+                  {/* Animated Background Layer */}
+                  <div className="fixed inset-0 animated-bg opacity-30" />
+                  {/* Subtle pattern overlay */}
+                  <div className="fixed inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%239C92AC%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-10" />
                   {/* Gradient Orbs */}
-                  <div className="fixed top-0 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" />
-                  <div className="fixed top-0 right-1/4 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }} />
-                  <div className="fixed bottom-0 left-1/2 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }} />
+                  <div className="fixed top-[-4rem] left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse" />
+                  <div className="fixed top-[10%] right-1/5 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }} />
+                  <div className="fixed bottom-[-4rem] left-1/2 w-96 h-96 bg-fuchsia-500 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse" style={{ animationDelay: '4s' }} />
                   
                   <Navbar />
-                  <main className="pt-20 pb-20 relative z-10">
-                    <Routes>
+                  <main className={`${isAuthRoute ? 'pt-0 pb-0' : 'pt-20 pb-20'} relative z-10`}>
+                    <div className="site-container">
+                      <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<Home />} />
                     <Route path="/home" element={<Home />} />
@@ -134,10 +140,11 @@ function App() {
                     } />
                     <Route path="/python-tools" element={
                       <ProtectedRoute>
-                        <AgentChat />
+                        <PythonTools />
                       </ProtectedRoute>
                     } />
-                  </Routes>
+                      </Routes>
+                    </div>
                 </main>
                 <Footer />
                 <Toaster

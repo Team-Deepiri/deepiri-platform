@@ -32,12 +32,12 @@ const Footer = () => {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true }}
-      className="relative glass-dark backdrop-blur-xl border-t border-white/10"
+      className="relative glass-dark backdrop-blur-xl border-top border-white/10"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="container px-4 py-5">
+        <div className="row g-4 row-cols-1 row-cols-md-4">
           {/* Brand */}
-          <motion.div variants={itemVariants} className="col-span-1 md:col-span-2">
+          <motion.div variants={itemVariants} className="col-md-6">
             <div className="flex items-center space-x-3 mb-6">
               <motion.div
                 className="text-4xl"
@@ -83,7 +83,7 @@ const Footer = () => {
           </motion.div>
 
           {/* Quick Links */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="col">
             <h3 className="text-xl font-bold mb-6 gradient-text">Quick Links</h3>
             <ul className="space-y-3">
               {[
@@ -114,7 +114,7 @@ const Footer = () => {
           </motion.div>
 
           {/* Support */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="col">
             <h3 className="text-xl font-bold mb-6 gradient-text-secondary">Support</h3>
             <ul className="space-y-3">
               {[
@@ -148,7 +148,7 @@ const Footer = () => {
         {/* Newsletter Signup */}
         <motion.div 
           variants={itemVariants}
-          className="mt-16 p-8 glass rounded-2xl border border-white/10"
+          className="mt-5 p-4 glass rounded-4 border border-white/10"
         >
           <div className="text-center">
             <h3 className="text-2xl font-bold mb-4 gradient-text-accent">
@@ -157,7 +157,7 @@ const Footer = () => {
             <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
               Get the latest adventure recommendations, exclusive events, and community updates delivered to your inbox.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+            <div className="d-flex flex-column flex-sm-row gap-3 container-narrow">
               <input
                 type="email"
                 placeholder="Enter your email"
@@ -178,14 +178,14 @@ const Footer = () => {
         {/* Bottom Section */}
         <motion.div 
           variants={itemVariants}
-          className="border-t border-white/10 mt-12 pt-8"
+          className="border-top border-white/10 mt-4 pt-4"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center space-x-6 mb-4 md:mb-0">
-              <p className="text-gray-400 text-sm">
+          <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between">
+            <div className="d-flex align-items-center gap-3 mb-3 mb-md-0">
+              <p className="text-gray-400 small mb-0">
                 © 2024 tripblip MAG 2.0. All rights reserved.
               </p>
-              <div className="flex items-center space-x-2 text-sm text-gray-400">
+              <div className="d-flex align-items-center gap-2 small text-gray-400">
                 <span>Made with</span>
                 <motion.span
                   animate={{ scale: [1, 1.2, 1] }}
@@ -197,7 +197,7 @@ const Footer = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-6 text-sm text-gray-400">
+            <div className="d-flex align-items-center gap-3 small text-gray-400">
               <span>🌍 Available worldwide</span>
               <span>🔒 Secure & Private</span>
               <span>⚡ Lightning Fast</span>

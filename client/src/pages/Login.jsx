@@ -40,8 +40,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-green-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="center-page bg-gradient-to-br from-purple-50 to-green-50 py-4 px-3">
+      <div className="container-auth-compact w-100 mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -62,7 +62,7 @@ const Login = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-lg p-8 border border-purple-100"
+          className="bg-white rounded-4 shadow-lg p-4 p-md-5 border border-purple-100 mx-auto" style={{ maxWidth: 460 }}
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -113,7 +113,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-green-500 text-white rounded-lg hover:opacity-95 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors duration-200 font-medium disabled:opacity-50"
+              className="w-full btn-modern btn-primary btn-lgx focus-ring disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -147,7 +147,7 @@ const Login = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="text-center"
+          className="text-center mt-3"
         >
           <p className="text-gray-600">
             Don't have an account?{' '}

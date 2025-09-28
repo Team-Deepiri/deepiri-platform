@@ -53,6 +53,8 @@
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
   --transition-slow: 0.5s ease-in-out;
+  /* Layout */
+  --nav-height: 5rem;
 }
 
 /* Body styles */
@@ -81,6 +83,43 @@ code {
   width: 100%;
   background: var(--dark);
   position: relative;
+}
+
+/* Centering helpers to complement Bootstrap */
+.center-page {
+  min-height: calc(100vh - var(--nav-height) - 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: calc(var(--nav-height) / 2);
+  padding-bottom: 2rem;
+}
+.container-narrow {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Global site container for centered layouts */
+.site-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Extra small auth containers for tight, centered forms */
+.container-auth {
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.container-auth-compact {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Custom Scrollbar */
@@ -248,6 +287,29 @@ code {
   transform: translateY(-2px);
 }
 
+.btn-lgx {
+  padding: 14px 28px;
+  font-size: 18px;
+  border-radius: 14px;
+}
+
+.btn-outline {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: white;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* Card Styles */
 .card-modern {
   background: rgba(255, 255, 255, 0.05);
@@ -258,6 +320,44 @@ code {
   box-shadow: var(--shadow-xl);
   transition: all var(--transition-normal);
 }
+.card-hero {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  padding: 32px;
+}
+
+/* Typography */
+.display-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.subtitle {
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+/* Header hero */
+.header-hero {
+  border-radius: 20px;
+  padding: 32px;
+}
+
+/* Section spacing */
+.section {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+/* Hover lift */
+.lift {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-xl);
+}
+
 
 .card-modern:hover {
   transform: translateY(-5px);

@@ -23,12 +23,23 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (token) {
-      verifyToken();
-    } else {
-      setLoading(false);
-    }
+    // Always attempt to verify on load – token in localStorage or refresh cookie
+    verifyToken();
   }, [token]);
+
+  const tryRefresh = async () => {
+    try {
+      const res = await authApi.refreshToken();
+      if (res.success) {
+        const { user, token } = res.data;
+        setUser(user);
+        setToken(token);
+        localStorage.setItem('token', token);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  };
 
   const verifyToken = async () => {
     try {
@@ -36,11 +47,15 @@ export const AuthProvider = ({ children }) => {
       if (response.success) {
         setUser(response.data.user);
       } else {
-        logout();
+        const refreshed = await tryRefresh();
+        if (!refreshed) logout();
       }
     } catch (error) {
-      console.error('Token verification failed:', error);
-      logout();
+      const refreshed = await tryRefresh();
+      if (!refreshed) {
+        console.error('Token verification failed:', error);
+        logout();
+      }
     } finally {
       setLoading(false);
     }

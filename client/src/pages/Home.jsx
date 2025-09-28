@@ -88,11 +88,11 @@ const Home = () => {
         className="relative z-20"
       >
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto text-center">
+        <section className="relative min-vh-100 d-flex align-items-center justify-content-center px-3">
+          <div className="container text-center">
             <motion.div variants={itemVariants} className="mb-8">
               <motion.h1 
-                className="text-6xl md:text-8xl font-bold mb-6"
+                className="display-title mb-3" style={{ fontSize: 'clamp(42px, 6vw, 88px)' }}
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 1, ease: "easeOut" }}
@@ -103,7 +103,7 @@ const Home = () => {
               </motion.h1>
               
               <motion.p 
-                className="text-xl md:text-2xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed"
+                className="subtitle mb-4 mx-auto" style={{ maxWidth: 900, fontSize: 'clamp(16px, 2.2vw, 24px)' }}
                 variants={itemVariants}
               >
                 Your AI-powered adventure companion. Discover extraordinary experiences, 
@@ -113,7 +113,7 @@ const Home = () => {
 
             <motion.div 
               variants={itemVariants}
-              className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
+              className="d-flex flex-column flex-sm-row gap-3 justify-content-center align-items-center mb-4"
             >
               {isAuthenticated ? (
                 <>
@@ -155,7 +155,7 @@ const Home = () => {
             {/* Floating Feature Cards */}
             <motion.div 
               variants={itemVariants}
-              className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
+              className="row row-cols-1 row-cols-md-3 g-4 container-narrow mx-auto"
             >
               {[
                 {
@@ -180,7 +180,7 @@ const Home = () => {
                 <motion.div
                   key={index}
                   variants={itemVariants}
-                  className="card-modern text-center group"
+                  className="card-modern text-center group col lift"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -202,8 +202,8 @@ const Home = () => {
         </section>
 
         {/* Features Section */}
-        <section className="py-32 relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-5 relative">
+          <div className="container px-3">
             <motion.div
               variants={itemVariants}
               className="text-center mb-20"
@@ -219,8 +219,8 @@ const Home = () => {
               </p>
             </motion.div>
 
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div variants={itemVariants} className="space-y-8">
+            <div className="row g-4 align-items-center">
+              <motion.div variants={itemVariants} className="col-lg-6">
                 {[
                   {
                     icon: '🎯',
@@ -246,7 +246,7 @@ const Home = () => {
                   <motion.div
                     key={index}
                     variants={itemVariants}
-                    className="flex items-start space-x-4 group"
+                    className="d-flex align-items-start gap-3 group mb-3"
                     whileHover={{ x: 10 }}
                   >
                     <div className="text-4xl group-hover:scale-110 transition-transform duration-300">
@@ -262,7 +262,7 @@ const Home = () => {
 
               <motion.div 
                 variants={itemVariants}
-                className="relative"
+                className="col-lg-6"
               >
                 <div className="card-modern p-8 float">
                   <div className="text-center">
@@ -271,22 +271,30 @@ const Home = () => {
                     <p className="text-gray-300 mb-6">
                       Explore your adventure route with our interactive 3D map interface
                     </p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="card-modern p-4 text-center">
+                    <div className="row g-3">
+                      <div className="col-6">
+                        <div className="card-modern p-4 text-center">
                         <div className="text-2xl mb-2">📍</div>
                         <div className="text-sm font-semibold">Locations</div>
+                        </div>
                       </div>
-                      <div className="card-modern p-4 text-center">
+                      <div className="col-6">
+                        <div className="card-modern p-4 text-center">
                         <div className="text-2xl mb-2">⏰</div>
                         <div className="text-sm font-semibold">Timeline</div>
+                        </div>
                       </div>
-                      <div className="card-modern p-4 text-center">
+                      <div className="col-6">
+                        <div className="card-modern p-4 text-center">
                         <div className="text-2xl mb-2">🌤️</div>
                         <div className="text-sm font-semibold">Weather</div>
+                        </div>
                       </div>
-                      <div className="card-modern p-4 text-center">
+                      <div className="col-6">
+                        <div className="card-modern p-4 text-center">
                         <div className="text-2xl mb-2">👥</div>
                         <div className="text-sm font-semibold">Friends</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -297,8 +305,8 @@ const Home = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-32 relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <section className="py-5 relative">
+          <div className="container text-center px-3">
             <motion.div variants={itemVariants}>
               <h2 className="text-5xl md:text-6xl font-bold mb-8">
                 <span className="gradient-text">Ready to</span>
@@ -313,7 +321,7 @@ const Home = () => {
               {!isAuthenticated && (
                 <motion.div
                   variants={itemVariants}
-                  className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+                  className="d-flex flex-column flex-sm-row gap-3 justify-content-center align-items-center"
                 >
                   <Link
                     to="/register"

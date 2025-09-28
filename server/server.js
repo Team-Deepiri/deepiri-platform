@@ -22,6 +22,7 @@ const cacheService = require('./services/cacheService');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const userItemRoutes = require('./routes/userItemRoutes');
 const adventureRoutes = require('./routes/adventureRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 const eventRoutes = require('./routes/eventRoutes');
@@ -179,6 +180,7 @@ app.use((req, res, next) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authenticateJWT, userRoutes);
+app.use('/api/user-items', authenticateJWT, userItemRoutes);
 app.use('/api/adventures', authenticateJWT, adventureRoutes);
 app.use('/api/events', authenticateJWT, eventRoutes);
 app.use('/api/notifications', authenticateJWT, notificationRoutes);

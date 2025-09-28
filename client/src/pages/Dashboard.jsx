@@ -97,8 +97,8 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-vh-100 bg-gray-50">
+      <div className="container px-3 py-4">
         {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -106,11 +106,11 @@ const Dashboard = () => {
           transition={{ duration: 0.8 }}
           className="mb-8"
         >
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white">
+          <div className="bg-gradient-to-r from-purple-600 to-emerald-500 header-hero text-white">
             <h1 className="text-3xl font-bold mb-2">
               {getGreeting()}, {user?.name}! 👋
             </h1>
-            <p className="text-blue-100 text-lg">
+            <p className="text-emerald-100 text-lg">
               Ready for your next adventure? Let's explore what's around you.
             </p>
             {weather && (
@@ -128,23 +128,23 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="row g-4">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="col-lg-8 d-flex flex-column gap-4">
             {/* Quick Actions */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white rounded-xl shadow-lg p-4"
             >
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Quick Actions 🚀
               </h2>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="row g-3">
                 <Link
                   to="/adventure/generate"
-                  className="group p-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
+                  className="group p-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg text-white transition-all duration-200"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="text-3xl">🎯</div>
@@ -157,7 +157,7 @@ const Dashboard = () => {
 
                 <Link
                   to="/events"
-                  className="group p-6 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+                  className="group p-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg text-white transition-all duration-200"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="text-3xl">📅</div>
@@ -170,7 +170,7 @@ const Dashboard = () => {
 
                 <Link
                   to="/friends"
-                  className="group p-6 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105"
+                  className="group p-4 bg-gradient-to-r from-green-500 to-green-600 rounded-lg text-white transition-all duration-200"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="text-3xl">👥</div>
@@ -183,7 +183,7 @@ const Dashboard = () => {
 
                 <Link
                   to="/adventures"
-                  className="group p-6 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-105"
+                  className="group p-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg text-white transition-all duration-200"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="text-3xl">🗺️</div>
@@ -201,7 +201,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white rounded-xl shadow-lg p-4 lift"
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -269,14 +269,14 @@ const Dashboard = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-8">
+          <div className="col-lg-4 d-flex flex-column gap-4">
             {/* Stats */}
             {stats && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
-                className="bg-white rounded-xl shadow-lg p-6"
+                className="bg-white rounded-xl shadow-lg p-4"
               >
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
                   Your Stats 📊
@@ -316,7 +316,7 @@ const Dashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.5 }}
-                className="bg-white rounded-xl shadow-lg p-6"
+                className="bg-white rounded-xl shadow-lg p-4"
               >
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
                   Nearby Events 📅
@@ -347,7 +347,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200"
+              className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200"
             >
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 💡 Pro Tip

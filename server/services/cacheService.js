@@ -231,6 +231,50 @@ class CacheService {
     }
   }
 
+  // User Items cache methods
+  async getUserItems(userId, options = {}) {
+    const key = `user_items:${userId}:${JSON.stringify(options)}`;
+    return await this.get(key);
+  }
+
+  async setUserItems(userId, items, options = {}, ttl = null) {
+    const key = `user_items:${userId}:${JSON.stringify(options)}`;
+    const cacheTtl = ttl || 1800; // 30 minutes
+    return await this.set(key, items, cacheTtl);
+  }
+
+  async getUserItemStats(userId) {
+    const key = `user_item_stats:${userId}`;
+    return await this.get(key);
+  }
+
+  async setUserItemStats(userId, stats, ttl = null) {
+    const key = `user_item_stats:${userId}`;
+    const cacheTtl = ttl || 3600; // 1 hour
+    return await this.set(key, stats, cacheTtl);
+  }
+
+  // Clear user items cache
+  async clearUserItemsCache(userId) {
+    const patterns = [`user_items:${userId}:*`, `user_item_stats:${userId}`];
+    try {
+      if (!this.isConnected) {
+        return false;
+      }
+
+      for (const pattern of patterns) {
+        const keys = await this.client.keys(pattern);
+        if (keys.length > 0) {
+          await this.client.del(keys);
+        }
+      }
+      return true;
+    } catch (error) {
+      logger.error('Clear user items cache error:', error);
+      return false;
+    }
+  }
+
   // Clear all cache
   async clearAll() {
     try {
