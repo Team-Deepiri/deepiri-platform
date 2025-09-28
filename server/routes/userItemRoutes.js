@@ -13,6 +13,10 @@ const {
 
 const router = express.Router();
 
+// Apply user ID validation and rate limiting to all routes
+router.use(validateUserId);
+router.use(itemRateLimit(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
+
 // Validation schemas
 const createItemSchema = Joi.object({
   name: Joi.string().min(1).max(200).required(),
@@ -141,7 +145,7 @@ const shareItemSchema = Joi.object({
 });
 
 // Get all user items
-router.get('/', async (req, res) => {
+router.get('/', auditItemOperation('list'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const {
@@ -198,7 +202,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get user item statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', auditItemOperation('stats'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const stats = await userItemService.getUserItemStats(userId);
@@ -218,7 +222,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // Search user items
-router.get('/search', async (req, res) => {
+router.get('/search', auditItemOperation('search'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { q: searchQuery, category, tags, limit = 20, page = 1 } = req.query;
@@ -324,7 +328,7 @@ router.get('/public', async (req, res) => {
 });
 
 // Export user items
-router.get('/export', async (req, res) => {
+router.get('/export', auditItemOperation('export'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { format = 'json' } = req.query;
@@ -352,7 +356,7 @@ router.get('/export', async (req, res) => {
 });
 
 // Get specific user item
-router.get('/:itemId', async (req, res) => {
+router.get('/:itemId', verifySharedItemAccess, auditItemOperation('view'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { itemId } = req.params;
@@ -374,7 +378,7 @@ router.get('/:itemId', async (req, res) => {
 });
 
 // Create new user item
-router.post('/', async (req, res) => {
+router.post('/', auditItemOperation('create'), async (req, res) => {
   try {
     const userId = req.user.userId;
     
@@ -448,7 +452,7 @@ router.post('/bulk', async (req, res) => {
 });
 
 // Update user item
-router.put('/:itemId', async (req, res) => {
+router.put('/:itemId', verifyItemOwnership, auditItemOperation('update'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { itemId } = req.params;
@@ -481,7 +485,7 @@ router.put('/:itemId', async (req, res) => {
 });
 
 // Toggle item favorite status
-router.patch('/:itemId/favorite', async (req, res) => {
+router.patch('/:itemId/favorite', verifyItemOwnership, auditItemOperation('toggle_favorite'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { itemId } = req.params;
@@ -504,7 +508,7 @@ router.patch('/:itemId/favorite', async (req, res) => {
 });
 
 // Add memory to item
-router.post('/:itemId/memories', async (req, res) => {
+router.post('/:itemId/memories', verifyItemOwnership, auditItemOperation('add_memory'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { itemId } = req.params;
@@ -537,7 +541,7 @@ router.post('/:itemId/memories', async (req, res) => {
 });
 
 // Share item
-router.post('/:itemId/share', async (req, res) => {
+router.post('/:itemId/share', verifyItemOwnership, auditItemOperation('share'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { itemId } = req.params;
@@ -570,7 +574,7 @@ router.post('/:itemId/share', async (req, res) => {
 });
 
 // Delete user item
-router.delete('/:itemId', async (req, res) => {
+router.delete('/:itemId', verifyItemOwnership, auditItemOperation('delete'), async (req, res) => {
   try {
     const userId = req.user.userId;
     const { itemId } = req.params;

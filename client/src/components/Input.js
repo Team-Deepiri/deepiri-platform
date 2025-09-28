@@ -39,6 +39,8 @@ const Input = ({
         disabled={disabled}
         required={required}
         className={classes}
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={error ? `${props.id || 'input'}-error` : undefined}
         {...props}
       />
       {error && (
@@ -46,6 +48,8 @@ const Input = ({
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-sm text-red-400"
+          id={`${props.id || 'input'}-error`}
+          role="alert"
         >
           {error}
         </motion.p>

@@ -404,4 +404,80 @@ code {
     padding: 14px 16px;
     font-size: 14px;
   }
+  
+  .site-container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .container-auth {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-modern {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .card-modern {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .input-modern {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .gradient-text {
+    font-size: 1.5rem;
+  }
+}
+
+/* Focus indicators for accessibility */
+.btn-modern:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.input-modern:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid white;
+  }
+  
+  .btn-glass {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid white;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animated-bg {
+    animation: none;
+  }
+  
+  .float {
+    animation: none;
+  }
+  
+  .pulse {
+    animation: none;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

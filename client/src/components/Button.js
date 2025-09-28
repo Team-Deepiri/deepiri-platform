@@ -41,10 +41,15 @@ const Button = ({
       className={classes}
       whileHover={{ scale: disabled || loading ? 1 : 1.02 }}
       whileTap={{ scale: disabled || loading ? 1 : 0.98 }}
+      aria-busy={loading}
+      aria-disabled={disabled || loading}
       {...props}
     >
       {loading && (
-        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+        <div 
+          className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"
+          aria-hidden="true"
+        ></div>
       )}
       {children}
     </motion.button>
