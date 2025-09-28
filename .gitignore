@@ -10,7 +10,7 @@ secrets.yaml
 # testing
 /coverage
 */assets
-client/dist/
+client/dist/assets
 
 # production
 /build
