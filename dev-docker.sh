@@ -46,7 +46,7 @@ cleanup() {
 }
 
 # Build and start development environment
-start_dev() {
+build_dev() {
     print_status "Starting Tripblip Development Environment..."
     
     # Kill any existing processes on port 5173
@@ -59,14 +59,38 @@ start_dev() {
     
     print_success "Development environment started!"
     print_status "Services running:"
-    echo "  🌐 Frontend (HMR): http://localhost:5173"
-    echo "  🔧 Backend API:    http://localhost:5000"
-    echo "  🤖 Python Agent:  http://localhost:8000"
-    echo "  📊 MongoDB:       localhost:27017"
-    echo "  🔴 Redis:         localhost:6379"
+    echo "  Frontend (HMR): http://localhost:5173"
+    echo "  Backend API:    http://localhost:5000"
+    echo "  Agent:  http://localhost:8000"
+    echo "  MongoDB:       localhost:27017"
+    echo "  Redis:         localhost:6379"
     echo ""
     print_status "To view logs: docker-compose -f docker-compose.dev.yml logs -f frontend-dev"
-    print_warning "HMR should work automatically - edit files in ./client and see instant updates!"
+    print_status "HMR should work automatically - edit files in ./client and see instant updates!"
+}
+
+# Start development environment
+start_dev() {
+    print_status "Starting Tripblip Development Environment..."
+    
+    # Kill any existing processes on port 5173
+    print_status "Freeing up port 5173..."
+    lsof -ti:5173 | xargs kill -9 2>/dev/null || true
+    
+    # Start services
+    print_status "Starting services..."
+    docker-compose -f docker-compose.dev.yml up -d 
+    
+    print_success "Development environment started!"
+    print_status "Services running:"
+    echo "  Frontend (HMR): http://localhost:5173"
+    echo "  Backend API:    http://localhost:5000"
+    echo "  Agent:  http://localhost:8000"
+    echo "  MongoDB:       localhost:27017"
+    echo "  Redis:         localhost:6379"
+    echo ""
+    print_status "To view logs: docker-compose -f docker-compose.dev.yml logs -f frontend-dev"
+    print_status "HMR should work automatically - edit files in ./client and see instant updates!"
 }
 
 # Stop development environment
@@ -97,11 +121,20 @@ case "${1:-start}" in
     "stop")
         stop_dev
         ;;
+    "build")
+        build_dev
+        ;;
     "restart")
         stop_dev
         sleep 2
         check_docker
         start_dev
+        ;;
+    "rebuild")
+        stop_dev
+        sleep 2
+        check_docker
+        build_dev
         ;;
     "logs")
         logs "$2"
