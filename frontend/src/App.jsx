@@ -32,6 +32,7 @@ import GamificationDashboard from './pages/GamificationDashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import Notifications from './pages/Notifications';
 import AgentChat from './pages/AgentChat';
+import ProductivityChat from './pages/ProductivityChat';
 import PythonTools from './pages/PythonTools';
 import UserInventory from './pages/UserInventory';
 
@@ -162,6 +163,11 @@ function App() {
                     <Route path="/agent" element={
                       <ProtectedRoute>
                         <AgentChat />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/chat" element={
+                      <ProtectedRoute>
+                        <ProductivityChat />
                       </ProtectedRoute>
                     } />
                     <Route path="/python-tools" element={
