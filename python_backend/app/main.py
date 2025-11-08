@@ -46,9 +46,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS configuration - support both web app and desktop IDE
+cors_origins = [settings.CORS_ORIGIN] if settings.CORS_ORIGIN else []
+# Add common desktop IDE origins
+cors_origins.extend([
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000",  # React dev server
+    "file://",  # Electron file protocol
+    "app://",   # Electron app protocol
+])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.CORS_ORIGIN],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,15 +79,30 @@ async def add_request_id_and_metrics(request: Request, call_next):
     
     try:
         # API key guard for non-health/metrics endpoints
+        # Allow requests from desktop IDE (Electron) and web app
         if not path.startswith("/health") and not path.startswith("/metrics"):
             api_key = request.headers.get("x-api-key")
-            if settings.PYAGENT_API_KEY and api_key != settings.PYAGENT_API_KEY:
-                error_logger.log_api_error(
-                    HTTPException(status_code=401, detail="Invalid API key"),
-                    request_id,
-                    path
-                )
-                raise HTTPException(status_code=401, detail="Invalid API key")
+            # Check if request is from desktop IDE (has x-desktop-client header) or has valid API key
+            is_desktop_client = request.headers.get("x-desktop-client") == "true"
+            
+            if settings.PYAGENT_API_KEY:
+                # Desktop IDE can use API key or be identified by header
+                if not is_desktop_client and api_key != settings.PYAGENT_API_KEY:
+                    error_logger.log_api_error(
+                        HTTPException(status_code=401, detail="Invalid API key"),
+                        request_id,
+                        path
+                    )
+                    raise HTTPException(status_code=401, detail="Invalid API key")
+                # Desktop IDE with API key is always allowed
+                elif is_desktop_client and api_key and api_key != settings.PYAGENT_API_KEY:
+                    # Desktop IDE must have valid API key
+                    error_logger.log_api_error(
+                        HTTPException(status_code=401, detail="Invalid API key"),
+                        request_id,
+                        path
+                    )
+                    raise HTTPException(status_code=401, detail="Invalid API key")
         
         response = await call_next(request)
         return response

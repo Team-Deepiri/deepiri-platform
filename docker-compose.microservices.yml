@@ -1,0 +1,264 @@
+# Docker Compose for Microservices Architecture
+# This file defines the target microservices structure
+# Services will be gradually migrated from api-server monolith
+
+name: deepiri-microservices
+
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  mongodb:
+    image: mongo:7.0
+    container_name: deepiri-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-deepiri}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - deepiri-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: deepiri-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    volumes:
+      - redis_data:/data
+    networks:
+      - deepiri-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: deepiri-api-gateway
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5000
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here}
+      # Service URLs
+      USER_SERVICE_URL: http://user-service:5001
+      TASK_SERVICE_URL: http://task-service:5002
+      CHALLENGE_SERVICE_URL: http://challenge-service:5003
+      GAMIFICATION_SERVICE_URL: http://gamification-service:5004
+      ANALYTICS_SERVICE_URL: http://analytics-service:5005
+      INTEGRATION_SERVICE_URL: http://integration-service:5006
+      NOTIFICATION_SERVICE_URL: http://notification-service:5007
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # User Service
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: deepiri-user-service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5001
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here}
+    depends_on:
+      - mongodb
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # Task Service
+  task-service:
+    build:
+      context: ./services/task-service
+      dockerfile: Dockerfile
+    container_name: deepiri-task-service
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5002
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # Challenge Service
+  challenge-service:
+    build:
+      context: ./services/challenge-service
+      dockerfile: Dockerfile
+    container_name: deepiri-challenge-service
+    restart: unless-stopped
+    ports:
+      - "5003:5003"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5003
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+      AI_SERVICE_URL: http://pyagent:8000
+    depends_on:
+      - mongodb
+      - pyagent
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # Gamification Service
+  gamification-service:
+    build:
+      context: ./services/gamification-service
+      dockerfile: Dockerfile
+    container_name: deepiri-gamification-service
+    restart: unless-stopped
+    ports:
+      - "5004:5004"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5004
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+      dockerfile: Dockerfile
+    container_name: deepiri-analytics-service
+    restart: unless-stopped
+    ports:
+      - "5005:5005"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5005
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # Integration Service
+  integration-service:
+    build:
+      context: ./services/integration-service
+      dockerfile: Dockerfile
+    container_name: deepiri-integration-service
+    restart: unless-stopped
+    ports:
+      - "5006:5006"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5006
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: deepiri-notification-service
+    restart: unless-stopped
+    ports:
+      - "5007:5007"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5007
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # WebSocket Service
+  websocket-service:
+    build:
+      context: ./services/websocket-service
+      dockerfile: Dockerfile
+    container_name: deepiri-websocket-service
+    restart: unless-stopped
+    ports:
+      - "5008:5008"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5008
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+  # Python AI Service
+  pyagent:
+    build:
+      context: ./python_backend
+      dockerfile: Dockerfile
+    container_name: deepiri-pyagent
+    restart: unless-stopped
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      NODE_BACKEND_URL: http://api-gateway:5000
+      PYAGENT_API_KEY: ${PYAGENT_API_KEY:-change-me}
+    ports:
+      - "8000:8000"
+    networks:
+      - deepiri-network
+    profiles:
+      - microservices
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  deepiri-network:
+    driver: bridge
+

@@ -104,7 +104,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Python Agent API
+  # Python Agent API (AI Service)
   pyagent:
     build:
       context: ./python_backend
@@ -117,8 +117,15 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       NODE_BACKEND_URL: http://backend:5000
       PYAGENT_API_KEY: ${PYAGENT_API_KEY:-change-me}
+      # AI Training Configuration
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      WANDB_API_KEY: ${WANDB_API_KEY}
     ports:
       - "8000:8000"
+    volumes:
+      - ./python_backend/train/models:/app/train/models
+      - ./python_backend/train/data:/app/train/data
+      - ./python_backend/inference/models:/app/inference/models
     depends_on:
       - backend
     networks:
@@ -128,6 +135,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    # Uncomment for GPU support (requires nvidia-docker)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
 
   # Frontend
   frontend:
@@ -179,6 +194,43 @@ services:
     depends_on:
       - prometheus
 
+  # MLflow for AI Experiment Tracking (Optional)
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.8.1
+    container_name: deepiri-mlflow
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    environment:
+      BACKEND_STORE_URI: file:/mlflow
+      DEFAULT_ARTIFACT_ROOT: file:/mlflow/artifacts
+    volumes:
+      - mlflow_data:/mlflow
+    networks:
+      - deepiri-network
+    profiles:
+      - ai-training
+
+  # Jupyter Notebook for AI Research (Optional)
+  jupyter:
+    build:
+      context: ./python_backend
+      dockerfile: Dockerfile
+    container_name: deepiri-jupyter
+    restart: unless-stopped
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./python_backend/train/notebooks:/app/notebooks
+      - ./python_backend/train/data:/app/data
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    networks:
+      - deepiri-network
+    profiles:
+      - ai-training
+
   # NGINX Reverse Proxy (Optional for production)
   nginx:
     image: nginx:alpine
@@ -202,6 +254,8 @@ volumes:
   mongodb_data:
     driver: local
   redis_data:
+    driver: local
+  mlflow_data:
     driver: local
 
 networks:
