@@ -1,0 +1,27 @@
+{
+  "base_model": "mistralai/Mistral-7B-v0.1",
+  "use_local_model": false,
+  "local_model_path": null,
+  "api_keys": {
+    "openai": "${OPENAI_API_KEY}",
+    "anthropic": "${ANTHROPIC_API_KEY}",
+    "huggingface": "${HUGGINGFACE_API_KEY}"
+  },
+  "preferred_model_type": "openai",
+  "training_config": {
+    "num_epochs": 3,
+    "batch_size": 4,
+    "gradient_accumulation_steps": 16,
+    "learning_rate": 2e-4,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "use_qlora": true,
+    "use_deepspeed": true
+  },
+  "train_classifier": true,
+  "train_generator": true,
+  "train_bandit": true,
+  "data_collection_days": 7,
+  "min_samples_for_training": 100
+}
+

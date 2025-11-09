@@ -29,19 +29,6 @@ By participating in this project, you agree to:
 
 ---
 
-## Getting Started
-
-### Prerequisites
-
-Before you begin, ensure you have:
-
-- **Node.js** 18+ (for backend and frontend)
-- **Python** 3.9+ (for AI service)
-- **Docker** and **Docker Compose** (recommended)
-- **Git** for version control
-- **MongoDB** (or use Docker)
-- **Redis** (or use Docker)
-
 ### Fork and Clone
 
 1. Fork the repository on GitHub

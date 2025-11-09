@@ -183,8 +183,28 @@ def root():
 
 
 # Include routers
+from .routes.task import router as task_router
+from .routes.personalization import router as personalization_router
+from .routes.rag import router as rag_router
+from .routes.inference import router as inference_router
+from .routes.bandit import router as bandit_router
+from .routes.session import router as session_router
+from .routes.monitoring import router as monitoring_router
+from .middleware.request_timing import RequestTimingMiddleware
+from .middleware.rate_limiter import RateLimitMiddleware
+
+app.add_middleware(RequestTimingMiddleware)
+app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
+
 app.include_router(agent_router, prefix="/agent", tags=["agent"])
 app.include_router(challenge_router, prefix="/agent", tags=["challenge"])
+app.include_router(task_router, prefix="/agent", tags=["task"])
+app.include_router(personalization_router, prefix="/agent", tags=["personalization"])
+app.include_router(rag_router, prefix="/agent", tags=["rag"])
+app.include_router(inference_router, prefix="/agent", tags=["inference"])
+app.include_router(bandit_router, prefix="/agent", tags=["bandit"])
+app.include_router(session_router, prefix="/agent", tags=["session"])
+app.include_router(monitoring_router, prefix="/agent", tags=["monitoring"])
 
 
 if __name__ == "__main__":
