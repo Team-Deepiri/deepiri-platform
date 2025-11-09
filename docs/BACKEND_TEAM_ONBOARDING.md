@@ -26,8 +26,10 @@ Welcome to the Deepiri Backend Team! This guide will help you get set up and sta
 
 - **GitHub Account** (for repository access)
 - **MongoDB Atlas** (optional, for cloud database)
-- **Firebase Account** (for authentication)
-- **API Keys** for integrations (Notion, Trello, GitHub)
+- **Firebase Account** (for authentication and push notifications)
+- **API Keys** for integrations (Notion, Trello, GitHub, Google Docs)
+- **OAuth Credentials** for each integration provider
+- **InfluxDB Account** (optional, for time-series analytics)
 
 ### System Requirements
 
@@ -74,6 +76,20 @@ docker run -d --name redis -p 6379:6379 redis:7-alpine
 # Or install locally
 # macOS: brew install redis
 # Ubuntu: sudo apt-get install redis-server
+```
+
+**InfluxDB (Optional - for time-series analytics):**
+```bash
+# Using Docker
+docker run -d --name influxdb -p 8086:8086 \
+  -e INFLUXDB_DB=analytics \
+  -e INFLUXDB_ADMIN_USER=admin \
+  -e INFLUXDB_ADMIN_PASSWORD=admin \
+  influxdb:2.7
+
+# Or install locally
+# macOS: brew install influxdb
+# Ubuntu: wget https://dl.influxdata.com/influxdb/releases/influxdb2-2.7.0-linux-amd64.tar.gz
 ```
 
 ### 4. Backend API Setup
@@ -150,6 +166,50 @@ cat MICROSERVICES_ARCHITECTURE.md
 
 **Additional Setup:**
 ```bash
+# Install OAuth and webhook libraries
+npm install passport passport-oauth2
+npm install express-session
+npm install crypto  # For webhook signature verification
+```
+
+**First Tasks:**
+1. Review `services/integration-service/src/webhookService.js` - NEW: Webhook service
+2. Review OAuth flows for each provider
+3. Set up webhook endpoints
+4. Implement OAuth 2.0 flows
+5. Test integration connections
+
+**Key Files:**
+- `services/integration-service/src/webhookService.js` - NEW: Webhook processing
+- `services/integration-service/src/` - Integration service
+- `api-server/services/integrationService.js` - Existing integration service
+
+**OAuth Setup:**
+```bash
+# Get OAuth credentials from:
+# - GitHub: https://github.com/settings/developers
+# - Notion: https://www.notion.so/my-integrations
+# - Trello: https://trello.com/app-key
+# - Google: https://console.cloud.google.com/apis/credentials
+```
+
+**Webhook Testing:**
+```bash
+# Test webhook locally using ngrok
+ngrok http 5000
+
+# Configure webhook URLs in provider settings
+# GitHub: Settings > Webhooks > Add webhook
+# Notion: Integration settings > Webhooks
+# Trello: Power-Ups > Webhooks
+```
+
+---
+
+### Backend Engineer 1 (Avatar) - External Integrations (Updated)
+
+**Additional Setup:**
+```bash
 cd services/integration-service
 
 # Install OAuth libraries
@@ -189,6 +249,40 @@ curl -X POST http://localhost:5000/api/integrations/notion/connect
 ---
 
 ### Backend Engineer 2 - Real-time Systems
+
+**Additional Setup:**
+```bash
+# Install WebSocket and real-time libraries
+npm install socket.io
+npm install ws
+npm install redis  # For pub/sub
+```
+
+**First Tasks:**
+1. Review `services/notification-service/src/websocketService.js` - NEW: WebSocket service
+2. Review `services/websocket-service/README.md`
+3. Set up Socket.IO server
+4. Implement challenge update broadcasting
+5. Create multiplayer session management
+6. Set up presence tracking
+7. Integrate with notification service
+
+**Key Files:**
+- `services/notification-service/src/websocketService.js` - NEW: WebSocket service
+- `services/websocket-service/` - WebSocket service
+- `api-server/services/notificationService.js` - Notification service
+
+**WebSocket Setup:**
+```javascript
+// Example: Initialize WebSocket service
+const { WebSocketService } = require('./services/notification-service/src/websocketService');
+const wsService = new WebSocketService();
+wsService.initialize(server);
+```
+
+---
+
+### Backend Engineer 2 - Real-time Systems (Updated)
 
 **Additional Setup:**
 ```bash
@@ -244,6 +338,53 @@ pip install -r requirements.txt
 
 **First Tasks:**
 1. Review `python_backend/app/routes/challenge.py`
+2. Review `python_backend/app/services/` - NEW: All new AI services
+3. Review `python_backend/app/services/rl_environment.py` - NEW: RL environment
+4. Review `python_backend/app/services/ppo_agent.py` - NEW: PPO agent
+5. Review `python_backend/app/services/multi_agent_system.py` - NEW: Multi-agent
+6. Create challenge state management
+7. Implement gamification rule engine
+8. Set up AI response validation
+
+**Key Files:**
+- `python_backend/app/routes/challenge.py` - Challenge routes
+- `python_backend/app/services/challenge_generator.py` - Challenge generation
+- `python_backend/app/services/rl_environment.py` - NEW: RL environment
+- `python_backend/app/services/ppo_agent.py` - NEW: PPO agent
+- `python_backend/app/services/multi_agent_system.py` - NEW: Multi-agent
+- `services/challenge-service/` - Challenge service
+
+**Integration Example:**
+```javascript
+// Call Python AI service with new endpoints
+const response = await axios.post('http://localhost:8000/api/challenge/generate', {
+  task: taskData,
+  user_profile: userProfile
+});
+
+// Call RL environment
+const rlResponse = await axios.post('http://localhost:8000/api/rl/optimize', {
+  challenge_data: challengeData
+});
+```
+
+---
+
+### Backend Engineer 3 (Alex Truong) - AI Integration (Updated)
+
+**Additional Setup:**
+```bash
+# Install HTTP client for Python service
+npm install axios
+npm install node-fetch
+
+# Python setup (if needed)
+cd python_backend
+pip install -r requirements.txt
+```
+
+**First Tasks:**
+1. Review `python_backend/app/routes/challenge.py`
 2. Review `python_backend/app/services/`
 3. Create challenge state management
 4. Implement gamification rule engine
@@ -265,6 +406,45 @@ const response = await axios.post('http://localhost:8000/api/challenge/generate'
 ---
 
 ### Backend Engineer 4 - Data & Performance
+
+**Additional Setup:**
+```bash
+# Install database and caching tools
+npm install mongoose
+npm install redis
+npm install mongodb
+npm install @influxdata/influxdb-client  # For time-series analytics
+```
+
+**First Tasks:**
+1. Review database models
+2. Review `services/user-service/src/timeSeriesService.js` - NEW: Time-series service
+3. Review `services/analytics-service/src/timeSeriesAnalytics.js` - NEW: Time-series analytics
+4. Analyze query performance
+5. Set up caching strategies
+6. Create database migrations
+7. Implement backup systems
+8. Set up InfluxDB for time-series data
+
+**Key Files:**
+- `api-server/models/` - Database models
+- `python_backend/app/database/models.py` - Python models
+- `python_backend/app/utils/cache.py` - Caching utilities
+- `services/user-service/src/timeSeriesService.js` - NEW: Time-series tracking
+- `services/analytics-service/src/timeSeriesAnalytics.js` - NEW: Time-series analytics
+
+**Time-Series Setup:**
+```bash
+# Start InfluxDB
+docker run -d --name influxdb -p 8086:8086 influxdb:2.7
+
+# Create bucket
+influx bucket create -n analytics -o deepiri
+```
+
+---
+
+### Backend Engineer 4 - Data & Performance (Updated)
 
 **Additional Setup:**
 ```bash
@@ -344,16 +524,23 @@ npm install socket.io-client
 ```
 
 **First Tasks:**
-1. Review gamification service
-2. Create progress tracking components
-3. Implement badge animations
-4. Create leaderboard with real-time updates
-5. Build social features interface
+1. Review `services/gamification-service/src/multiCurrencyService.js` - NEW: Multi-currency
+2. Review `services/gamification-service/src/eloLeaderboardService.js` - NEW: ELO ranking
+3. Review `services/gamification-service/src/badgeSystemService.js` - NEW: Badge system
+4. Review gamification service
+5. Create progress tracking components
+6. Implement badge animations
+7. Create leaderboard with real-time updates (ELO-based)
+8. Build social features interface
+9. Implement multi-currency UI
 
 **Key Files:**
-- `services/gamification-service/`
-- `frontend/src/components/gamification/`
-- `api-server/services/gamificationService.js`
+- `services/gamification-service/src/multiCurrencyService.js` - NEW: Multi-currency
+- `services/gamification-service/src/eloLeaderboardService.js` - NEW: ELO leaderboard
+- `services/gamification-service/src/badgeSystemService.js` - NEW: Badge system
+- `services/gamification-service/` - Gamification service
+- `frontend/src/components/gamification/` - Frontend components
+- `api-server/services/gamificationService.js` - Existing service
 
 ---
 
@@ -368,15 +555,19 @@ npm install react-oauth
 ```
 
 **First Tasks:**
-1. Create integration dashboard UI
-2. Implement OAuth flows in frontend
-3. Create data sync monitoring
-4. Build configuration interfaces
+1. Review `services/integration-service/src/webhookService.js` - NEW: Webhook service
+2. Create integration dashboard UI
+3. Implement OAuth flows in frontend
+4. Create webhook management UI
+5. Create data sync monitoring
+6. Build configuration interfaces
+7. Test webhook endpoints
 
 **Key Files:**
-- `frontend/src/pages/integrations/`
-- `frontend/src/components/integrations/`
-- `services/integration-service/`
+- `services/integration-service/src/webhookService.js` - NEW: Webhook processing
+- `frontend/src/pages/integrations/` - Integration pages
+- `frontend/src/components/integrations/` - Integration components
+- `services/integration-service/` - Integration service
 
 ---
 
@@ -393,16 +584,24 @@ npm install date-fns
 ```
 
 **First Tasks:**
-1. Create analytics dashboard
-2. Implement productivity visualization
-3. Create real-time analytics API
-4. Build data export features
-5. Create insight recommendation UI
+1. Review `services/analytics-service/src/timeSeriesAnalytics.js` - NEW: Time-series
+2. Review `services/analytics-service/src/behavioralClustering.js` - NEW: Clustering
+3. Review `services/analytics-service/src/predictiveModeling.js` - NEW: Predictive models
+4. Create analytics dashboard
+5. Implement productivity visualization
+6. Create real-time analytics API
+7. Build data export features
+8. Create insight recommendation UI
+9. Integrate time-series charts
+10. Implement clustering visualizations
 
 **Key Files:**
-- `frontend/src/pages/analytics/`
-- `services/analytics-service/`
-- `api-server/services/analyticsService.js`
+- `services/analytics-service/src/timeSeriesAnalytics.js` - NEW: Time-series analytics
+- `services/analytics-service/src/behavioralClustering.js` - NEW: Behavioral clustering
+- `services/analytics-service/src/predictiveModeling.js` - NEW: Predictive modeling
+- `frontend/src/pages/analytics/` - Analytics pages
+- `services/analytics-service/` - Analytics service
+- `api-server/services/analyticsService.js` - Existing service
 
 ---
 

@@ -175,6 +175,37 @@ import * as yup from 'yup';
 ```bash
 cd frontend
 
+# Install charting and visualization libraries
+npm install recharts d3
+npm install @influxdata/influxdb-client  # For time-series data
+npm install react-query  # For data fetching
+```
+
+**First Tasks:**
+1. Review `services/analytics-service/src/timeSeriesAnalytics.js` - NEW: Time-series
+2. Review `services/analytics-service/src/behavioralClustering.js` - NEW: Clustering
+3. Review `services/analytics-service/src/predictiveModeling.js` - NEW: Predictive models
+4. Create AI visualization dashboards
+5. Implement time-series charts (InfluxDB integration)
+6. Create clustering visualizations
+7. Create predictive model visualizations
+8. Build real-time analytics displays
+
+**Key Files:**
+- `services/analytics-service/src/timeSeriesAnalytics.js` - NEW: Time-series analytics
+- `services/analytics-service/src/behavioralClustering.js` - NEW: Behavioral clustering
+- `services/analytics-service/src/predictiveModeling.js` - NEW: Predictive modeling
+- `frontend/src/pages/analytics/` - Analytics pages
+- `frontend/src/components/charts/` - Chart components
+
+---
+
+### Frontend Engineer 2 (Melvin) - AI/Visualization Dashboards (Updated)
+
+**Additional Setup:**
+```bash
+cd frontend
+
 # Install charting libraries
 npm install recharts
 npm install d3
@@ -215,13 +246,21 @@ npm install lottie-react  # for Lottie animations
 ```
 
 **First Tasks:**
-1. Review gamification components
-2. Create badge components with animations
-3. Create progress bar components
-4. Create avatar components
-5. Implement achievement animations
+1. Review `services/gamification-service/src/multiCurrencyService.js` - NEW: Multi-currency
+2. Review `services/gamification-service/src/eloLeaderboardService.js` - NEW: ELO ranking
+3. Review `services/gamification-service/src/badgeSystemService.js` - NEW: Badge system (500+ badges)
+4. Review gamification components
+5. Create badge components with animations (support 500+ badges)
+6. Create progress bar components
+7. Create avatar components
+8. Implement achievement animations
+9. Create multi-currency display components
+10. Create ELO leaderboard UI
 
 **Key Files:**
+- `services/gamification-service/src/multiCurrencyService.js` - NEW: Multi-currency
+- `services/gamification-service/src/eloLeaderboardService.js` - NEW: ELO leaderboard
+- `services/gamification-service/src/badgeSystemService.js` - NEW: Badge system
 - `frontend/src/components/gamification/` (create)
 - `api-server/services/gamificationService.js` (review)
 

@@ -1,0 +1,38 @@
+# MLOps Docker Image
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install MLOps specific packages
+RUN pip install --no-cache-dir \
+    mlflow==2.8.1 \
+    kubernetes==28.1.0 \
+    prometheus-client==0.19.0 \
+    grafana-api==1.0.3
+
+# Copy MLOps code
+COPY mlops/ /app/mlops/
+COPY app/ /app/app/
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV MLFLOW_TRACKING_URI=http://mlflow:5000
+ENV MODEL_REGISTRY_PATH=/app/model_registry
+
+# Expose ports
+EXPOSE 8000
+
+# Run MLOps service
+CMD ["python", "-m", "mlops.service"]
+

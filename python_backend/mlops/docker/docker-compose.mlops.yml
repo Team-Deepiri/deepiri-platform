@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.8.1
+    ports:
+      - "5000:5000"
+    environment:
+      - BACKEND_URI=sqlite:///mlflow.db
+      - DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - mlflow-data:/mlflow
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/artifacts
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+
+  mlops-service:
+    build:
+      context: ..
+      dockerfile: mlops/docker/Dockerfile.mlops
+    ports:
+      - "8001:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_REGISTRY_PATH=/app/model_registry
+      - STAGING_MODEL_PATH=/app/models/staging
+      - PRODUCTION_MODEL_PATH=/app/models/production
+    volumes:
+      - model-registry:/app/model_registry
+      - models-staging:/app/models/staging
+      - models-production:/app/models/production
+    depends_on:
+      - mlflow
+      - prometheus
+
+volumes:
+  mlflow-data:
+  prometheus-data:
+  grafana-data:
+  model-registry:
+  models-staging:
+  models-production:
+

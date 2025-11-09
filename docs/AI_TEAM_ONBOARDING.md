@@ -65,6 +65,15 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install transformers accelerate bitsandbytes
 pip install mlflow wandb
 pip install jupyter notebook
+
+# Install new AI service dependencies
+pip install peft  # For LoRA adapters
+pip install gymnasium  # For RL environment
+pip install @influxdata/influxdb-client  # For time-series analytics
+pip install pinecone-client  # For vector database (optional)
+pip install weaviate-client  # For vector database (optional)
+pip install kubernetes  # For MLOps deployment
+pip install prometheus-client  # For monitoring
 ```
 
 ### 3. Environment Configuration
@@ -83,6 +92,24 @@ WANDB_API_KEY=your-key-here
 # Model configuration
 LOCAL_MODEL_PATH=/path/to/local/model (optional)
 PREFERRED_MODEL_TYPE=openai
+
+# MLOps Configuration
+MLFLOW_TRACKING_URI=http://localhost:5000
+MODEL_REGISTRY_PATH=./model_registry
+STAGING_MODEL_PATH=./models/staging
+PRODUCTION_MODEL_PATH=./models/production
+
+# Vector Database (for Enhanced RAG)
+PINECONE_API_KEY=your-pinecone-key (optional)
+PINECONE_ENVIRONMENT=us-east1-gcp
+PINECONE_INDEX=deepiri
+WEAVIATE_URL=http://localhost:8080 (optional)
+
+# InfluxDB (for time-series analytics)
+INFLUXDB_URL=http://localhost:8086
+INFLUXDB_TOKEN=your-influxdb-token
+INFLUXDB_ORG=deepiri
+INFLUXDB_BUCKET=analytics
 ```
 
 ### 4. Verify GPU Setup
@@ -96,7 +123,9 @@ python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}'); 
 ```bash
 mkdir -p train/models train/data train/experiments train/notebooks
 mkdir -p inference/models inference/pipelines
-mkdir -p mlops/ci mlops/monitoring mlops/deployment
+mkdir -p mlops/ci mlops/monitoring mlops/deployment mlops/registry
+mkdir -p adapters  # For LoRA adapters
+mkdir -p model_registry models/staging models/production
 ```
 
 ### 6. Start MLflow UI
@@ -132,7 +161,10 @@ mlflow ui
 **Key Files:**
 - `python_backend/train/infrastructure/experiment_tracker.py`
 - `python_backend/train/experiments/research_experiment_template.py`
-- `python_backend/mlops/monitoring/model_monitor.py`
+- `python_backend/mlops/monitoring/model_monitor.py` - NEW: Model monitoring
+- `python_backend/mlops/registry/model_registry.py` - NEW: Model registry
+- `python_backend/mlops/ci/model_ci_pipeline.py` - NEW: CI/CD pipeline
+- `python_backend/mlops/deployment/deployment_automation.py` - NEW: Deployment automation
 
 ---
 
@@ -259,17 +291,33 @@ pip install numpy  # For advanced calculations
 ```
 
 **First Tasks:**
-1. Review `app/services/advanced_task_parser.py` - NEW: Advanced task understanding
-2. Review `app/services/adaptive_challenge_generator.py` - NEW: RL-based challenge generation
+1. Review `app/services/advanced_task_parser.py` - Advanced task understanding
+2. Review `app/services/adaptive_challenge_generator.py` - RL-based challenge generation
 3. Review `app/services/challenge_generator.py` - Standard challenge generation
 4. Review `app/services/task_classifier.py` - Basic classification
 5. Review `app/services/hybrid_ai_service.py` - Model switching
-6. Test API integrations
-7. Optimize prompt engineering for new services
+6. Review `app/services/rl_environment.py` - NEW: OpenAI Gym compatible RL environment
+7. Review `app/services/ppo_agent.py` - NEW: PPO agent for challenge optimization
+8. Review `app/services/dynamic_lora_service.py` - NEW: Per-user LoRA adapters
+9. Review `app/services/multi_agent_system.py` - NEW: Multi-agent collaboration
+10. Review `app/services/cognitive_state_monitor.py` - NEW: Cognitive state tracking
+11. Review `app/services/enhanced_rag_service.py` - NEW: Enhanced RAG with Pinecone/Weaviate
+12. Review `app/services/procedural_content_generator.py` - NEW: Procedural content generation
+13. Review `app/services/motivational_ai.py` - NEW: Motivational AI messages
+14. Test API integrations
+15. Optimize prompt engineering for new services
 
 **Key Files:**
-- `python_backend/app/services/advanced_task_parser.py` - NEW: Advanced parsing
-- `python_backend/app/services/adaptive_challenge_generator.py` - NEW: Adaptive generation
+- `python_backend/app/services/advanced_task_parser.py` - Advanced parsing
+- `python_backend/app/services/adaptive_challenge_generator.py` - Adaptive generation
+- `python_backend/app/services/rl_environment.py` - NEW: RL environment
+- `python_backend/app/services/ppo_agent.py` - NEW: PPO agent
+- `python_backend/app/services/dynamic_lora_service.py` - NEW: Dynamic LoRA
+- `python_backend/app/services/multi_agent_system.py` - NEW: Multi-agent
+- `python_backend/app/services/cognitive_state_monitor.py` - NEW: Cognitive monitoring
+- `python_backend/app/services/enhanced_rag_service.py` - NEW: Enhanced RAG
+- `python_backend/app/services/procedural_content_generator.py` - NEW: Procedural content
+- `python_backend/app/services/motivational_ai.py` - NEW: Motivational AI
 - `python_backend/app/services/challenge_generator.py` - Standard generation
 - `python_backend/app/services/task_classifier.py` - Basic classification
 - `python_backend/app/services/hybrid_ai_service.py` - Hybrid AI

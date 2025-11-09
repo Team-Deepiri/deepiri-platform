@@ -27,6 +27,9 @@ Welcome to the Deepiri Platform Team! This guide will help you set up infrastruc
 - **Cloud Provider Accounts** (AWS/GCP/Azure)
 - **Docker Hub** or container registry
 - **Monitoring Tools** (Datadog, New Relic, etc.)
+- **MLflow Account** (for model tracking)
+- **InfluxDB Account** (for time-series analytics)
+- **Pinecone/Weaviate Account** (for vector databases, optional)
 
 ### System Requirements
 
@@ -90,6 +93,60 @@ aws configure
 
 # Azure CLI
 # Download from docs.microsoft.com/cli/azure
+```
+
+### 6. MLOps Infrastructure Setup
+
+```bash
+cd python_backend/mlops
+
+# Run setup script
+bash scripts/setup_mlops_environment.sh
+
+# Or manually
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install mlflow kubernetes prometheus-client
+
+# Start MLflow
+mlflow server --host 0.0.0.0 --port 5000
+
+# Start monitoring stack
+docker-compose -f docker/docker-compose.mlops.yml up -d
+```
+
+**MLOps Services:**
+- MLflow: http://localhost:5000
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000
+
+### 7. Time-Series Database Setup (InfluxDB)
+
+```bash
+# Using Docker
+docker run -d --name influxdb -p 8086:8086 \
+  -e INFLUXDB_DB=analytics \
+  -e INFLUXDB_ADMIN_USER=admin \
+  -e INFLUXDB_ADMIN_PASSWORD=admin \
+  influxdb:2.7
+
+# Or install locally
+# macOS: brew install influxdb
+# Ubuntu: wget https://dl.influxdata.com/influxdb/releases/influxdb2-2.7.0-linux-amd64.tar.gz
+```
+
+### 8. Vector Database Setup (Optional)
+
+**Pinecone:**
+- Sign up at pinecone.io
+- Create index: `deepiri`
+- Get API key
+
+**Weaviate:**
+```bash
+# Using Docker
+docker run -d --name weaviate -p 8080:8080 \
+  semitechnologies/weaviate:latest
 ```
 
 ## Role-Specific Setup

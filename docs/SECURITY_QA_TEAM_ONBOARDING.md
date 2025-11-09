@@ -25,6 +25,8 @@ Welcome to the Deepiri Security & QA Team! This guide will help you get set up f
 - **GitHub Account** (for Dependabot access)
 - **Security scanning tools** (Snyk, OWASP ZAP, etc.)
 - **Test management tools** (if used)
+- **OAuth Provider Accounts** (for testing OAuth flows)
+- **Integration Test Accounts** (GitHub, Notion, Trello test accounts)
 
 ### System Requirements
 
@@ -90,14 +92,31 @@ npm install -g npm-audit-resolver
 
 **First Tasks:**
 1. Review security architecture
-2. Set up network defense
-3. Review cloud security configs
-4. Audit microservices security
-5. Plan security improvements
+2. Review `services/user-service/src/oauthService.js` - NEW: OAuth 2.0 implementation
+3. Review `services/integration-service/src/webhookService.js` - NEW: Webhook security
+4. Review `services/notification-service/src/pushNotificationService.js` - NEW: Push notification security
+5. Set up network defense
+6. Review cloud security configs
+7. Audit microservices security
+8. Test OAuth flows for security
+9. Test webhook signature verification
+10. Plan security improvements
 
 **Key Files:**
+- `services/user-service/src/oauthService.js` - NEW: OAuth 2.0 service
+- `services/integration-service/src/webhookService.js` - NEW: Webhook service
+- `services/notification-service/src/pushNotificationService.js` - NEW: Push notifications
 - `infrastructure/security/` (create)
 - `api-server/SECURITY_AUDIT.md` (review)
+
+**Security Testing:**
+```bash
+# Test OAuth flows
+# Test webhook signature verification
+# Test API authentication
+# Test data encryption
+# Test rate limiting
+```
 - `services/auth-service/` (review)
 
 ---

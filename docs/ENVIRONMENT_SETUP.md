@@ -112,6 +112,35 @@ MONGODB_URI=mongodb://localhost:27017/deepiri
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-secret-key-here
 FIREBASE_PROJECT_ID=your-firebase-project
+
+# OAuth 2.0 Configuration
+OAUTH_CLIENT_ID=your-oauth-client-id
+OAUTH_CLIENT_SECRET=your-oauth-client-secret
+OAUTH_REDIRECT_URI=http://localhost:5000/oauth/callback
+
+# Integration API Keys
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+NOTION_CLIENT_ID=your-notion-client-id
+NOTION_CLIENT_SECRET=your-notion-client-secret
+TRELLO_API_KEY=your-trello-api-key
+TRELLO_API_SECRET=your-trello-api-secret
+
+# Webhook Secrets
+GITHUB_WEBHOOK_SECRET=your-github-webhook-secret
+NOTION_WEBHOOK_SECRET=your-notion-webhook-secret
+TRELLO_WEBHOOK_SECRET=your-trello-webhook-secret
+
+# Push Notifications
+FCM_SERVER_KEY=your-fcm-server-key
+APNS_KEY_ID=your-apns-key-id
+APNS_TEAM_ID=your-apns-team-id
+
+# InfluxDB (for time-series analytics)
+INFLUXDB_URL=http://localhost:8086
+INFLUXDB_TOKEN=your-influxdb-token
+INFLUXDB_ORG=deepiri
+INFLUXDB_BUCKET=analytics
 ```
 
 **`frontend/.env`:**
@@ -128,6 +157,27 @@ ANTHROPIC_API_KEY=your-anthropic-key
 HUGGINGFACE_API_KEY=your-huggingface-key
 LOCAL_MODEL_PATH=/path/to/local/model
 PREFERRED_MODEL_TYPE=openai
+
+# MLOps Configuration
+MLFLOW_TRACKING_URI=http://localhost:5000
+MODEL_REGISTRY_PATH=./model_registry
+STAGING_MODEL_PATH=./models/staging
+PRODUCTION_MODEL_PATH=./models/production
+
+# Vector Database (Optional)
+PINECONE_API_KEY=your-pinecone-key
+PINECONE_ENVIRONMENT=us-east1-gcp
+PINECONE_INDEX=deepiri
+WEAVIATE_URL=http://localhost:8080
+
+# InfluxDB (for time-series analytics)
+INFLUXDB_URL=http://localhost:8086
+INFLUXDB_TOKEN=your-influxdb-token
+INFLUXDB_ORG=deepiri
+INFLUXDB_BUCKET=analytics
+
+# Firebase (for push notifications)
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
 ```
 
 ### 3. Database Setup
@@ -278,6 +328,20 @@ npm install
 npm run dev
 ```
 
+**New Microservices Available:**
+- **User Service**: `services/user-service/src/` (OAuth, skill trees, social graph, time-series)
+- **Task Service**: `services/task-service/src/` (Versioning, dependency graphs)
+- **Gamification Service**: `services/gamification-service/src/` (Multi-currency, ELO, badges)
+- **Analytics Service**: `services/analytics-service/src/` (Time-series, clustering, predictive)
+- **Notification Service**: `services/notification-service/src/` (WebSocket, push, email)
+- **Integration Service**: `services/integration-service/src/` (Webhooks, OAuth flows)
+
+**Service Dependencies:**
+- User Service requires: MongoDB, Redis, OAuth providers
+- Analytics Service requires: InfluxDB (optional), MongoDB
+- Notification Service requires: Firebase (for push), WebSocket server
+- Integration Service requires: OAuth credentials for each provider
+
 ### AI Training Environment
 
 ```bash
@@ -285,25 +349,70 @@ cd python_backend
 
 # Setup training directories
 mkdir -p train/models train/data train/experiments train/notebooks
+mkdir -p adapters  # For LoRA adapters
+mkdir -p model_registry models/staging models/production
+
+# Install additional AI dependencies
+pip install peft bitsandbytes accelerate
+pip install gymnasium  # For RL environment
+pip install mlflow wandb
 
 # Initialize MLflow
 mlflow ui --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
 
 # Run training pipeline
 python train/pipelines/ml_training_pipeline.py --config train/configs/ml_training_config.json
+
+# Test RL environment
+python -c "from app.services.rl_environment import get_rl_environment; env = get_rl_environment(); print('RL Environment ready')"
+
+# Test PPO agent
+python -c "from app.services.ppo_agent import get_ppo_agent; agent = get_ppo_agent(); print('PPO Agent ready')"
 ```
+
+**New AI Services Available:**
+- **RL Environment**: `app/services/rl_environment.py` (OpenAI Gym compatible)
+- **PPO Agent**: `app/services/ppo_agent.py` (Challenge optimization)
+- **Dynamic LoRA**: `app/services/dynamic_lora_service.py` (Per-user adapters)
+- **Multi-Agent System**: `app/services/multi_agent_system.py` (Collaborative AI)
+- **Cognitive Monitoring**: `app/services/cognitive_state_monitor.py` (User state tracking)
+- **Enhanced RAG**: `app/services/enhanced_rag_service.py` (Pinecone/Weaviate)
+- **Procedural Content**: `app/services/procedural_content_generator.py` (Challenge generation)
+- **Motivational AI**: `app/services/motivational_ai.py` (Personalized messages)
 
 ### MLOps Setup
 
 ```bash
 cd python_backend/mlops
 
-# Setup monitoring
-# Prometheus and Grafana configs are in infrastructure/monitoring/
+# Run setup script (Linux/Mac)
+bash scripts/setup_mlops_environment.sh
 
-# Setup CI/CD
-# GitHub Actions workflows are in .github/workflows/
+# Or manually (Windows)
+python -m venv venv
+venv\Scripts\activate
+pip install -r ../requirements.txt
+pip install mlflow kubernetes prometheus-client
+
+# Start MLflow
+mlflow server --host 0.0.0.0 --port 5000
+
+# Start monitoring stack (Docker)
+docker-compose -f docker/docker-compose.mlops.yml up -d
+
+# Access services:
+# - MLflow UI: http://localhost:5000
+# - Prometheus: http://localhost:9090
+# - Grafana: http://localhost:3000 (admin/admin)
 ```
+
+**MLOps Services:**
+- **Model Registry**: `python_backend/mlops/registry/model_registry.py`
+- **CI/CD Pipeline**: `python_backend/mlops/ci/model_ci_pipeline.py`
+- **Model Monitoring**: `python_backend/mlops/monitoring/model_monitor.py`
+- **Deployment**: `python_backend/mlops/deployment/deployment_automation.py`
+
+**See**: `docs/MLOPS_TEAM_ONBOARDING.md` for detailed MLOps setup
 
 ## Development Tools
 

@@ -244,40 +244,61 @@
 
 ### MLOps Engineer 1
 **Location:** `deepiri/python_backend/mlops/ci/` & `deepiri/python_backend/mlops/deployment/`
-**Stack:** Python, CI/CD (GitHub Actions, GitLab CI), Kubernetes, MLflow, Docker
+**Stack:** Python, CI/CD (GitHub Actions, GitLab CI), Kubernetes, MLflow, Docker, Prometheus
 **Start Here:**
-- CI pipeline: `deepiri/python_backend/mlops/ci/training_pipeline.yml`
-- MLOps README: `deepiri/python_backend/mlops/README.md`
+- **Onboarding Guide**: `deepiri/docs/MLOPS_TEAM_ONBOARDING.md` (READ THIS FIRST!)
+- **CI/CD Pipeline**: `deepiri/python_backend/mlops/ci/model_ci_pipeline.py`
+- **Deployment**: `deepiri/python_backend/mlops/deployment/deployment_automation.py`
+- **Model Registry**: `deepiri/python_backend/mlops/registry/model_registry.py`
+- **MLOps README**: `deepiri/python_backend/mlops/README.md`
+- **Setup Script**: `deepiri/python_backend/mlops/scripts/setup_mlops_environment.sh`
 **Your Tasks:**
-- CI/CD for AI models
-- Model versioning and registry
-- Cloud GPU management
-- Automated training pipelines
-- Model deployment automation
+- **CI/CD for AI models**: Automate model updates and monitor engagement metrics
+- **Model versioning and registry**: Manage model lifecycle with semantic versioning
+- **Cloud GPU management**: Optimize GPU resource allocation
+- **Automated training pipelines**: End-to-end training automation
+- **Model deployment automation**: Canary, blue-green, and A/B testing deployments
+- **A/B testing framework**: Setup and manage A/B tests for challenge effectiveness
+**Files to Work On:**
+- `deepiri/python_backend/mlops/ci/model_ci_pipeline.py` - Main CI/CD pipeline
+- `deepiri/python_backend/mlops/deployment/deployment_automation.py` - Deployment strategies
+- `deepiri/python_backend/mlops/registry/model_registry.py` - Model registry
+- `deepiri/python_backend/mlops/scripts/run_ci_pipeline.sh` - CI/CD automation
+- `deepiri/python_backend/mlops/scripts/deploy_model.sh` - Deployment script
 **Files to Create:**
-- `deepiri/python_backend/mlops/ci/model_ci.yml`
-- `deepiri/python_backend/mlops/deployment/kubernetes_deployment.yaml`
-- `deepiri/python_backend/mlops/versioning/model_versioning.py`
-- `deepiri/python_backend/mlops/gpu/gpu_manager.py` (create)
+- `deepiri/python_backend/mlops/ci/github_actions.yml` - GitHub Actions workflow
+- `deepiri/python_backend/mlops/deployment/kubernetes_deployment.yaml` - K8s manifests
+- `deepiri/python_backend/mlops/gpu/gpu_manager.py` - GPU resource management
 
 ---
 
 ### MLOps Engineer 2 
 **Location:** `deepiri/python_backend/mlops/monitoring/` & `deepiri/python_backend/mlops/optimization/`
-**Stack:** Python, Prometheus, Grafana, MLflow, Performance Profiling
+**Stack:** Python, Prometheus, Grafana, MLflow, Performance Profiling, Alerting
 **Start Here:**
-- Model monitoring: `deepiri/python_backend/mlops/monitoring/model_monitor.py`
+- **Onboarding Guide**: `deepiri/docs/MLOPS_TEAM_ONBOARDING.md` (READ THIS FIRST!)
+- **Model Monitoring**: `deepiri/python_backend/mlops/monitoring/model_monitor.py`
+- **Docker Setup**: `deepiri/python_backend/mlops/docker/docker-compose.mlops.yml`
+- **MLOps README**: `deepiri/python_backend/mlops/README.md`
 **Your Tasks:**
-- Performance monitoring for models
-- Deployment automation
-- Resource optimization
-- Model drift detection
-- Inference latency optimization
+- **Performance monitoring**: Track accuracy, latency, throughput, error rates
+- **Model drift detection**: Data drift and prediction drift monitoring
+- **Deployment automation**: Monitor deployments and automate rollbacks
+- **Resource optimization**: GPU utilization, model quantization, caching
+- **Inference latency optimization**: Model compression, batching, caching
+- **Alerting systems**: Setup alerts for performance degradation and drift
+- **Monitoring dashboards**: Create Grafana dashboards for model metrics
+**Files to Work On:**
+- `deepiri/python_backend/mlops/monitoring/model_monitor.py` - Main monitoring service
+- `deepiri/python_backend/mlops/scripts/monitor_model.sh` - Monitoring script
+- `deepiri/python_backend/mlops/docker/docker-compose.mlops.yml` - Monitoring stack
 **Files to Create:**
-- `deepiri/python_backend/mlops/monitoring/drift_detection.py`
-- `deepiri/python_backend/mlops/monitoring/performance_metrics.py`
-- `deepiri/python_backend/mlops/optimization/inference_optimization.py`
-- `deepiri/python_backend/mlops/optimization/resource_optimizer.py`
+- `deepiri/python_backend/mlops/monitoring/dashboards/` - Grafana dashboard configs
+- `deepiri/python_backend/mlops/monitoring/alerts/` - Alert configurations
+- `deepiri/python_backend/mlops/monitoring/drift_detection.py` - Advanced drift detection
+- `deepiri/python_backend/mlops/monitoring/performance_metrics.py` - Performance tracking
+- `deepiri/python_backend/mlops/optimization/inference_optimization.py` - Inference optimization
+- `deepiri/python_backend/mlops/optimization/resource_optimizer.py` - Resource optimization
 
 ---
 
