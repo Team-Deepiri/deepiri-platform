@@ -2,10 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install system dependencies and clean up in one layer
-RUN apk add --no-cache --virtual .build-deps curl dumb-init && \
-    rm -rf /var/cache/apk/* && \
-    apk del .build-deps 2>/dev/null || true
+# Install system dependencies (dumb-init and curl needed at runtime)
+RUN apk add --no-cache curl dumb-init
 
 COPY package*.json ./
 
@@ -30,6 +28,6 @@ EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5001/health || exit 1
 
-ENTRYPOINT ["dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["node", "server.js"]
 

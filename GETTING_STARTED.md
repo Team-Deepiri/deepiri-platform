@@ -206,7 +206,6 @@ kubectl port-forward svc/pyagent-service 8000:8000
 | **LocalAI/Ollama** | http://localhost:8080 | localai:8080 | localai-service:8080 | ✅ Yes (for free AI) |
 | **ChromaDB** | Embedded in PyAgent | Embedded | Embedded | ✅ Yes (for RAG) |
 | **Firebase Auth** | N/A | N/A | N/A | ⚠️ Optional (can skip) |
-| **FCM/Twilio** | N/A | N/A | N/A | ⚠️ Optional (can skip) |
 | **Prometheus/Grafana** | localhost:9090/3001 | prometheus:9090 | Optional | ⚠️ Optional |
 
 ---
@@ -535,7 +534,7 @@ docker-compose build --no-cache
 
 **Optional Services (Can Skip for Local Dev):**
 - Firebase Auth: Can skip, use JWT only
-- FCM/Twilio: Can skip, notifications work without
+- FCM: Can skip, notifications work without
 - Prometheus/Grafana: Optional monitoring
 - External APIs (Google Maps, Weather): Optional features
 

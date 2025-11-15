@@ -70,10 +70,12 @@
 **Location:** `deepiri/python_backend/train/experiments/`
 **Stack:** Python, PyTorch, Transformers, Novel Architectures (Mamba, MoE), Custom Training Loops, Graph Neural Networks
 **Start Here:**
-- Template: `deepiri/python_backend/train/experiments/research_experiment_template.py`
-- Notebooks: `deepiri/python_backend/train/notebooks/`
-- Neuro-symbolic service: `deepiri/python_backend/app/services/neuro_symbolic_challenge.py`
-**Unique Mission:** Theorize how tasks become "challenges" in the single-player gamified system. Build theoretical frameworks for task-to-challenge conversion.
+1. **Research Template**: Start with `deepiri/python_backend/train/experiments/research_experiment_template.py` to understand experiment structure
+2. **Jupyter Notebooks**: Explore `deepiri/python_backend/train/notebooks/` for existing research work
+3. **Cognitive Models**: Review `deepiri/python_backend/app/services/neuro_symbolic_challenge.py` for current neuro-symbolic approaches
+4. **Task Classification**: Study `deepiri/python_backend/app/services/task_classifier.py` to understand current task understanding
+5. **Challenge Generation**: Review `deepiri/python_backend/app/services/challenge_generator.py` (if exists) for gamification logic
+**Unique Mission:** Theorize how tasks become "challenges" in the single-player gamified system. Build theoretical frameworks for task-to-challenge conversion. Research cognitive load balancing. Study decision-making frameworks for daily planning. Explore non-transformer cognitive models (Mamba, MoE, GNN-level theory). Create mathematical models for difficulty scaling. Support → ML Engineers (not Systems).
 **Your Tasks:**
 - Research cognitive load balancing algorithms for challenge difficulty
 - Study decision-making frameworks for daily planning and task prioritization
@@ -84,13 +86,6 @@
 - Experiment with Mamba and MoE architectures for task processing
 - Research alternative optimization algorithms beyond Adam/AdamW
 - Support ML Engineers with theoretical foundations (not systems implementation)
-**Files to Create:**
-- `deepiri/python_backend/train/experiments/mamba_architecture.py`
-- `deepiri/python_backend/train/experiments/moe_gamification.py`
-- `deepiri/python_backend/train/experiments/neuro_symbolic_experiments.py`
-- `deepiri/python_backend/train/experiments/cognitive_load_balancing.py`
-- `deepiri/python_backend/train/experiments/difficulty_scaling_models.py`
-- `deepiri/python_backend/train/experiments/decision_making_frameworks.py`
 
 ---
 
@@ -111,13 +106,6 @@
 - Design frameworks for document parsing (PDFs, images, code repos)
 - Research graph neural networks for task relationship modeling
 - Support ML Engineers with multimodal research (not systems implementation)
-**Files to Create:**
-- `deepiri/python_backend/train/experiments/multimodal_fusion.py`
-- `deepiri/python_backend/train/experiments/visual_reasoning.py`
-- `deepiri/python_backend/train/experiments/graph_neural_networks.py`
-- `deepiri/python_backend/train/experiments/semantic_graphs.py`
-- `deepiri/python_backend/train/experiments/symbolic_deep_hybrid.py`
-- `deepiri/python_backend/train/experiments/unified_representation.py`
 
 ---
 
@@ -139,26 +127,19 @@
 - Research LoRA adapter optimization for per-user personalization
 - Design model distillation strategies for smaller, faster models
 - Support AI Systems for native app inference optimization
-**Files to Create:**
-- `deepiri/python_backend/train/experiments/quantization_methods.py`
-- `deepiri/python_backend/train/experiments/pruning_techniques.py`
-- `deepiri/python_backend/train/experiments/sparse_training.py`
-- `deepiri/python_backend/train/experiments/federated_learning.py`
-- `deepiri/python_backend/train/experiments/optimal_quantization.py`
-- `deepiri/python_backend/train/experiments/sparse_network_theory.py`
-- `deepiri/python_backend/train/experiments/on_device_architectures.py`
-- `deepiri/python_backend/train/experiments/memory_efficient_training.py`
 
 ---
 
 ### AI Systems Lead
-**Reports to:** Founder
+**Reports to:** N/A
 **Location:** `deepiri/python_backend/app/services/` & `deepiri/python_backend/train/pipelines/`
 **Stack:** Python, FastAPI, Docker, Kubernetes, MLflow, Model Deployment
 **Start Here:**
-- Services: `deepiri/python_backend/app/services/`
-- Training pipelines: `deepiri/python_backend/train/pipelines/`
-- Main app: `deepiri/python_backend/app/main.py`
+1. **Review AI Systems Architecture**: Read `deepiri/python_backend/app/services/` to understand current service structure
+2. **Training Infrastructure**: Study `deepiri/python_backend/train/pipelines/` for model training workflows
+3. **Main Application**: Review `deepiri/python_backend/app/main.py` to understand API structure
+4. **Model Deployment**: Check `deepiri/python_backend/mlops/deployment/` for deployment automation
+5. **Team Coordination**: Review code review workflows and merge processes with ML Team Lead
 **Unique Mission:** Model deployment infrastructure, inference optimization, training pipeline management. Code review and merging for AI Systems team.
 **Your Tasks:**
 - Manage model deployment infrastructure for production
@@ -178,12 +159,14 @@
 **Location:** `deepiri/python_backend/app/services/` & `deepiri/python_backend/app/routes/`
 **Stack:** Python, FastAPI, OpenAI API, Anthropic API, AsyncIO, WebSockets, Model Orchestration, Routing Logic
 **Start Here:**
-- Inference service: `deepiri/python_backend/app/services/inference_service.py`
-- Hybrid AI: `deepiri/python_backend/app/services/hybrid_ai_service.py`
-- Challenge routes: `deepiri/python_backend/app/routes/challenge.py`
-- Task routes: `deepiri/python_backend/app/routes/task.py`
-- Agent routes: `deepiri/python_backend/app/routes/agent.py`
-**Unique Mission:** Develop inference-routing logic for both web and native app platforms.
+1. **Inference Service**: Review `deepiri/python_backend/app/services/inference_service.py` for current inference routing
+2. **Hybrid AI Service**: Study `deepiri/python_backend/app/services/hybrid_ai_service.py` for hybrid model selection
+3. **Challenge Routes**: Check `deepiri/python_backend/app/routes/challenge.py` for challenge generation API
+4. **Task Routes**: Review `deepiri/python_backend/app/routes/task.py` for task processing endpoints
+5. **Agent Routes**: Study `deepiri/python_backend/app/routes/agent.py` for agent interaction endpoints
+6. **Model Selector**: Check `deepiri/python_backend/app/services/model_selector.py` for model selection logic
+7. **Caching Strategy**: Review caching implementation for repeated queries
+**Unique Mission:** Develop inference-routing logic for both web and native app platforms. Build orchestration logic for model selection (`model_selector.py`). Optimize prompt processing pipelines for FastAPI endpoints. Route requests between task-agent ↔ plan-agent ↔ code-agent. Reduce latency in challenge generation API (`/api/challenges/generate`). Design fallback models for weak connectivity scenarios. Implement caching strategies for repeated queries. Optimize batch processing for concurrent requests. Monitor inference performance and latency metrics.
 **Your Tasks:**
 - Build orchestration logic for model selection (`model_selector.py`)
 - Optimize prompt processing pipelines for FastAPI endpoints
@@ -196,14 +179,10 @@
 **Files to Work On:**
 - `deepiri/python_backend/app/services/inference_service.py` - Inference routing
 - `deepiri/python_backend/app/services/model_selector.py` - Model selection logic
-- `deepiri/python_backend/app/services/agent_routing.py` - Agent routing (create)
+- `deepiri/python_backend/app/services/agent_routing.py` - Agent routing
 - `deepiri/python_backend/app/routes/challenge.py` - API routes
 - `deepiri/python_backend/app/routes/task.py` - Task routes
 - `deepiri/python_backend/app/routes/agent.py` - Agent routes
-**Files to Create:**
-- `deepiri/python_backend/app/services/inference_router.py` - Main routing service
-- `deepiri/python_backend/app/services/fallback_models.py` - Fallback logic
-- `deepiri/python_backend/app/services/prompt_pipeline.py` - Prompt optimization
 
 ---
 
@@ -212,10 +191,12 @@
 **Location:** `deepiri/python_backend/app/services/`
 **Stack:** Python, FastAPI, AsyncIO, Message Queues, Multi-Agent Systems, Safety Frameworks
 **Start Here:**
-- Multi-agent system: `deepiri/python_backend/app/services/multi_agent_system.py`
-- Context-aware adaptation: `deepiri/python_backend/app/services/context_aware_adaptation.py`
-- PPO agent: `deepiri/python_backend/app/services/ppo_agent.py`
-**Unique Mission:** Build and maintain internal messaging framework for multi-agent reasoning.
+1. **Multi-Agent System**: Review `deepiri/python_backend/app/services/multi_agent_system.py` to understand current agent architecture
+2. **Context Adaptation**: Study `deepiri/python_backend/app/services/context_aware_adaptation.py` for context handling
+3. **RL Agent**: Check `deepiri/python_backend/app/services/ppo_agent.py` for reinforcement learning integration
+4. **Message Routing**: Review existing service communication patterns in `deepiri/python_backend/app/services/`
+5. **Safety Frameworks**: Look for existing guardrails in `deepiri/python_backend/app/middleware/` or `deepiri/python_backend/app/services/`
+**Unique Mission:** Build and maintain internal messaging framework for multi-agent reasoning. Architect agent → agent communication layers (`multi_agent_system.py`). Build reasoning loop frameworks for collaborative AI agents. Add safety + guardrails + alignment mechanisms. Support model orchestration during complex tasks. Implement agent coordination protocols. Design error handling and recovery for agent failures. Build agent state management and context sharing. Ensure agent outputs align with challenge generation requirements.
 **Your Tasks:**
 - Architect agent → agent communication layers (`multi_agent_system.py`)
 - Build reasoning loop frameworks for collaborative AI agents
@@ -229,11 +210,6 @@
 - `deepiri/python_backend/app/services/multi_agent_system.py` - Multi-agent coordination
 - `deepiri/python_backend/app/services/context_aware_adaptation.py` - Context adaptation
 - `deepiri/python_backend/app/services/ppo_agent.py` - PPO agent
-**Files to Create:**
-- `deepiri/python_backend/app/services/agent_messaging.py` - Agent communication framework
-- `deepiri/python_backend/app/services/reasoning_loops.py` - Reasoning loop frameworks
-- `deepiri/python_backend/app/services/safety_guardrails.py` - Safety mechanisms
-- `deepiri/python_backend/app/services/alignment_mechanisms.py` - Alignment systems
 
 ---
 
@@ -258,13 +234,7 @@
 **Files to Work On:**
 - `deepiri/python_backend/train/pipelines/distributed_training.py`
 - `deepiri/python_backend/mlops/ci/training_pipeline.yml`
-- `deepiri/python_backend/mlops/deployment/model_deployment.py` (create)
-**Files to Create:**
-- `deepiri/python_backend/train/pipelines/ray_distributed.py` - Ray integration
-- `deepiri/python_backend/train/pipelines/slurm_distributed.py` - Slurm integration
-- `deepiri/python_backend/train/pipelines/gpu_scheduler.py` - GPU scheduling
-- `deepiri/python_backend/train/pipelines/data_parallel.py` - Data parallelism
-- `deepiri/python_backend/train/pipelines/model_parallel.py` - Model parallelism
+- `deepiri/python_backend/mlops/deployment/model_deployment.py`
 
 ---
 
@@ -290,12 +260,6 @@
 - `deepiri/python_backend/app/services/inference_service.py` - Inference serving
 - `deepiri/python_backend/mlops/deployment/deployment_automation.py` - Deployment
 - `deepiri/python_backend/mlops/registry/model_registry.py` - Model registry
-**Files to Create:**
-- `deepiri/python_backend/app/services/model_serving.py` - Production serving
-- `deepiri/python_backend/app/services/batching_optimizer.py` - Batching logic
-- `deepiri/python_backend/app/services/versioned_deployment.py` - Versioning
-- `deepiri/python_backend/mlops/deployment/triton_serving.py` - Triton integration
-- `deepiri/python_backend/mlops/deployment/vllm_serving.py` - vLLM integration
 
 ---
 
@@ -326,12 +290,13 @@
 **Location:** `deepiri/python_backend/train/scripts/` & `deepiri/python_backend/app/services/`
 **Stack:** Python, PyTorch, Reinforcement Learning (RLlib, Stable-Baselines3), Multi-Armed Bandits, Actor-Critic
 **Start Here:**
-- Bandit training: `deepiri/python_backend/train/pipelines/bandit_training.py`
-- Bandit service: `deepiri/python_backend/app/services/bandit_service.py`
-- PPO agent: `deepiri/python_backend/app/services/ppo_agent.py`
-- RL environment: `deepiri/python_backend/app/services/rl_environment.py`
-- Reward model: `deepiri/python_backend/app/services/reward_model.py`
-**Unique Mission:** Turn tasks → challenges using RL frameworks and reward modeling.
+1. **Bandit Training Pipeline**: Review `deepiri/python_backend/train/pipelines/bandit_training.py` for recommendation algorithms
+2. **Bandit Service**: Study `deepiri/python_backend/app/services/bandit_service.py` for challenge recommendation logic
+3. **PPO Agent**: Check `deepiri/python_backend/app/services/ppo_agent.py` for actor-critic optimization
+4. **RL Environment**: Review `deepiri/python_backend/app/services/rl_environment.py` for challenge generation environment
+5. **Reward Model**: Examine `deepiri/python_backend/app/services/reward_model.py` for reward function design
+6. **RL Training Scripts**: Look in `deepiri/python_backend/train/scripts/` for existing RL training code
+**Unique Mission:** Turn tasks → challenges using RL frameworks and reward modeling. Train reward models (`reward_model.py`) for challenge generation. Build challenge selection policies using RL algorithms. Actor-critic optimization for adaptive difficulty (`ppo_agent.py`). Personalized difficulty engines based on user performance. Implement RL environment for challenge generation (`rl_environment.py`). Train bandit algorithms for challenge recommendation (`bandit_service.py`). Optimize reward functions for user engagement. Integrate RL models with challenge generation pipeline.
 **Your Tasks:**
 - Train reward models (`reward_model.py`) for challenge generation
 - Build challenge selection policies using RL algorithms
@@ -341,13 +306,6 @@
 - Train bandit algorithms for challenge recommendation (`bandit_service.py`)
 - Optimize reward functions for user engagement
 - Integrate RL models with challenge generation pipeline
-**Files to Create:**
-- `deepiri/python_backend/train/scripts/train_policy_network.py`
-- `deepiri/python_backend/train/scripts/train_value_network.py`
-- `deepiri/python_backend/train/scripts/train_actor_critic.py`
-- `deepiri/python_backend/train/scripts/train_reward_model.py`
-- `deepiri/python_backend/train/scripts/train_challenge_selection.py`
-- `deepiri/python_backend/train/scripts/train_difficulty_engine.py`
 
 ---
 
@@ -374,12 +332,8 @@
 **Files to Work On:**
 - `deepiri/python_backend/train/scripts/train_task_classifier.py`
 - `deepiri/python_backend/train/scripts/train_transformer_classifier.py`
-- `deepiri/python_backend/train/scripts/train_teacher_student.py` (create)
-- `deepiri/python_backend/train/scripts/train_quantized_model.py` (create)
-**Files to Create:**
-- `deepiri/python_backend/train/scripts/train_task_understanding.py` - Deep task understanding
-- `deepiri/python_backend/train/scripts/train_knowledge_distillation.py` - Distillation
-- `deepiri/python_backend/train/scripts/train_edge_efficient.py` - Edge models
+- `deepiri/python_backend/train/scripts/train_teacher_student.py`
+- `deepiri/python_backend/train/scripts/train_quantized_model.py`
 
 ---
 
@@ -388,10 +342,13 @@
 **Location:** `deepiri/python_backend/train/scripts/` & `deepiri/python_backend/app/services/`
 **Stack:** Python, PyTorch, Lightweight Models (MobileNet, EfficientNet), Temporal Models (LSTM, GRU, Transformers), Ensemble Methods
 **Start Here:**
-- Challenge generator training: `deepiri/python_backend/train/scripts/train_challenge_generator.py`
-- Personalization training: `deepiri/python_backend/train/scripts/train_personalization_model.py`
-- Session analyzer: `deepiri/python_backend/app/services/session_analyzer.py`
-**Unique Mission:** Model user habits and predict behavior patterns for personalization.
+1. **Challenge Generator Training**: Review `deepiri/python_backend/train/scripts/train_challenge_generator.py` for challenge generation models
+2. **Personalization Training**: Study `deepiri/python_backend/train/scripts/train_personalization_model.py` for user personalization
+3. **Session Analysis**: Check `deepiri/python_backend/app/services/session_analyzer.py` for user behavior analysis
+4. **Time-Series Data**: Review `deepiri/services/analytics-service/` for user activity data
+5. **Temporal Models**: Look for existing LSTM/GRU implementations in `deepiri/python_backend/train/scripts/`
+6. **Behavior Data**: Check `deepiri/python_backend/train/data/` for user behavior datasets
+**Unique Mission:** Model user habits and predict behavior patterns for personalization. Train temporal sequence models for user behavior prediction. Build habit-prediction networks for challenge timing. Train ensemble scoring models for user performance. Local recommendation models for challenge suggestions. Implement time-series analysis for productivity patterns. Build user behavior clustering models. Predict optimal challenge timing based on user history. Integrate behavior models with gamification service.
 **Your Tasks:**
 - Train temporal sequence models for user behavior prediction
 - Build habit-prediction networks for challenge timing
@@ -401,13 +358,6 @@
 - Build user behavior clustering models
 - Predict optimal challenge timing based on user history
 - Integrate behavior models with gamification service
-**Files to Create:**
-- `deepiri/python_backend/train/scripts/train_lightweight_challenge_generator.py`
-- `deepiri/python_backend/train/scripts/train_temporal_behavior_model.py`
-- `deepiri/python_backend/train/scripts/train_ensemble_scoring.py`
-- `deepiri/python_backend/train/scripts/train_on_device_recommendation.py`
-- `deepiri/python_backend/train/scripts/train_temporal_sequence.py` - Temporal sequences
-- `deepiri/python_backend/train/scripts/train_habit_prediction.py` - Habit prediction
 
 ---
 
@@ -438,10 +388,6 @@
 - `deepiri/python_backend/mlops/registry/model_registry.py` - Model registry
 - `deepiri/python_backend/mlops/scripts/run_ci_pipeline.sh` - CI/CD automation
 - `deepiri/python_backend/mlops/scripts/deploy_model.sh` - Deployment script
-**Files to Create:**
-- `deepiri/python_backend/mlops/ci/github_actions.yml` - GitHub Actions workflow
-- `deepiri/python_backend/mlops/deployment/kubernetes_deployment.yaml` - K8s manifests
-- `deepiri/python_backend/mlops/gpu/gpu_manager.py` - GPU resource management
 
 ---
 
@@ -450,11 +396,14 @@
 **Location:** `deepiri/python_backend/mlops/monitoring/` & `deepiri/python_backend/mlops/optimization/`
 **Stack:** Python, Prometheus, Grafana, MLflow, Performance Profiling, Alerting, Cost Optimization
 **Start Here:**
-- **Onboarding Guide**: `deepiri/docs/MLOPS_TEAM_ONBOARDING.md` (READ THIS FIRST!)
-- **Model Monitoring**: `deepiri/python_backend/mlops/monitoring/model_monitor.py`
-- **Docker Setup**: `deepiri/python_backend/mlops/docker/docker-compose.mlops.yml`
-- **MLOps README**: `deepiri/python_backend/mlops/README.md`
-**Unique Mission:** Create monitoring + performance insights for AI systems.
+1. **Onboarding Guide**: Read `deepiri/docs/MLOPS_TEAM_ONBOARDING.md` FIRST for team context
+2. **Model Monitoring Service**: Review `deepiri/python_backend/mlops/monitoring/model_monitor.py` for current monitoring setup
+3. **Docker Infrastructure**: Check `deepiri/python_backend/mlops/docker/docker-compose.mlops.yml` for monitoring stack
+4. **MLOps Documentation**: Read `deepiri/python_backend/mlops/README.md` for overall MLOps architecture
+5. **Prometheus Config**: Check `deepiri/ops/prometheus/prometheus.yml` for metrics collection
+6. **Grafana Dashboards**: Look for existing dashboards in `deepiri/python_backend/mlops/monitoring/dashboards/` (if exists)
+7. **Cost Tracking**: Review infrastructure costs and GPU usage patterns
+**Unique Mission:** Create monitoring + performance insights for AI systems. Monitor model drift and performance degradation. Track infrastructure LATENCY for inference endpoints. Create alerting dashboards for model health. Optimize AI costs (GPU usage, API calls, inference time). Performance monitoring for challenge generation API. Model A/B testing infrastructure. Resource utilization tracking and optimization. Integration with Prometheus and Grafana for metrics.
 **Your Tasks:**
 - Monitor model drift and performance degradation
 - Track infrastructure LATENCY for inference endpoints
@@ -468,13 +417,6 @@
 - `deepiri/python_backend/mlops/monitoring/model_monitor.py` - Main monitoring service
 - `deepiri/python_backend/mlops/scripts/monitor_model.sh` - Monitoring script
 - `deepiri/python_backend/mlops/docker/docker-compose.mlops.yml` - Monitoring stack
-**Files to Create:**
-- `deepiri/python_backend/mlops/monitoring/dashboards/` - Grafana dashboard configs
-- `deepiri/python_backend/mlops/monitoring/alerts/` - Alert configurations
-- `deepiri/python_backend/mlops/monitoring/drift_detection.py` - Advanced drift detection
-- `deepiri/python_backend/mlops/monitoring/performance_metrics.py` - Performance tracking
-- `deepiri/python_backend/mlops/optimization/inference_optimization.py` - Inference optimization
-- `deepiri/python_backend/mlops/optimization/resource_optimizer.py` - Resource optimization
 
 ---
 
@@ -483,9 +425,13 @@
 **Location:** `deepiri/python_backend/train/data/` & `deepiri/python_backend/app/services/analytics/`
 **Stack:** Python, Pandas, NumPy, Apache Kafka, NATS, Real-time Processing, Feature Engineering, Event Streaming
 **Start Here:**
-- Data collection: `deepiri/python_backend/train/pipelines/data_collection_pipeline.py`
-- Dataset prep: `deepiri/python_backend/train/data/prepare_dataset.py`
-**Unique Mission:** Create real-time event pipelines to feed ML and Gamification services.
+1. **Data Collection Pipeline**: Review `deepiri/python_backend/train/pipelines/data_collection_pipeline.py` for current data ingestion
+2. **Dataset Preparation**: Study `deepiri/python_backend/train/data/prepare_dataset.py` for data preprocessing workflows
+3. **Analytics Service**: Check `deepiri/services/analytics-service/` for time-series data handling
+4. **Event Streaming**: Review existing streaming infrastructure (Kafka/NATS/Redis Streams) in `deepiri/services/`
+5. **InfluxDB Integration**: Check `deepiri/services/analytics-service/src/timeSeriesAnalytics.js` for time-series storage
+6. **Real-Time Features**: Look for feature generation code in `deepiri/python_backend/app/services/analytics/`
+**Unique Mission:** Create real-time event pipelines to feed ML and Gamification services. Stream user activity via Kafka/NATS (or Redis Streams). Build challenge analytics pipelines. Generate real-time features for ML models. Integrate with Analytics Service for time-series data. Real-time event processing for gamification triggers. Data pipeline for user behavior tracking. Event streaming for challenge completion events. Integration with InfluxDB for time-series storage.
 **Your Tasks:**
 - Stream user activity via Kafka/NATS (or Redis Streams)
 - Build challenge analytics pipelines
@@ -495,14 +441,6 @@
 - Data pipeline for user behavior tracking
 - Event streaming for challenge completion events
 - Integration with InfluxDB for time-series storage
-**Files to Create:**
-- `deepiri/python_backend/train/data/user_behavior_pipeline.py`
-- `deepiri/python_backend/train/data/challenge_analytics_pipeline.py`
-- `deepiri/python_backend/app/services/analytics/real_time_features.py`
-- `deepiri/python_backend/app/services/analytics/event_processor.py`
-- `deepiri/python_backend/app/services/analytics/kafka_streaming.py` - Kafka integration
-- `deepiri/python_backend/app/services/analytics/nats_streaming.py` - NATS integration
-- `deepiri/python_backend/app/services/analytics/challenge_analytics.py` - Challenge analytics
 
 ---
 
@@ -511,9 +449,13 @@
 **Location:** `deepiri/python_backend/train/data/` (Data Quality & Privacy)
 **Stack:** Python, Pandas, Data Validation, Privacy Tools (Differential Privacy, PII Detection), GDPR Compliance
 **Start Here:**
-- Dataset prep: `deepiri/python_backend/train/data/prepare_dataset.py`
-- Data collection: `deepiri/python_backend/train/pipelines/data_collection_pipeline.py`
-**Unique Mission:** Maintain complete data integrity & privacy constraints.
+1. **Dataset Preparation**: Review `deepiri/python_backend/train/data/prepare_dataset.py` for current data processing
+2. **Data Collection**: Study `deepiri/python_backend/train/pipelines/data_collection_pipeline.py` for data sources
+3. **Privacy Tools**: Check for existing PII detection and anonymization code in `deepiri/python_backend/train/data/`
+4. **Data Validation**: Look for validation schemas and quality checks
+5. **GDPR Compliance**: Review data retention policies and user consent mechanisms
+6. **Label Validation**: Check training dataset labeling processes
+**Unique Mission:** Maintain complete data integrity & privacy constraints. Label validation for training datasets. GDPR and data minimization compliance. Data anonymization for user behavior data. Dataset curation for model training. Data quality assurance and validation. Privacy-preserving data processing. Data retention policy enforcement. Compliance with data protection regulations.
 **Your Tasks:**
 - Label validation for training datasets
 - GDPR and data minimization compliance
@@ -523,15 +465,6 @@
 - Privacy-preserving data processing
 - Data retention policy enforcement
 - Compliance with data protection regulations
-**Files to Create:**
-- `deepiri/python_backend/train/data/data_curation.py`
-- `deepiri/python_backend/train/data/data_quality.py`
-- `deepiri/python_backend/train/data/privacy_anonymization.py`
-- `deepiri/python_backend/train/data/pii_detection.py`
-- `deepiri/python_backend/train/data/data_validation.py`
-- `deepiri/python_backend/train/data/label_validation.py` - Label validation
-- `deepiri/python_backend/train/data/gdpr_compliance.py` - GDPR compliance
-- `deepiri/python_backend/train/data/data_minimization.py` - Data minimization
 
 ---
 
@@ -540,10 +473,12 @@
 **Location:** `deepiri/python_backend/train/scripts/` & `deepiri/python_backend/docs/`
 **Stack:** Python, PyTorch, Documentation Tools, Testing Frameworks
 **Start Here:**
-- Test suite: `deepiri/python_backend/tests/ai/`
-- Training scripts: `deepiri/python_backend/train/scripts/`
-- Documentation: `deepiri/docs/`
-**Unique:** High-level documentation + assisting live training jobs.
+1. **Test Suite**: Review `deepiri/python_backend/tests/ai/` to understand testing patterns
+2. **Training Scripts**: Study `deepiri/python_backend/train/scripts/` for training workflows
+3. **Documentation**: Check `deepiri/docs/` for existing documentation structure
+4. **AI Services**: Review `deepiri/python_backend/app/services/` to understand system architecture
+5. **Training Infrastructure**: Check `deepiri/python_backend/train/infrastructure/` for training setup
+**Unique Mission:** High-level documentation + assisting live training jobs. Document AI system architecture and workflows. Assist with monitoring live training jobs. Create documentation for model deployment processes. Help maintain training infrastructure documentation. Support AI Systems Engineers with documentation tasks.
 **Your Tasks:**
 - Support model training
 - Write test cases for AI services
@@ -554,8 +489,8 @@
 **Files to Work On:**
 - `deepiri/python_backend/tests/ai/test_task_classifier.py`
 - `deepiri/python_backend/tests/ai/test_challenge_generator.py`
-- `deepiri/python_backend/train/scripts/README.md` (create/update)
-- `deepiri/docs/ai_training_guide.md` (create/update)
+- `deepiri/python_backend/train/scripts/README.md`
+- `deepiri/docs/ai_training_guide.md`
 
 ---
 
@@ -564,9 +499,12 @@
 **Location:** `desktop-ide-deepiri/src-tauri/src/` (Desktop/Edge AI)
 **Stack:** Rust, ONNX Runtime, Quantized Models, Desktop Deployment, Testing
 **Start Here:**
-- Local LLM: `desktop-ide-deepiri/src-tauri/src/local_llm.rs`
-- Tauri backend: `desktop-ide-deepiri/src-tauri/src/main.rs`
-**Unique Mission:** Tests native desktop agent behavior on local environments.
+1. **Local LLM**: Review `desktop-ide-deepiri/src-tauri/src/local_llm.rs` for desktop inference
+2. **Tauri Backend**: Study `desktop-ide-deepiri/src-tauri/src/main.rs` for desktop app structure
+3. **Desktop Tests**: Check `desktop-ide-deepiri/tests/` for existing test patterns
+4. **Model Quantization**: Review how models are quantized for desktop deployment
+5. **Offline Capabilities**: Understand offline-first AI implementation
+**Unique Mission:** Builds synthetic datagen + automation for training. Build synthetic data generation for training datasets. Automate data collection and preprocessing. Create data augmentation pipelines. Generate synthetic challenges for training.
 **Your Tasks:**
 - Test desktop IDE AI agent functionality
 - Validate local model inference on desktop
@@ -576,8 +514,8 @@
 **Files to Work On:**
 - `desktop-ide-deepiri/src-tauri/src/local_llm.rs`
 - `desktop-ide-deepiri/src-tauri/src/commands.rs`
-- `desktop-ide-deepiri/tests/edge_ai_tests.rs` (create)
-- `desktop-ide-deepiri/tests/native_agent_tests.rs` (create)
+- `desktop-ide-deepiri/tests/edge_ai_tests.rs`
+- `desktop-ide-deepiri/tests/native_agent_tests.rs`
 
 ---
 
@@ -586,10 +524,13 @@
 **Location:** `deepiri/python_backend/train/data/` & `deepiri/python_backend/train/scripts/`
 **Stack:** Python, Pandas, Data Processing, ETL Pipelines, Synthetic Data Generation, Automation
 **Start Here:**
-- Dataset prep: `deepiri/python_backend/train/data/prepare_dataset.py`
-- Data collection: `deepiri/python_backend/train/pipelines/data_collection_pipeline.py`
-- Training scripts: `deepiri/python_backend/train/scripts/`
-**Unique Mission:** Builds synthetic datagen + automation for training.
+1. **Dataset Preparation**: Review `deepiri/python_backend/train/data/prepare_dataset.py` for data processing
+2. **Data Collection**: Study `deepiri/python_backend/train/pipelines/data_collection_pipeline.py` for data ingestion
+3. **Training Scripts**: Check `deepiri/python_backend/train/scripts/` for training workflows
+4. **Synthetic Data**: Look for existing synthetic data generation code
+5. **ETL Pipelines**: Review data transformation pipelines
+6. **Automation**: Understand training automation workflows
+**Unique Mission:** Focuses on evaluating failure modes + regression tests. Evaluate AI system failure modes. Build regression tests for model updates. Test edge cases in challenge generation. Validate model outputs for correctness. Create test suites for AI services.
 **Your Tasks:**
 - Build synthetic data generation for training datasets
 - Automate data collection and preprocessing
@@ -598,11 +539,8 @@
 - Automate dataset preparation workflows
 **Files to Work On:**
 - `deepiri/python_backend/train/data/prepare_dataset.py`
-- `deepiri/python_backend/train/data/data_cleaning.py` (create)
-- `deepiri/python_backend/train/data/etl_pipeline.py` (create)
-**Files to Create:**
-- `deepiri/python_backend/train/data/synthetic_data_generator.py` - Synthetic data
-- `deepiri/python_backend/train/scripts/training_automation.py` - Training automation
+- `deepiri/python_backend/train/data/data_cleaning.py`
+- `deepiri/python_backend/train/data/etl_pipeline.py`
 
 ---
 
@@ -623,11 +561,8 @@
 **Files to Work On:**
 - `deepiri/python_backend/tests/ai/benchmarks/benchmark_classifier.py`
 - `deepiri/python_backend/train/scripts/evaluate_model.py`
-- `deepiri/python_backend/tests/ai/benchmarks/benchmark_generator.py` (create)
-- `deepiri/python_backend/train/scripts/quality_metrics.py` (create)
-**Files to Create:**
-- `deepiri/python_backend/tests/ai/failure_mode_analysis.py` - Failure mode evaluation
-- `deepiri/python_backend/tests/ai/regression_tests.py` - Regression test suite
+- `deepiri/python_backend/tests/ai/benchmarks/benchmark_generator.py`
+- `deepiri/python_backend/train/scripts/quality_metrics.py`
 
 ---
 
@@ -636,22 +571,19 @@
 **Location:** `deepiri/python_backend/docs/` & `deepiri/services/shared-utils/`
 **Stack:** Python, Documentation Tools, Testing, Code Quality, Refactoring
 **Start Here:**
-- Tests: `deepiri/python_backend/tests/`
-- READMEs: `deepiri/python_backend/train/README.md`
-- Shared utils: `deepiri/services/shared-utils/`
-**Unique Mission:** Maintains shared-utils consistency + code refactors.
+1. **Test Suite**: Review `deepiri/python_backend/tests/` for testing patterns
+2. **Training README**: Read `deepiri/python_backend/train/README.md` for training context
+3. **Shared Utils**: Study `deepiri/services/shared-utils/` for common utilities
+4. **Code Quality**: Check for linting and code quality tools
+5. **Refactoring Patterns**: Review existing refactoring approaches
+6. **Documentation**: Check `deepiri/python_backend/docs/` for documentation standards
+**Unique Mission:** Maintains shared-utils consistency + code refactors. Maintain shared utilities across AI services. Refactor code for consistency and maintainability. Ensure code quality standards across AI codebase. Help with code organization and structure. Support code review and refactoring efforts.
 **Your Tasks:**
 - Maintain shared utilities across AI services
 - Refactor code for consistency and maintainability
 - Ensure code quality standards across AI codebase
 - Help with code organization and structure
 - Support code review and refactoring efforts
-**Files to Create:**
-- `deepiri/python_backend/docs/ai_services.md`
-- `deepiri/python_backend/docs/training_guide.md`
-- `deepiri/python_backend/tests/README.md`
-- `deepiri/python_backend/.pre-commit-config.yaml` (create)
-- `deepiri/services/shared-utils/refactoring_guide.md` (create)
 
 ---
 
@@ -669,12 +601,6 @@
 - Validate agent behavior and outputs
 - Test multi-agent system interactions
 - Create test scenarios for challenge generation
-**Files to Create:**
-- `deepiri/python_backend/tests/ai/test_qa_agent.py`
-- `deepiri/python_backend/train/experiments/simulation_env.py`
-- `deepiri/python_backend/tests/integration/test_ai_pipeline.py`
-- `deepiri/python_backend/tests/ai/simulation_environments.py` - Simulation environments
-- `deepiri/python_backend/tests/ai/validation_scripts.py` - Validation scripts
 
 ---
 
@@ -713,10 +639,12 @@
 **Location:** `deepiri/services/integration-service/`
 **Stack:** Node.js, Express, OAuth2, REST APIs, Webhooks, External API Integration
 **Start Here:**
-- Service server: `deepiri/services/integration-service/server.js` (Port 5006)
-- Route handlers: `deepiri/services/integration-service/src/index.js`
-- Webhook service: `deepiri/services/integration-service/src/webhookService.js`
-- Integration service: `deepiri/services/integration-service/README.md`
+1. **Service Server**: Start with `deepiri/services/integration-service/server.js` (Port 5006) to understand service setup
+2. **Route Handlers**: Review `deepiri/services/integration-service/src/index.js` for API endpoints
+3. **Webhook Service**: Study `deepiri/services/integration-service/src/webhookService.js` for webhook processing
+4. **Integration README**: Read `deepiri/services/integration-service/README.md` for integration documentation
+5. **OAuth Flows**: Check for existing OAuth implementations for Notion, Trello, GitHub
+6. **API Gateway**: Understand how requests route through `deepiri/services/api-gateway/server.js`
 **Unique Mission:** External Integrations: Notion/Trello/GitHub APIs, OAuth flows, webhook management, data synchronization.
 **Your Tasks:**
 - Build OAuth flows for Notion, Trello, GitHub, Google Docs
@@ -732,10 +660,6 @@
 - `deepiri/services/integration-service/src/index.js` - Route handlers
 - `deepiri/services/integration-service/src/webhookService.js` - Webhook processing
 - `deepiri/services/integration-service/Dockerfile` - Container definition
-**Files to Create:**
-- `deepiri/services/integration-service/src/notion.js` (if needed)
-- `deepiri/services/integration-service/src/trello.js` (if needed)
-- `deepiri/services/integration-service/src/github.js` (if needed)
 
 ---
 
@@ -744,9 +668,12 @@
 **Location:** `deepiri/services/websocket-service/` & `deepiri/services/notification-service/`
 **Stack:** Node.js, Socket.IO, WebSockets, Real-time Systems, Redis Pub/Sub
 **Start Here:**
-- WebSocket service: `deepiri/services/websocket-service/server.js` (Port 5008)
-- Notification service: `deepiri/services/notification-service/server.js` (Port 5005)
-- WebSocket handler: `deepiri/services/notification-service/src/websocketService.js`
+1. **WebSocket Service**: Review `deepiri/services/websocket-service/server.js` (Port 5008) for real-time communication setup
+2. **Notification Service**: Study `deepiri/services/notification-service/server.js` (Port 5005) for notification handling
+3. **WebSocket Handler**: Check `deepiri/services/notification-service/src/websocketService.js` for connection management
+4. **Redis Pub/Sub**: Review Redis configuration for message broadcasting
+5. **Presence Tracking**: Look for user presence tracking implementations
+6. **Challenge Sessions**: Understand how challenge sessions use WebSocket connections
 **Unique Mission:** WebSocket infrastructure, message routing, presence tracking, active challenge sessions support.
 **Your Tasks:**
 - WebSocket infrastructure for real-time communication (`websocket-service/`)
@@ -770,9 +697,12 @@
 **Location:** `deepiri/python_backend/app/routes/` & `deepiri/services/challenge-service/`
 **Stack:** Python, FastAPI, Node.js, Express, AI Integration, State Management
 **Start Here:**
-- Challenge service: `deepiri/services/challenge-service/server.js` (Port 5007)
-- Challenge routes: `deepiri/python_backend/app/routes/challenge.py` (Port 8000)
-- AI services: `deepiri/python_backend/app/services/`
+1. **Challenge Service**: Review `deepiri/services/challenge-service/server.js` (Port 5007) for challenge management
+2. **Challenge Routes**: Study `deepiri/python_backend/app/routes/challenge.py` (Port 8000) for AI endpoints
+3. **AI Services**: Explore `deepiri/python_backend/app/services/` to understand AI service architecture
+4. **State Management**: Check how challenge state is managed across services
+5. **Gamification Rules**: Review gamification rule engine logic
+6. **Python Service Communication**: Understand how Node.js services communicate with Python AI service (`http://pyagent:8000`)
 **Unique Mission:** AI Integration: Python service communication layer, challenge state management, gamification rule engine logic.
 **Your Tasks:**
 - Python service communication layer (FastAPI integration)
@@ -787,11 +717,6 @@
 - `deepiri/services/challenge-service/server.js` - Challenge service (port 5007) - Main service file
 - `deepiri/python_backend/app/routes/challenge.py` - Python AI routes
 - `deepiri/services/challenge-service/Dockerfile` - Container definition
-**Files to Create:**
-- `deepiri/services/challenge-service/src/` directory (if needed for route handlers)
-- `deepiri/services/challenge-service/src/challenge_state.js` (if needed)
-- `deepiri/services/challenge-service/src/gamification_rules.js` (if needed)
-- `deepiri/services/challenge-service/src/ai_validator.js` (if needed)
 
 ---
 
@@ -800,10 +725,13 @@
 **Location:** `deepiri/services/*/src/` & `deepiri/python_backend/app/database/`
 **Stack:** MongoDB, Redis, InfluxDB, SQL, Database Optimization, Query Performance, Data Migrations
 **Start Here:**
-- User Service: `deepiri/services/user-service/server.js` (Port 5001) - Time-series tracking
-- Analytics Service: `deepiri/services/analytics-service/server.js` (Port 5004) - InfluxDB
-- Database models: `deepiri/python_backend/app/database/models.py`
-- Database config: `deepiri/python_backend/app/config/database.py`
+1. **User Service**: Review `deepiri/services/user-service/server.js` (Port 5001) for time-series tracking
+2. **Analytics Service**: Study `deepiri/services/analytics-service/server.js` (Port 5004) for InfluxDB integration
+3. **Database Models**: Check `deepiri/python_backend/app/database/models.py` for data models
+4. **Database Config**: Review `deepiri/python_backend/app/config/database.py` for connection settings
+5. **Caching Layer**: Understand Redis caching implementation in `deepiri/python_backend/app/utils/cache.py`
+6. **Indexing Strategy**: Review MongoDB collection indexes for performance
+7. **Offline-First Sync**: Study how desktop IDE handles offline-first with sync recovery
 **Unique Mission:** DB indexing strategy, caching layers, query performance optimization, database migrations.
 **Your Tasks:**
 - DB indexing strategy for MongoDB collections
@@ -819,11 +747,6 @@
 - `deepiri/services/analytics-service/src/timeSeriesAnalytics.js` - InfluxDB analytics
 - `deepiri/python_backend/app/database/models.py` - Database models
 - `deepiri/python_backend/app/utils/cache.py` - Caching utilities
-**Files to Create:**
-- `deepiri/python_backend/app/database/optimization.py` (if needed)
-- `deepiri/python_backend/app/database/migrations/` (create directory)
-- `deepiri/services/*/src/database/backup.js` (create in each service if needed)
-- `deepiri/services/*/src/database/offline_sync.js` - Offline-first sync logic
 
 ---
 
@@ -832,9 +755,13 @@
 **Location:** `deepiri/frontend/src/pages/` & `deepiri/python_backend/app/routes/`
 **Stack:** React, TypeScript, FastAPI, REST APIs, Real-time Updates
 **Start Here:**
-- Productivity chat: `deepiri/frontend/src/pages/ProductivityChat.jsx`
-- Challenge routes: `deepiri/python_backend/app/routes/challenge.py`
-**Unique Mission:** Builds UI hooks for AI interactions (cloud), visualizes model outputs + reasoning flow.
+1. **Productivity Chat**: Review `deepiri/frontend/src/pages/ProductivityChat.jsx` for AI interaction UI
+2. **Challenge Routes**: Study `deepiri/python_backend/app/routes/challenge.py` for AI endpoints
+3. **AI Services**: Check `deepiri/python_backend/app/services/` for AI service integration
+4. **Real-Time Updates**: Understand WebSocket integration for live AI feedback
+5. **Model Output Visualization**: Review how AI responses are displayed in UI
+6. **Frontend API Integration**: Check how frontend connects to AI services
+**Unique Mission:** Builds UI hooks for AI interactions (cloud), visualizes model outputs + reasoning flow. Builds UI hooks for AI interactions (cloud). Visualizes model outputs + reasoning flow. Builds the real-time AI feedback loop for microservices IDE. UI → AI service API connectivity. Challenge flow integration between cloud UI and backend. Real-time AI response visualization. AI agent status and progress indicators.
 **Your Tasks:**
 - Builds UI hooks for AI interactions (cloud)
 - Visualizes model outputs + reasoning flow
@@ -843,11 +770,6 @@
 - Challenge flow integration between cloud UI and backend
 - Real-time AI response visualization
 - AI agent status and progress indicators
-**Files to Create:**
-- `deepiri/frontend/src/components/ChallengeGenerator.jsx`
-- `deepiri/frontend/src/components/AIResponseViewer.jsx`
-- `deepiri/frontend/src/components/ModelOutputVisualization.jsx`
-- `deepiri/frontend/src/services/challengeApi.js`
 
 ---
 
@@ -876,11 +798,6 @@
 - `deepiri/services/gamification-service/src/multiCurrencyService.js` - Multi-currency
 - `deepiri/services/gamification-service/src/eloLeaderboardService.js` - ELO leaderboard
 - `deepiri/services/gamification-service/src/badgeSystemService.js` - Badge system
-**Files to Create:**
-- `deepiri/frontend/src/components/gamification/ProgressTracker.jsx`
-- `deepiri/frontend/src/components/gamification/BadgeAnimation.jsx`
-- `deepiri/frontend/src/components/gamification/Leaderboard.jsx`
-- `deepiri/frontend/src/components/gamification/SocialFeatures.jsx`
 
 ---
 
@@ -889,10 +806,12 @@
 **Location:** `deepiri/frontend/src/pages/integrations/` & `deepiri/services/integration-service/`
 **Stack:** React, TypeScript, Node.js, OAuth2, REST APIs
 **Start Here:**
-- Integration service: `deepiri/services/integration-service/server.js` (Port 5006)
-- Route handlers: `deepiri/services/integration-service/src/index.js`
-- Webhook service: `deepiri/services/integration-service/src/webhookService.js`
-- Frontend: `deepiri/frontend/src/pages/`
+1. **Integration Service**: Review `deepiri/services/integration-service/server.js` (Port 5006) for backend API
+2. **Route Handlers**: Study `deepiri/services/integration-service/src/index.js` for endpoint structure
+3. **Webhook Service**: Check `deepiri/services/integration-service/src/webhookService.js` for webhook processing
+4. **Frontend Pages**: Explore `deepiri/frontend/src/pages/` for existing integration UI
+5. **OAuth Flows**: Understand OAuth implementation for Notion, Trello, GitHub
+6. **Sync Status**: Review how real-time sync status is displayed in UI
 **Unique Mission:** Builds external integrations UI, OAuth connection dashboard, real-time sync status visualization.
 **Your Tasks:**
 - Builds external integrations UI
@@ -906,11 +825,6 @@
 - `deepiri/services/integration-service/server.js` - Service server
 - `deepiri/services/integration-service/src/index.js` - Route handlers
 - `deepiri/services/integration-service/src/webhookService.js` - Webhook processing
-**Files to Create:**
-- `deepiri/frontend/src/pages/integrations/Dashboard.jsx`
-- `deepiri/frontend/src/components/integrations/OAuthFlow.jsx`
-- `deepiri/frontend/src/components/integrations/SyncMonitor.jsx`
-- `deepiri/frontend/src/components/integrations/ConfigInterface.jsx`
 
 ---
 
@@ -919,10 +833,13 @@
 **Location:** `deepiri/frontend/src/pages/analytics/` & `deepiri/services/analytics-service/`
 **Stack:** React, TypeScript, Chart.js/D3.js, Node.js, InfluxDB, Real-time Data
 **Start Here:**
-- Analytics service: `deepiri/services/analytics-service/server.js` (Port 5004)
-- Route handlers: `deepiri/services/analytics-service/src/index.js`
-- Services: `deepiri/services/analytics-service/src/timeSeriesAnalytics.js`, `behavioralClustering.js`, `predictiveModeling.js`
-- Frontend: `deepiri/frontend/src/pages/`
+1. **Analytics Service**: Review `deepiri/services/analytics-service/server.js` (Port 5004) for data API
+2. **Route Handlers**: Study `deepiri/services/analytics-service/src/index.js` for endpoint structure
+3. **Time-Series Analytics**: Check `deepiri/services/analytics-service/src/timeSeriesAnalytics.js` for InfluxDB queries
+4. **Behavioral Clustering**: Review `deepiri/services/analytics-service/src/behavioralClustering.js` for clustering logic
+5. **Predictive Modeling**: Study `deepiri/services/analytics-service/src/predictiveModeling.js` for predictions
+6. **Frontend Pages**: Explore `deepiri/frontend/src/pages/analytics/` for existing dashboards
+7. **Charting Libraries**: Review Chart.js/D3.js integration for data visualization
 **Unique Mission:** Data visualizations, productivity metrics UI, real-time analytics integration.
 **Your Tasks:**
 - Data visualizations for productivity metrics
@@ -938,10 +855,6 @@
 - `deepiri/services/analytics-service/src/timeSeriesAnalytics.js` - InfluxDB analytics
 - `deepiri/services/analytics-service/src/behavioralClustering.js` - Clustering
 - `deepiri/services/analytics-service/src/predictiveModeling.js` - Predictive models
-**Files to Create:**
-- `deepiri/frontend/src/pages/analytics/Dashboard.jsx`
-- `deepiri/frontend/src/components/analytics/ProductivityChart.jsx`
-- `deepiri/frontend/src/components/analytics/InsightRecommendations.jsx`
 
 ---
 
@@ -966,12 +879,6 @@
 - `deepiri/services/api-gateway/server.js` - API Gateway routing
 - `deepiri/services/api-gateway/src/index.js` - Route definitions
 - `deepiri/docker-compose.dev.yml` - Service orchestration
-**Files to Create:**
-- `deepiri/architecture/microservices_design.md` (if needed)
-- `deepiri/architecture/service_communication.md` (if needed)
-- `deepiri/services/api-gateway/src/service_discovery.js` (if needed)
-- `deepiri/services/api-gateway/src/load_balancer.js` (if needed)
-- `deepiri/architecture/native_cloud_protocol.md` - Native-to-cloud handshake
 
 ---
 
@@ -990,11 +897,6 @@
 - Pipeline design for analytics → ML engineers
 - Event-driven architecture patterns
 - Stream processing for user events
-**Files to Create:**
-- `deepiri/architecture/event_driven_design.md`
-- `deepiri/services/event-bus/` (create service)
-- `deepiri/services/event-bus/src/kafka_producer.js`
-- `deepiri/services/event-bus/src/event_processor.js`
 
 ---
 
@@ -1014,11 +916,6 @@
 - Compliance alignment (HIPAA/GDPR if needed)
 - Rate limiting and DDoS protection
 - Security audit logging
-**Files to Create:**
-- `deepiri/architecture/security_design.md`
-- `deepiri/services/auth-service/src/encryption.js`
-- `deepiri/services/auth-service/src/api_security.js`
-- `deepiri/python_backend/app/middleware/security.py`
 
 ---
 
@@ -1038,11 +935,6 @@
 - Failover systems for cloud IDE during peak usage
 - Database replication and sharding
 - CDN integration for static assets
-**Files to Create:**
-- `deepiri/architecture/multiplayer_scaling.md`
-- `deepiri/services/websocket-service/src/session_scaling.js`
-- `deepiri/services/websocket-service/src/game_state_manager.js`
-- `deepiri/services/websocket-service/src/disaster_recovery.js`
 
 ---
 
@@ -1060,10 +952,6 @@
 - Validates communication flows between services
 - Creates architecture diagrams
 - Assists with system design documentation
-**Files to Create:**
-- `deepiri/architecture/patterns.md`
-- `deepiri/architecture/service_templates.md`
-- `deepiri/architecture/design_reviews.md`
 
 ---
 
@@ -1083,10 +971,6 @@
 - Report and prioritize system-level anomalies
 - Integration testing across all microservices
 - Validate AI service integration with backend
-**Files to Create:**
-- `deepiri/tests/integration/full_system_test.py`
-- `deepiri/tests/integration/ai_backend_integration.py`
-- `deepiri/scripts/system_health_check.sh`
 
 ---
 
@@ -1095,8 +979,12 @@
 **Location:** `deepiri/docs/` & `deepiri/` (Visual Documentation)
 **Stack:** Documentation, Diagramming, Visual Design, Planning Tools
 **Start Here:**
-- Documentation: `deepiri/docs/`
-- Architecture: `deepiri/docs/SYSTEM_ARCHITECTURE.md`
+1. **Documentation Directory**: Review `deepiri/docs/` for existing documentation structure
+2. **System Architecture**: Read `deepiri/docs/SYSTEM_ARCHITECTURE.md` for system overview
+3. **Microservices Setup**: Study `deepiri/docs/MICROSERVICES_SETUP.md` for service architecture
+4. **Product Documentation**: Check `deepiri/docs/PRODUCT_CHECKLIST.md` for product context
+5. **Visual Tools**: Familiarize with diagramming tools used by the team
+6. **Workflow Documentation**: Review existing workflow diagrams if available
 **Unique Mission:** Support the Product Lead in visualizing, planning, and documenting system flows without touching software.
 **Your Tasks:**
 - Create physical diagrams for workflows, data flows, and user journeys
@@ -1104,11 +992,6 @@
 - Visualize task and challenge logic for planning sessions
 - Maintain visual documentation for onboarding and team alignment
 - Assist Product Lead with whiteboarding, brainstorming product flow diagrams, and planning sessions
-**Files to Create:**
-- `deepiri/docs/diagrams/workflows/` - Workflow diagrams
-- `deepiri/docs/diagrams/data_flows/` - Data flow diagrams
-- `deepiri/docs/diagrams/user_journeys/` - User journey maps
-- `deepiri/docs/diagrams/device_agent/` - Device-agent interaction schematics
 
 ---
 
@@ -1130,11 +1013,6 @@
 - Inter-service debugging tools
 - Local development environment setup
 - Developer onboarding tooling
-**Files to Create:**
-- `deepiri/platform/developer_portal/`
-- `deepiri/.github/workflows/ci.yml`
-- `deepiri/platform/tooling/`
-- `deepiri/platform/cli/` - Internal CLI tools
 
 ---
 
@@ -1155,10 +1033,6 @@
 - Manage access controls
 - Ensure the platform adheres to compliance standards
 - Kubernetes configuration and deployment
-**Files to Create:**
-- `deepiri/infrastructure/terraform/`
-- `deepiri/infrastructure/kubernetes/`
-- `deepiri/infrastructure/docker/`
 
 ---
 
@@ -1177,11 +1051,6 @@
 - Resource allocation and scaling
 - Cloud provider integration (AWS/GCP/Azure)
 - Network security and VPC configuration
-**Files to Create:**
-- `deepiri/infrastructure/cloud/aws/`
-- `deepiri/infrastructure/cloud/gcp/`
-- `deepiri/infrastructure/networking/`
-- `deepiri/infrastructure/cost_optimization.md`
 
 ---
 
@@ -1201,11 +1070,6 @@
 - Observability dashboards (Grafana, Prometheus)
 - Performance monitoring and alerting
 - Log aggregation and analysis
-**Files to Create:**
-- `deepiri/infrastructure/monitoring/prometheus.yml`
-- `deepiri/infrastructure/monitoring/grafana/`
-- `deepiri/infrastructure/security/security_scanning.sh`
-- `deepiri/infrastructure/monitoring/alerts.yml`
 
 ---
 
@@ -1223,12 +1087,6 @@
 - Native IDE → cloud sync recovery mechanisms
 - Disaster recovery planning
 - Data replication across regions
-**Files to Create:**
-- `deepiri/infrastructure/disaster_recovery/plan.md`
-- `deepiri/infrastructure/backup/backup_strategy.md`
-- `deepiri/infrastructure/ha/high_availability.yml`
-- `deepiri/infrastructure/failover/failover_config.yml`
-- `deepiri/infrastructure/sync_recovery/` - Native IDE sync recovery
 
 ---
 
@@ -1247,11 +1105,6 @@
 - Deployment pipelines for both web services and native update service
 - Automated testing in CI/CD
 - Release management and versioning
-**Files to Create:**
-- `deepiri/.github/workflows/deploy.yml`
-- `deepiri/infrastructure/ci_cd/`
-- `deepiri/infrastructure/monitoring/observability.yml`
-- `deepiri/infrastructure/native_updates/` - Native update service
 
 ---
 
@@ -1260,18 +1113,19 @@
 **Location:** `deepiri/services/*/tests/` & `deepiri/.github/workflows/`
 **Stack:** Testing, CI/CD, Test Automation
 **Start Here:**
-- Services: `deepiri/services/`
-- CI/CD: `deepiri/.github/workflows/`
-**Unique Mission:** Microservice testing, CI/CD pipeline support, API validation.
+1. **Service Tests**: Review `deepiri/services/*/tests/` for existing test patterns
+2. **CI/CD Workflows**: Study `deepiri/.github/workflows/` for automation pipelines
+3. **Service Architecture**: Check `deepiri/docs/MICROSERVICES_SETUP.md` for service structure
+4. **API Testing**: Review API testing approaches in existing tests
+5. **Test Automation**: Understand test automation frameworks used
+6. **Integration Tests**: Check `deepiri/python_backend/tests/integration/` for integration testing
+**Unique Mission:** Microservice testing, CI/CD pipeline support, API validation. Microservice testing. Supports CI/CD pipeline. Automates test workflows and API validation. Integration testing for services. Test coverage improvement.
 **Your Tasks:**
 - Microservice testing
 - Supports CI/CD pipeline
 - Automates test workflows and API validation
 - Integration testing for services
 - Test coverage improvement
-**Files to Create:**
-- `deepiri/services/*/tests/` (in each service)
-- `deepiri/.github/workflows/test.yml`
 
 ---
 
@@ -1288,11 +1142,6 @@
 - Builds internal documentation and debug logs panel
 - API documentation maintenance
 - Code documentation and comments
-**Files to Create:**
-- `deepiri/services/*/docs/API.md` (for each service)
-- `deepiri/services/*/src/logging.js`
-- `deepiri/docs/api_overview.md`
-- `deepiri/services/*/src/schemas/` - Request/response schemas
 
 ---
 
@@ -1301,18 +1150,19 @@
 **Location:** `deepiri/services/*/tests/performance/` & `deepiri/services/*/src/`
 **Stack:** Performance Testing, Load Testing, Bug Fixes
 **Start Here:**
-- Services: `deepiri/services/`
-**Unique Mission:** Stress tests APIs, identifies slow endpoints, backend bug fixing.
+1. **Service Architecture**: Review `deepiri/services/` to understand service structure
+2. **Performance Tests**: Check `deepiri/services/*/tests/performance/` for existing performance tests
+3. **API Endpoints**: Study service endpoints to understand what needs testing
+4. **Load Testing Tools**: Familiarize with load testing tools used
+5. **Performance Metrics**: Understand performance benchmarks and targets
+6. **Bug Tracking**: Review bug reports to understand common performance issues
+**Unique Mission:** Stress tests APIs, identifies slow endpoints, backend bug fixing. Stress tests APIs. Identifies slow endpoints, timing the requests, then if its too late we need to improve algorithm. Backend bug fixing. Performance reports. Load testing and optimization.
 **Your Tasks:**
 - Stress tests APIs
 - Identifies slow endpoints
 - Backend bug fixing
 - Performance reports
 - Load testing and optimization
-**Files to Create:**
-- `deepiri/services/*/tests/performance/load_test.js`
-- `deepiri/services/*/tests/performance/stress_test.js`
-- `deepiri/scripts/performance_test_suite.sh`
 
 ---
 
@@ -1357,11 +1207,6 @@
 - Design system and style guide
 - Icon and asset creation
 - Brand consistency across platforms
-**Files to Create:**
-- `deepiri/frontend/src/assets/logo.svg`
-- `deepiri/frontend/src/assets/branding/`
-- `deepiri/frontend/public/favicon.ico`
-- `deepiri/frontend/src/styles/brand.css`
 
 ---
 
@@ -1380,11 +1225,6 @@
 - Core React components and layouts
 - Routing and navigation
 - Form validation and error handling
-**Files to Create:**
-- `deepiri/frontend/src/pages/Dashboard.jsx`
-- `deepiri/frontend/src/components/forms/`
-- `deepiri/frontend/src/services/firebase.js`
-- `deepiri/frontend/src/components/forms/FormValidation.jsx`
 
 ---
 
@@ -1393,8 +1233,12 @@
 **Location:** `deepiri/frontend/src/components/charts/` & `deepiri/frontend/src/pages/analytics/`
 **Stack:** React, TypeScript, Chart.js, D3.js, Data Visualization
 **Start Here:**
-- Analytics: `deepiri/frontend/src/pages/analytics/`
-- Components: `deepiri/frontend/src/components/`
+1. **Analytics Pages**: Review `deepiri/frontend/src/pages/analytics/` for existing analytics UI
+2. **Chart Components**: Study `deepiri/frontend/src/components/charts/` for visualization components
+3. **AI Service Integration**: Check how AI responses are visualized in the frontend
+4. **Real-Time Updates**: Understand WebSocket integration for live AI feedback
+5. **Multimodal Rendering**: Review how text, images, and code are displayed
+6. **Chart Libraries**: Familiarize with Chart.js and D3.js usage in the codebase
 **Unique Mission:** AI reasoning visualization, advanced charting, multimodal rendering.
 **Your Tasks:**
 - AI reasoning visualization
@@ -1403,11 +1247,6 @@
 - Interactive charts for analytics tools
 - Real-time AI response visualization
 - Model output display components
-**Files to Create:**
-- `deepiri/frontend/src/components/charts/ProductivityChart.jsx`
-- `deepiri/frontend/src/components/charts/AIInsightsChart.jsx`
-- `deepiri/frontend/src/pages/analytics/Dashboard.jsx`
-- `deepiri/frontend/src/components/charts/ChartLibrary.jsx`
 
 ---
 
@@ -1416,7 +1255,12 @@
 **Location:** `deepiri/frontend/src/components/gamification/`
 **Stack:** React, TypeScript, CSS Animations, Gamification UI
 **Start Here:**
-- Components: `deepiri/frontend/src/components/`
+1. **Gamification Components**: Review `deepiri/frontend/src/components/gamification/` for existing UI
+2. **Gamification Service**: Study `deepiri/services/gamification-service/` to understand backend API
+3. **Badge System**: Check badge and achievement UI implementations
+4. **Progress Visualization**: Review progress bars, XP displays, and streak tracking
+5. **Animation Patterns**: Study CSS animation patterns used in the codebase
+6. **Cross-Platform Components**: Understand how components work for both web and desktop UI
 **Unique Mission:** Badges, animated avatars, progress bars, challenge animations.
 **Your Tasks:**
 - Badges and achievement UI
@@ -1426,11 +1270,6 @@
 - Cross-platform gamification components for web + desktop UI frameworks
 - Streak tracking UI
 - Reward animations
-**Files to Create:**
-- `deepiri/frontend/src/components/gamification/Badge.jsx`
-- `deepiri/frontend/src/components/gamification/ProgressBar.jsx`
-- `deepiri/frontend/src/components/gamification/Avatar.jsx`
-- `deepiri/frontend/src/components/gamification/Animations.jsx`
 
 ---
 
@@ -1439,8 +1278,13 @@
 **Location:** `deepiri/frontend/` (Performance & PWA)
 **Stack:** React, TypeScript, PWA, Performance Optimization, Service Workers
 **Start Here:**
-- Frontend: `deepiri/frontend/`
-- Config: `deepiri/frontend/vite.config.js`
+1. **Frontend Root**: Review `deepiri/frontend/` directory structure
+2. **Vite Config**: Study `deepiri/frontend/vite.config.js` for build configuration
+3. **Service Workers**: Check `deepiri/frontend/public/service-worker.js` (if exists) for PWA setup
+4. **Bundle Analysis**: Review current bundle size and code splitting strategies
+5. **Performance Metrics**: Understand current performance bottlenecks
+6. **PWA Manifest**: Check `deepiri/frontend/public/manifest.json` for PWA configuration
+7. **Native Desktop Bridge**: Review how web UI patterns bridge to native desktop app
 **Unique Mission:** SPA optimization, PWA support, preloading strategies, offline-first UI cache.
 **Your Tasks:**
 - SPA optimization (React performance)
@@ -1450,11 +1294,6 @@
 - Offline-first UI cache
 - Code splitting and lazy loading
 - Bundle size optimization
-**Files to Create:**
-- `deepiri/frontend/public/service-worker.js`
-- `deepiri/frontend/src/utils/performance.js`
-- `deepiri/frontend/vite.config.js` (optimize)
-- `deepiri/frontend/public/manifest.json`
 
 ---
 
@@ -1463,8 +1302,12 @@
 **Location:** `deepiri/frontend/src/components/` & `deepiri/frontend/tests/`
 **Stack:** React, Testing Library, Jest, Component Development
 **Start Here:**
-- Components: `deepiri/frontend/src/components/`
-- Tests: `deepiri/frontend/tests/`
+1. **Component Library**: Review `deepiri/frontend/src/components/` to understand component structure
+2. **Test Suite**: Study `deepiri/frontend/tests/` for testing patterns
+3. **React Testing Library**: Familiarize with testing utilities used in the codebase
+4. **Component Patterns**: Review existing component patterns and best practices
+5. **Accessibility**: Check accessibility standards followed in components
+6. **Bug Fixes**: Review recent bug reports to understand common issues
 **Unique Mission:** Component polish, UI tests, bug fixes, learns the architecture.
 **Your Tasks:**
 - Component polish and refinement
@@ -1473,10 +1316,6 @@
 - Learns the architecture and contributes to smaller UI pieces
 - Accessibility improvements
 - Cross-browser testing
-**Files to Create:**
-- `deepiri/frontend/tests/components/`
-- `deepiri/frontend/src/components/common/Button.jsx`
-- `deepiri/frontend/src/components/common/Input.jsx`
 
 ---
 
@@ -1499,10 +1338,6 @@
 - Security incident response
 - Access control and identity management
 - Security policy enforcement
-**Files to Create:**
-- `deepiri/infrastructure/security/network_defense.md`
-- `deepiri/infrastructure/security/cloud_security.yml`
-- `deepiri/services/auth-service/src/security.js`
 
 ---
 
@@ -1520,10 +1355,6 @@
 - Organizational tech support
 - Development environment setup
 - IT asset management
-**Files to Create:**
-- `deepiri/docs/internal/onboarding.md`
-- `deepiri/docs/internal/tech_support.md`
-- `deepiri/scripts/onboarding/setup.sh`
 
 ---
 
@@ -1541,10 +1372,6 @@
 - User onboarding assistance
 - Bug report triage and escalation
 - User documentation and help guides
-**Files to Create:**
-- `deepiri/docs/user/getting_started.md`
-- `deepiri/frontend/src/pages/support/HelpCenter.jsx`
-- `deepiri/frontend/src/pages/support/Contact.jsx`
 
 ---
 
@@ -1561,10 +1388,6 @@
 - Vulnerability scanning
 - Security incident investigation
 - Access control monitoring
-**Files to Create:**
-- `deepiri/docs/support/monitoring.md`
-- `deepiri/scripts/monitoring/resource_check.sh`
-- `deepiri/docs/support/alerts.md`
 
 ---
 
@@ -1581,11 +1404,6 @@
 - Vulnerability scanning
 - Security incident investigation
 - Access control monitoring
-**Files to Create:**
-- `deepiri/scripts/security/dependency_scan.sh`
-- `deepiri/scripts/security/vulnerability_check.sh`
-- `deepiri/infrastructure/security/security_policy.md`
-- `.github/dependabot.yml` (update)
 
 ---
 
@@ -1624,10 +1442,6 @@
 - Review and merge code for QA team and other teams
 - Establish testing automation strategy
 - Coordinate with all teams on quality standards
-**Files to Create:**
-- `deepiri/qa/test_plans.md`
-- `deepiri/qa/integration_test_plan.md`
-- `deepiri/qa/regression_test_plan.md`
 
 ---
 
@@ -1646,10 +1460,6 @@
 - Validate AI agent output alignment with intended task guidance
 - Test challenge generation and gamification flows
 - Validate external integrations (Notion, Trello, GitHub)
-**Files to Create:**
-- `deepiri/qa/manual/test_cases.md`
-- `deepiri/qa/manual/uat_scenarios.md`
-- `deepiri/qa/manual/bug_reports.md`
 
 ---
 
@@ -1668,11 +1478,6 @@
 - Automate repetitive regression and integration tests
 - API testing with Postman/Newman or similar tools
 - End-to-end testing with Playwright/Cypress
-**Files to Create:**
-- `deepiri/tests/automation/api_tests.js`
-- `deepiri/tests/automation/e2e_tests.js`
-- `deepiri/qa/automation/test_reports/`
-- `deepiri/tests/automation/framework/`
 
 ---
 
@@ -1690,10 +1495,6 @@
 - Support QA Engineer 1 in user acceptance testing
 - Help maintain test case documentation
 - **YOU KEEP TRACK OF THE TESTING DOCUMENTATION!**
-**Files to Create:**
-- `deepiri/tests/scripts/`
-- `deepiri/qa/bug_tracking.md`
-- `deepiri/tests/data/test_data.json`
 
 ---
 
@@ -1711,10 +1512,6 @@
 - Support QA Lead in executing integration regression runs
 - Monitor environment health during automated test execution
 - Test environment maintenance and cleanup
-**Files to Create:**
-- `deepiri/tests/regression/regression_suite.js`
-- `deepiri/qa/environments/test_env_setup.md`
-- `deepiri/tests/config/test_config.json`
 
 ---
 
@@ -1747,7 +1544,7 @@
 2. **Check your "Location"** - that's where you'll be working
 3. **Review your "Stack"** - technologies you'll use
 4. **Start with "Start Here"** files
-5. **Work on "Your Tasks"** and "Files to Create/Work On"
+5. **Work on "Your Tasks"** and "Files to Work On"
 6. **Ask questions** in team channels if stuck
 
 ---

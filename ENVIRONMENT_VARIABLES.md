@@ -237,7 +237,6 @@ In Kubernetes, services communicate using service names:
 - `FIREBASE_PROJECT_ID` - Optional, can skip for local dev
 - `GOOGLE_MAPS_API_KEY` - Optional
 - `FCM_SERVER_KEY` - Optional
-- `TWILIO_ACCOUNT_SID` - Optional
 
 **Monitoring:**
 - `ENABLE_METRICS` - Optional

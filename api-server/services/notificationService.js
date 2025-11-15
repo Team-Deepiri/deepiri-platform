@@ -110,7 +110,7 @@ class NotificationService {
 
   async sendSMSNotification(notification) {
     try {
-      // TODO: Implement SMS service (Twilio, AWS SNS, etc.)
+      // TODO: Implement SMS service (AWS SNS, etc.)
       logger.info(`Sending SMS notification to user ${notification.userId}: ${notification.message}`);
       
       // Placeholder implementation

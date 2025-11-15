@@ -7,13 +7,20 @@
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.2",
     "@heroicons/react": "^2.2.0",
+    "@influxdata/influxdb-client": "^1.33.2",
+    "@react-three/drei": "^9.92.7",
+    "@react-three/fiber": "^8.15.19",
     "axios": "^1.8.4",
     "bootstrap": "^5.3.5",
+    "chart.js": "^4.4.1",
+    "d3": "^7.8.5",
     "date-fns": "^2.30.0",
     "firebase": "^11.6.1",
     "framer-motion": "^11.18.2",
     "leaflet": "^1.9.4",
+    "lottie-react": "^2.4.0",
     "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
     "react-confetti": "^6.1.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
@@ -24,18 +31,11 @@
     "react-query": "^3.39.3",
     "react-router-dom": "^7.5.0",
     "react-spring": "^9.7.3",
-    "socket.io-client": "^4.7.4",
-    "web-vitals": "^3.5.0",
-    "zustand": "^4.4.7",
     "recharts": "^2.10.3",
-    "d3": "^7.8.5",
-    "@influxdata/influxdb-client": "^1.33.2",
-    "chart.js": "^4.4.1",
-    "react-chartjs-2": "^5.2.0",
-    "lottie-react": "^2.4.0",
-    "@react-three/fiber": "^8.15.19",
-    "@react-three/drei": "^9.92.7",
-    "three": "^0.160.0"
+    "socket.io-client": "^4.7.4",
+    "three": "^0.160.0",
+    "web-vitals": "^3.5.0",
+    "zustand": "^4.4.7"
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
@@ -72,7 +72,7 @@
     "jsdom": "^24.0.0",
     "msw": "^2.0.11",
     "vite": "^6.3.3",
-    "vitest": "^1.5.0"
+    "vitest": "^4.0.9"
   },
   "proxy": "http://localhost:5000"
 }
