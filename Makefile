@@ -4,13 +4,24 @@
 .PHONY: rebuild clean build up down logs
 
 # Clean rebuild - removes old images first (ONLY use when rebuilding needed)
+# Detects WSL and uses docker.exe/docker-compose.exe if needed
 rebuild:
-	@echo "🧹 Cleaning old images..."
-	docker compose -f docker-compose.dev.yml down --rmi local
-	docker builder prune -af
-	@echo "🔨 Rebuilding..."
-	docker compose -f docker-compose.dev.yml build --no-cache
-	@echo "✅ Rebuild complete!"
+	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
+		echo "🔍 WSL detected - using docker.exe and docker-compose.exe"; \
+		echo "🧹 Cleaning old images..."; \
+		docker-compose.exe -f docker-compose.dev.yml down --rmi local; \
+		docker.exe builder prune -af; \
+		echo "🔨 Rebuilding..."; \
+		docker-compose.exe -f docker-compose.dev.yml build --no-cache; \
+		echo "✅ Rebuild complete!"; \
+	else \
+		echo "🧹 Cleaning old images..."; \
+		docker compose -f docker-compose.dev.yml down --rmi local; \
+		docker builder prune -af; \
+		echo "🔨 Rebuilding..."; \
+		docker compose -f docker-compose.dev.yml build --no-cache; \
+		echo "✅ Rebuild complete!"; \
+	fi
 
 # Clean rebuild specific service (ONLY use when rebuilding needed)
 rebuild-service:
@@ -36,19 +47,35 @@ clean:
 
 # Build (normal, with cache) - only rebuilds if needed
 build:
-	docker compose -f docker-compose.dev.yml build
+	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
+		docker-compose.exe -f docker-compose.dev.yml build; \
+	else \
+		docker compose -f docker-compose.dev.yml build; \
+	fi
 
 # Up (normal start - uses existing images, NO rebuild)
 up:
-	docker compose -f docker-compose.dev.yml up -d
+	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
+		docker-compose.exe -f docker-compose.dev.yml up -d; \
+	else \
+		docker compose -f docker-compose.dev.yml up -d; \
+	fi
 
 # Down
 down:
-	docker compose -f docker-compose.dev.yml down
+	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
+		docker-compose.exe -f docker-compose.dev.yml down; \
+	else \
+		docker compose -f docker-compose.dev.yml down; \
+	fi
 
 # Logs
 logs:
-	docker compose -f docker-compose.dev.yml logs -f
+	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
+		docker-compose.exe -f docker-compose.dev.yml logs -f; \
+	else \
+		docker compose -f docker-compose.dev.yml logs -f; \
+	fi
 
 # Show disk usage
 df:

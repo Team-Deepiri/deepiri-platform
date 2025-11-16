@@ -8,21 +8,42 @@ set -e
 
 COMPOSE_FILE="${1:-docker-compose.dev.yml}"
 
+# Detect WSL and use .exe versions if needed
+if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null || [[ -n "$WSL_DISTRO_NAME" ]]; then
+    DOCKER_CMD="docker.exe"
+    COMPOSE_CMD="docker-compose.exe"
+    echo "🔍 WSL detected - using docker.exe and docker-compose.exe"
+else
+    DOCKER_CMD="docker"
+    COMPOSE_CMD="docker compose"
+fi
+
 npm pkg set BUILD_TIMESTAMP=$(date +%s) &>/dev/null || true
 
 export BUILD_TIMESTAMP=$(date +%s)
 
 echo "🧹 Stopping containers and removing old images..."
-docker compose -f "$COMPOSE_FILE" down --rmi all --volumes --remove-orphans
+if [[ "$COMPOSE_CMD" == "docker-compose.exe" ]]; then
+    $COMPOSE_CMD -f "$COMPOSE_FILE" down --rmi all --volumes --remove-orphans
+else
+    $COMPOSE_CMD -f "$COMPOSE_FILE" down --rmi all --volumes --remove-orphans
+fi
 
 echo "🔨 Rebuilding containers (no cache)..."
-docker compose -f "$COMPOSE_FILE" build --no-cache --pull
+if [[ "$COMPOSE_CMD" == "docker-compose.exe" ]]; then
+    $COMPOSE_CMD -f "$COMPOSE_FILE" build --no-cache --pull
+else
+    $COMPOSE_CMD -f "$COMPOSE_FILE" build --no-cache --pull
+fi
 
 echo "🚀 Starting services..."
-docker compose -f "$COMPOSE_FILE" up -d
+if [[ "$COMPOSE_CMD" == "docker-compose.exe" ]]; then
+    $COMPOSE_CMD -f "$COMPOSE_FILE" up -d
+else
+    $COMPOSE_CMD -f "$COMPOSE_FILE" up -d
+fi
 
 echo "✅ Rebuild complete!"
 echo ""
-echo "View logs: docker compose -f $COMPOSE_FILE logs -f"
-echo "Check status: docker compose -f $COMPOSE_FILE ps"
-
+echo "View logs: $COMPOSE_CMD -f $COMPOSE_FILE logs -f"
+echo "Check status: $COMPOSE_CMD -f $COMPOSE_FILE ps"
