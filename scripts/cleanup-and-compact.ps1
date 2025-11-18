@@ -137,84 +137,132 @@ if ($dockerAvailable) {
     Write-Output ""
 }
 
-# Step 10: Stop Docker Desktop and Shutdown WSL
+# Step 10: Stop Docker Desktop and Shutdown WSL COMPLETELY
 Write-ColorOutput Yellow "Stopping Docker Desktop and WSL..."
-$dockerProcesses = Get-Process -Name "com.docker.backend","com.docker.desktop","Docker Desktop" -ErrorAction SilentlyContinue
+$dockerProcesses = Get-Process -Name "com.docker.backend","com.docker.desktop","Docker Desktop","dockerd","vmmem","wslhost" -ErrorAction SilentlyContinue
 if ($dockerProcesses) {
+    Write-ColorOutput Yellow "Stopping Docker processes..."
     taskkill /IM "com.docker.backend.exe" /F 2>$null | Out-Null
     taskkill /IM "com.docker.desktop.exe" /F 2>$null | Out-Null
+    taskkill /IM "dockerd.exe" /F 2>$null | Out-Null
+    taskkill /IM "vmmem.exe" /F 2>$null | Out-Null
+    taskkill /IM "wslhost.exe" /F 2>$null | Out-Null
+    Start-Sleep -Seconds 3
     Write-ColorOutput Green "[OK] Docker Desktop processes stopped"
 } else {
     Write-ColorOutput Yellow "[INFO] Docker Desktop processes not running (may not be installed)"
 }
+
+Write-ColorOutput Yellow "Shutting down WSL completely..."
 wsl --shutdown
-Start-Sleep -Seconds 5
-Write-ColorOutput Green "[OK] WSL shutdown complete"
+Start-Sleep -Seconds 10
+
+# Verify WSL is actually shut down
+$wslStillRunning = wsl --list --running 2>$null
+$retries = 0
+while ($wslStillRunning -and $retries -lt 5) {
+    Write-ColorOutput Yellow "WSL still running, waiting..."
+    wsl --shutdown
+    Start-Sleep -Seconds 5
+    $wslStillRunning = wsl --list --running 2>$null
+    $retries++
+}
+
+if ($wslStillRunning) {
+    Write-ColorOutput Red "[WARNING] WSL may still be running. Compaction might fail."
+} else {
+    Write-ColorOutput Green "[OK] WSL shutdown complete"
+}
 Write-Output ""
 
-# Step 11: Compact Docker Desktop VHDX (if exists)
-# Check multiple possible Docker Desktop VHDX locations
+# Step 11: Find ALL Docker Desktop VHDX files
+Write-ColorOutput Yellow "Finding ALL Docker Desktop VHDX files..."
 $dockerVhdPaths = @(
-    "$env:LOCALAPPDATA\Docker\wsl\data\ext4.vhdx",
-    "$env:USERPROFILE\AppData\Local\Docker\wsl\data\ext4.vhdx",
-    "$env:ProgramData\Docker\wsl\data\ext4.vhdx"
+    "$env:LOCALAPPDATA\Docker\wsl",
+    "$env:USERPROFILE\AppData\Local\Docker\wsl",
+    "$env:ProgramData\Docker\wsl"
 )
 
-# Also search for any Docker-related VHDX files
-$dockerVhdFiles = Get-ChildItem -Path "$env:LOCALAPPDATA\Docker" -Recurse -Filter "*.vhdx" -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "*data*" -or $_.Name -like "*ext4*" }
-
-$dockerVhd = $null
-foreach ($path in $dockerVhdPaths) {
-    if (Test-Path $path) {
-        $dockerVhd = $path
-        break
+# Find ALL Docker VHDX files (data, distro, etc.)
+$allDockerVhdxFiles = @()
+foreach ($basePath in $dockerVhdPaths) {
+    if (Test-Path $basePath) {
+        $files = Get-ChildItem -Path $basePath -Recurse -Filter "*.vhdx" -ErrorAction SilentlyContinue
+        if ($files) {
+            $allDockerVhdxFiles += $files
+        }
     }
 }
 
-# If not found in standard locations, use first found Docker VHDX
-if (-not $dockerVhd -and $dockerVhdFiles) {
-    $dockerVhd = $dockerVhdFiles[0].FullName
-    Write-ColorOutput Yellow "[INFO] Found Docker VHDX at non-standard location: $dockerVhd"
+# Also search in entire Docker directory
+if ($allDockerVhdxFiles.Count -eq 0) {
+    $allDockerVhdxFiles = Get-ChildItem -Path "$env:LOCALAPPDATA\Docker" -Recurse -Filter "*.vhdx" -ErrorAction SilentlyContinue
 }
 
 $dockerSpaceReclaimed = 0
-if ($dockerVhd -and (Test-Path $dockerVhd)) {
-    Write-ColorOutput Yellow "Found Docker Desktop VHDX, compacting..."
-    $dockerSizeBefore = (Get-Item $dockerVhd).Length / 1GB
-    $dockerSizeBeforeFormatted = "{0:N2}" -f $dockerSizeBefore
-    Write-ColorOutput Cyan "Docker VHD size before: $dockerSizeBeforeFormatted GB"
-    Write-ColorOutput Yellow "Docker VHD location: $dockerVhd"
+if ($allDockerVhdxFiles.Count -gt 0) {
+    Write-ColorOutput Green "Found $($allDockerVhdxFiles.Count) Docker VHDX file(s) to compact"
+    Write-Output ""
     
-    # Use DiskPart to compact Docker VHDX
-    $diskpartScript = @"
-select vdisk file="$dockerVhd"
+    foreach ($dockerVhd in $allDockerVhdxFiles) {
+        $dockerVhdPath = $dockerVhd.FullName
+        Write-ColorOutput Yellow "Compacting: $dockerVhdPath"
+        
+        $dockerSizeBefore = $dockerVhd.Length / 1GB
+        $dockerSizeBeforeFormatted = "{0:N2}" -f $dockerSizeBefore
+        Write-ColorOutput Cyan "  Size before: $dockerSizeBeforeFormatted GB"
+        
+        # Try Optimize-VHD first (more reliable)
+        $compactionSuccess = $false
+        try {
+            Import-Module Hyper-V -ErrorAction Stop
+            Write-ColorOutput Yellow "  Using Optimize-VHD (this may take several minutes)..."
+            Optimize-VHD -Path $dockerVhdPath -Mode Full -ErrorAction Stop
+            $compactionSuccess = $true
+            Write-ColorOutput Green "  [OK] Optimize-VHD compaction complete"
+        } catch {
+            Write-ColorOutput Yellow "  Optimize-VHD failed, trying DiskPart..."
+            
+            # Fallback to DiskPart
+            $diskpartScript = @"
+select vdisk file="$dockerVhdPath"
 attach vdisk readonly
 compact vdisk
 detach vdisk
 exit
 "@
-    
-    $tempFile = [System.IO.Path]::GetTempFileName()
-    Set-Content -Path $tempFile -Value $diskpartScript -Encoding ASCII
-    
-    Write-ColorOutput Yellow "Running DiskPart compaction (this may take a few minutes)..."
-    $diskpartResult = diskpart /s $tempFile 2>&1
-    Remove-Item $tempFile
-    
-    # Check if compaction was successful
-    if ($LASTEXITCODE -eq 0 -or $diskpartResult -match "successfully compacted") {
-        $dockerSizeAfter = (Get-Item $dockerVhd).Length / 1GB
-        $dockerSpaceReclaimed = [math]::Round($dockerSizeBefore - $dockerSizeAfter, 2)
-        $dockerSizeAfterFormatted = "{0:N2}" -f $dockerSizeAfter
-        Write-ColorOutput Cyan "Docker VHD size after: $dockerSizeAfterFormatted GB"
-        Write-ColorOutput Green "Docker space reclaimed: $dockerSpaceReclaimed GB"
-    } else {
-        Write-ColorOutput Yellow "[WARNING] Docker VHDX compaction may have failed. Check DiskPart output above."
-        Write-ColorOutput Yellow "This is normal if Docker Desktop is not installed or uses a different storage method."
+            
+            $tempFile = [System.IO.Path]::GetTempFileName()
+            Set-Content -Path $tempFile -Value $diskpartScript -Encoding ASCII
+            
+            Write-ColorOutput Yellow "  Running DiskPart compaction..."
+            $diskpartResult = diskpart /s $tempFile 2>&1 | Out-String
+            Remove-Item $tempFile
+            
+            if ($LASTEXITCODE -eq 0 -or $diskpartResult -match "successfully compacted") {
+                $compactionSuccess = $true
+                Write-ColorOutput Green "  [OK] DiskPart compaction complete"
+            } else {
+                Write-ColorOutput Red "  [ERROR] Compaction failed"
+                Write-ColorOutput Yellow "  DiskPart output: $diskpartResult"
+            }
+        }
+        
+        if ($compactionSuccess) {
+            # Refresh file info
+            Start-Sleep -Seconds 2
+            $dockerVhdRefreshed = Get-Item $dockerVhdPath
+            $dockerSizeAfter = $dockerVhdRefreshed.Length / 1GB
+            $dockerSpaceReclaimedThis = [math]::Round($dockerSizeBefore - $dockerSizeAfter, 2)
+            $dockerSizeAfterFormatted = "{0:N2}" -f $dockerSizeAfter
+            Write-ColorOutput Cyan "  Size after: $dockerSizeAfterFormatted GB"
+            Write-ColorOutput Green "  Space reclaimed: $dockerSpaceReclaimedThis GB"
+            $dockerSpaceReclaimed += $dockerSpaceReclaimedThis
+        }
+        Write-Output ""
     }
-    Write-Output ""
 } else {
-    Write-ColorOutput Yellow "[INFO] Docker Desktop VHDX not found"
+    Write-ColorOutput Yellow "[INFO] No Docker Desktop VHDX files found"
     Write-ColorOutput Yellow "[INFO] This is normal if Docker Desktop is not installed or uses WSL2 integration differently"
     Write-Output ""
 }
@@ -257,29 +305,67 @@ Write-ColorOutput Cyan "VHDX size before compaction: $vhdxBeforeGB GB"
 Write-Output ""
 
 # Step 14: Compact the Ubuntu VHDX
-Write-ColorOutput Yellow "Compacting VHDX (this may take several minutes)..."
+Write-ColorOutput Yellow "Compacting Ubuntu VHDX (this may take several minutes)..."
+$ubuntuCompactionSuccess = $false
+
 try {
     Import-Module Hyper-V -ErrorAction Stop
     
     # Use Optimize-VHD with Full mode for maximum space reclamation
-    Optimize-VHD -Path $vhdxPath -Mode Full
+    Write-ColorOutput Yellow "Using Optimize-VHD with Full mode..."
+    Optimize-VHD -Path $vhdxPath -Mode Full -ErrorAction Stop
     
+    $ubuntuCompactionSuccess = $true
     Write-ColorOutput Green "[OK] VHDX compaction complete!"
 } catch {
-    Write-ColorOutput Red "[ERROR] Error compacting VHDX: $_"
-    Write-ColorOutput Yellow "Make sure Hyper-V module is available and you have sufficient permissions."
-    Exit
+    Write-ColorOutput Yellow "Optimize-VHD failed, trying DiskPart as fallback..."
+    
+    # Fallback to DiskPart
+    $diskpartScript = @"
+select vdisk file="$vhdxPath"
+attach vdisk readonly
+compact vdisk
+detach vdisk
+exit
+"@
+    
+    $tempFile = [System.IO.Path]::GetTempFileName()
+    Set-Content -Path $tempFile -Value $diskpartScript -Encoding ASCII
+    
+    $diskpartResult = diskpart /s $tempFile 2>&1 | Out-String
+    Remove-Item $tempFile
+    
+    if ($LASTEXITCODE -eq 0 -or $diskpartResult -match "successfully compacted") {
+        $ubuntuCompactionSuccess = $true
+        Write-ColorOutput Green "[OK] DiskPart compaction complete!"
+    } else {
+        Write-ColorOutput Red "[ERROR] Both compaction methods failed!"
+        Write-ColorOutput Yellow "Optimize-VHD error: $_"
+        Write-ColorOutput Yellow "DiskPart output: $diskpartResult"
+        Write-ColorOutput Yellow "Make sure Hyper-V module is available and WSL is completely shut down."
+    }
 }
 
 Write-Output ""
 
 # Step 15: Get Ubuntu VHDX size after compaction
-$vhdxAfter = (Get-Item $vhdxPath).Length
-$vhdxAfterGB = [math]::Round($vhdxAfter / 1GB, 2)
-$spaceReclaimed = [math]::Round(($vhdxBefore - $vhdxAfter) / 1GB, 2)
-
-Write-ColorOutput Cyan "VHDX size after compaction: $vhdxAfterGB GB"
-Write-ColorOutput Green "Space reclaimed: $spaceReclaimed GB"
+if ($ubuntuCompactionSuccess) {
+    # Refresh file info to get accurate size
+    Start-Sleep -Seconds 2
+    $vhdxAfter = (Get-Item $vhdxPath).Length
+    $vhdxAfterGB = [math]::Round($vhdxAfter / 1GB, 2)
+    $spaceReclaimed = [math]::Round(($vhdxBefore - $vhdxAfter) / 1GB, 2)
+    
+    Write-ColorOutput Cyan "VHDX size after compaction: $vhdxAfterGB GB"
+    if ($spaceReclaimed -gt 0) {
+        Write-ColorOutput Green "Space reclaimed: $spaceReclaimed GB"
+    } else {
+        Write-ColorOutput Yellow "No space reclaimed (file may already be compacted or compaction failed)"
+    }
+} else {
+    $spaceReclaimed = 0
+    Write-ColorOutput Red "Compaction failed - no space reclaimed"
+}
 Write-Output ""
 
 # Step 16: Restart Docker Desktop and WSL
@@ -315,10 +401,14 @@ Write-ColorOutput Cyan "Summary:"
 if ($dockerAvailable) {
     Write-Output "  [OK] Docker images, volumes, build cache, and networks pruned"
 }
-if ($dockerVhd -and (Test-Path $dockerVhd) -and $dockerSpaceReclaimed -gt 0) {
-    Write-Output "  [OK] Docker Desktop VHDX compacted (reclaimed: $dockerSpaceReclaimed GB)"
-} elseif ($dockerVhd) {
-    Write-Output "  [INFO] Docker Desktop VHDX found but compaction may have been skipped"
+if ($allDockerVhdxFiles.Count -gt 0) {
+    if ($dockerSpaceReclaimed -gt 0) {
+        Write-Output "  [OK] Docker Desktop VHDX files compacted ($($allDockerVhdxFiles.Count) files, reclaimed: $dockerSpaceReclaimed GB)"
+    } else {
+        Write-Output "  [WARNING] Docker Desktop VHDX files found but no space was reclaimed (may already be compacted)"
+    }
+} else {
+    Write-Output "  [INFO] No Docker Desktop VHDX files found"
 }
 Write-Output "  [OK] Ubuntu WSL2 virtual disk compacted (reclaimed: $spaceReclaimed GB)"
 $totalReclaimed = [math]::Round($spaceReclaimed + $dockerSpaceReclaimed, 2)

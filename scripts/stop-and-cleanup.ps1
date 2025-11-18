@@ -8,24 +8,25 @@ param(
 )
 
 # Colors for output
-function Write-ColorOutput($ForegroundColor) {
+function Write-ColorOutput {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ForegroundColor,
+        [Parameter(ValueFromRemainingArguments=$true)]
+        [string[]]$Message
+    )
     $fc = $host.UI.RawUI.ForegroundColor
     $host.UI.RawUI.ForegroundColor = $ForegroundColor
-    if ($args) {
-        Write-Output $args
+    if ($Message) {
+        Write-Output ($Message -join " ")
     }
     $host.UI.RawUI.ForegroundColor = $fc
 }
 
-Write-ColorOutput Cyan "========================================"
-Write-ColorOutput Cyan "Deepiri Docker Stop and Cleanup Script"
-Write-ColorOutput Cyan "========================================"
-Write-Output ""
-
 # Function to check if Docker is running
 function Test-Docker {
     try {
-        docker info | Out-Null
+        $null = docker info 2>&1
         return $true
     } catch {
         Write-ColorOutput Red "Error: Docker is not running or not accessible"
@@ -37,7 +38,7 @@ function Test-Docker {
 function Stop-Containers {
     Write-ColorOutput Yellow "Stopping all Deepiri containers..."
     
-    $containers = docker ps -a --filter "name=deepiri" --format "{{.Names}}" 2>$null
+    $containers = docker ps -a --filter "name=deepiri" --format "{{.Names}}" 2>&1
     
     if ([string]::IsNullOrWhiteSpace($containers)) {
         Write-ColorOutput Green "No Deepiri containers found"
@@ -46,18 +47,18 @@ function Stop-Containers {
         foreach ($container in $containerList) {
             if ($container) {
                 Write-Output "  Stopping: $container"
-                docker stop $container 2>$null | Out-Null
+                $null = docker stop $container 2>&1
             }
         }
         
         # Also stop any containers started by docker-compose
         Write-ColorOutput Yellow "Stopping docker-compose services..."
-        docker-compose -f docker-compose.yml down 2>$null | Out-Null
-        docker-compose -f docker-compose.dev.yml down 2>$null | Out-Null
-        docker-compose -f docker-compose.microservices.yml down 2>$null | Out-Null
-        docker-compose -f docker-compose.enhanced.yml down 2>$null | Out-Null
+        $null = docker-compose -f docker-compose.yml down 2>&1
+        $null = docker-compose -f docker-compose.dev.yml down 2>&1
+        $null = docker-compose -f docker-compose.microservices.yml down 2>&1
+        $null = docker-compose -f docker-compose.enhanced.yml down 2>&1
         
-        Write-ColorOutput Green "✓ All containers stopped"
+        Write-ColorOutput Green "[OK] All containers stopped"
     }
 }
 
@@ -65,7 +66,7 @@ function Stop-Containers {
 function Remove-Containers {
     Write-ColorOutput Yellow "Removing all Deepiri containers..."
     
-    $containers = docker ps -a --filter "name=deepiri" --format "{{.Names}}" 2>$null
+    $containers = docker ps -a --filter "name=deepiri" --format "{{.Names}}" 2>&1
     
     if ([string]::IsNullOrWhiteSpace($containers)) {
         Write-ColorOutput Green "No Deepiri containers to remove"
@@ -74,11 +75,11 @@ function Remove-Containers {
         foreach ($container in $containerList) {
             if ($container) {
                 Write-Output "  Removing: $container"
-                docker rm -f $container 2>$null | Out-Null
+                $null = docker rm -f $container 2>&1
             }
         }
         
-        Write-ColorOutput Green "✓ All containers removed"
+        Write-ColorOutput Green "[OK] All containers removed"
     }
 }
 
@@ -91,7 +92,7 @@ function Remove-Images {
     
     Write-ColorOutput Yellow "Removing Deepiri images..."
     
-    $images = docker images --filter "reference=*deepiri*" --format "{{.Repository}}:{{.Tag}}" 2>$null
+    $images = docker images --filter "reference=*deepiri*" --format "{{.Repository}}:{{.Tag}}" 2>&1
     
     if ([string]::IsNullOrWhiteSpace($images)) {
         Write-ColorOutput Green "No Deepiri images found"
@@ -100,19 +101,19 @@ function Remove-Images {
         foreach ($image in $imageList) {
             if ($image) {
                 Write-Output "  Removing: $image"
-                docker rmi -f $image 2>$null | Out-Null
+                $null = docker rmi -f $image 2>&1
             }
         }
         
-        Write-ColorOutput Green "✓ Images removed"
+        Write-ColorOutput Green "[OK] Images removed"
     }
     
     # Also remove dangling images
     Write-ColorOutput Yellow "Removing dangling images..."
-    $dangling = docker images -f "dangling=true" -q 2>$null
-    if ($dangling) {
-        docker rmi -f $dangling 2>$null | Out-Null
-        Write-ColorOutput Green "✓ Dangling images removed"
+    $dangling = docker images -f "dangling=true" -q 2>&1
+    if ($dangling -and $dangling.Trim()) {
+        $null = docker rmi -f $dangling 2>&1
+        Write-ColorOutput Green "[OK] Dangling images removed"
     } else {
         Write-ColorOutput Green "No dangling images found"
     }
@@ -127,7 +128,7 @@ function Remove-Volumes {
     
     Write-ColorOutput Yellow "Removing unused volumes..."
     
-    $volumes = docker volume ls --filter "name=deepiri" --format "{{.Name}}" 2>$null
+    $volumes = docker volume ls --filter "name=deepiri" --format "{{.Name}}" 2>&1
     
     if ([string]::IsNullOrWhiteSpace($volumes)) {
         Write-ColorOutput Green "No Deepiri volumes found"
@@ -136,31 +137,31 @@ function Remove-Volumes {
         foreach ($volume in $volumeList) {
             if ($volume) {
                 Write-Output "  Removing: $volume"
-                docker volume rm $volume 2>$null | Out-Null
+                $null = docker volume rm $volume 2>&1
             }
         }
         
-        Write-ColorOutput Green "✓ Volumes removed"
+        Write-ColorOutput Green "[OK] Volumes removed"
     }
     
     # Remove all unused volumes
     Write-ColorOutput Yellow "Removing all unused volumes..."
-    docker volume prune -f 2>$null | Out-Null
-    Write-ColorOutput Green "✓ Unused volumes pruned"
+    $null = docker volume prune -f 2>&1
+    Write-ColorOutput Green "[OK] Unused volumes pruned"
 }
 
 # Function to clean build cache
 function Clear-BuildCache {
     Write-ColorOutput Yellow "Cleaning Docker build cache..."
-    docker builder prune -af 2>$null | Out-Null
-    Write-ColorOutput Green "✓ Build cache cleaned"
+    $null = docker builder prune -af 2>&1
+    Write-ColorOutput Green "[OK] Build cache cleaned"
 }
 
 # Function to remove networks
 function Remove-Networks {
     Write-ColorOutput Yellow "Removing Deepiri networks..."
     
-    $networks = docker network ls --filter "name=deepiri" --format "{{.Name}}" 2>$null
+    $networks = docker network ls --filter "name=deepiri" --format "{{.Name}}" 2>&1
     
     if ([string]::IsNullOrWhiteSpace($networks)) {
         Write-ColorOutput Green "No Deepiri networks found"
@@ -169,19 +170,19 @@ function Remove-Networks {
         foreach ($network in $networkList) {
             if ($network -and $network -ne "deepiri-network" -and $network -ne "deepiri-dev-network") {
                 Write-Output "  Removing: $network"
-                docker network rm $network 2>$null | Out-Null
+                $null = docker network rm $network 2>&1
             }
         }
         
         # Remove the main networks if no containers are using them
         foreach ($network in @("deepiri-network", "deepiri-dev-network")) {
             try {
-                $networkInfo = docker network inspect $network 2>$null
-                if ($networkInfo) {
-                    $containers = docker network inspect $network --format '{{len .Containers}}' 2>$null
+                $networkInfo = docker network inspect $network 2>&1
+                if ($networkInfo -and -not ($networkInfo -match "Error")) {
+                    $containers = docker network inspect $network --format '{{len .Containers}}' 2>&1
                     if ($containers -eq "0") {
                         Write-Output "  Removing: $network"
-                        docker network rm $network 2>$null | Out-Null
+                        $null = docker network rm $network 2>&1
                     }
                 }
             } catch {
@@ -189,7 +190,7 @@ function Remove-Networks {
             }
         }
         
-        Write-ColorOutput Green "✓ Networks removed"
+        Write-ColorOutput Green "[OK] Networks removed"
     }
 }
 
@@ -203,7 +204,12 @@ function Show-DiskUsage {
 
 # Main execution
 function Main {
-    Test-Docker
+    Write-ColorOutput Cyan "========================================"
+    Write-ColorOutput Cyan "Deepiri Docker Stop and Cleanup Script"
+    Write-ColorOutput Cyan "========================================"
+    Write-Output ""
+    
+    Test-Docker | Out-Null
     
     Write-ColorOutput Yellow "Current Docker disk usage:"
     Show-DiskUsage
