@@ -4,7 +4,7 @@
 [submodule "diri-cyrex"]
 	path = diri-cyrex
 	url = git@github.com:Team-Deepiri/diri-cyrex.git
-[submodule "services/deepiri-api-gateway"]
+[submodule "platform-services/backend/deepiri-api-gateway"]
 	path = platform-services/backend/deepiri-api-gateway
 	url = git@github.com:Team-Deepiri/deepiri-api-gateway.git
 [submodule "deepiri-web-frontend"]
