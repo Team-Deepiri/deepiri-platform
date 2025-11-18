@@ -2,14 +2,21 @@
   "name": "@deepiri/shared-utils",
   "version": "1.0.0",
   "description": "Shared utilities for Deepiri microservices",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest"
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "winston": "^3.11.0"
   },
   "devDependencies": {
-    "jest": "^25.0.0"
+    "@types/node": "^20.10.0",
+    "@types/winston": "^2.4.4",
+    "jest": "^25.0.0",
+    "typescript": "^5.3.3"
   }
 }
