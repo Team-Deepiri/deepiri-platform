@@ -1,0 +1,12 @@
+[submodule "deepiri-core-api"]
+	path = deepiri-core-api
+	url = git@github.com:Team-Deepiri/deepiri-core-api.git
+[submodule "diri-cyrex"]
+	path = diri-cyrex
+	url = git@github.com:Team-Deepiri/diri-cyrex.git
+[submodule "services/deepiri-api-gateway"]
+	path = services/deepiri-api-gateway
+	url = git@github.com:Team-Deepiri/deepiri-api-gateway.git
+[submodule "deepiri-web-frontend"]
+	path = deepiri-web-frontend
+	url = git@github.com:Team-Deepiri/deepiri-web-frontend.git
