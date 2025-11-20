@@ -11,7 +11,10 @@ sudo install minikube-linux-amd64 /usr/local/bin/minikube
 
 # Install kubectl
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Verify installation
+kubectl version --client
 
 # Install Skaffold
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
@@ -27,8 +30,18 @@ eval $(minikube docker-env)  # Build images directly in k8s
 
 ### 3. Run Skaffold
 
+**Using the helper script (recommended):**
 ```bash
-skaffold dev --port-forward
+# Linux/WSL2
+./scripts/start-skaffold-dev.sh
+
+# Windows PowerShell
+.\scripts\start-skaffold-dev.ps1
+```
+
+**Or directly:**
+```bash
+skaffold dev -f skaffold-local.yaml --port-forward
 ```
 
 That's it! Skaffold will:
@@ -84,12 +97,16 @@ docker ps  # Verify it works
 ```
 
 **Ports already in use?**
-Edit `skaffold.yaml` to change `localPort` values.
+Edit `skaffold-local.yaml` to change `localPort` values.
 
 **Files not syncing?**
-Check sync patterns in `skaffold.yaml` match your file types.
+Check sync patterns in `skaffold-local.yaml` match your file types.
+
+**Kubernetes connection errors?**
+Make sure you're using `skaffold-local.yaml` for local development. See [SKAFFOLD_CONFIGS.md](SKAFFOLD_CONFIGS.md) for details.
 
 ## 📚 Full Documentation
 
-See [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md) for detailed documentation.
+- **[SKAFFOLD_CONFIGS.md](SKAFFOLD_CONFIGS.md)** - Complete guide to Skaffold config files (local vs cloud)
+- **[docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md)** - Detailed Skaffold setup documentation
 

@@ -72,11 +72,12 @@ eval $(minikube docker-env)
 .\scripts\setup-minikube-wsl2.ps1     # Windows PowerShell
 
 # 2. Start with Skaffold (handles everything automatically)
-skaffold dev --port-forward
-
-# Or use the helper script
+# Using helper script (recommended - uses skaffold-local.yaml)
 ./scripts/start-skaffold-dev.sh        # Linux/WSL2
 .\scripts\start-skaffold-dev.ps1      # Windows PowerShell
+
+# Or directly
+skaffold dev -f skaffold-local.yaml --port-forward
 ```
 
 **Skaffold automatically:**
@@ -95,7 +96,7 @@ skaffold dev --port-forward
 .\scripts\stop-skaffold.ps1            # Windows PowerShell
 ```
 
-**See [SKAFFOLD_QUICK_START.md](SKAFFOLD_QUICK_START.md) or [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md) for detailed Skaffold documentation.**
+**See [SKAFFOLD_QUICK_START.md](SKAFFOLD_QUICK_START.md), [SKAFFOLD_CONFIGS.md](SKAFFOLD_CONFIGS.md), or [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md) for detailed Skaffold documentation.**
 
 ### Option B: Docker Compose (Alternative) 🐳
 

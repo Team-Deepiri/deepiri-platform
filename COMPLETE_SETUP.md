@@ -210,7 +210,20 @@ minikube version
 ./scripts/setup-minikube-wsl2.sh
 ```
 
-### 2. Install Skaffold
+### 2. Install kubectl
+
+```bash
+# Download and install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Verify installation
+kubectl version --client
+```
+
+**⚠️ Important:** kubectl is required for Skaffold to deploy to Kubernetes. If you get "kubectl: executable file not found in $PATH" errors, make sure kubectl is installed and in your PATH.
+
+### 3. Install Skaffold
 
 ```bash
 # Download Skaffold
@@ -224,7 +237,7 @@ curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffo
 sudo install skaffold /usr/local/bin/skaffold
 ```
 
-### 3. Start Minikube
+### 4. Start Minikube
 
 ```bash
 # IMPORTANT: Make sure Docker is running first!

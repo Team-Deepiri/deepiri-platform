@@ -41,10 +41,15 @@ sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ### Install kubectl
 
 ```bash
+# Download and install kubectl
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Verify installation
+kubectl version --client
 ```
+
+**Note:** If you get "kubectl: executable file not found in $PATH" errors, make sure kubectl is installed and in your PATH. You can verify with `which kubectl` (should show `/usr/local/bin/kubectl`).
 
 ### Install Skaffold
 
@@ -85,6 +90,7 @@ eval $(minikube docker-env)
 
 ### 2. Start Development Environment
 
+**Using helper script (recommended):**
 ```bash
 # Linux/WSL2
 ./scripts/start-skaffold-dev.sh
@@ -93,14 +99,19 @@ eval $(minikube docker-env)
 .\scripts\start-skaffold-dev.ps1
 ```
 
-Or manually:
+The script automatically:
+- ✅ Uses `skaffold-local.yaml` config file
+- ✅ Configures kubectl for Minikube
+- ✅ Unsets in-cluster config variables (prevents connection errors)
+- ✅ Sets up proper KUBECONFIG
 
+**Or manually:**
 ```bash
 # Make sure you're using Minikube's Docker daemon
 eval $(minikube docker-env)
 
-# Run Skaffold
-skaffold dev --port-forward
+# Run Skaffold (use skaffold-local.yaml for local dev)
+skaffold dev -f skaffold-local.yaml --port-forward
 ```
 
 ## How It Works
@@ -128,9 +139,26 @@ Skaffold automatically forwards:
 
 ## Configuration
 
-### Skaffold Configuration (`skaffold.yaml`)
+### Skaffold Configuration Files
 
-The main configuration file defines:
+This project includes two Skaffold configuration files:
+
+- **`skaffold-local.yaml`** - For local development with Minikube
+  - Uses kubeconfig (not in-cluster config)
+  - Prevents Kubernetes connection errors
+  - Local builds (no push to registry)
+  - File sync enabled
+
+- **`skaffold-cloud.yaml`** - For cloud/production deployments
+  - Supports both kubeconfig (CI/CD) and in-cluster config
+  - Pushes images to container registry
+  - Production-optimized builds
+
+**See [SKAFFOLD_CONFIGS.md](../SKAFFOLD_CONFIGS.md) for complete documentation on both config files.**
+
+### Skaffold Local Configuration (`skaffold-local.yaml`)
+
+The local development configuration file defines:
 
 - **Build artifacts**: Docker images to build (backend, cyrex)
 - **Sync rules**: Files that can be synced without rebuilds
@@ -183,7 +211,7 @@ Features:
 ```bash
 # Setup and start
 ./scripts/setup-minikube-wsl2.sh
-./scripts/start-skaffold-dev.sh
+./scripts/start-skaffold-dev.sh  # Uses skaffold-local.yaml automatically
 ```
 
 ### Rebuild Specific Service
@@ -232,7 +260,7 @@ minikube dashboard
 # Stop Skaffold (Ctrl+C) - it will cleanup automatically
 
 # Or manually cleanup
-skaffold delete
+skaffold delete -f skaffold-local.yaml
 
 # Stop Minikube
 minikube stop
@@ -240,6 +268,23 @@ minikube stop
 # Delete Minikube cluster
 minikube delete
 ```
+
+### Production Deployment
+
+For production/cloud deployments, use the production script:
+
+```bash
+# Deploy to production
+./scripts/start-skaffold-prod.sh
+
+# Deploy to staging
+./scripts/start-skaffold-prod.sh --profile staging
+
+# With port forwarding
+./scripts/start-skaffold-prod.sh --port-forward
+```
+
+**See [SKAFFOLD_CONFIGS.md](../SKAFFOLD_CONFIGS.md) for complete production deployment guide.**
 
 ## Troubleshooting
 
@@ -257,7 +302,7 @@ docker ps  # Should work now
 
 **Problem**: Ports already in use
 
-**Solution**: Stop conflicting services or change ports in `skaffold.yaml`:
+**Solution**: Stop conflicting services or change ports in `skaffold-local.yaml`:
 ```yaml
 portForward:
   - resourceType: service
@@ -271,9 +316,23 @@ portForward:
 **Problem**: File changes not syncing
 
 **Solution**: 
-1. Check sync rules in `skaffold.yaml`
+1. Check sync rules in `skaffold-local.yaml`
 2. Ensure files match the sync patterns
-3. Restart Skaffold: `skaffold dev --port-forward`
+3. Restart Skaffold: `skaffold dev -f skaffold-local.yaml --port-forward`
+
+### Kubernetes Connection Errors
+
+**Problem**: "KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT must be defined"
+
+**Solution**: 
+1. Use `skaffold-local.yaml` for local development (not `skaffold.yaml`)
+2. Use the helper script: `./scripts/start-skaffold-dev.sh`
+3. The script automatically:
+   - Unsets in-cluster config variables
+   - Configures kubectl for Minikube
+   - Sets proper KUBECONFIG
+
+**See [SKAFFOLD_CONFIGS.md](../SKAFFOLD_CONFIGS.md) for detailed troubleshooting.**
 
 ### Minikube Not Starting
 

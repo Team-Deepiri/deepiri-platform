@@ -27,14 +27,16 @@ Welcome to Deepiri, your AI-powered digital productivity playground that gamifie
    minikube start --driver=docker --cpus=4 --memory=8192
    eval $(minikube docker-env)
    
-   # Start with Skaffold (smart rebuilds, file sync, auto port-forward)
-   skaffold dev --port-forward
-   
-   # Or use helper scripts
+   # Or use setup script
    ./scripts/setup-minikube-wsl2.sh      # Linux/WSL2
-   ./scripts/start-skaffold-dev.sh        # Linux/WSL2
    .\scripts\setup-minikube-wsl2.ps1     # Windows PowerShell
+   
+   # Start with Skaffold (uses skaffold-local.yaml)
+   ./scripts/start-skaffold-dev.sh        # Linux/WSL2
    .\scripts\start-skaffold-dev.ps1      # Windows PowerShell
+   
+   # Or directly
+   skaffold dev -f skaffold-local.yaml --port-forward
    ```
 
    **Alternative: Docker Compose**
@@ -64,6 +66,7 @@ Welcome to Deepiri, your AI-powered digital productivity playground that gamifie
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup guide for new developers
 - **[START_EVERYTHING.md](START_EVERYTHING.md)** - Detailed service startup instructions
 - **[SKAFFOLD_QUICK_START.md](SKAFFOLD_QUICK_START.md)** - Quick Skaffold + Kubernetes guide
+- **[SKAFFOLD_CONFIGS.md](SKAFFOLD_CONFIGS.md)** - Skaffold config files guide (local vs cloud)
 - **[FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)** - Find tasks and responsibilities by role
 - **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md)** - Complete Skaffold documentation
@@ -99,12 +102,12 @@ Welcome to Deepiri, your AI-powered digital productivity playground that gamifie
 minikube start --driver=docker --cpus=4 --memory=8192
 eval $(minikube docker-env)
 
-# Start with Skaffold (smart rebuilds, file sync, auto port-forward)
-skaffold dev --port-forward
-
-# Or use helper scripts
+# Start with Skaffold (uses skaffold-local.yaml)
 ./scripts/start-skaffold-dev.sh        # Linux/Mac
 .\scripts\start-skaffold-dev.ps1       # Windows
+
+# Or directly
+skaffold dev -f skaffold-local.yaml --port-forward
 ```
 
 **Alternative: Docker Compose**

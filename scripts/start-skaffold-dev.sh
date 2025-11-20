@@ -96,8 +96,8 @@ if ! command -v skaffold &> /dev/null; then
 fi
 
 # Check if we're in the right directory
-if [ ! -f "skaffold.yaml" ]; then
-    echo "❌ skaffold.yaml not found. Please run this script from the project root."
+if [ ! -f "skaffold-local.yaml" ] && [ ! -f "skaffold.yaml" ]; then
+    echo "❌ skaffold-local.yaml or skaffold.yaml not found. Please run this script from the project root."
     exit 1
 fi
 
@@ -107,9 +107,51 @@ if [ ! -d "ops/k8s" ]; then
     exit 1
 fi
 
-echo "✅ Environment ready. Starting Skaffold..."
+# Configure kubectl to use Minikube context
+echo "🔧 Configuring kubectl for Minikube..."
+if command -v kubectl &> /dev/null; then
+    # Set kubectl context to minikube
+    kubectl config use-context minikube &> /dev/null || {
+        echo "⚠️  Warning: Could not set kubectl context to minikube automatically"
+        echo "   Trying to get kubeconfig from minikube..."
+        minikube update-context &> /dev/null || true
+    }
+    
+    # Verify kubectl can connect
+    if ! kubectl cluster-info &> /dev/null; then
+        echo "⚠️  Warning: kubectl cannot connect to cluster. Trying to fix..."
+        minikube update-context
+        sleep 2
+        if ! kubectl cluster-info &> /dev/null; then
+            echo "❌ kubectl cannot connect to Minikube cluster."
+            echo "   Try running: minikube start"
+            exit 1
+        fi
+    fi
+    echo "✅ kubectl is configured and can connect to Minikube"
+else
+    echo "⚠️  Warning: kubectl is not installed. Skaffold may have issues connecting to Kubernetes."
+fi
+
+# Unset any in-cluster config environment variables that might interfere
+unset KUBERNETES_SERVICE_HOST KUBERNETES_SERVICE_PORT
+
+# Ensure KUBECONFIG is set (Skaffold will use this instead of in-cluster config)
+if [ -z "$KUBECONFIG" ]; then
+    export KUBECONFIG="$HOME/.kube/config"
+fi
+
+# Use skaffold-local.yaml for local development
+CONFIG_FILE="skaffold-local.yaml"
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "⚠️  Warning: $CONFIG_FILE not found, falling back to skaffold.yaml"
+    CONFIG_FILE="skaffold.yaml"
+fi
+
+echo "✅ Environment ready. Starting Skaffold (DEV mode)..."
 echo ""
 echo "📋 Skaffold will:"
+echo "   - Use config: $CONFIG_FILE"
 echo "   - Build Docker images using Minikube's Docker daemon"
 echo "   - Deploy to Kubernetes"
 echo "   - Auto-sync files for faster development"
@@ -121,6 +163,7 @@ echo ""
 
 # Run Skaffold in dev mode
 skaffold dev \
+    -f "$CONFIG_FILE" \
     --port-forward \
     --trigger=notify \
     --watch-poll=1000 \

@@ -429,15 +429,15 @@ skaffold build --artifact=deepiri-cyrex
 #### **How to Run**
 
 ```bash
-# Start with Skaffold (builds, deploys, port-forwards, streams logs)
-skaffold dev --port-forward
-
-# Or use helper script
+# Using helper script (recommended - uses skaffold-local.yaml)
 ./scripts/start-skaffold-dev.sh        # Linux/WSL2
 .\scripts\start-skaffold-dev.ps1      # Windows PowerShell
 
+# Or directly
+skaffold dev -f skaffold-local.yaml --port-forward
+
 # Run once (no watch mode)
-skaffold run --port-forward
+skaffold run -f skaffold-local.yaml --port-forward
 ```
 
 **Skaffold automatically:**

@@ -95,8 +95,9 @@ fi
 if ! command -v kubectl &> /dev/null; then
     echo "❌ kubectl is not installed. Installing..."
     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    chmod +x kubectl
-    sudo mv kubectl /usr/local/bin/
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    echo "✅ kubectl installed successfully"
+    kubectl version --client
 fi
 
 # Check if skaffold is installed
@@ -157,6 +158,8 @@ echo ""
 echo "🚀 Next steps:"
 echo "   1. Make sure you're in the Minikube Docker environment:"
 echo "      eval \$(minikube docker-env)"
-echo "   2. Run Skaffold:"
-echo "      skaffold dev --port-forward"
+echo "      2. Run Skaffold:"
+    echo "      skaffold dev -f skaffold-local.yaml --port-forward"
+    echo "      # Or use the helper script:"
+    echo "      ./scripts/start-skaffold-dev.sh"
 echo ""
