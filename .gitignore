@@ -131,3 +131,10 @@ Thumbs.db
 .cache/
 .temp/
 temp/
+
+# ========================================
+# BINARY FILES & EXECUTABLES
+# ========================================
+minikube-*
+*.bin
+binary/
