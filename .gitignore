@@ -140,3 +140,5 @@ kubectl
 skaffold
 *.bin
 binary/
+# Kubernetes binary (should be installed globally)
+kubectl
