@@ -29,6 +29,7 @@ Quick navigation to all documentation.
 | [SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md) | Architecture overview |
 | [docs/SERVICES_OVERVIEW.md](docs/SERVICES_OVERVIEW.md) | Complete service details & access points |
 | [docs/CORE_API_STATUS.md](docs/CORE_API_STATUS.md) | Core-API status & team access requirements |
+| [docs/CORE_API_REPURPOSING_STRATEGY.md](docs/CORE_API_REPURPOSING_STRATEGY.md) | **How to repurpose core-api assets** |
 | [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md) | Team responsibilities |
 | [COMMANDS_REFERENCE.md](COMMANDS_REFERENCE.md) | Command reference |
 
@@ -90,5 +91,6 @@ Old/deprecated docs moved to `docs/archive/`:
 - **Docker logs?** → [docs/DOCKER_LOG_MANAGEMENT.md](docs/DOCKER_LOG_MANAGEMENT.md)
 - **Need to see architecture?** → [SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)
 - **Need service details?** → [docs/SERVICES_OVERVIEW.md](docs/SERVICES_OVERVIEW.md)
+- **Core-API repurposing?** → [docs/CORE_API_REPURPOSING_STRATEGY.md](docs/CORE_API_REPURPOSING_STRATEGY.md)
 - **Looking for your team?** → See "Team Onboarding" section above
 

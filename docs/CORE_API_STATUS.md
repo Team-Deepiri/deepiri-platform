@@ -14,13 +14,15 @@
 
 ### 2. Is the core-api just old or is it still important?
 
-**It's DEPRECATED** ⚠️ - Core-api is a legacy monolith being actively migrated to microservices.
+**It's BEING REPURPOSED** 🔄 - Core-api has valuable assets that shouldn't be thrown away!
 
-**Status:**
-- ✅ **Current Architecture:** Microservices in `platform-services/backend/`
-- ❌ **Legacy:** `deepiri-core-api/` is the old monolith
-- 🔄 **Migration:** Services are being extracted from core-api to microservices
-- 📅 **Timeline:** Core-api will be removed once migration is complete
+**New Strategy:**
+- ✅ **Repurpose:** Transform into shared library (`@deepiri/shared-core`)
+- ✅ **Keep:** Maintain as API contract validator
+- ✅ **Use:** Simple dev environment option
+- 📦 **Assets:** Models, middleware, business logic, types
+
+**See:** [CORE_API_REPURPOSING_STRATEGY.md](CORE_API_REPURPOSING_STRATEGY.md) for details
 
 ---
 
@@ -47,13 +49,20 @@ API Gateway (5000)
 └─────────────────────────────────────┘
 ```
 
-### Legacy (Deprecated) ❌
+### Future (Repurposed) 🔄
 ```
-Frontend
+Core-API Assets
     ↓
-deepiri-core-api (monolith)
+┌─────────────────────────┐
+│  @deepiri/shared-core   │ ← Shared library
+├─────────────────────────┤
+│  • Models               │
+│  • Middleware           │
+│  • Types                │
+│  • Business Logic       │
+└─────────────────────────┘
     ↓
-All services bundled together
+All microservices import from shared-core
 ```
 
 ---
@@ -84,62 +93,70 @@ All services bundled together
 
 ---
 
-## Core-API Migration Status
+## Core-API Repurposing Status
 
-### Services Already Migrated ✅
+### Valuable Assets Being Repurposed ✅
 
-| Service | Old Location (core-api) | New Location (microservices) |
-|---------|------------------------|------------------------------|
-| Auth | `src/services/userService.ts` | `platform-services/backend/deepiri-auth-service/` |
-| Tasks | `src/services/taskService.ts` | `platform-services/backend/deepiri-task-orchestrator/` |
-| Challenges | `src/services/challengeService.ts` | `platform-services/backend/deepiri-challenge-service/` |
-| Gamification | `src/services/gamificationService.ts` | `platform-services/backend/deepiri-engagement-service/` |
-| Analytics | `src/services/analyticsService.ts` | `platform-services/backend/deepiri-platform-analytics-service/` |
-| Integrations | `src/services/integrationService.ts` | `platform-services/backend/deepiri-external-bridge-service/` |
-| Notifications | `src/services/notificationService.ts` | `platform-services/backend/deepiri-notification-service/` |
-| WebSocket | `src/server.ts` (Socket.IO) | `platform-services/backend/deepiri-realtime-gateway/` |
+| Asset | Current Location (core-api) | Future Use |
+|-------|----------------------------|------------|
+| **Models** | `src/models/*.ts` (13 files) | → `@deepiri/shared-core/models` |
+| **Middleware** | `src/middleware/*.ts` (7 files) | → `@deepiri/shared-core/middleware` |
+| **Types** | `src/types/*.ts` | → `@deepiri/shared-core/types` |
+| **Business Logic** | `src/services/*.ts` (14 files) | → Reference & shared utilities |
+| **Validators** | Throughout codebase | → `@deepiri/shared-core/validators` |
+| **Tests** | `tests/*.test.js` | → Contract testing & shared tests |
+| **API Routes** | `src/routes/*.ts` (15 files) | → API documentation generation |
 
-### Still in Core-API (if any) ⚠️
+### New Purposes for Core-API 🎯
 
-- Any remaining legacy code
-- Migration utilities
-- Old database migrations
-- Legacy test files
+1. **Shared Core Library** - Extract common code into `@deepiri/shared-core`
+2. **API Contract Validator** - Ensure microservices match original behavior
+3. **Dev Environment** - Quick all-in-one setup for new developers
+4. **Documentation Source** - Generate OpenAPI specs
+5. **Migration Validator** - Compare behavior during migration
+6. **Fallback Option** - Monolithic deployment for specific use cases
+
+**See:** [CORE_API_REPURPOSING_STRATEGY.md](CORE_API_REPURPOSING_STRATEGY.md)
 
 ---
 
 ## Who Needs Core-API Access?
 
-### ✅ Teams That May Need It:
+### ✅ Teams That WILL Need It:
 
-1. **Backend Team** (Migration work)
-   - Extracting services from monolith
-   - Understanding legacy patterns
-   - Migration planning
+1. **Backend Team** (Primary users)
+   - Creating `@deepiri/shared-core` library
+   - Extracting models and middleware
+   - Ensuring microservices use shared code
 
-2. **Infrastructure Team** (Reference)
-   - Understanding old deployment patterns
-   - Migration tooling
-   - Legacy system support
+2. **Platform Engineers** (Important users)
+   - Setting up shared library infrastructure
+   - Contract testing setup
+   - CI/CD integration
 
-3. **Platform Engineers** (Reference)
-   - Migration standards
-   - Platform tooling
-   - Architecture documentation
+3. **Infrastructure Team** (Reference users)
+   - Simple dev environment setup
+   - Deployment options
+   - Fallback configurations
 
-### ❌ Teams That Do NOT Need It:
+4. **All Microservice Developers** (Indirect users)
+   - Will import from `@deepiri/shared-core`
+   - Use shared models and middleware
+   - Benefit from shared utilities
+
+### ❌ Teams That Do NOT Need Direct Access:
 
 1. **Frontend Team** ❌
    - Uses API Gateway only
-   - No direct backend access needed
+   - Benefits indirectly from consistent models
 
 2. **AI/ML Team** ❌
    - Works with `diri-cyrex` service
-   - No core-api dependencies
+   - May use shared types if needed
 
-3. **QA Team** ❌
+3. **QA Team** ❌ (mostly)
    - Tests against API Gateway
-   - No need for legacy code
+   - May use for contract testing
 
 ---
 
@@ -193,15 +210,22 @@ The API Gateway (`platform-services/backend/deepiri-api-gateway`) handles:
 
 ### For Project Management:
 
-1. **Complete Migration**
-   - Finish extracting all services from core-api
-   - Remove core-api once migration is done
-   - Update documentation to remove core-api references
+1. **Implement Shared Library**
+   - Create `@deepiri/shared-core` package
+   - Extract models, middleware, types from core-api
+   - Update all microservices to use shared-core
 
-2. **Clear API Contracts**
+2. **Keep Core-API for Reference**
+   - Use for API contract validation
+   - Maintain for simple dev environment
+   - Keep as documentation source
+
+3. **Clear API Contracts**
    - Document all API Gateway endpoints
-   - Provide OpenAPI/Swagger specs
-   - Maintain backward compatibility during migration
+   - Generate OpenAPI/Swagger from core-api
+   - Maintain backward compatibility
+
+**Timeline:** 3-4 weeks for shared library implementation
 
 ---
 
@@ -210,9 +234,10 @@ The API Gateway (`platform-services/backend/deepiri-api-gateway`) handles:
 | Question | Answer |
 |----------|--------|
 | **Frontend needs core-api?** | ❌ NO - They use API Gateway only |
-| **Core-api still important?** | ⚠️ DEPRECATED - Being migrated to microservices |
+| **Core-api still important?** | ✅ YES - Being repurposed into shared library |
 | **What frontend needs?** | ✅ API Gateway access + API documentation |
-| **Who needs core-api?** | Backend team (migration), Infrastructure (reference) |
+| **Who needs core-api?** | Backend team (shared library), All devs (indirect use) |
+| **What happens to core-api?** | 🔄 Transform into `@deepiri/shared-core` + keep as reference |
 
 ---
 
