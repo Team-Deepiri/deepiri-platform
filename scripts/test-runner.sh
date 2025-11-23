@@ -104,8 +104,8 @@ install_test_deps() {
     fi
     
     # Install deepiri-web-frontend test dependencies
-    if [ -f "deepiri-web-deepiri-web-frontend/package.json" ]; then
-        cd deepiri-web-deepiri-web-frontend
+    if [ -f "deepiri-web-frontend/package.json" ]; then
+        cd deepiri-web-frontend
         npm install --silent
         cd ..
     fi
@@ -240,8 +240,8 @@ test_security() {
     log_info "Running security tests..."
     
     # Run npm audit for Node.js projects
-    if [ -f "api-server/package.json" ]; then
-        cd api-server
+    if [ -f "deepiri-core-api/package.json" ]; then
+        cd deepiri-core-api
         if npm audit --audit-level=moderate; then
             log_success "Server security audit passed"
         else

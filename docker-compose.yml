@@ -70,7 +70,7 @@ services:
     build:
       context: ./deepiri-core-api
       dockerfile: Dockerfile
-    container_name: deepiri-backend
+    container_name: deepiri-core-api
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -159,6 +159,11 @@ services:
     build:
       context: ./diri-cyrex
       dockerfile: Dockerfile
+      args:
+        BUILD_TYPE: from-scratch
+        BASE_IMAGE: python:3.11-slim
+        PYTORCH_VERSION: 2.0.0
+        PYTHON_VERSION: 3.11
     container_name: deepiri-cyrex
     restart: unless-stopped
     logging:
@@ -330,6 +335,11 @@ services:
     build:
       context: ./diri-cyrex
       dockerfile: Dockerfile
+      args:
+        BUILD_TYPE: from-scratch
+        BASE_IMAGE: python:3.11-slim
+        PYTORCH_VERSION: 2.0.0
+        PYTHON_VERSION: 3.11
     container_name: deepiri-jupyter
     restart: unless-stopped
     logging:

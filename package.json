@@ -32,5 +32,14 @@
   ],
   "author": "",
   "license": "MIT",
-  "BUILD_TIMESTAMP": "1763293844"
+  "BUILD_TIMESTAMP": "1763293844",
+  "devDependencies": {
+    "node-notifier": "^10.0.1"
+  },
+  "overrides": {
+    "node-notifier": "^10.0.1",
+    "@jest/reporters": {
+      "node-notifier": "^10.0.1"
+    }
+  }
 }

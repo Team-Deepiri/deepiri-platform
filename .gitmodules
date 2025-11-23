@@ -10,3 +10,9 @@
 [submodule "deepiri-web-frontend"]
 	path = deepiri-web-frontend
 	url = git@github.com:Team-Deepiri/deepiri-web-frontend.git
+[submodule "platform-services/backend/deepiri-external-bridge-service"]
+	path = platform-services/backend/deepiri-external-bridge-service
+	url = git@github.com:Team-Deepiri/deepiri-external-bridge-service.git
+[submodule "platform-services/backend/deepiri-auth-service"]
+	path = platform-services/backend/deepiri-auth-service
+	url = git@github.com:Team-Deepiri/deepiri-auth-service.git

@@ -1,0 +1,88 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: deepiri-platform-engineers
+  # Platform Engineers Configuration - All services for platform tooling and standards
+
+build:
+  local:
+    useBuildkit: true
+    push: false
+  tagPolicy:
+    sha256: {}
+  artifacts:
+    # All services for platform development
+    - image: deepiri-dev-frontend
+      context: ./deepiri-web-frontend
+      docker:
+        dockerfile: Dockerfile.dev
+    
+    - image: deepiri-dev-api-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-api-gateway/Dockerfile
+    
+    - image: deepiri-dev-auth-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-auth-service/Dockerfile
+    
+    - image: deepiri-dev-task-orchestrator
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+    
+    - image: deepiri-dev-engagement-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-engagement-service/Dockerfile
+    
+    - image: deepiri-dev-platform-analytics-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+    
+    - image: deepiri-dev-notification-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-notification-service/Dockerfile
+    
+    - image: deepiri-dev-external-bridge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+    
+    - image: deepiri-dev-challenge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-challenge-service/Dockerfile
+    
+    - image: deepiri-dev-realtime-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+    
+    - image: deepiri-dev-cyrex
+      context: ./diri-cyrex
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          BUILD_TYPE: prebuilt
+          BASE_IMAGE: python:3.11-slim
+          PYTORCH_VERSION: 2.9.1
+          PYTHON_VERSION: 3.11
+    
+    - image: deepiri-dev-jupyter
+      context: ./diri-cyrex
+      docker:
+        dockerfile: Dockerfile.jupyter
+        buildArgs:
+          BUILD_TYPE: prebuilt
+          BASE_IMAGE: python:3.11-slim
+          PYTORCH_VERSION: 2.9.1
+          PYTHON_VERSION: 3.11
+
+deploy:
+  kubectl:
+    manifests: []
+

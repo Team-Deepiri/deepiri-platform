@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deepiri-backend
+  name: deepiri-core-api
 spec:
   replicas: 1  # Start with 1 for local dev
   selector:
     matchLabels:
-      app: deepiri-backend
+      app: deepiri-core-api
   template:
     metadata:
       labels:
-        app: deepiri-backend
+        app: deepiri-core-api
     spec:
       containers:
         - name: backend
-          image: deepiri-backend:latest  # Build locally or use your registry
+          image: deepiri-core-api:latest  # Build locally or use your registry
           ports:
             - containerPort: 5000
           envFrom:
@@ -52,7 +52,7 @@ metadata:
   name: backend-service
 spec:
   selector:
-    app: deepiri-backend
+    app: deepiri-core-api
   ports:
   - port: 5000
     targetPort: 5000
@@ -64,12 +64,12 @@ spec:
 # apiVersion: autoscaling/v2
 # kind: HorizontalPodAutoscaler
 # metadata:
-#   name: deepiri-backend-hpa
+#   name: deepiri-core-api-hpa
 # spec:
 #   scaleTargetRef:
 #     apiVersion: apps/v1
 #     kind: Deployment
-#     name: deepiri-backend
+#     name: deepiri-core-api
 #   minReplicas: 2
 #   maxReplicas: 10
 #   metrics:

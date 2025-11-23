@@ -1,246 +1,104 @@
 # Scripts Directory
 
-This directory contains all utility scripts for Deepiri. Scripts are organized by purpose.
+## 🚀 Main Scripts (Use These)
 
-## 🚀 Quick Reference
-
-### Main Rebuild Scripts (in root for easy access)
-- **`../rebuild.sh`** / **`../rebuild.ps1`** - Main rebuild scripts (clean rebuild, removes old images)
-  - Use these when you need to rebuild after code changes
-  - Located in root for easy access: `./rebuild.sh` or `.\rebuild.ps1`
+### Build Scripts
+| Script | Description | Usage |
+|--------|-------------|-------|
+| **[../build.sh](../build.sh)** | **Smart build** (Linux/Mac/WSL) | `cd deepiri && ./build.sh` |
+| **[../build.ps1](../build.ps1)** | **Smart build** (Windows) | `cd deepiri && .\build.ps1` |
+| `remove-dangling-images.sh` | Manual cleanup (Linux/Mac/WSL) | `./remove-dangling-images.sh` |
+| `remove-dangling-images.ps1` | Manual cleanup (Windows) | `.\remove-dangling-images.ps1` |
+| `auto-cleanup-after-build.sh` | Auto-cleanup helper | Called by build scripts |
 
 ### Cleanup Scripts
-- **`stop-and-cleanup.sh`** / **`stop-and-cleanup.ps1`** - Stop containers and clean Docker resources
-- **`cleanup-and-compact.ps1`** - Full cleanup including WSL2 disk compaction (Windows, requires Admin)
-- **`run-cleanup-direct.ps1`** - PowerShell launcher for cleanup scripts
-- **`run-cleanup-as-admin.bat`** - Batch file to run cleanup as Administrator (Windows)
+| Script | Description | Usage |
+|--------|-------------|-------|
+| `cleanup-and-compact.ps1` | **Full cleanup + WSL compact** (Windows Admin) | `.\cleanup-and-compact.ps1` |
+| `remove-dangling-images.*` | Remove dangling images only | `./remove-dangling-images.sh` |
 
-### Development Scripts
-- **`dev-docker.sh`** - Development Docker utilities
-- **`dev-start.js`** - Development server starter
-- **`run.py`** - Python utility runner
-- **`utils_docker.py`** - Docker utility functions
+### Storage Management
+| Script | Description | Usage |
+|--------|-------------|-------|
+| [STORAGE-TROUBLESHOOTING.md](STORAGE-TROUBLESHOOTING.md) | Disk space troubleshooting guide | Read when having disk issues |
+| `compact-wsl-disk.ps1` | Compact WSL VHDX (Windows Admin) | `.\compact-wsl-disk.ps1` |
 
-### Other Scripts
-- **`setup.sh`** - Initial project setup
-- **`docker-cleanup.sh`** - Docker cleanup utilities
-- **`test-runner.sh`** - Test execution script
-- **`fix-dependencies.sh`** - Dependency fixer
-- **`mongo-backup.sh`** / **`mongo-restore.sh`** - MongoDB backup/restore
-- **`compact-wsl-disk.sh`** / **`compact-wsl-disk.ps1`** - WSL2 disk compaction
+## 🗂️ Legacy/Specialized Scripts
+
+Most scripts in this directory are legacy or for specialized use cases. They've been replaced by the main build scripts above.
+
+### Development Environment
+- `setup-dev-venv.sh/ps1` - Set up Python virtual environment
+- `activate-dev-venv.sh/ps1` - Activate Python venv
+- `setup-docker-wsl2.sh` - WSL2 Docker setup
+
+### Database Management
+- `mongo-backup.sh` - MongoDB backup
+- `mongo-restore.sh` - MongoDB restore
+- `mongo-init.js` - MongoDB initialization
+
+### Legacy Build Scripts (Deprecated)
+- `force-rebuild-all.sh` - Use `../build.sh --no-cache` instead
+- `build-cyrex-auto.*` - Use `../build.sh cyrex` instead
+- `rebuild.sh/ps1` - Use `../build.sh` instead
+- `BUILD_RUN_STOP.sh/ps1` - Use `../build.sh` + docker compose instead
+- All `skaffold-*` scripts - Deprecated, use Docker Compose workflow
 
 ### Archive
-- **`archive/`** - Old/legacy scripts (kept for reference)
+- `archive/` - Very old scripts kept for reference only
 
----
+## 🎯 Recommended Workflow
 
-## 📖 Detailed Script Documentation
-
-### Rebuild Scripts
-
-#### `../rebuild.sh` / `../rebuild.ps1` (Main - in root)
-**Purpose:** Clean rebuild of all Docker services
-
-**Usage:**
+### Daily Development
 ```bash
-# Linux/Mac
-./rebuild.sh
+# 1. Build (from project root)
+cd deepiri
+./build.sh                    # Linux/Mac/WSL
+.\build.ps1                   # Windows
 
-# Windows PowerShell
-.\rebuild.ps1
+# 2. Run
+docker compose -f docker-compose.dev.yml up -d
 
-# Specify different compose file
-./rebuild.sh docker-compose.yml
-.\rebuild.ps1 -ComposeFile docker-compose.yml
+# 3. Check logs
+docker compose -f docker-compose.dev.yml logs -f
 ```
 
-**What it does:**
-1. Stops all containers
-2. Removes old images (prevents storage bloat!)
-3. Cleans build cache
-4. Rebuilds everything fresh (no cache)
-5. Starts all services
-
-**When to use:**
-- After code changes
-- When you want fresh images
-- When Docker storage is getting full
-
-**Note:** Normal `docker compose up` does NOT rebuild - use these scripts when you need to rebuild.
-
----
-
-### Cleanup Scripts
-
-#### `stop-and-cleanup.sh` / `stop-and-cleanup.ps1`
-**Purpose:** Stop containers and clean Docker resources (images, volumes, cache)
-
-**Usage:**
+### Disk Space Issues
 ```bash
-# Linux/Mac
-./scripts/stop-and-cleanup.sh
+# Quick cleanup (no admin)
+./scripts/remove-dangling-images.sh        # Linux/Mac/WSL
+.\scripts\remove-dangling-images.ps1       # Windows
 
-# Windows PowerShell
-.\scripts\stop-and-cleanup.ps1
-```
-
-**What it does:**
-- Stops all Deepiri containers
-- Removes unused images
-- Prunes volumes
-- Cleans build cache
-
-**When to use:**
-- When you want to clean up without rebuilding
-- To free Docker storage space
-
----
-
-#### `cleanup-and-compact.ps1` (Windows only)
-**Purpose:** Full cleanup including WSL2 disk compaction
-
-**Usage:**
-```powershell
-# Requires Administrator privileges
+# Full cleanup + WSL compact (Windows Admin required)
 .\scripts\cleanup-and-compact.ps1
 ```
 
-**What it does:**
-1. Docker cleanup (images, volumes, cache)
-2. Shuts down WSL2 safely
-3. Compacts Ubuntu VHDX file
-4. Restarts WSL2
-5. Shows space reclaimed
-
-**When to use:**
-- When WSL2 disk is very large (50GB+)
-- When you need maximum space reclamation
-- Requires Administrator privileges
-
-**Helper scripts:**
-- `run-cleanup-as-admin.bat` - Right-click → Run as Administrator
-- `run-cleanup-direct.ps1` - PowerShell launcher
-
----
-
-### Development Scripts
-
-#### `dev-docker.sh`
-**Purpose:** Development Docker utilities
-
-**Usage:**
+### Clean Rebuild
 ```bash
-./scripts/dev-docker.sh [command]
+# Stop containers
+docker compose -f docker-compose.dev.yml down
+
+# Clean build
+./build.sh --no-cache         # Linux/Mac/WSL
+.\build.ps1 -NoCache          # Windows
+
+# Start fresh
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-#### `dev-start.js`
-**Purpose:** Development server starter
+## 📝 Notes
 
-**Usage:**
-```bash
-node scripts/dev-start.js
-```
+- **Use the main build scripts** in project root (`build.sh` / `build.ps1`)
+- Most scripts here are legacy or specialized
+- See [../HOW_TO_BUILD.md](../HOW_TO_BUILD.md) for the complete build guide
+- Old Skaffold scripts are deprecated - use Docker Compose workflow
 
-#### `run.py`
-**Purpose:** Python utility runner
+## 🔍 Finding the Right Script
 
-**Usage:**
-```bash
-python scripts/run.py [options]
-```
+- **Want to build?** → Use `../build.sh` or `../build.ps1`
+- **Out of disk space?** → Use `remove-dangling-images.*`
+- **Windows storage issues?** → Use `cleanup-and-compact.ps1` (as Admin)
+- **Need to setup environment?** → Use `setup-dev-venv.*`
+- **Database backup/restore?** → Use `mongo-backup.sh` / `mongo-restore.sh`
 
----
-
-### Database Scripts
-
-#### `mongo-backup.sh`
-**Purpose:** Backup MongoDB database
-
-**Usage:**
-```bash
-./scripts/mongo-backup.sh
-```
-
-#### `mongo-restore.sh`
-**Purpose:** Restore MongoDB database from backup
-
-**Usage:**
-```bash
-./scripts/mongo-restore.sh [backup-file]
-```
-
----
-
-### Setup Scripts
-
-#### `setup.sh`
-**Purpose:** Initial project setup
-
-**Usage:**
-```bash
-./scripts/setup.sh
-```
-
-**What it does:**
-- Creates necessary directories
-- Sets up environment files
-- Installs dependencies
-- Configures Docker
-
----
-
-## 🔧 Script Organization
-
-```
-scripts/
-├── README.md                    # This file
-├── cleanup-*.sh/ps1          # Cleanup scripts
-├── dev-*.sh/js                # Development utilities
-├── mongo-*.sh                 # Database scripts
-├── setup.sh                   # Initial setup
-├── test-runner.sh             # Testing utilities
-├── fix-dependencies.sh        # Dependency management
-├── compact-wsl-disk.*         # WSL2 disk management
-└── archive/                   # Old/legacy scripts
-```
-
----
-
-## 📝 Best Practices
-
-1. **Use rebuild scripts** (`../rebuild.sh` / `../rebuild.ps1`) for rebuilding
-2. **Use cleanup scripts** when you need to free space
-3. **Check script help** - Most scripts have `--help` or usage info
-4. **Run as Administrator** when required (Windows cleanup scripts)
-
----
-
-## 🆘 Troubleshooting
-
-### Script won't run (PowerShell)
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-.\scripts\script-name.ps1
-```
-
-### Script opens in Notepad
-- Use the `.bat` helper files
-- Or run from PowerShell directly
-
-### Permission denied (Linux/Mac)
-```bash
-chmod +x scripts/script-name.sh
-```
-
----
-
-## 📚 Related Documentation
-
-- **[../docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md](../docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md)** - Complete Docker cleanup guide
-- **[../docs/MAKEFILE-EXPLANATION.md](../docs/MAKEFILE-EXPLANATION.md)** - Makefile usage (alternative to scripts)
-- **[../README.md](../README.md)** - Main project README
-
----
-
-**Questions?** Check the main [README.md](../README.md) or [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md)
-
+Everything else is likely legacy and has been replaced.

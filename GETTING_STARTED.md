@@ -1,22 +1,158 @@
 # Getting Started with Deepiri
 
-Complete guide for setting up Deepiri locally for development. This covers both **local services** (running directly) and **local Kubernetes** (Minikube/Kind/k3d) setups.
-
-## Table of Contents
-
-1. [Quick Start](#quick-start)
-2. [Prerequisites](#prerequisites)
-3. [Architecture Overview](#architecture-overview)
-4. [Service Setup](#service-setup)
-5. [Kubernetes Setup (Local Dev)](#kubernetes-setup-local-dev)
-6. [Troubleshooting](#troubleshooting)
-7. [Next Steps](#next-steps)
+**Welcome to Deepiri!** This is your central navigation hub. Find your role below and follow the links to your specific setup guide.
 
 ---
 
-## Quick Start
+## 🚀 **START HERE: Complete Setup Guide**
 
-### Option 1: Docker Compose (Easiest) ⚡
+**⭐ NEW USERS: Begin with the complete setup guide for building and running the entire project:**
+
+👉 **[COMPLETE_SETUP.md](COMPLETE_SETUP.md)** - **Complete step-by-step guide for setting up and running all services**
+
+This guide covers:
+- ✅ All prerequisites and dependencies
+- ✅ Complete environment setup
+- ✅ Building all services
+- ✅ Running the entire stack
+- ✅ Verification and testing
+
+**After completing the setup guide, return here for team-specific information.**
+
+---
+
+## 🎯 Quick Navigation by Role
+
+### **New to the Project? Start Here:**
+
+1. **⭐ Complete Setup** → [COMPLETE_SETUP.md](COMPLETE_SETUP.md) - **Build and run the entire project**
+2. **Find Your Role** → [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
+3. **Read Your Team's Onboarding Guide** (see links below)
+4. **Choose Your Development Environment** (⭐ **PRIMARY: Skaffold** or Docker Compose)
+5. **Set Up Your Environment** (follow your team's guide)
+
+---
+
+## 👥 Team-Specific Onboarding Guides
+
+### **AI Team**
+- **Onboarding Guide:** [docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)
+- **AI Services Overview:** [docs/AI_SERVICES_OVERVIEW.md](docs/AI_SERVICES_OVERVIEW.md)
+
+### **ML Team**
+- **ML Engineer Guide:** [docs/ML_ENGINEER_COMPLETE_GUIDE.md](docs/ML_ENGINEER_COMPLETE_GUIDE.md)
+- **MLOps Guide:** [docs/MLOPS_TEAM_ONBOARDING.md](docs/MLOPS_TEAM_ONBOARDING.md)
+
+### **Backend Team**
+- **Onboarding Guide:** [docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)
+- **Microservices Setup:** [docs/MICROSERVICES_SETUP.md](docs/MICROSERVICES_SETUP.md)
+- **Your Code:** 
+  - `deepiri-core-api/` (Main API)
+  - `platform-services/backend/` (Microservices)
+
+### **Frontend Team**
+- **Onboarding Guide:** [docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)
+- **Your Code:** `deepiri-web-frontend/` (React + Vite)
+
+### **Infrastructure Team + Platform Engineers**
+- **Onboarding Guide:** [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md)
+- **Kubernetes Setup:** [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md) ⭐ **PRIMARY: Skaffold for K8s Development**
+- **Quick Skaffold Guide:** [SKAFFOLD_QUICK_START.md](SKAFFOLD_QUICK_START.md)
+- **Your Code:** 
+  - `ops/k8s/` (Kubernetes manifests)
+  - `scripts/` (Infrastructure scripts)
+  - `skaffold.yaml` (Skaffold configuration)
+
+### **QA Team**
+- **Onboarding Guide:** [docs/SECURITY_QA_TEAM_ONBOARDING.md](docs/SECURITY_QA_TEAM_ONBOARDING.md)
+
+---
+
+## 🚀 Quick Start Options
+
+**⭐ PRIMARY RECOMMENDATION: Use Skaffold for Kubernetes development (Option 1)**
+
+### **Prerequisites: Install Docker First**
+
+**For WSL2 users (Recommended):**
+```bash
+# Install Docker Engine (not Docker Desktop - more reliable in WSL2)
+cd deepiri
+./scripts/setup-docker-wsl2.sh
+
+# After installation, restart WSL2:
+# In Windows PowerShell (as Administrator): wsl --shutdown
+# Then restart your WSL2 terminal
+
+# Verify Docker is working
+docker --version
+docker ps
+```
+
+**What the script does:**
+- Installs Docker Engine, Buildx, and Compose (official Docker packages)
+- Verifies Docker's official GPG key fingerprint (security check)
+- Configures WSL2 for systemd
+- See [QUICK-START-SCRIPTS.md](QUICK-START-SCRIPTS.md) for manual installation steps
+
+**Why Docker Engine instead of Docker Desktop?**
+- More reliable WSL2 integration (no socket connection issues)
+- Better performance in WSL2
+- Full control over Docker daemon
+
+---
+
+Choose the development environment that works best for you:
+
+### **Option 1: Kubernetes with Skaffold (PRIMARY - Recommended)** ☸️ ⭐
+
+**Best for:** All teams - production-like local development with smart rebuilds and file sync
+
+**Skaffold provides smart rebuilds, file sync, and automatic port-forwarding:**
+
+```bash
+# 1. Setup Minikube (first time only)
+minikube start --driver=docker --cpus=4 --memory=8192
+eval $(minikube docker-env)
+
+# Or use the setup script
+./scripts/setup-minikube-wsl2.sh      # Linux/WSL2
+.\scripts\setup-minikube-wsl2.ps1     # Windows PowerShell
+
+# 2. Start with Skaffold (handles everything automatically)
+skaffold dev --port-forward
+
+# Or use the helper script
+./scripts/start-skaffold-dev.sh        # Linux/WSL2
+.\scripts\start-skaffold-dev.ps1      # Windows PowerShell
+```
+
+**Skaffold automatically:**
+- ✅ Builds Docker images using Minikube's Docker daemon
+- ✅ Deploys to Kubernetes
+- ✅ Auto-syncs files for instant updates (no rebuilds needed for `.ts`, `.js`, `.py` files)
+- ✅ Port-forwards all services automatically
+- ✅ Streams logs from all services
+- ✅ Cleans up on exit (Ctrl+C)
+
+**Stop Skaffold:**
+```bash
+# Press Ctrl+C in Skaffold terminal (auto-cleanup)
+# Or manually cleanup:
+./scripts/stop-skaffold.sh             # Linux/WSL2
+.\scripts\stop-skaffold.ps1            # Windows PowerShell
+```
+
+**📚 More Details:**
+- **Quick Start:** [SKAFFOLD_QUICK_START.md](SKAFFOLD_QUICK_START.md)
+- **Complete Guide:** [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md)
+- **Configuration:** `skaffold.yaml`
+
+---
+
+### **Option 2: Docker Compose (Alternative - Simpler but less production-like)** 🐳
+
+**Best for:** Quick local testing, teams not using Kubernetes
 
 ```bash
 # Navigate to project root
@@ -24,9 +160,7 @@ cd deepiri
 
 # Copy environment file
 cp env.example .env
-
 # Edit .env - Set AI_PROVIDER=localai for free local AI
-# For LocalAI, you can leave OPENAI_API_KEY empty
 
 # Normal start (uses existing images - no rebuild)
 docker compose -f docker-compose.dev.yml up -d
@@ -48,21 +182,26 @@ docker compose -f docker-compose.dev.yml ps
 - MongoDB: localhost:27017
 - Redis: localhost:6379
 
-### Option 2: Local Services (No Docker)
+**📚 More Details:**
+- **Complete Setup Guide:** [START_EVERYTHING.md](START_EVERYTHING.md)
+- **Environment Variables:** [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)
+- **Troubleshooting:** [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+---
+
+### **Option 3: Local Services (No Docker - Advanced)**
+
+**Best for:** Developers who prefer running services directly on their machine
 
 ```bash
 # 1. Start MongoDB
-# macOS
-brew services start mongodb-community
-# Linux
-sudo systemctl start mongodb
+# macOS: brew services start mongodb-community
+# Linux: sudo systemctl start mongodb
 # Windows: Start MongoDB service from Services panel
 
 # 2. Start Redis
-# macOS
-brew services start redis
-# Linux
-sudo systemctl start redis-server
+# macOS: brew services start redis
+# Linux: sudo systemctl start redis-server
 # Windows: Start Redis service
 
 # 3. Start LocalAI (Optional - for free local AI)
@@ -92,7 +231,15 @@ cp env.example.deepiri-web-frontend .env.local
 npm run dev
 ```
 
-### Option 3: Local Kubernetes (Minikube/Kind/k3d)
+**📚 More Details:**
+- **Environment Setup:** [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)
+- **Environment Variables:** [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)
+
+---
+
+### **Option 4: Manual Kubernetes (Advanced - Not Recommended)**
+
+**Best for:** Platform engineers who need full control over Kubernetes deployment
 
 ```bash
 # 1. Start local Kubernetes cluster
@@ -109,7 +256,7 @@ k3d cluster create deepiri
 cd deepiri/ops/k8s
 
 # Create ConfigMap (non-sensitive config)
-kubectl apply -f configmap.yaml
+kubectl apply -f configmaps/configmap.yaml
 
 # Create Secrets (sensitive data - edit secrets/secrets.yaml first!)
 kubectl apply -f secrets/secrets.yaml
@@ -132,9 +279,13 @@ kubectl port-forward svc/cyrex-service 8000:8000
 
 **Note:** For local Kubernetes, you don't need `.env` files. Everything is configured via ConfigMaps and Secrets.
 
+**📚 More Details:**
+- **Platform Team Guide:** [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md)
+- **Kubernetes Manifests:** `ops/k8s/`
+
 ---
 
-## Prerequisites
+## 📋 Prerequisites
 
 ### Required Software
 
@@ -142,15 +293,18 @@ kubectl port-forward svc/cyrex-service 8000:8000
 - **Python** 3.10 or higher
 - **Docker** and **Docker Compose** (for Docker/Kubernetes options)
 - **Git**
-- **MongoDB** 6.0+ (or use Docker)
-- **Redis** 7.0+ (or use Docker)
+
+### Required for Primary Method (Skaffold)
+
+- **kubectl** (required for Skaffold)
+- **Minikube** (required for local Kubernetes)
+- **Skaffold** (required - primary development method)
 
 ### Optional but Recommended
 
-- **kubectl** (for Kubernetes option)
-- **Minikube**, **Kind**, or **k3d** (for local Kubernetes)
 - **VS Code** or your preferred IDE
 - **MongoDB Compass** (for database management)
+- **Docker Compose** (for alternative method)
 
 ### System Requirements
 
@@ -160,7 +314,50 @@ kubectl port-forward svc/cyrex-service 8000:8000
 
 ---
 
-## Architecture Overview
+## 📚 Essential Documentation
+
+### **Getting Started**
+- **[FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)** - Find your role and responsibilities
+- **[START_EVERYTHING.md](START_EVERYTHING.md)** - Detailed service startup guide
+- **[ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)** - Complete environment setup
+- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - Environment variable reference
+
+### **Development Tools (PRIMARY METHOD)**
+- **[SKAFFOLD_QUICK_START.md](SKAFFOLD_QUICK_START.md)** - Quick Skaffold + Kubernetes guide ⭐ **PRIMARY**
+- **[docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md)** - Complete Skaffold documentation ⭐ **PRIMARY**
+- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md](docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md)** - Docker cleanup guide (alternative method)
+
+### **Architecture & System**
+- **[docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md)** - System design overview
+- **[docs/MICROSERVICES_ARCHITECTURE.md](docs/MICROSERVICES_ARCHITECTURE.md)** - Microservices details
+- **[docs/MICROSERVICES_SETUP.md](docs/MICROSERVICES_SETUP.md)** - Microservices setup guide
+- **[DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md)** - Complete index of all documentation
+
+### **Team-Specific Documentation**
+- **AI Team:** [docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md), [docs/ML_ENGINEER_COMPLETE_GUIDE.md](docs/ML_ENGINEER_COMPLETE_GUIDE.md)
+- **Backend Team:** [docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md), [docs/MICROSERVICES_SETUP.md](docs/MICROSERVICES_SETUP.md)
+- **Frontend Team:** [docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)
+- **Platform Team:** [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md), [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md)
+- **Security/QA Team:** [docs/SECURITY_QA_TEAM_ONBOARDING.md](docs/SECURITY_QA_TEAM_ONBOARDING.md)
+
+---
+
+## 🏗️ Architecture Overview
+
+### Service Ports Reference
+
+| Service | Local URL | Docker Service | K8s Service | Required? |
+|---------|-----------|----------------|-------------|-----------|
+| **Frontend** | http://localhost:5173 | N/A | Port-forward | ✅ Yes |
+| **Backend** | http://localhost:5000 | backend:5000 | backend-service:5000 | ✅ Yes |
+| **Python Agent** | http://localhost:8000 | cyrex:8000 | cyrex-service:8000 | ✅ Yes |
+| **MongoDB** | localhost:27017 | mongodb:27017 | mongodb-service:27017 | ✅ Yes |
+| **Redis** | localhost:6379 | redis:6379 | redis-service:6379 | ✅ Yes |
+| **LocalAI/Ollama** | http://localhost:8080 | localai:8080 | localai-service:8080 | ✅ Yes (for free AI) |
+| **ChromaDB** | Embedded in Cyrex | Embedded | Embedded | ✅ Yes (for RAG) |
+| **Firebase Auth** | N/A | N/A | N/A | ⚠️ Optional (can skip) |
+| **Prometheus/Grafana** | localhost:9090/3001 | prometheus:9090 | Optional | ⚠️ Optional |
 
 ### Local Development Architecture
 
@@ -200,230 +397,231 @@ kubectl port-forward svc/cyrex-service 8000:8000
                                 └──────────────────┘
 ```
 
-### Service Ports Reference
-
-| Service | Local URL | Docker Service | K8s Service | Required? |
-|---------|-----------|----------------|-------------|-----------|
-| **Frontend** | http://localhost:5173 | N/A | Port-forward | ✅ Yes |
-| **Backend** | http://localhost:5000 | backend:5000 | backend-service:5000 | ✅ Yes |
-| **Python Agent** | http://localhost:8000 | cyrex:8000 | cyrex-service:8000 | ✅ Yes |
-| **MongoDB** | localhost:27017 | mongodb:27017 | mongodb-service:27017 | ✅ Yes |
-| **Redis** | localhost:6379 | redis:6379 | redis-service:6379 | ✅ Yes |
-| **LocalAI/Ollama** | http://localhost:8080 | localai:8080 | localai-service:8080 | ✅ Yes (for free AI) |
-| **ChromaDB** | Embedded in Cyrex | Embedded | Embedded | ✅ Yes (for RAG) |
-| **Firebase Auth** | N/A | N/A | N/A | ⚠️ Optional (can skip) |
-| **Prometheus/Grafana** | localhost:9090/3001 | prometheus:9090 | Optional | ⚠️ Optional |
-
 ---
 
-## Service Setup
+## 🛠️ Quick Reference: Build, Run, Stop, Logs
 
-### 1. AI / LLM Service (Local/Free Path)
+> **⭐ PRIMARY METHOD: Use Skaffold (see below). Docker Compose is available as an alternative.**
 
-**Option A: LocalAI (Recommended)**
+### ☸️ Kubernetes with Skaffold (PRIMARY) ⭐
+
+#### **How to Build**
+
 ```bash
-# Using Docker
-docker run -d --name local-ai -p 8080:8080 localai/localai:latest
+# Setup Minikube (first time only)
+minikube start --driver=docker --cpus=4 --memory=8192
+eval $(minikube docker-env)
 
-# Or using LocalAI binary
-curl https://localai.io/install.sh | sh
-local-ai serve
+# Or use setup script
+./scripts/setup-minikube-wsl2.sh      # Linux/WSL2
+.\scripts\setup-minikube-wsl2.ps1     # Windows PowerShell
+
+# Build images (Skaffold handles this automatically)
+skaffold build
+
+# Build specific image
+skaffold build --artifact=deepiri-core-api
+skaffold build --artifact=deepiri-cyrex
 ```
 
-**Option B: Ollama**
+**💡 Tip:** Skaffold automatically rebuilds when files change in dev mode!
+
+#### **How to Run**
+
 ```bash
-# Install Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
+# Using helper script (recommended - uses skaffold-local.yaml)
+./scripts/start-skaffold-dev.sh        # Linux/WSL2
+.\scripts\start-skaffold-dev.ps1      # Windows PowerShell
 
-# Pull a model
-ollama pull llama3.2:1b
+# Or directly
+skaffold dev -f skaffold-local.yaml --port-forward
 
-# Set in .env
-AI_PROVIDER=ollama
-OLLAMA_API_BASE=http://localhost:11434
+# Run once (no watch mode)
+skaffold run -f skaffold-local.yaml --port-forward
 ```
 
-**Option C: LM Studio**
-- Download LM Studio
-- Start local server on port 1234
-- Set `AI_PROVIDER=openai` and `OPENAI_API_BASE=http://localhost:1234/v1`
+**Skaffold automatically:**
+- ✅ Builds Docker images
+- ✅ Deploys to Kubernetes
+- ✅ Port-forwards services
+- ✅ Streams logs
+- ✅ Auto-syncs files (no rebuilds needed for `.ts`, `.js`, `.py`)
 
-### 2. Databases
+**Services Available (auto port-forwarded):**
+- Backend: http://localhost:5000
+- Cyrex: http://localhost:8000
+- MongoDB: localhost:27017
+- Redis: localhost:6379
+- LocalAI: http://localhost:8080
 
-**MongoDB:**
+#### **How to Stop**
+
 ```bash
-# Docker
-docker run -d --name mongodb -p 27017:27017 \
-  -e MONGO_INITDB_ROOT_USERNAME=admin \
-  -e MONGO_INITDB_ROOT_PASSWORD=password \
-  mongo:7.0
+# Press Ctrl+C in Skaffold terminal (auto-cleanup)
 
-# Or local installation
-# macOS: brew install mongodb-community
-# Linux: sudo apt-get install mongodb
-# Windows: Download from mongodb.com
+# Or manually cleanup:
+./scripts/stop-skaffold.sh             # Linux/WSL2
+.\scripts\stop-skaffold.ps1            # Windows PowerShell
+
+# Or use Skaffold directly
+skaffold delete
 ```
 
-**Redis:**
-```bash
-# Docker
-docker run -d --name redis -p 6379:6379 redis:7-alpine
-
-# Or local installation
-# macOS: brew install redis
-# Linux: sudo apt-get install redis-server
-# Windows: Download from redis.io
-```
-
-### 3. Python Agent (Cyrex)
-
-**Option A: Docker Build (Recommended - Auto GPU Detection)**
+#### **How to Check Logs**
 
 ```bash
-cd deepiri
+# Skaffold streams logs automatically in dev mode
+# Or view logs manually:
 
-# Auto-detect GPU and build (recommended)
-# Windows
-.\scripts\build-cyrex-auto.ps1
+# All pods
+kubectl logs -f -l app=deepiri-core-api
+kubectl logs -f -l app=deepiri-cyrex
 
-# Linux/Mac
-./scripts/build-cyrex-auto.sh
+# Specific deployment
+kubectl logs -f deployment/deepiri-core-api
+kubectl logs -f deployment/deepiri-cyrex
+kubectl logs -f deployment/mongodb
+kubectl logs -f deployment/redis
 
-# This automatically:
-# - Detects if you have a GPU (≥4GB VRAM)
-# - Uses CUDA image if GPU is good enough
-# - Falls back to CPU image if no GPU (faster, no freezing!)
-# - Builds with prebuilt PyTorch images (no 1.5GB downloads)
-```
+# Specific pod
+kubectl get pods                    # List pods
+kubectl logs -f <pod-name>          # View pod logs
 
-**Option B: Manual Local Setup**
+# Last 100 lines
+kubectl logs --tail=100 deployment/deepiri-core-api
 
-```bash
-cd diri-cyrex
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy and configure env
-cp env.example.diri-cyrex .env
-# Edit .env: Set AI_PROVIDER=localai
-
-# Start server
-uvicorn app.main:app --reload --port 8000
-```
-
-**Note:** For Docker builds, see `diri-cyrex/README_BUILD.md` for detailed GPU detection and CPU fallback information.
-
-### 4. Node.js Backend
-
-```bash
-cd deepiri-core-api
-
-# Install dependencies
-npm install
-
-# Copy and configure env
-cp env.example.deepiri-core-api .env
-# Edit .env: Set AI_PROVIDER=localai
-
-# Start server
-npm start
-```
-
-### 5. Frontend
-
-```bash
-cd deepiri-web-frontend
-
-# Install dependencies
-npm install
-
-# Copy and configure env
-cp env.example.deepiri-web-frontend .env.local
-# Edit .env.local: VITE_API_URL=http://localhost:5000/api
-
-# Start dev server
-npm run dev
+# Previous container (if pod restarted)
+kubectl logs -f --previous deployment/deepiri-core-api
 ```
 
 ---
 
-## Kubernetes Setup (Local Dev)
+### 🐳 Docker Compose (Alternative)
 
-### Prerequisites
-
-Choose one:
-- **Minikube**: `minikube start`
-- **Kind**: `kind create cluster --name deepiri`
-- **k3d**: `k3d cluster create deepiri`
-
-### Configuration
-
-Kubernetes uses **ConfigMaps** and **Secrets** instead of `.env` files:
-
-**ConfigMap** (`ops/k8s/configmap.yaml`):
-- Non-sensitive configuration
-- Ports, feature flags, URLs
-- Already configured for local dev
-
-**Secrets** (`ops/k8s/secrets/secrets.yaml`):
-- Sensitive data (passwords, API keys)
-- **Edit this file** with your local dev values
-- Use `kubectl apply -f secrets/secrets.yaml` to deploy
-
-### Deployment Steps
+#### **How to Build**
 
 ```bash
-# 1. Start Kubernetes cluster
-minikube start  # or kind/k3d
+# Full rebuild (removes old images, rebuilds fresh)
+./rebuild.sh              # Linux/Mac
+.\rebuild.ps1             # Windows PowerShell
 
-# 2. Apply ConfigMap
-kubectl apply -f ops/k8s/configmap.yaml
+# Rebuild specific service
+docker compose -f docker-compose.dev.yml build --no-cache <service-name>
 
-# 3. Edit and apply Secrets
-# Edit ops/k8s/secrets/secrets.yaml with your local values
-kubectl apply -f ops/k8s/secrets/secrets.yaml
-
-# 4. Deploy services (order matters)
-kubectl apply -f ops/k8s/mongodb-deployment.yaml
-kubectl apply -f ops/k8s/redis-deployment.yaml
-kubectl apply -f ops/k8s/localai-deployment.yaml
-kubectl apply -f ops/k8s/cyrex-deployment.yaml
-kubectl apply -f ops/k8s/backend-deployment.yaml
-
-# 5. Check status
-kubectl get pods
-kubectl get services
-
-# 6. Port forward to access locally
-kubectl port-forward svc/backend-service 5000:5000 &
-kubectl port-forward svc/cyrex-service 8000:8000 &
-kubectl port-forward svc/localai-service 8080:8080 &
+# Rebuild all services (without removing old images)
+docker compose -f docker-compose.dev.yml build
 ```
 
-### Service URLs in Kubernetes
+**💡 Tip:** Normal `docker compose up` does NOT rebuild - it uses existing images. Only rebuild when code changes!
 
-In Kubernetes, services communicate using service names:
-- `mongodb-service:27017` (not `localhost:27017`)
-- `redis-service:6379` (not `localhost:6379`)
-- `backend-service:5000` (not `localhost:5000`)
-- `cyrex-service:8000` (not `localhost:8000`)
-- `localai-service:8080` (not `localhost:8080`)
+#### **How to Run**
 
-The ConfigMap and Deployments are already configured with these service names.
+```bash
+# Start all services (uses existing images - fast!)
+docker compose -f docker-compose.dev.yml up -d
+
+# Start specific service
+docker compose -f docker-compose.dev.yml up -d <service-name>
+
+# Start and view logs in terminal
+docker compose -f docker-compose.dev.yml up
+```
+
+**Services Available:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000
+- Python Agent: http://localhost:8000
+- MongoDB: localhost:27017
+- Redis: localhost:6379
+
+#### **How to Stop**
+
+```bash
+# Stop all services (keeps containers)
+docker compose -f docker-compose.dev.yml stop
+
+# Stop and remove containers
+docker compose -f docker-compose.dev.yml down
+
+# Stop and remove containers + volumes (WARNING: Deletes data!)
+docker compose -f docker-compose.dev.yml down -v
+```
+
+#### **How to Check Logs**
+
+```bash
+# All services (follow mode)
+docker compose -f docker-compose.dev.yml logs -f
+
+# Specific service
+docker compose -f docker-compose.dev.yml logs -f <service-name>
+
+# Last 100 lines
+docker compose -f docker-compose.dev.yml logs --tail=100
+
+# Examples:
+docker compose -f docker-compose.dev.yml logs -f backend
+docker compose -f docker-compose.dev.yml logs -f cyrex
+docker compose -f docker-compose.dev.yml logs -f mongodb
+```
 
 ---
 
-## Troubleshooting
+### 🔧 Additional Useful Commands
 
-### Port Already in Use
+#### **Check Service Status**
 
+**Docker Compose:**
 ```bash
-# Find process using port
+docker compose -f docker-compose.dev.yml ps
+docker stats                          # Resource usage
+```
+
+**Kubernetes:**
+```bash
+kubectl get pods                      # Pod status
+kubectl get services                  # Service status
+kubectl get deployments               # Deployment status
+kubectl describe pod <pod-name>       # Detailed pod info
+```
+
+#### **Restart Services**
+
+**Docker Compose:**
+```bash
+docker compose -f docker-compose.dev.yml restart
+docker compose -f docker-compose.dev.yml restart <service-name>
+```
+
+**Kubernetes:**
+```bash
+kubectl rollout restart deployment/deepiri-core-api
+kubectl rollout restart deployment/deepiri-cyrex
+```
+
+#### **Access Service Shell**
+
+**Docker Compose:**
+```bash
+docker compose -f docker-compose.dev.yml exec <service-name> sh
+docker compose -f docker-compose.dev.yml exec backend sh
+docker compose -f docker-compose.dev.yml exec cyrex sh
+```
+
+**Kubernetes:**
+```bash
+kubectl exec -it deployment/deepiri-core-api -- sh
+kubectl exec -it deployment/deepiri-cyrex -- sh
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Quick Fixes
+
+**Port Already in Use:**
+```bash
 # Windows
 netstat -ano | findstr :5000
 taskkill /PID <pid> /F
@@ -433,103 +631,26 @@ lsof -i :5000
 kill -9 <pid>
 ```
 
-### MongoDB Connection Issues
-
+**Docker Issues:**
 ```bash
-# Check MongoDB is running
-# Docker
-docker ps | grep mongodb
-
-# Local
-# macOS
-brew services list | grep mongodb
-# Linux
-sudo systemctl status mongodb
-
-# Test connection
-mongosh mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-### LocalAI Not Responding
-
+**Kubernetes Pods Not Starting:**
 ```bash
-# Check LocalAI is running
-curl http://localhost:8080/v1/models
-
-# Check logs
-docker logs local-ai
-
-# Restart LocalAI
-docker restart local-ai
-```
-
-### Python Agent Issues
-
-```bash
-# Check virtual environment is activated
-which python  # Should show venv path
-
-# Reinstall dependencies
-pip install -r requirements.txt --force-reinstall
-
-# Check logs
-# Look for errors in terminal where uvicorn is running
-```
-
-### Frontend Can't Connect to Backend
-
-1. Check backend is running: `curl http://localhost:5000/health`
-2. Check deepiri-web-frontend `.env.local`: `VITE_API_URL=http://localhost:5000/api`
-3. Check browser console for CORS errors
-4. Restart deepiri-web-frontend dev server
-
-### Kubernetes Pods Not Starting
-
-```bash
-# Check pod status
 kubectl get pods
-
-# Check pod logs
-kubectl logs <pod-name>
-
-# Check pod events
 kubectl describe pod <pod-name>
-
-# Check ConfigMap/Secrets are applied
-kubectl get configmap deepiri-config
-kubectl get secret deepiri-secrets
+kubectl logs <pod-name>
 ```
 
-### Docker Issues
-
-```bash
-# Reset Docker containers
-docker-compose down -v
-docker-compose up -d
-
-# View logs
-docker-compose logs -f <service-name>
-
-# Rebuild images
-docker-compose build --no-cache
-```
+**📚 More Help:**
+- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Comprehensive troubleshooting guide
+- **Your Team's Onboarding Guide** - Team-specific troubleshooting
 
 ---
 
-## Next Steps
-
-1. **Configure Environment**: See `ENVIRONMENT_VARIABLES.md` for detailed environment variable reference
-2. **Start Services**: Follow Quick Start section above
-3. **Verify Setup**: Check all services are running
-4. **Test Frontend**: Open http://localhost:5173
-5. **Read Documentation**: 
-   - `ENVIRONMENT_VARIABLES.md` - Detailed environment configuration
-   - `START_EVERYTHING.md` - Service startup guide
-   - `FIND_YOUR_TASKS.md` - Development tasks
-
----
-
-## Important Notes
+## ⚙️ Environment Configuration
 
 ### Local vs Cloud Variables
 
@@ -567,8 +688,28 @@ docker-compose build --no-cache
 - Prometheus/Grafana: Optional monitoring
 - External APIs (Google Maps, Weather): Optional features
 
+**📚 More Details:**
+- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - Complete environment variable reference
+
+---
+
+## 🎯 Next Steps
+
+1. **Find Your Role:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
+2. **Read Your Team's Onboarding Guide** (see Team-Specific Onboarding Guides above)
+3. **Choose Your Development Environment** (⭐ **PRIMARY: Skaffold** or Docker Compose)
+4. **Set Up Your Environment** (follow your team's guide)
+5. **Start Coding!** 🚀
+
+---
+
+## 📞 Need Help?
+
+- **Troubleshooting:** [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- **Your Team's Guide:** See Team-Specific Onboarding Guides above
+- **Documentation Index:** [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md)
+
 ---
 
 **Last Updated:** 2024  
 **Maintained by:** Platform Team
-

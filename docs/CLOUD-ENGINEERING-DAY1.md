@@ -104,15 +104,18 @@ For Ubuntu/Debian:
    sudo apt-get install ca-certificates curl gnupg lsb-release
    ```
 
-3. **Add Docker's official GPG key**
+3. **Add Docker's official GPG key** (using official Docker documentation method)
    ```
-   sudo mkdir -p /etc/apt/keyrings
-   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+   sudo install -m 0755 -d /etc/apt/keyrings
+   sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+   sudo chmod a+r /etc/apt/keyrings/docker.asc
    ```
 
 4. **Set up repository**
    ```
-   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   ARCH=$(dpkg --print-architecture)
+   CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+   echo "deb [arch=${ARCH} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${CODENAME} stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
    ```
 
 5. **Install Docker Engine**
@@ -1609,7 +1612,7 @@ services:
       - backend
 
   backend:
-    build: ./backend
+    build: ./deepiri-core-api
     ports:
       - "5000:5000"
     environment:

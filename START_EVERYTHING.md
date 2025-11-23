@@ -56,29 +56,72 @@ cp env.example .env
 # - NOTION_CLIENT_ID, NOTION_CLIENT_SECRET (optional)
 ```
 
-## Step 2: Start All Services with Docker Compose
+## Step 2: Choose Your Deployment Method
 
-**This is the EASIEST way to start everything:**
+### ⚡ Option A: Docker Compose (FASTEST - Recommended for Daily Dev) 🐳
 
-### Normal Start (Uses Existing Images - No Rebuild)
+**This is the FASTEST way to run pre-built containers (~5-10 seconds):**
 
 ```bash
-# Start all services (uses existing images - fast!)
+# Quick start (uses existing images - no rebuild!)
+./scripts/start-docker-dev.sh        # Linux/WSL2
+.\scripts\start-docker-dev.ps1      # Windows PowerShell
+
+# Or directly
 docker compose -f docker-compose.dev.yml up -d
-
-# Check all services are running
-docker compose -f docker-compose.dev.yml ps
-
-# View logs for all services
-docker compose -f docker-compose.dev.yml logs -f
-
-# View logs for specific service
-docker compose -f docker-compose.dev.yml logs -f api-gateway
-docker compose -f docker-compose.dev.yml logs -f cyrex
-docker compose -f docker-compose.dev.yml logs -f jupyter
 ```
 
-**Note:** Normal `docker compose up` does NOT rebuild images - it uses existing ones. This is fast and efficient for daily use.
+**Docker Compose automatically:**
+- ✅ Starts all services using existing images (fast!)
+- ✅ Sets up networking between services
+- ✅ Exposes ports automatically
+- ✅ Manages container lifecycle
+
+**Best for:** Daily development, quick restarts, running pre-built containers
+
+**See [SPEED_COMPARISON.md](SPEED_COMPARISON.md) for speed comparison**
+
+### 🔄 Option B: Kubernetes with Skaffold (WITH FILE SYNC) ☸️
+
+**This is RECOMMENDED for active development with file sync:**
+
+```bash
+# 1. Setup Minikube (first time only)
+minikube start --driver=docker --cpus=4 --memory=8192
+eval $(minikube docker-env)
+
+# Or use the setup script
+./scripts/setup-minikube-wsl2.sh      # Linux/WSL2
+.\scripts\setup-minikube-wsl2.ps1     # Windows PowerShell
+
+# 2. Start with Skaffold (handles everything automatically)
+# Using helper script (recommended - uses skaffold-local.yaml)
+./scripts/start-skaffold-dev.sh        # Linux/WSL2
+.\scripts\start-skaffold-dev.ps1      # Windows PowerShell
+
+# Or directly
+skaffold dev -f skaffold-local.yaml --port-forward
+```
+
+**Skaffold automatically:**
+- ✅ Builds Docker images using Minikube's Docker daemon
+- ✅ Deploys to Kubernetes
+- ✅ Auto-syncs files for instant updates (no rebuilds needed for `.ts`, `.js`, `.py` files)
+- ✅ Port-forwards all services automatically
+- ✅ Streams logs from all services
+- ✅ Cleans up on exit (Ctrl+C)
+
+**Stop Skaffold:**
+```bash
+# Press Ctrl+C in Skaffold terminal (auto-cleanup)
+# Or manually cleanup:
+./scripts/stop-skaffold.sh             # Linux/WSL2
+.\scripts\stop-skaffold.ps1            # Windows PowerShell
+```
+
+**See [SKAFFOLD_QUICK_START.md](SKAFFOLD_QUICK_START.md), [SKAFFOLD_CONFIGS.md](SKAFFOLD_CONFIGS.md), or [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md) for detailed Skaffold documentation.**
+
+**See [SPEED_COMPARISON.md](SPEED_COMPARISON.md) to compare Docker Compose vs Skaffold speeds**
 
 ### Rebuilding (Only When Needed)
 
@@ -96,8 +139,6 @@ docker compose -f docker-compose.dev.yml logs -f jupyter
 # 4. Rebuilds everything fresh
 # 5. Starts all services
 ```
-
-**💡 Tip:** Only use `rebuild.sh` / `rebuild.ps1` when you need to rebuild. Normal `docker compose up` is faster and doesn't rebuild. See [docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md](docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md) for details.
 
 ### Common Issues and Fixes
 
@@ -172,7 +213,7 @@ curl http://localhost:8086  # InfluxDB (browser)
 
 ```bash
 # Navigate to frontend
-cd frontend
+cd deepiri-web-frontend
 
 # Install dependencies (first time only)
 npm install
@@ -243,69 +284,266 @@ curl http://localhost:5000/api/integrations/health
 
 ## Step 6: Monitor Everything
 
-### View All Logs
+See the **"How to Check Logs"** section below for comprehensive logging commands.
+
+## 🔨 How to Build
+
+### Option 1: Build with Skaffold (Recommended for K8s)
 
 ```bash
-# All services
-docker-compose -f docker-compose.dev.yml logs -f
+# Setup Minikube (first time only)
+eval $(minikube docker-env)
+minikube start --driver=docker --cpus=4 --memory=8192
 
-# Specific service
-docker-compose -f docker-compose.dev.yml logs -f api-gateway
-docker-compose -f docker-compose.dev.yml logs -f cyrex
-docker-compose -f docker-compose.dev.yml logs -f auth-service
+# Build all images with Skaffold (tags with :latest automatically)
+skaffold build -f skaffold-local.yaml -p dev-compose
 ```
 
-### Check Service Status
+### Option 2: Build with Docker Compose
+
+```bash
+# Build all services
+docker compose -f docker-compose.dev.yml build
+
+# Build specific service
+docker compose -f docker-compose.dev.yml build api-gateway
+
+# Build without cache (fresh build)
+docker compose -f docker-compose.dev.yml build --no-cache
+
+# Build and start
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+### Option 3: Full Rebuild Script
+
+```bash
+# Clean rebuild (removes old images, rebuilds fresh)
+./rebuild.sh              # Linux/Mac
+.\rebuild.ps1             # Windows
+```
+
+---
+
+## 🚀 How to Run
+
+### Start Everything
+
+```bash
+# Docker Compose (fastest - uses existing images)
+docker compose -f docker-compose.dev.yml up -d
+
+# Or use helper script
+./scripts/start-docker-dev.sh        # Linux/WSL
+.\scripts\start-docker-dev.ps1       # Windows
+
+# Start with Skaffold (with file sync)
+./scripts/start-skaffold-dev.sh      # Linux/WSL
+.\scripts\start-skaffold-dev.ps1     # Windows
+```
+
+### Start Specific Services
+
+```bash
+# Start infrastructure only
+docker compose -f docker-compose.dev.yml up -d mongodb redis influxdb
+
+# Start specific service
+docker compose -f docker-compose.dev.yml up -d api-gateway
+
+# Start multiple services
+docker compose -f docker-compose.dev.yml up -d api-gateway auth-service task-orchestrator
+```
+
+### Start Frontend (Separate Terminal)
+
+```bash
+cd deepiri-web-frontend
+npm install  # First time only
+npm run dev
+```
+
+---
+
+## 🛑 How to Stop
+
+### Stop Everything
+
+**Docker Compose:**
+```bash
+# Stop all services (keeps containers)
+docker compose -f docker-compose.dev.yml stop
+
+# Stop and remove containers
+docker compose -f docker-compose.dev.yml down
+
+# Stop and remove containers + volumes (WARNING: Deletes data!)
+docker compose -f docker-compose.dev.yml down -v
+```
+
+**Skaffold:**
+```bash
+# Press Ctrl+C in Skaffold terminal (auto-cleanup)
+# Or manually:
+skaffold delete -f skaffold-local.yaml
+
+# Or use script
+./scripts/stop-skaffold.sh        # Linux/Mac
+.\scripts\stop-skaffold.ps1       # Windows
+```
+
+### Stop Specific Service
+
+```bash
+# Stop service
+docker compose -f docker-compose.dev.yml stop api-gateway
+
+# Stop and remove service
+docker compose -f docker-compose.dev.yml rm -f api-gateway
+```
+
+---
+
+## 📋 How to Check Logs
+
+### View All Services Logs
+
+```bash
+# All services (follow mode - real-time)
+docker compose -f docker-compose.dev.yml logs -f
+
+# All services (last 100 lines)
+docker compose -f docker-compose.dev.yml logs --tail=100
+
+# All services (since last 10 minutes)
+docker compose -f docker-compose.dev.yml logs --since 10m
+
+# All services (timestamps)
+docker compose -f docker-compose.dev.yml logs -f --timestamps
+```
+
+### View Individual Service Logs
+
+```bash
+# API Gateway
+docker compose -f docker-compose.dev.yml logs -f api-gateway
+
+# Auth Service
+docker compose -f docker-compose.dev.yml logs -f auth-service
+
+# Task Orchestrator
+docker compose -f docker-compose.dev.yml logs -f task-orchestrator
+
+# Engagement Service
+docker compose -f docker-compose.dev.yml logs -f engagement-service
+
+# Platform Analytics Service
+docker compose -f docker-compose.dev.yml logs -f platform-analytics-service
+
+# Notification Service
+docker compose -f docker-compose.dev.yml logs -f notification-service
+
+# External Bridge Service
+docker compose -f docker-compose.dev.yml logs -f external-bridge-service
+
+# Challenge Service
+docker compose -f docker-compose.dev.yml logs -f challenge-service
+
+# Realtime Gateway
+docker compose -f docker-compose.dev.yml logs -f realtime-gateway
+
+# Cyrex AI Service
+docker compose -f docker-compose.dev.yml logs -f cyrex
+
+# Frontend
+docker compose -f docker-compose.dev.yml logs -f frontend
+
+# Infrastructure Services
+docker compose -f docker-compose.dev.yml logs -f mongodb
+docker compose -f docker-compose.dev.yml logs -f redis
+docker compose -f docker-compose.dev.yml logs -f influxdb
+docker compose -f docker-compose.dev.yml logs -f mlflow
+docker compose -f docker-compose.dev.yml logs -f jupyter
+```
+
+### View Multiple Services Logs
+
+```bash
+# Multiple services at once
+docker compose -f docker-compose.dev.yml logs -f api-gateway auth-service cyrex
+
+# All backend services
+docker compose -f docker-compose.dev.yml logs -f \
+  api-gateway \
+  auth-service \
+  task-orchestrator \
+  engagement-service \
+  platform-analytics-service \
+  notification-service \
+  external-bridge-service \
+  challenge-service \
+  realtime-gateway
+```
+
+### Skaffold/Kubernetes Logs
+
+```bash
+# All pods
+kubectl logs -f -l app=deepiri
+
+# Specific deployment
+kubectl logs -f deployment/api-gateway
+kubectl logs -f deployment/cyrex
+kubectl logs -f deployment/auth-service
+
+# All pods in namespace
+kubectl logs -f --all-namespaces
+
+# Pod logs with timestamps
+kubectl logs -f --timestamps deployment/api-gateway
+```
+
+---
+
+## 🔄 Restart Services
+
+```bash
+# Restart all services
+docker compose -f docker-compose.dev.yml restart
+
+# Restart specific service
+docker compose -f docker-compose.dev.yml restart api-gateway
+docker compose -f docker-compose.dev.yml restart cyrex
+
+# Rebuild and restart
+docker compose -f docker-compose.dev.yml up -d --build api-gateway
+```
+
+---
+
+## 📊 Check Service Status
 
 ```bash
 # List all running containers
-docker-compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml ps
+
+# Check specific service
+docker compose -f docker-compose.dev.yml ps api-gateway
 
 # Check resource usage
 docker stats
 
-# Check specific service
-docker-compose -f docker-compose.dev.yml ps api-gateway
-```
-
-## Quick Commands Reference
-
-### Start Everything
-```bash
-docker-compose -f docker-compose.dev.yml up -d
-cd frontend && npm run dev
-```
-
-### Stop Everything
-```bash
-# Stop all services
-docker-compose -f docker-compose.dev.yml down
-
-# Stop and remove volumes (WARNING: Deletes data)
-docker-compose -f docker-compose.dev.yml down -v
-```
-
-### Restart Everything
-```bash
-docker-compose -f docker-compose.dev.yml restart
-```
-
-### Restart Specific Service
-```bash
-docker-compose -f docker-compose.dev.yml restart api-gateway
-docker-compose -f docker-compose.dev.yml restart cyrex
-```
-
-### Rebuild Services (after code changes)
-```bash
-# Rebuild all
-docker-compose -f docker-compose.dev.yml build
-
-# Rebuild specific service
-docker-compose -f docker-compose.dev.yml build api-gateway
-
-# Rebuild and restart
-docker-compose -f docker-compose.dev.yml up -d --build api-gateway
+# Check service health
+curl http://localhost:5000/health  # API Gateway
+curl http://localhost:5001/health  # Auth Service
+curl http://localhost:5002/health  # Task Orchestrator
+curl http://localhost:5003/health  # Engagement Service
+curl http://localhost:5004/health  # Analytics Service
+curl http://localhost:5005/health  # Notification Service
+curl http://localhost:5006/health  # External Bridge
+curl http://localhost:5007/health  # Challenge Service
+curl http://localhost:5008/health  # Realtime Gateway
+curl http://localhost:8000/health  # Cyrex AI
 ```
 
 ## Troubleshooting

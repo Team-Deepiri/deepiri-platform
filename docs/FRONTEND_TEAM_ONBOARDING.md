@@ -169,17 +169,17 @@ npm install @storybook/react
 ```
 
 **First Tasks:**
-1. Review `deepiri-web-frontend/src/App.jsx`
+1. Review `deepiri-web-frontend/src/App.tsx`
 2. Review component structure
 3. Establish design system
 4. Set up component library
 5. Review UX/UI consistency
 
 **Key Files:**
-- `deepiri-web-frontend/src/App.jsx`
+- `deepiri-web-frontend/src/App.tsx`
 - `deepiri-web-frontend/src/components/`
 - `deepiri-web-frontend/src/pages/`
-- `deepiri-web-frontend/vite.config.js`
+- `deepiri-web-frontend/vite.config.ts`
 
 ---
 
@@ -374,21 +374,21 @@ npm install workbox-window
 ```
 
 **First Tasks:**
-1. Review `deepiri-web-frontend/vite.config.js`
+1. Review `deepiri-web-frontend/vite.config.ts`
 2. Optimize bundle size
 3. Implement code splitting
 4. Set up service worker
 5. Create PWA manifest
 
 **Key Files:**
-- `deepiri-web-frontend/vite.config.js`
+- `deepiri-web-frontend/vite.config.ts`
 - `deepiri-web-frontend/public/service-worker.js` (create)
 - `deepiri-web-frontend/public/manifest.json` (create)
 - `deepiri-web-frontend/src/utils/performance.js` (create)
 
 **PWA Setup:**
 ```javascript
-// vite.config.js
+// vite.config.ts
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default {

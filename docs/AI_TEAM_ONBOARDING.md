@@ -43,7 +43,32 @@ git clone <repository-url>
 cd Deepiri/deepiri
 ```
 
-### 2. Python Environment Setup
+### 2. Docker Setup (Required)
+
+**For WSL2 users (Recommended): Use Docker Engine instead of Docker Desktop**
+
+```bash
+# Install Docker Engine (more reliable in WSL2 than Docker Desktop)
+cd deepiri
+./scripts/setup-docker-wsl2.sh
+
+# After the script completes, restart WSL2:
+# In Windows PowerShell (as Administrator): wsl --shutdown
+# Then restart your WSL2 terminal
+
+# Verify Docker installation
+docker --version
+docker-compose --version
+docker ps
+```
+
+**What the script does:**
+- Installs Docker Engine, Buildx, and Compose (official Docker packages)
+- Verifies Docker's official GPG key fingerprint (security check)
+- Configures WSL2 for systemd
+- See [QUICK-START-SCRIPTS.md](../QUICK-START-SCRIPTS.md) for manual installation steps
+
+### 3. Python Environment Setup
 
 ```bash
 cd diri-cyrex

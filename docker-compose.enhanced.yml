@@ -68,7 +68,7 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_ENV: ${NODE_ENV:-development}
-    container_name: deepiri-backend
+    container_name: deepiri-core-api
     restart: unless-stopped
     ports:
       - "5000:5000"

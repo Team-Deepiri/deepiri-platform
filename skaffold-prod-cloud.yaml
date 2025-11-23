@@ -1,0 +1,182 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: deepiri-cloud
+  # Cloud/production configuration
+  # Can use in-cluster config (if running in a pod) or kubeconfig (if running locally)
+  # For CI/CD pipelines, set KUBECONFIG environment variable
+
+build:
+  # Cloud builds typically push to a registry
+  googleCloudBuild:
+    projectId: your-gcp-project-id  # Update with your GCP project
+    region: us-central1
+    machineType: n1-highcpu-8
+  # Alternative: Use local build with push
+  local:
+    useBuildkit: true
+    push: true  # Push to registry
+  artifacts:
+    # Backend API Service (Monolith - Legacy)
+    - image: deepiri-core-api
+      context: ./deepiri-core-api
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: '**/*.ts'
+            dest: /app/src/
+          - src: '**/*.js'
+            dest: /app/dist/
+          - src: '**/*.json'
+            dest: /app/
+    
+    # AI/ML Service (Cyrex)
+    - image: deepiri-cyrex
+      context: ./diri-cyrex
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          BUILD_TYPE: prebuilt
+          BASE_IMAGE: python:3.11-slim
+          PYTORCH_VERSION: 2.9.1
+          PYTHON_VERSION: 3.11
+    
+    # Frontend
+    - image: deepiri-frontend
+      context: ./deepiri-web-frontend
+      docker:
+        dockerfile: Dockerfile
+    
+    # Microservices - API Gateway
+    - image: deepiri-api-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-api-gateway/Dockerfile
+    
+    # Microservices - Auth Service
+    - image: deepiri-auth-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-auth-service/Dockerfile
+    
+    # Microservices - Task Orchestrator
+    - image: deepiri-task-orchestrator
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+    
+    # Microservices - Challenge Service
+    - image: deepiri-challenge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-challenge-service/Dockerfile
+    
+    # Microservices - Engagement Service (Gamification)
+    - image: deepiri-engagement-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-engagement-service/Dockerfile
+    
+    # Microservices - Platform Analytics Service
+    - image: deepiri-platform-analytics-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+    
+    # Microservices - External Bridge Service
+    - image: deepiri-external-bridge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+    
+    # Microservices - Notification Service
+    - image: deepiri-notification-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-notification-service/Dockerfile
+    
+    # Microservices - Realtime Gateway (WebSocket)
+    - image: deepiri-realtime-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+
+deploy:
+  kubectl:
+    # For cloud: Skaffold will use KUBECONFIG if set, otherwise try in-cluster config
+    # This works both in CI/CD (with kubeconfig) and in-cluster (with service account)
+    # If KUBECONFIG is set, kubectl will use it automatically
+    # If not set and running in a pod, kubectl will use in-cluster config
+    manifests:
+      # Infrastructure services (deploy first)
+      - ops/k8s/mongodb-deployment.yaml
+      - ops/k8s/redis-deployment.yaml
+      - ops/k8s/localai-deployment.yaml
+      
+      # Application services
+      - ops/k8s/backend-deployment.yaml
+      - ops/k8s/cyrex-deployment.yaml
+      
+      # Configuration
+      - ops/k8s/configmaps/configmap.yaml
+      - ops/k8s/secrets/secrets.yaml
+      
+      # Networking
+      - ops/k8s/services.yaml
+      - ops/k8s/ingress.yaml
+
+portForward:
+  # Port forwarding for cloud deployments (optional)
+  - resourceType: service
+    resourceName: backend-service
+    namespace: default
+    port: 5000
+    localPort: 5000
+  - resourceType: service
+    resourceName: cyrex-service
+    namespace: default
+    port: 8000
+    localPort: 8000
+
+profiles:
+  # Production profile
+  - name: prod
+    build:
+      googleCloudBuild:
+        projectId: your-gcp-project-id  # Update with your GCP project
+        region: us-central1
+        machineType: n1-highcpu-8
+      local:
+        push: true
+        useBuildkit: true
+    deploy:
+      kubectl:
+        flags:
+          global: []
+  
+  # Staging profile
+  - name: staging
+    build:
+      local:
+        push: true
+        useBuildkit: true
+    deploy:
+      kubectl:
+        flags:
+          global: []
+  
+  # GPU profile for cloud (if using GPU nodes)
+  - name: gpu
+    build:
+      artifacts:
+        - image: deepiri-cyrex
+          context: ./diri-cyrex
+          docker:
+            dockerfile: Dockerfile
+            buildArgs:
+              BUILD_TYPE: prebuilt
+              BASE_IMAGE: pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime
+              PYTORCH_VERSION: 2.9.1
+              PYTHON_VERSION: 3.11
+

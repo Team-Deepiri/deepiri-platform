@@ -53,7 +53,7 @@ docker logs deepiri-redis-dev
 docker logs deepiri-mongo-express-dev
 
 # For docker-compose.yml:
-docker logs deepiri-backend
+docker logs deepiri-core-api
 docker logs deepiri-cyrex-dev
 ```
 
@@ -67,7 +67,7 @@ docker logs -f deepiri-api-gateway-dev
 
 # For docker-compose.yml:
 docker compose -f docker-compose.yml logs -f backend
-docker logs -f deepiri-backend
+docker logs -f deepiri-core-api
 ```
 
 **View last N lines:**
@@ -78,7 +78,7 @@ docker logs --tail=100 deepiri-api-gateway-dev
 
 # For docker-compose.yml:
 docker compose -f docker-compose.yml logs --tail=100 backend
-docker logs --tail=100 deepiri-backend
+docker logs --tail=100 deepiri-core-api
 ```
 
 **View logs with timestamps:**
@@ -89,7 +89,7 @@ docker logs -t deepiri-api-gateway-dev
 
 # For docker-compose.yml:
 docker compose -f docker-compose.yml logs -t backend
-docker logs -t deepiri-backend
+docker logs -t deepiri-core-api
 ```
 
 **View logs since specific time:**
@@ -100,7 +100,7 @@ docker logs --since 2024-11-04T20:00:00 deepiri-api-gateway-dev
 
 # For docker-compose.yml:
 docker compose -f docker-compose.yml logs --since 10m backend
-docker logs --since 2024-11-04T20:00:00 deepiri-backend
+docker logs --since 2024-11-04T20:00:00 deepiri-core-api
 ```
 
 **View logs until specific time:**
@@ -148,7 +148,7 @@ docker logs deepiri-api-gateway-dev | grep -i "challenge"
 
 # For docker-compose.yml:
 docker compose -f docker-compose.yml logs backend | grep "error"
-docker logs deepiri-backend | grep -i "challenge"
+docker logs deepiri-core-api | grep -i "challenge"
 ```
 
 **Case-insensitive search:**
@@ -157,7 +157,7 @@ docker logs deepiri-backend | grep -i "challenge"
 docker logs deepiri-api-gateway-dev | grep -i "error"
 
 # For docker-compose.yml:
-docker logs deepiri-backend | grep -i "error"
+docker logs deepiri-core-api | grep -i "error"
 ```
 
 **Search with context (show surrounding lines):**
@@ -166,7 +166,7 @@ docker logs deepiri-backend | grep -i "error"
 docker logs deepiri-api-gateway-dev | grep -A 5 -B 5 "error"
 
 # For docker-compose.yml:
-docker logs deepiri-backend | grep -A 5 -B 5 "error"
+docker logs deepiri-core-api | grep -A 5 -B 5 "error"
 ```
 
 **Multiple search terms:**
@@ -175,7 +175,7 @@ docker logs deepiri-backend | grep -A 5 -B 5 "error"
 docker logs deepiri-api-gateway-dev | grep -E "error|warn|challenge"
 
 # For docker-compose.yml:
-docker logs deepiri-backend | grep -E "error|warn|challenge"
+docker logs deepiri-core-api | grep -E "error|warn|challenge"
 ```
 
 #### 6. Save Logs to File
@@ -188,7 +188,7 @@ docker logs deepiri-api-gateway-dev > api-gateway.log
 
 # For docker-compose.yml:
 docker compose -f docker-compose.yml logs backend > backend.log
-docker logs deepiri-backend > backend.log
+docker logs deepiri-core-api > backend.log
 ```
 
 **Append to file:**
@@ -197,7 +197,7 @@ docker logs deepiri-backend > backend.log
 docker logs deepiri-api-gateway-dev >> api-gateway.log
 
 # For docker-compose.yml:
-docker logs deepiri-backend >> backend.log
+docker logs deepiri-core-api >> backend.log
 ```
 
 **Save with timestamps:**
@@ -206,7 +206,7 @@ docker logs deepiri-backend >> backend.log
 docker logs -t deepiri-api-gateway-dev > api-gateway-with-timestamps.log
 
 # For docker-compose.yml:
-docker logs -t deepiri-backend > backend-with-timestamps.log
+docker logs -t deepiri-core-api > backend-with-timestamps.log
 ```
 
 #### 7. Inspect Container Logs Directly
@@ -217,7 +217,7 @@ docker logs -t deepiri-backend > backend-with-timestamps.log
 docker inspect deepiri-api-gateway-dev | grep LogPath
 
 # For docker-compose.yml:
-docker inspect deepiri-backend | grep LogPath
+docker inspect deepiri-core-api | grep LogPath
 ```
 
 **View container stats (includes log info):**
@@ -226,7 +226,7 @@ docker inspect deepiri-backend | grep LogPath
 docker stats deepiri-api-gateway-dev
 
 # For docker-compose.yml:
-docker stats deepiri-backend
+docker stats deepiri-core-api
 ```
 
 ## Common Use Cases
@@ -286,7 +286,7 @@ docker compose -f docker-compose.yml logs -f backend cyrex
 docker inspect deepiri-api-gateway-dev | grep -A 10 Health
 
 # For docker-compose.yml:
-docker inspect deepiri-backend | grep -A 10 Health
+docker inspect deepiri-core-api | grep -A 10 Health
 
 # View container status
 docker ps -a --filter "name=deepiri"
@@ -303,8 +303,8 @@ docker logs deepiri-api-gateway-dev
 docker logs --tail=100 deepiri-api-gateway-dev
 
 # For docker-compose.yml:
-docker logs deepiri-backend
-docker logs --tail=100 deepiri-backend
+docker logs deepiri-core-api
+docker logs --tail=100 deepiri-core-api
 ```
 
 ### High Memory Usage
@@ -316,8 +316,8 @@ docker stats deepiri-api-gateway-dev
 docker logs deepiri-api-gateway-dev | grep -i memory
 
 # For docker-compose.yml:
-docker stats deepiri-backend
-docker logs deepiri-backend | grep -i memory
+docker stats deepiri-core-api
+docker logs deepiri-core-api | grep -i memory
 ```
 
 ### Connection Issues

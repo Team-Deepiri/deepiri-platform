@@ -1,0 +1,210 @@
+name: deepiri-ml-team
+
+# ML Team Configuration
+# Services: cyrex, jupyter, mlflow, platform-analytics-service
+# Infrastructure: mongodb, influxdb, redis
+
+x-build-args: &build-args
+  DOCKER_BUILDKIT: 1
+  BUILDKIT_PROGRESS: plain
+
+x-logging: &minimal-logging
+  driver: "local"
+  options:
+    max-size: "1m"
+    max-file: "1"
+    compress: "false"
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: deepiri-mongodb-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-deepiri}
+    volumes:
+      - mongodb_ml_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - deepiri-ml-network
+
+  # Redis Cache
+  redis:
+    image: redis:7.2-alpine
+    container_name: deepiri-redis-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "6380:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    volumes:
+      - redis_ml_data:/data
+    networks:
+      - deepiri-ml-network
+
+  # InfluxDB for Time-Series Analytics
+  influxdb:
+    image: influxdb:2.7
+    container_name: deepiri-influxdb-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:-adminpassword}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-deepiri}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-your-influxdb-token}
+    volumes:
+      - influxdb_ml_data:/var/lib/influxdb2
+    networks:
+      - deepiri-ml-network
+
+  # Python Agent API (AI Service)
+  cyrex:
+    build:
+      context: ./diri-cyrex
+      dockerfile: Dockerfile
+      args:
+        BUILD_TYPE: prebuilt
+        BASE_IMAGE: python:3.11-slim
+        PYTORCH_VERSION: 2.9.1
+        PYTHON_VERSION: 3.11
+    image: deepiri-dev-cyrex:latest
+    pull_policy: never
+    container_name: deepiri-cyrex-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      CORS_ORIGIN: http://localhost:5173
+      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      WANDB_API_KEY: ${WANDB_API_KEY}
+      MODEL_REGISTRY_PATH: /app/model_registry
+      STAGING_MODEL_PATH: /app/models/staging
+      PRODUCTION_MODEL_PATH: /app/models/production
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT:-us-east1-gcp}
+      PINECONE_INDEX: ${PINECONE_INDEX:-deepiri}
+      WEAVIATE_URL: ${WEAVIATE_URL}
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+      TRANSFORMERS_CACHE: /app/.cache/huggingface
+      HF_HOME: /app/.cache/huggingface
+      SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./diri-cyrex/app:/app/app
+      - ./diri-cyrex/train/models:/app/train/models
+      - ./diri-cyrex/train/data:/app/train/data
+      - ./diri-cyrex/inference/models:/app/inference/models
+      - cyrex_ml_cache:/app/.cache
+    depends_on:
+      - influxdb
+    networks:
+      - deepiri-ml-network
+
+  # MLflow for AI Experiment Tracking
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.8.1
+    container_name: deepiri-mlflow-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5500:5000"
+    environment:
+      BACKEND_STORE_URI: file:/mlflow
+      DEFAULT_ARTIFACT_ROOT: file:/mlflow/artifacts
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:/mlflow --default-artifact-root file:/mlflow/artifacts
+    volumes:
+      - mlflow_ml_data:/mlflow
+    networks:
+      - deepiri-ml-network
+
+  # Jupyter Notebook for AI Research
+  jupyter:
+    build:
+      context: ./diri-cyrex
+      dockerfile: Dockerfile.jupyter
+      args:
+        BUILD_TYPE: prebuilt
+        BASE_IMAGE: python:3.11-slim
+        PYTORCH_VERSION: 2.9.1
+        PYTHON_VERSION: 3.11
+    image: deepiri-dev-jupyter:latest
+    pull_policy: never
+    container_name: deepiri-jupyter-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./diri-cyrex/train/notebooks:/app/notebooks
+      - ./diri-cyrex/train/data:/app/data
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
+    networks:
+      - deepiri-ml-network
+
+  # Platform Analytics Service
+  platform-analytics-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+    image: deepiri-dev-platform-analytics-service:latest
+    pull_policy: never
+    container_name: deepiri-platform-analytics-service-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5004:5004"
+    environment:
+      NODE_ENV: development
+      PORT: 5004
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+    volumes:
+      - ./platform-services/backend/deepiri-platform-analytics-service:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - mongodb
+      - influxdb
+    networks:
+      - deepiri-ml-network
+
+volumes:
+  mongodb_ml_data:
+    driver: local
+  redis_ml_data:
+    driver: local
+  mlflow_ml_data:
+    driver: local
+  influxdb_ml_data:
+    driver: local
+  cyrex_ml_cache:
+    driver: local
+
+networks:
+  deepiri-ml-network:
+    driver: bridge
+

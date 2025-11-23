@@ -1,313 +1,167 @@
-# Deepiri - AI-Powered Digital Productivity Playground
+# Deepiri - AI-Powered Learning Platform
 
-Welcome to Deepiri, your AI-powered digital productivity playground that gamifies your tasks, study material, coding projects, and creative work into engaging mini-games, challenges, and interactive experiences.
+> **Quick Start:** Run `./build.sh` (Linux/Mac/WSL) or `.\build.ps1` (Windows), then `docker compose -f docker-compose.dev.yml up -d`
 
-## 🚀 Quick Start
+## What is Deepiri?
 
-**New to Deepiri? Start here!**
+Deepiri is an AI-powered learning and development platform featuring:
+- 🤖 AI agents (Cyrex) for intelligent assistance
+- 🎮 Gamification and challenges
+- 📊 Real-time analytics
+- 🔔 Notifications and webhooks
+- 🌐 External integrations (GitHub, Notion, Trello)
+- 📝 Jupyter notebooks for research
 
-1. **Prerequisites**
-   - Docker and Docker Compose installed
-   - Git
+## Getting Started
 
-2. **Clone and Setup**
-   ```bash
-   git clone <repository-url>
-   cd deepiri
-   cp env.example .env
-   # Edit .env with your API keys
-   ```
+### Prerequisites
+- Docker & Docker Compose
+- WSL2 (Windows only)
+- 8GB+ RAM recommended
 
-3. **Start Everything**
-   ```bash
-   # Normal start (uses existing images - fast!)
-   docker compose -f docker-compose.dev.yml up -d
-   
-   # First time or after code changes? Rebuild:
-   ./rebuild.sh        # Linux/Mac
-   .\rebuild.ps1       # Windows PowerShell
-   ```
+### Build & Run
 
-4. **Access Services**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:5000
-   - Python Agent: http://localhost:8000
-   - MLflow: http://localhost:5500
-   - API Docs: http://localhost:5000/api-docs
-
-**That's it!** See [GETTING_STARTED.md](GETTING_STARTED.md) for detailed setup.
-
----
-
-## 📚 Documentation
-
-### Essential Guides
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup guide for new developers
-- **[START_EVERYTHING.md](START_EVERYTHING.md)** - Detailed service startup instructions
-- **[FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)** - Find tasks and responsibilities by role
-- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-
-### Team-Specific Guides
-- **AI Team** → [docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)
-- **Backend Team** → [docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)
-- **Frontend Team** → [docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)
-- **ML Team** → [docs/ML_ENGINEER_COMPLETE_GUIDE.md](docs/ML_ENGINEER_COMPLETE_GUIDE.md)
-- **ML Ops** → [docs/MLOPS_TEAM_ONBOARDING.md](docs/MLOPS_TEAM_ONBOARDING.md)
-- **Platform Team** → [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md)
-- **QA Team** → [docs/SECURITY_QA_TEAM_ONBOARDING.md](docs/SECURITY_QA_TEAM_ONBOARDING.md)
-
-### Docker & Scripts
-- **[scripts/README.md](scripts/README.md)** - All available scripts explained
-- **[docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md](docs/DOCKER-IMAGE-CLEANSING-COMMANDS.md)** - Docker cleanup guide
-- **[docs/MAKEFILE-EXPLANATION.md](docs/MAKEFILE-EXPLANATION.md)** - Makefile usage (optional)
-
-### Architecture & System
-- **[docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md)** - System design overview
-- **[docs/MICROSERVICES_ARCHITECTURE.md](docs/MICROSERVICES_ARCHITECTURE.md)** - Microservices details
-- **[DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md)** - Complete index of all 63+ docs
-
----
-
-## 🛠️ Common Tasks
-
-### Starting Services
 ```bash
-# Normal start (no rebuild)
+# 1. Clone the repository
+git clone <your-repo-url>
+cd deepiri
+
+# 2. Build all services (auto-cleans dangling images)
+./build.sh              # Linux/Mac/WSL
+.\build.ps1             # Windows PowerShell
+
+# 3. Start the stack
 docker compose -f docker-compose.dev.yml up -d
 
-# Rebuild and start (after code changes)
-./rebuild.sh        # Linux/Mac
-.\rebuild.ps1       # Windows
+# 4. Access services
+# - Frontend: http://localhost:5173
+# - API Gateway: http://localhost:5000
+# - Cyrex AI: http://localhost:8000
+# - Jupyter: http://localhost:8888
+# - MLflow: http://localhost:5500
 ```
 
-### Stopping Services
+### Stop
+
 ```bash
 docker compose -f docker-compose.dev.yml down
 ```
 
-### Viewing Logs
+## Documentation
+
+### Essential Guides
+- **[HOW_TO_BUILD.md](HOW_TO_BUILD.md)** - THE definitive build guide
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup walkthrough
+- **[SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)** - Architecture overview
+
+### Environment Setup
+- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - All environment variables
+- **[docker-compose.dev.yml](docker-compose.dev.yml)** - Development configuration
+
+### Troubleshooting
+- **[scripts/STORAGE-TROUBLESHOOTING.md](scripts/STORAGE-TROUBLESHOOTING.md)** - Disk space issues
+- **[docs/LOG_INSPECTION_GUIDE.md](docs/LOG_INSPECTION_GUIDE.md)** - Debugging logs
+
+### Team-Specific
+- **[docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)** - AI/ML development
+- **[docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)** - Backend services
+- **[docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)** - Frontend development
+
+## Architecture
+
+### Microservices
+- **API Gateway** (Port 5000) - Routes all requests
+- **Auth Service** (Port 5001) - Authentication & authorization
+- **Task Orchestrator** (Port 5002) - Task management
+- **Engagement Service** (Port 5003) - Gamification
+- **Platform Analytics** (Port 5004) - Analytics
+- **Notification Service** (Port 5005) - Notifications
+- **External Bridge** (Port 5006) - External integrations
+- **Challenge Service** (Port 5007) - Challenges
+- **Realtime Gateway** (Port 5008) - WebSockets
+
+### AI/ML Services
+- **Cyrex** (Port 8000) - AI agent API
+- **Jupyter** (Port 8888) - Research notebooks
+- **MLflow** (Port 5500) - Experiment tracking
+
+### Infrastructure
+- **MongoDB** (Port 27017) - Primary database
+- **Redis** (Port 6380) - Cache & sessions
+- **InfluxDB** (Port 8086) - Time-series analytics
+
+## Common Commands
+
 ```bash
-# All services
+# Build specific service
+./build.sh cyrex
+
+# View logs
 docker compose -f docker-compose.dev.yml logs -f
 
-# Specific service
+# View specific service logs
 docker compose -f docker-compose.dev.yml logs -f cyrex
+
+# Check status
+docker compose -f docker-compose.dev.yml ps
+
+# Restart service
+docker compose -f docker-compose.dev.yml restart cyrex
+
+# Clean up disk space
+./scripts/remove-dangling-images.sh        # Linux/Mac/WSL
+.\scripts\remove-dangling-images.ps1       # Windows
 ```
 
-### Rebuilding (Only When Needed)
-```bash
-# Full clean rebuild
-./rebuild.sh        # Linux/Mac
-.\rebuild.ps1       # Windows
+## Development Workflow
 
-# Rebuild cyrex with auto GPU detection (recommended)
-# Windows
-.\scripts\build-cyrex-auto.ps1
+1. Make code changes
+2. Run `./build.sh` (or `.\build.ps1`)
+3. Run `docker compose -f docker-compose.dev.yml restart <service>`
+4. Check logs with `docker compose -f docker-compose.dev.yml logs -f <service>`
 
-# Linux/Mac
-./scripts/build-cyrex-auto.sh
+The build scripts automatically clean up dangling Docker images, so you never get disk space bloat.
 
-# Manual rebuild specific service
-docker compose -f docker-compose.dev.yml build --no-cache cyrex
-docker compose -f docker-compose.dev.yml up -d cyrex
-```
-
-**Note:** Normal `docker compose up` does NOT rebuild - it uses existing images. Only rebuild when code changes!
-
-**GPU Detection:** The build system automatically detects your GPU and chooses the best base image (CUDA if GPU ≥4GB, CPU otherwise). This prevents build freezing from large CUDA downloads. See `diri-cyrex/README_BUILD.md` for details.
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 deepiri/
-├── README.md                    # You are here! Start here.
-├── GETTING_STARTED.md           # Detailed setup guide
-├── START_EVERYTHING.md          # Service startup guide
-├── rebuild.sh / rebuild.ps1     # Main rebuild scripts (root for easy access)
-├── Makefile                     # Optional make commands
-│
-├── scripts/                     # All utility scripts
-│   ├── README.md                # Script documentation
-│   ├── cleanup-*.sh/ps1        # Cleanup scripts
-│   └── archive/                 # Old/legacy scripts
-│
-├── docs/                        # All documentation
-│   ├── *_TEAM_ONBOARDING.md    # Team guides
-│   ├── TROUBLESHOOTING.md      # Common issues
-│   └── DOCKER-*.md             # Docker guides
-│
-├── deepiri-web-frontend/        # React frontend
-├── deepiri-core-api/            # Node.js backend
-├── diri-cyrex/              # Python AI agent
-├── platform-services/           # Platform microservices
-│   ├── backend/                 # Backend microservices
-│   ├── shared/                  # Shared utilities
-│   ├── ai-ml/                   # AI/ML services (future)
-│   └── data/                    # Data processing services (future)
-└── docker-compose.dev.yml       # Docker configuration
+├── deepiri-core-api/          # Legacy monolith (deprecated)
+├── platform-services/         # Microservices
+│   └── backend/
+│       ├── deepiri-api-gateway/
+│       ├── deepiri-auth-service/
+│       ├── deepiri-task-orchestrator/
+│       └── ... (other services)
+├── diri-cyrex/               # AI/ML service
+├── deepiri-web-frontend/     # React frontend
+├── ops/                      # Kubernetes configs
+├── scripts/                  # Utility scripts
+├── docs/                     # Documentation
+├── build.sh / build.ps1      # Build scripts
+└── docker-compose.dev.yml    # Development config
 ```
 
----
-
-## 🎯 Core Concept
-
-Gamify your productivity by turning tasks, study material, coding projects, or creative work into mini-games, challenges, and interactive experiences. Rewards, progress tracking, and adaptive difficulty make boring tasks fun. AI adapts challenges to your workflow and style, with optional multiplayer/competitive features.
-
-## 🏗️ Architecture
-
-Deepiri follows a modern microservices architecture:
-
-### Backend Services
-- **User Service**: Authentication, profiles, progress, preferences
-- **Task Service**: CRUD tasks, fetch tasks from integrations, store metadata
-- **AI Challenge Service**: Generates challenges from tasks using NLP + RL models
-- **Gamification Service**: Points, badges, leaderboards, streaks
-- **Analytics Service**: Tracks performance, creates insights, suggests optimizations
-- **Notification Service**: Sends reminders, daily missions, streak updates
-- **Integration Service**: Connects to Notion, Trello, Google Docs, GitHub
-
-### Python Agent (FastAPI)
-- **AI Challenge Generation**: NLP models for task parsing and challenge creation
-- **Reinforcement Learning**: Adaptive difficulty optimization
-- **Task Understanding**: Classifies and categorizes tasks
-
-### Frontend (React + Vite)
-- **Modern React 18**: Hooks, Context API, and modern patterns
-- **Responsive Design**: Mobile-first design with Tailwind CSS
-- **Real-time Updates**: Socket.IO integration for live progress
-- **Progressive Web App**: Offline support and mobile optimization
-
-### Database & Infrastructure
-- **MongoDB**: Primary database for all application data
-- **Redis**: Caching layer and leaderboard storage
-- **Docker**: Containerized deployment
-- **NGINX**: Load balancing and reverse proxy
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-Copy `env.example` to `.env` and configure:
-
-```bash
-# Required API Keys
-OPENAI_API_KEY=your_openai_api_key
-
-# Database
-MONGO_ROOT_USER=admin
-MONGO_ROOT_PASSWORD=your_secure_password
-MONGO_DB=deepiri
-REDIS_PASSWORD=your_redis_password
-
-# JWT Secret
-JWT_SECRET=your_jwt_secret_key
-```
-
-See [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for complete list.
-
----
-
-## 🧪 Testing
-
-```bash
-# Backend tests
-cd deepiri-core-api && npm test
-
-# Python agent tests
-cd diri-cyrex && pytest -q
-
-# Frontend tests
-cd deepiri-web-frontend && npm test
-```
-
----
-
-## 🚢 Deployment
-
-### Production with Docker
-```bash
-export NODE_ENV=production
-docker compose --profile production up -d
-```
-
-### Cloud Deployment
-Designed for cloud-native deployment on:
-- **AWS**: ECS, EKS, or EC2
-- **Google Cloud**: GKE or Cloud Run
-- **Azure**: AKS or Container Instances
-- **DigitalOcean**: App Platform or Kubernetes
-
----
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
+2. Create a feature branch
 3. Make your changes
-4. Run tests: `npm test`
-5. Commit: `git commit -m "Add feature"`
-6. Push: `git push origin feature-name`
-7. Submit a pull request
+4. Run `./build.sh` to test
+5. Submit a pull request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
----
+## License
 
-## 📖 API Documentation
+See [LICENSE.md](LICENSE.md)
 
-Once running, visit:
-- **Swagger UI**: http://localhost:5000/api-docs
+## Support
 
-### Main Endpoints
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/tasks` - Create new task
-- `GET /api/tasks` - Get user's tasks
-- `POST /api/challenges/generate` - Generate challenge from task
-- `GET /api/gamification/profile` - Get user progress
+- Documentation: See `docs/` directory
+- Issues: Use GitHub issues
+- Architecture: See [SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)
 
 ---
 
-## 🆘 Support
-
-### Common Issues
-
-**Port already in use**
-```bash
-docker compose -f docker-compose.dev.yml down
-```
-
-**Docker storage bloat (50GB+ images)**
-```bash
-./rebuild.sh        # Linux/Mac
-.\rebuild.ps1       # Windows
-```
-
-**Database connection issues**
-```bash
-docker compose -f docker-compose.dev.yml up -d mongodb
-```
-
-See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for more solutions.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- OpenAI for GPT-4 integration
-- React and Node.js communities
-- Hugging Face for transformer models
-
----
-
-**Need help?** Check [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md) or [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+**Note:** Old Skaffold-based build docs are archived in `docs/archive/skaffold/` for reference only. Use the Docker Compose workflow documented in [HOW_TO_BUILD.md](HOW_TO_BUILD.md).

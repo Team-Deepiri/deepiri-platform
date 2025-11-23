@@ -45,7 +45,7 @@ install_deps() {
     
     # Frontend dependencies
     log_info "Installing deepiri-web-frontend dependencies..."
-    cd deepiri-web-deepiri-web-frontend
+    cd deepiri-web-frontend
     npm install
     cd ..
     
