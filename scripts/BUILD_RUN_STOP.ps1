@@ -16,7 +16,7 @@ switch ($Command) {
     'build' {
         Write-Host "🏗️  Building all services..." -ForegroundColor Cyan
         Set-Location deepiri
-        skaffold build -f skaffold-local.yaml -p dev-compose
+        skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
         Write-Host "✅ Build complete! Images tagged with :latest (overwrites old ones)" -ForegroundColor Green
     }
     
@@ -51,7 +51,7 @@ switch ($Command) {
         
         # Rebuild (will overwrite existing :latest tags)
         Write-Host "  2/3 Rebuilding images..." -ForegroundColor Yellow
-        skaffold build -f skaffold-local.yaml -p dev-compose
+        skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
         
         # Start services
         Write-Host "  3/3 Starting services..." -ForegroundColor Yellow

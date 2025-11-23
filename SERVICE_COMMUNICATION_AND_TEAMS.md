@@ -205,7 +205,7 @@ docker compose -f docker-compose.dev.yml up -d \
 **What They Work On:**
 - `ops/k8s/` - Kubernetes manifests
 - `docker-compose.*.yml` - Service orchestration
-- `skaffold-*.yaml` - Build and deployment configs
+- `skaffold/*.yaml` - Build and deployment configs
 - Infrastructure monitoring and scaling
 
 **Start Command:**

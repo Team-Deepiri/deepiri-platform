@@ -1,18 +1,20 @@
 name: deepiri-infrastructure-team
 
-# Infrastructure Team Configuration
-# All infrastructure services + all microservices for monitoring and scaling
+# IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
+# This prevents 50GB+ of dangling images on every build
 
 x-build-args: &build-args
+  # Use BuildKit for better caching and no dangling images
   DOCKER_BUILDKIT: 1
   BUILDKIT_PROGRESS: plain
 
+# Minimal logging - logs are automatically cleared and not saved
 x-logging: &minimal-logging
   driver: "local"
   options:
-    max-size: "1m"
-    max-file: "1"
-    compress: "false"
+    max-size: "1m"      # Only 1MB per file
+    max-file: "1"       # Only 1 file (no rotation backup)
+    compress: "false"   # No compression (faster cleanup)
 
 services:
   # MongoDB Database

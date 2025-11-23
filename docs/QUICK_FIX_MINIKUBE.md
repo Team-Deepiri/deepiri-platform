@@ -20,7 +20,7 @@ eval $(minikube docker-env)
 minikube status
 
 # 4. Now build with Skaffold
-skaffold build -f skaffold-local.yaml -p dev-compose
+skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
 ```
 
 ## Or Use the Helper Script

@@ -40,7 +40,7 @@ fi
 case "$1" in
     build)
         print_info "Building all images with Skaffold..."
-        skaffold build -f skaffold-local.yaml -p dev-compose
+        skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
         print_success "Build complete!"
         ;;
     
@@ -66,7 +66,7 @@ case "$1" in
     
     rebuild)
         print_info "Rebuilding and restarting..."
-        skaffold build -f skaffold-local.yaml -p dev-compose
+        skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
         docker compose -f docker-compose.dev.yml down
         docker compose -f docker-compose.dev.yml up -d
         print_success "Rebuild and restart complete!"

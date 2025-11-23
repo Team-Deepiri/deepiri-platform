@@ -40,5 +40,5 @@ echo "   To force a complete rebuild, use:"
 echo "   ./scripts/force-rebuild-all.sh"
 echo ""
 echo "   OR use Docker directly:"
-echo "   skaffold build -f skaffold-local.yaml -p dev-compose --cache-artifacts=false"
+echo "   skaffold build -f skaffold/skaffold-local.yaml -p dev-compose --cache-artifacts=false"
 
