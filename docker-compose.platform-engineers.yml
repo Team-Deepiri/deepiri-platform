@@ -147,7 +147,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-api-gateway/Dockerfile
-    image: deepiri-platform-api-gateway:latest
+    image: deepiri-dev-api-gateway:latest
     pull_policy: never
     container_name: deepiri-api-gateway-platform
     restart: unless-stopped
@@ -184,7 +184,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-auth-service/Dockerfile
-    image: deepiri-platform-auth-service:latest
+    image: deepiri-dev-auth-service:latest
     pull_policy: never
     container_name: deepiri-auth-service-platform
     restart: unless-stopped
@@ -217,7 +217,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-task-orchestrator/Dockerfile
-    image: deepiri-platform-task-orchestrator:latest
+    image: deepiri-dev-task-orchestrator:latest
     pull_policy: never
     container_name: deepiri-task-orchestrator-platform
     restart: unless-stopped
@@ -243,7 +243,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-engagement-service/Dockerfile
-    image: deepiri-platform-engagement-service:latest
+    image: deepiri-dev-engagement-service:latest
     pull_policy: never
     container_name: deepiri-engagement-service-platform
     restart: unless-stopped
@@ -273,7 +273,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
-    image: deepiri-platform-platform-analytics-service:latest
+    image: deepiri-dev-platform-analytics-service:latest
     pull_policy: never
     container_name: deepiri-platform-analytics-service-platform
     restart: unless-stopped
@@ -304,7 +304,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-notification-service/Dockerfile
-    image: deepiri-platform-notification-service:latest
+    image: deepiri-dev-notification-service:latest
     pull_policy: never
     container_name: deepiri-notification-service-platform
     restart: unless-stopped
@@ -333,7 +333,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-external-bridge-service/Dockerfile
-    image: deepiri-platform-external-bridge-service:latest
+    image: deepiri-dev-external-bridge-service:latest
     pull_policy: never
     container_name: deepiri-external-bridge-service-platform
     restart: unless-stopped
@@ -368,7 +368,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-challenge-service/Dockerfile
-    image: deepiri-platform-challenge-service:latest
+    image: deepiri-dev-challenge-service:latest
     pull_policy: never
     container_name: deepiri-challenge-service-platform
     restart: unless-stopped
@@ -396,7 +396,7 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-realtime-gateway/Dockerfile
-    image: deepiri-platform-realtime-gateway:latest
+    image: deepiri-dev-realtime-gateway:latest
     pull_policy: never
     container_name: deepiri-realtime-gateway-platform
     restart: unless-stopped
@@ -424,7 +424,7 @@ services:
         BASE_IMAGE: python:3.11-slim
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
-    image: deepiri-platform-cyrex:latest
+    image: deepiri-dev-cyrex:latest
     pull_policy: never
     container_name: deepiri-cyrex-platform
     restart: unless-stopped
@@ -493,7 +493,7 @@ services:
         BASE_IMAGE: python:3.11-slim
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
-    image: deepiri-platform-jupyter:latest
+    image: deepiri-dev-jupyter:latest
     pull_policy: never
     container_name: deepiri-jupyter-platform
     restart: unless-stopped
@@ -515,7 +515,7 @@ services:
     build:
       context: ./deepiri-web-frontend
       dockerfile: Dockerfile.dev
-    image: deepiri-platform-frontend:latest
+    image: deepiri-dev-frontend:latest
     pull_policy: never
     container_name: deepiri-frontend-platform
     restart: unless-stopped

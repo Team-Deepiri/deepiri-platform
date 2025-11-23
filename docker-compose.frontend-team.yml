@@ -346,7 +346,7 @@ services:
       dockerfile: Dockerfile.dev
     image: deepiri-dev-frontend:latest
     pull_policy: never
-    container_name: deepiri-frontend-dev
+    container_name: deepiri-frontend-frontend
     restart: unless-stopped
     logging: *minimal-logging
     ports:
