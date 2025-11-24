@@ -57,6 +57,70 @@ docker compose -f docker-compose.dev.yml stop \
 ./start.sh
 ```
 
+## Quick Reference
+
+### Setup Minikube (for Kubernetes/Skaffold builds)
+```bash
+# Check if Minikube is running
+minikube status
+
+# If not running, start Minikube
+minikube start --driver=docker --cpus=4 --memory=8192
+
+# Configure Docker to use Minikube's Docker daemon
+eval $(minikube docker-env)
+```
+
+### Build
+```bash
+# Build all services
+docker compose -f docker-compose.dev.yml build
+
+# Or use your team's build script
+./build.sh
+```
+
+### When you DO need to build / rebuild
+Only build if:
+1. **Dockerfile changes**
+2. **package.json/requirements.txt changes** (dependencies)
+3. **First time setup**
+
+**Note:** With hot reload enabled, code changes don't require rebuilds - just restart the service!
+
+### Run all services
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+### Stop all services
+```bash
+docker compose -f docker-compose.dev.yml down
+```
+
+### Running only services you need for your team
+```bash
+docker compose -f docker-compose.ai-team.yml up -d
+```
+
+### Stopping those services
+```bash
+docker compose -f docker-compose.ai-team.yml down
+```
+
+### Logs (All services)
+```bash
+docker compose -f docker-compose.dev.yml logs -f
+```
+
+### Logs (Individual services)
+```bash
+docker compose -f docker-compose.dev.yml logs -f cyrex
+docker compose -f docker-compose.dev.yml logs -f jupyter
+docker compose -f docker-compose.dev.yml logs -f challenge-service
+# ... etc for all services
+```
+
 ## What You Work On
 
 - `diri-cyrex/` - Python AI service

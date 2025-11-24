@@ -109,10 +109,10 @@ services:
       - "8000:8000"
     volumes:
       - ./diri-cyrex/app:/app/app
-      - ./diri-cyrex/train/models:/app/train/models
-      - ./diri-cyrex/train/data:/app/train/data
-      - ./diri-cyrex/inference/models:/app/inference/models
+      - ./diri-cyrex/train:/app/train
+      - ./diri-cyrex/inference:/app/inference
       - cyrex_ml_cache:/app/.cache
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
     depends_on:
       - influxdb
     networks:

@@ -166,6 +166,11 @@ services:
       CHALLENGE_SERVICE_URL: http://challenge-service:5007
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
       CYREX_URL: http://cyrex:8000
+    volumes:
+      - ./platform-services/backend/deepiri-api-gateway:/app
+      - /app/node_modules
+      - /app/dist
+    command: sh -c "cd /app && npm install --legacy-peer-deps && npm run dev"
     depends_on:
       - auth-service
       - task-orchestrator
@@ -456,10 +461,10 @@ services:
       - "8000:8000"
     volumes:
       - ./diri-cyrex/app:/app/app
-      - ./diri-cyrex/train/models:/app/train/models
-      - ./diri-cyrex/train/data:/app/train/data
-      - ./diri-cyrex/inference/models:/app/inference/models
+      - ./diri-cyrex/train:/app/train
+      - ./diri-cyrex/inference:/app/inference
       - cyrex_cache:/app/.cache
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
     depends_on:
       - influxdb
       - milvus
