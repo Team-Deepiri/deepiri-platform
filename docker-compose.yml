@@ -2,17 +2,22 @@ name: deepiri
 
 version: '3.8'
 
+# Minimal logging - logs are automatically cleared and not saved on restart
+# max-size: 1MB, max-file: 1 (no rotation), no compression
+x-logging: &minimal-logging
+  driver: "local"
+  options:
+    max-size: "1m"      # Only 1MB per file
+    max-file: "1"       # Only 1 file (no rotation backup)
+    compress: "false"   # No compression (faster cleanup)
+
 services:
   # MongoDB Database
   mongodb:
     image: mongo:7.0
     container_name: deepiri-mongodb
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
     ports:
       - "27017:27017"
     environment:
@@ -30,11 +35,8 @@ services:
     image: mongo-express:1.0.2
     container_name: deepiri-mongo-express
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     ports:
       - "8081:8081"
     environment:
@@ -52,11 +54,7 @@ services:
     image: redis:7.2-alpine
     container_name: deepiri-redis
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
     ports:
       - "6379:6379"
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
@@ -72,11 +70,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-core-api
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
     ports:
       - "5000:5000"
     environment:
@@ -166,11 +160,8 @@ services:
         PYTHON_VERSION: 3.11
     container_name: deepiri-cyrex
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
@@ -225,6 +216,7 @@ services:
     image: node:20-alpine
     container_name: deepiri-cyrex-interface
     restart: unless-stopped
+    logging: *minimal-logging
     working_dir: /app
     environment:
       VITE_CYREX_BASE_URL: http://cyrex:8000
@@ -257,11 +249,8 @@ services:
         VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID}
     container_name: deepiri-frontend
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     ports:
       - "3000:80"
     depends_on:
@@ -273,11 +262,8 @@ services:
     image: prom/prometheus:latest
     container_name: deepiri-prometheus
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     ports:
       - "9090:9090"
     volumes:
@@ -292,11 +278,8 @@ services:
     image: grafana/grafana:latest
     container_name: deepiri-grafana
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     ports:
       - "3001:3000"
     environment:
@@ -311,11 +294,8 @@ services:
     image: influxdb:2.7
     container_name: deepiri-influxdb
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     ports:
       - "8086:8086"
     environment:
@@ -335,11 +315,8 @@ services:
     image: ghcr.io/mlflow/mlflow:v2.8.1
     container_name: deepiri-mlflow
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     ports:
       - "5001:5000"
     environment:
@@ -364,11 +341,8 @@ services:
         PYTHON_VERSION: 3.11
     container_name: deepiri-jupyter
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
     ports:
       - "8888:8888"
@@ -387,11 +361,8 @@ services:
     image: nginx:alpine
     container_name: deepiri-nginx
     restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *minimal-logging
+    logging: *minimal-logging
     ports:
       - "80:80"
       - "443:443"
