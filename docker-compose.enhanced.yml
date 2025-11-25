@@ -167,6 +167,27 @@ services:
       retries: 3
       start_period: 30s
 
+  # Cyrex Interface (Frontend)
+  cyrex-interface:
+    image: node:20-alpine
+    container_name: deepiri-cyrex-interface
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      VITE_CYREX_BASE_URL: http://cyrex:8000
+      VITE_PORT: 5175
+    ports:
+      - "5175:5175"
+    volumes:
+      - ./diri-cyrex/cyrex-interface:/app
+      - /app/node_modules
+    command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
+    depends_on:
+      cyrex:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
   # Frontend
   frontend:
     build:

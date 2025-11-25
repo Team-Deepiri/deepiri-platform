@@ -137,7 +137,11 @@ temp/
 # ========================================
 minikube-*
 kubectl
-skaffold
+skaffold.log
+skaffold.log.*
+skaffold  
+# white list skaffold directory
+!skaffold/  
 *.bin
 binary/
 # Kubernetes binary (should be installed globally)

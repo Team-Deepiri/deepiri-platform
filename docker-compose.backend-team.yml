@@ -1,18 +1,20 @@
 name: deepiri-backend-team
 
-# Backend Team Configuration
-# All backend microservices + infrastructure
+# IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
+# This prevents 50GB+ of dangling images on every build
 
 x-build-args: &build-args
+  # Use BuildKit for better caching and no dangling images
   DOCKER_BUILDKIT: 1
   BUILDKIT_PROGRESS: plain
 
+# Minimal logging - logs are automatically cleared and not saved
 x-logging: &minimal-logging
   driver: "local"
   options:
-    max-size: "1m"
-    max-file: "1"
-    compress: "false"
+    max-size: "1m"      # Only 1MB per file
+    max-file: "1"       # Only 1 file (no rotation backup)
+    compress: "false"   # No compression (faster cleanup)
 
 services:
   # MongoDB Database
@@ -91,6 +93,11 @@ services:
       CHALLENGE_SERVICE_URL: http://challenge-service:5007
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
       CYREX_URL: http://cyrex:8000
+    volumes:
+      - ./platform-services/backend/deepiri-api-gateway:/app
+      - /app/node_modules
+      - /app/dist
+    command: sh -c "if [ ! -d node_modules ]; then npm install --legacy-peer-deps; fi && npm run dev"
     depends_on:
       - auth-service
       - task-orchestrator

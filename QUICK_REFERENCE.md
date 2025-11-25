@@ -1,54 +1,108 @@
 # Quick Reference
 
-## Build and Run
+## Setup Minikube (for Kubernetes/Skaffold builds)
 
-### Build (with auto-cleanup of dangling images)
-
+### Check if Minikube is running
 ```bash
-# Build all services
-./build.sh
+minikube status
+```
 
-# Build specific service
-./build.sh jupyter
+### If not running, start Minikube
+```bash
+minikube start --driver=docker --cpus=4 --memory=8192
+```
 
-# Build without cache (slower, forces rebuild)
+### Configure Docker to use Minikube's Docker daemon
+```bash
+eval $(minikube docker-env)
+```
+
+## Build
+
+### Build all services
+```bash
+# Using build script (recommended)
+./build.sh              # Linux/Mac/WSL
+.\build.ps1             # Windows PowerShell
+
+# Or using docker compose directly
+docker compose -f docker-compose.dev.yml build
+```
+
+### Build specific service
+```bash
+./build.sh <service-name>
+# or
+docker compose -f docker-compose.dev.yml build <service-name>
+```
+
+### Build without cache (slower, forces rebuild)
+```bash
 ./build.sh --no-cache
+# or
+docker compose -f docker-compose.dev.yml build --no-cache
 ```
 
-**Windows PowerShell:**
-```powershell
-.\build.ps1
-.\build.ps1 jupyter
-.\build.ps1 -NoCache
-```
+## When you DO need to build / rebuild
 
-### Run
+Only build if:
+1. **Dockerfile changes**
+2. **package.json/requirements.txt changes** (dependencies)
+3. **First time setup**
 
+**Note:** With hot reload enabled, code changes don't require rebuilds - just restart the service!
+
+## Run
+
+### Run all services
 ```bash
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-### Stop
+### Run only services you need for your team
+```bash
+docker compose -f docker-compose.<team_name>-team.yml up -d
+# Examples:
+docker compose -f docker-compose.ai-team.yml up -d
+docker compose -f docker-compose.backend-team.yml up -d
+docker compose -f docker-compose.frontend-team.yml up -d
+```
 
+### Stop all services
 ```bash
 docker compose -f docker-compose.dev.yml down
 ```
 
+### Stop team-specific services
+```bash
+docker compose -f docker-compose.<team_name>-team.yml down
+```
+
 ## Logs
 
-### View Logs
-
+### Logs (All services)
 ```bash
-# All services (last 50 lines each)
-docker compose -f docker-compose.dev.yml logs --tail=50
+docker compose -f docker-compose.dev.yml logs -f
+```
 
-# Specific service (last 50 lines)
+### Logs (Individual services)
+```bash
+docker compose -f docker-compose.dev.yml logs -f api-gateway
+docker compose -f docker-compose.dev.yml logs -f cyrex
+docker compose -f docker-compose.dev.yml logs -f auth-service
+docker compose -f docker-compose.dev.yml logs -f frontend-dev
+# ... etc for all services
+```
+
+### Additional log options
+```bash
+# Last 50 lines
 docker compose -f docker-compose.dev.yml logs --tail=50 <service-name>
 
-# Follow logs (live stream)
-docker compose -f docker-compose.dev.yml logs -f --tail=50 <service-name>
+# Last 10 minutes
+docker compose -f docker-compose.dev.yml logs --since 10m <service-name>
 
-# All available logs for a service (limited to 1MB)
+# All available logs (limited to 1MB per service)
 docker compose -f docker-compose.dev.yml logs <service-name>
 ```
 

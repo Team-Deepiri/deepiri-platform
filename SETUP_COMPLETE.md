@@ -20,7 +20,7 @@
 
 ```bash
 # Run this command
-skaffold build -f skaffold-local.yaml -p dev-compose
+skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
 
 # What happens automatically:
 # 1. Build images → deepiri-dev-*:latest
@@ -78,7 +78,7 @@ The configuration handles everything automatically. Just run your normal command
 
 ```bash
 # Build
-skaffold build -f skaffold-local.yaml -p dev-compose
+skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
 
 # Or use the hybrid script
 ./scripts/build-with-skaffold-run-with-docker.sh

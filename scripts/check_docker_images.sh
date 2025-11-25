@@ -36,7 +36,7 @@ if [ $MISSING -gt 0 ]; then
     echo "⚠️  $MISSING images are missing!"
     echo ""
     echo "Build them with:"
-    echo "  skaffold build -f skaffold-local.yaml -p dev-compose"
+    echo "  skaffold build -f skaffold/skaffold-local.yaml -p dev-compose"
     echo "  ./scripts/tag-skaffold-to-latest.sh"
 else
     echo "✅ All images exist!"

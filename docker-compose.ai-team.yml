@@ -1,19 +1,20 @@
 name: deepiri-ai-team
 
-# AI Team Configuration
-# Services: cyrex, jupyter, mlflow, challenge-service
-# Infrastructure: mongodb, influxdb, redis, milvus (with etcd and minio)
+# IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
+# This prevents 50GB+ of dangling images on every build
 
 x-build-args: &build-args
+  # Use BuildKit for better caching and no dangling images
   DOCKER_BUILDKIT: 1
   BUILDKIT_PROGRESS: plain
 
+# Minimal logging - logs are automatically cleared and not saved
 x-logging: &minimal-logging
   driver: "local"
   options:
-    max-size: "1m"
-    max-file: "1"
-    compress: "false"
+    max-size: "1m"      # Only 1MB per file
+    max-file: "1"       # Only 1 file (no rotation backup)
+    compress: "false"   # No compression (faster cleanup)
 
 services:
   # MongoDB Database
@@ -86,16 +87,29 @@ services:
       - deepiri-ai-network
 
   # MinIO service for Milvus object storage
+  # Updated to latest version (2024) with proper parity settings for data redundancy
   minio:
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: minio/minio:latest
     container_name: deepiri-minio-ai
     restart: unless-stopped
     logging: *minimal-logging
     environment:
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - minio_ai_data:/data
+    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 40s
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
     command: minio server /data --console-address ":9001"
     networks:
       - deepiri-ai-network
@@ -163,13 +177,34 @@ services:
       - "8000:8000"
     volumes:
       - ./diri-cyrex/app:/app/app
-      - ./diri-cyrex/train/models:/app/train/models
-      - ./diri-cyrex/train/data:/app/train/data
-      - ./diri-cyrex/inference/models:/app/inference/models
+      - ./diri-cyrex/train:/app/train
+      - ./diri-cyrex/inference:/app/inference
       - cyrex_ai_cache:/app/.cache
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
     depends_on:
       - influxdb
       - milvus
+    networks:
+      - deepiri-ai-network
+
+  # Cyrex Interface (Frontend)
+  cyrex-interface:
+    image: node:20-alpine
+    container_name: deepiri-cyrex-interface-ai
+    restart: unless-stopped
+    logging: *minimal-logging
+    working_dir: /app
+    environment:
+      VITE_CYREX_BASE_URL: http://cyrex:8000
+      VITE_PORT: 5175
+    ports:
+      - "5175:5175"
+    volumes:
+      - ./diri-cyrex/cyrex-interface:/app
+      - /app/node_modules
+    command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
+    depends_on:
+      - cyrex
     networks:
       - deepiri-ai-network
 

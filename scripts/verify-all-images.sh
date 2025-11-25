@@ -40,7 +40,7 @@ else
     echo "⚠️  $MISSING image(s) missing!"
     echo ""
     echo "Build missing images with:"
-    echo "  skaffold build -f skaffold-local.yaml -p dev-compose"
+    echo "  skaffold build -f skaffold/skaffold-local.yaml -p dev-compose"
     echo ""
     echo "Or run Docker Compose with --no-build to skip building:"
     echo "  docker compose -f docker-compose.dev.yml up -d --no-build"

@@ -40,7 +40,7 @@ if [ $MISSING -gt 0 ]; then
     echo ""
     echo "Build them with:"
     echo "  eval \$(minikube docker-env)"
-    echo "  skaffold build -f skaffold-local.yaml -p dev-compose"
+    echo "  skaffold build -f skaffold/skaffold-local.yaml -p dev-compose"
     echo ""
 else
     echo "✅ All images exist! Docker Compose should use them (not build)."

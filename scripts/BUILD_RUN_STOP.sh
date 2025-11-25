@@ -18,7 +18,7 @@ case $COMMAND in
     build)
         echo "🏗️  Building all services..."
         cd deepiri
-        skaffold build -f skaffold-local.yaml -p dev-compose
+        skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
         echo "✅ Build complete! Images tagged with :latest (overwrites old ones)"
         ;;
     
@@ -53,7 +53,7 @@ case $COMMAND in
         
         # Rebuild (will overwrite existing :latest tags)
         echo "  2/3 Rebuilding images..."
-        skaffold build -f skaffold-local.yaml -p dev-compose
+        skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
         
         # Start services
         echo "  3/3 Starting services..."

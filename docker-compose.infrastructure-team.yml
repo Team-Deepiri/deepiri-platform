@@ -1,18 +1,20 @@
 name: deepiri-infrastructure-team
 
-# Infrastructure Team Configuration
-# All infrastructure services + all microservices for monitoring and scaling
+# IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
+# This prevents 50GB+ of dangling images on every build
 
 x-build-args: &build-args
+  # Use BuildKit for better caching and no dangling images
   DOCKER_BUILDKIT: 1
   BUILDKIT_PROGRESS: plain
 
+# Minimal logging - logs are automatically cleared and not saved
 x-logging: &minimal-logging
   driver: "local"
   options:
-    max-size: "1m"
-    max-file: "1"
-    compress: "false"
+    max-size: "1m"      # Only 1MB per file
+    max-file: "1"       # Only 1 file (no rotation backup)
+    compress: "false"   # No compression (faster cleanup)
 
 services:
   # MongoDB Database
@@ -111,6 +113,11 @@ services:
       CHALLENGE_SERVICE_URL: http://challenge-service:5007
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
       CYREX_URL: http://cyrex:8000
+    volumes:
+      - ./platform-services/backend/deepiri-api-gateway:/app
+      - /app/node_modules
+      - /app/dist
+    command: sh -c "if [ ! -d node_modules ]; then npm install --legacy-peer-deps; fi && npm run dev"
     depends_on:
       - auth-service
       - task-orchestrator
@@ -399,12 +406,33 @@ services:
       - "8000:8000"
     volumes:
       - ./diri-cyrex/app:/app/app
-      - ./diri-cyrex/train/models:/app/train/models
-      - ./diri-cyrex/train/data:/app/train/data
-      - ./diri-cyrex/inference/models:/app/inference/models
+      - ./diri-cyrex/train:/app/train
+      - ./diri-cyrex/inference:/app/inference
       - cyrex_infra_cache:/app/.cache
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
     depends_on:
       - influxdb
+    networks:
+      - deepiri-infra-network
+
+  # Cyrex Interface (Frontend)
+  cyrex-interface:
+    image: node:20-alpine
+    container_name: deepiri-cyrex-interface-infra
+    restart: unless-stopped
+    logging: *minimal-logging
+    working_dir: /app
+    environment:
+      VITE_CYREX_BASE_URL: http://cyrex:8000
+      VITE_PORT: 5175
+    ports:
+      - "5175:5175"
+    volumes:
+      - ./diri-cyrex/cyrex-interface:/app
+      - /app/node_modules
+    command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
+    depends_on:
+      - cyrex
     networks:
       - deepiri-infra-network
 
