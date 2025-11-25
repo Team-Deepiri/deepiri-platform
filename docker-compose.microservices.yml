@@ -6,12 +6,22 @@ name: deepiri-microservices
 
 version: '3.8'
 
+# Minimal logging - logs are automatically cleared and not saved on restart
+# max-size: 1MB, max-file: 1 (no rotation), no compression
+x-logging: &minimal-logging
+  driver: "local"
+  options:
+    max-size: "1m"      # Only 1MB per file
+    max-file: "1"       # Only 1 file (no rotation backup)
+    compress: "false"   # No compression (faster cleanup)
+
 services:
   # Infrastructure Services
   mongodb:
     image: mongo:7.0
     container_name: deepiri-mongodb
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "27017:27017"
     environment:
@@ -27,6 +37,7 @@ services:
     image: redis:7.2-alpine
     container_name: deepiri-redis
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "6379:6379"
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
@@ -42,6 +53,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-api-gateway
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5000:5000"
     environment:
@@ -73,6 +85,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-auth-service
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5001:5001"
     environment:
@@ -94,6 +107,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-task-orchestrator
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5002:5002"
     environment:
@@ -114,6 +128,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-challenge-service
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5003:5003"
     environment:
@@ -136,6 +151,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-engagement-service
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5004:5004"
     environment:
@@ -158,6 +174,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-platform-analytics-service
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5005:5005"
     environment:
@@ -178,6 +195,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-external-bridge-service
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5006:5006"
     environment:
@@ -198,6 +216,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-notification-service
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5007:5007"
     environment:
@@ -218,6 +237,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-realtime-gateway
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
       - "5008:5008"
     environment:
@@ -240,6 +260,7 @@ services:
       dockerfile: Dockerfile
     container_name: deepiri-cyrex
     restart: unless-stopped
+    logging: *minimal-logging
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
@@ -257,6 +278,7 @@ services:
     image: node:20-alpine
     container_name: deepiri-cyrex-interface
     restart: unless-stopped
+    logging: *minimal-logging
     working_dir: /app
     environment:
       VITE_CYREX_BASE_URL: http://cyrex:8000
