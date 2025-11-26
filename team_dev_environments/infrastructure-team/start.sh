@@ -64,11 +64,14 @@ echo "Starting: ${SERVICES_TO_START[*]} (excluding frontend-dev)"
 # Use --no-build to prevent automatic building (images should already be built)
 docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES_TO_START[@]}"
 
+# Get API Gateway port from environment or use default
+API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
+
 echo "✅ Infrastructure Team services started!"
 echo ""
 echo "🗄️  MongoDB: localhost:27017"
 echo "🗄️  Mongo Express: http://localhost:8081"
 echo "💾 Redis: localhost:6380"
 echo "📊 InfluxDB: http://localhost:8086"
-echo "🌐 API Gateway: http://localhost:5000"
+echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 

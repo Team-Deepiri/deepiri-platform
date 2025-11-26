@@ -45,6 +45,26 @@ services:
     networks:
       - deepiri-frontend-network
 
+  # Mongo Express - Database Admin UI
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: deepiri-mongo-express-frontend
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: 27017
+    depends_on:
+      - mongodb
+    networks:
+      - deepiri-frontend-network
+
   # Redis Cache (optional)
   redis:
     image: redis:7.2-alpine
@@ -90,7 +110,7 @@ services:
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "5000:5000"
+      - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
     environment:
       NODE_ENV: development
       PORT: 5000
@@ -368,7 +388,7 @@ services:
       - "5173:5173"
     environment:
       NODE_ENV: development
-      VITE_API_URL: http://localhost:5000/api
+      VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
       VITE_CYREX_URL: http://localhost:8000
       CHOKIDAR_USEPOLLING: true
       WATCHPACK_POLLING: true

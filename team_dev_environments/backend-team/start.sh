@@ -48,7 +48,7 @@ fi
 echo "Starting: ${SERVICES[*]} (and their dependencies)"
 
 # Use --no-build to prevent automatic building (images should already be built)
-# Dependencies (mongodb, redis, influxdb, task-orchestrator, 
+# Dependencies (mongodb, redis, influxdb, mongo-express, task-orchestrator, 
 # engagement-service, platform-analytics-service, notification-service, challenge-service, 
 # realtime-gateway) will be started automatically
 docker compose -f docker-compose.backend-team.yml up -d --no-build "${SERVICES[@]}"
@@ -61,4 +61,5 @@ echo ""
 echo "🎨 Frontend: http://localhost:5173"
 echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🔐 Auth Service: http://localhost:5001"
+echo "🗄️  Mongo Express: http://localhost:8081"
 

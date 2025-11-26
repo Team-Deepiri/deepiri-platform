@@ -37,10 +37,13 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Stopping: ${SERVICES[*]} (and their dependencies: mongodb, influxdb)"
+echo "Stopping: ${SERVICES[*]} (and all frontend team services)"
 
-# Stop the services (dependencies will be stopped if not used by other services)
-docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}"
+# Stop all services in the frontend-team compose file
+# This stops all services defined in docker-compose.frontend-team.yml:
+# - frontend-dev, api-gateway, auth-service
+# - mongodb, redis, influxdb, mongo-express
+docker compose -f docker-compose.frontend-team.yml stop
 
 echo "✅ Frontend Team services stopped!"
 

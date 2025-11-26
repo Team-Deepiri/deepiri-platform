@@ -135,7 +135,7 @@ docker compose -f docker-compose.dev.yml logs -f frontend-dev
 ## Service URLs
 
 - **Frontend**: http://localhost:5173
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Cyrex**: http://localhost:8000
 - **MLflow**: http://localhost:5500
 - **Jupyter**: http://localhost:8888

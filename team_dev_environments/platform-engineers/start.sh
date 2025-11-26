@@ -15,7 +15,8 @@ docker compose -f docker-compose.dev.yml up -d --no-build
 
 echo "✅ Platform Engineers services started!"
 echo ""
-echo "🌐 API Gateway: http://localhost:5000"
+API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
+echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🎨 Frontend: http://localhost:5173"
 echo "🤖 Cyrex: http://localhost:8000"
 echo "📊 MLflow: http://localhost:5500"

@@ -165,7 +165,7 @@ services:
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "5000:5000"
+      - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
     environment:
       NODE_ENV: development
       PORT: 5000
@@ -561,7 +561,7 @@ services:
       - "5173:5173"
     environment:
       NODE_ENV: development
-      VITE_API_URL: http://localhost:5000/api
+      VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
       VITE_CYREX_URL: http://localhost:8000
       CHOKIDAR_USEPOLLING: true
       WATCHPACK_POLLING: true

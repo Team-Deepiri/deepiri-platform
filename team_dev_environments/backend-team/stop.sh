@@ -14,7 +14,7 @@ echo "🛑 Stopping Backend Team services..."
 # - task-orchestrator, engagement-service, platform-analytics-service
 # - notification-service, external-bridge-service, challenge-service
 # - realtime-gateway
-# - mongodb, redis, influxdb
+# - mongodb, redis, influxdb, mongo-express
 docker compose -f docker-compose.backend-team.yml stop
 
 echo "✅ Backend Team services stopped!"
