@@ -73,6 +73,57 @@ cleanup_invalid_submodule() {
     fi
 }
 
+# Helper function to ensure submodule is on main branch and tracking it
+ensure_submodule_on_main() {
+    local submodule_path="$1"
+    if [ ! -d "$submodule_path" ]; then
+        return 1
+    fi
+    
+    cd "$submodule_path" || return 1
+    
+    # Fetch latest changes
+    git fetch origin 2>/dev/null || true
+    
+    # Determine which branch to use (main or master)
+    local branch="main"
+    if ! git show-ref --verify --quiet refs/heads/main && git show-ref --verify --quiet refs/remotes/origin/master; then
+        branch="master"
+    elif ! git show-ref --verify --quiet refs/remotes/origin/main; then
+        if git show-ref --verify --quiet refs/remotes/origin/master; then
+            branch="master"
+        else
+            echo "    ⚠️  No main or master branch found, skipping branch checkout"
+            cd "$REPO_ROOT" || return 1
+            return 0
+        fi
+    fi
+    
+    # Check if we're in detached HEAD state
+    if ! git symbolic-ref -q HEAD > /dev/null; then
+        echo "    🔄 Detached HEAD detected, checking out $branch branch..."
+        git checkout -B "$branch" "origin/$branch" 2>/dev/null || git checkout "$branch" 2>/dev/null || true
+    else
+        # Check current branch
+        local current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+        if [ "$current_branch" != "$branch" ]; then
+            echo "    🔄 Currently on '$current_branch', switching to $branch branch..."
+            git checkout "$branch" 2>/dev/null || git checkout -b "$branch" "origin/$branch" 2>/dev/null || true
+        fi
+    fi
+    
+    # Set up tracking if not already set
+    if ! git config --get branch."$branch".remote > /dev/null 2>&1; then
+        git branch --set-upstream-to="origin/$branch" "$branch" 2>/dev/null || true
+    fi
+    
+    # Pull latest changes
+    git pull origin "$branch" 2>/dev/null || true
+    
+    cd "$REPO_ROOT" || return 1
+    return 0
+}
+
 # deepiri-core-api
 echo "  📦 deepiri-core-api (Core API - Team-Deepiri/deepiri-core-api)..."
 cleanup_invalid_submodule "deepiri-core-api"
@@ -133,14 +184,19 @@ fi
 echo "    ✅ web-frontend initialized at: $(pwd)/deepiri-web-frontend"
 echo ""
 
-# Update to latest
-echo "🔄 Updating submodules to latest..."
+# Update to latest and ensure on main branch
+echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote deepiri-core-api
+ensure_submodule_on_main "deepiri-core-api"
 git submodule update --remote platform-services/backend/deepiri-api-gateway
+ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
 git submodule update --remote platform-services/backend/deepiri-auth-service
+ensure_submodule_on_main "platform-services/backend/deepiri-auth-service"
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service
+ensure_submodule_on_main "platform-services/backend/deepiri-external-bridge-service"
 git submodule update --remote deepiri-web-frontend
-echo "    ✅ All backend submodules updated"
+ensure_submodule_on_main "deepiri-web-frontend"
+echo "    ✅ All backend submodules updated and on main branch"
 echo ""
 
 # Show status
