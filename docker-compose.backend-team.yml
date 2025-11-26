@@ -10,7 +10,12 @@ name: deepiri-backend-team
 # Primary services: frontend-dev, api-gateway, auth-service
 # Dependencies: mongodb, redis, influxdb, task-orchestrator, engagement-service,
 #   platform-analytics-service, notification-service, external-bridge-service,
-#   challenge-service, realtime-gateway, cyrex
+#   challenge-service, realtime-gateway
+#
+# API Gateway Port Configuration:
+#   - External port: 5100 (configurable via API_GATEWAY_PORT env var)
+#   - Internal port: 5000 (container port, unchanged)
+#   - This avoids conflict with macOS AirPlay Receiver on port 5000
 #
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
@@ -92,7 +97,7 @@ services:
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "5000:5000"
+      - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
     environment:
       NODE_ENV: development
       PORT: 5000
@@ -104,7 +109,6 @@ services:
       EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
       CHALLENGE_SERVICE_URL: http://challenge-service:5007
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
-      CYREX_URL: http://cyrex:8000
     volumes:
       - ./platform-services/backend/deepiri-api-gateway:/app
       - /app/node_modules
@@ -322,7 +326,6 @@ services:
       NODE_ENV: development
       PORT: 5007
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      CYREX_URL: http://cyrex:8000
     volumes:
       - ./platform-services/backend/deepiri-challenge-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -353,6 +356,31 @@ services:
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
     command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    networks:
+      - deepiri-backend-network
+
+  # Frontend with Vite HMR
+  frontend-dev:
+    build:
+      context: ./deepiri-web-frontend
+      dockerfile: Dockerfile.dev
+    image: deepiri-dev-frontend:latest
+    pull_policy: never
+    container_name: deepiri-frontend-backend
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
+      CHOKIDAR_USEPOLLING: true
+      WATCHPACK_POLLING: true
+    volumes:
+      - ./deepiri-web-frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api-gateway
     networks:
       - deepiri-backend-network
 
