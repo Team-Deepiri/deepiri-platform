@@ -43,10 +43,17 @@ git submodule update --init --recursive deepiri-web-frontend
 echo "    ✅ web-frontend initialized"
 echo ""
 
+# deepiri-auth-service
+echo "  📦 deepiri-auth-service (Auth Service)..."
+git submodule update --init --recursive platform-services/backend/deepiri-auth-service
+echo "    ✅ auth-service initialized at: $(pwd)/platform-services/backend/deepiri-auth-service"
+echo ""
+
 # Update to latest
 echo "🔄 Updating submodules to latest..."
 git submodule update --remote deepiri-web-frontend
-echo "    ✅ web-frontend updated"
+git submodule update --remote platform-services/backend/deepiri-auth-service
+echo "    ✅ completed"
 echo ""
 
 # Show status
@@ -63,4 +70,3 @@ echo "  - Update: git submodule update --remote deepiri-web-frontend"
 echo "  - Work in submodule: cd deepiri-web-frontend"
 echo "  - Install deps: cd deepiri-web-frontend && npm install"
 echo ""
-
