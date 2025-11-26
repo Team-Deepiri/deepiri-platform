@@ -141,5 +141,5 @@ docker compose -f docker-compose.dev.yml logs -f redis
 - **Mongo Express**: http://localhost:8081
 - **Redis**: localhost:6380
 - **InfluxDB**: http://localhost:8086
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 

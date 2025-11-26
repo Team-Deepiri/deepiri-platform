@@ -135,7 +135,7 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 
 ## Service URLs
 
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Frontend**: http://localhost:5173
 - **Cyrex**: http://localhost:8000
 - **MLflow**: http://localhost:5500

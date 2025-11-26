@@ -6,6 +6,7 @@
 #   engagement-service needs (mongodb, redis)
 #   challenge-service needs (mongodb)
 #   auth-service needs (mongodb, influxdb)
+#   Infrastructure: mongodb, redis, influxdb, mongo-express (pulled as images, not built)
 
 set -e
 

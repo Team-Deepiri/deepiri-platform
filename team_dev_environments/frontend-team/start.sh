@@ -38,14 +38,19 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Starting: ${SERVICES[*]} (and their dependencies: mongodb, influxdb)"
+echo "Starting: ${SERVICES[*]} (and their dependencies: mongodb, influxdb, mongo-express)"
 
 # Use --no-build to prevent automatic building (images should already be built)
-# Dependencies (mongodb, influxdb) will be started automatically
-docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
+# Dependencies (mongodb, influxdb, mongo-express) will be started automatically
+docker compose -f docker-compose.frontend-team.yml up -d --no-build "${SERVICES[@]}"
+
+# Get API Gateway port from environment or use default
+API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
 
 echo "✅ Frontend Team services started!"
 echo ""
 echo "🎨 Frontend: http://localhost:5173"
+echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🔐 Auth Service: http://localhost:5001"
+echo "🗄️  Mongo Express: http://localhost:8081"
 

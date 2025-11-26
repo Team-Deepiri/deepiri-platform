@@ -20,7 +20,7 @@ This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_
 
 **Primary Services:**
 - ✅ **Frontend Service** (Port 5173) - React application
-- ✅ **API Gateway** (Port 5000) - Backend API
+- ✅ **API Gateway** (Port 5100) - Backend API (uses 5100 to avoid macOS AirPlay conflict on 5000)
 - ✅ **Realtime Gateway** (Port 5008) - WebSocket for real-time features
 
 **Infrastructure:**
@@ -142,6 +142,6 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 ## Service URLs
 
 - **Frontend**: http://localhost:5173
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Realtime Gateway**: http://localhost:5008
 

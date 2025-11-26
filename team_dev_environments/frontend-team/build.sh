@@ -1,7 +1,7 @@
 #!/bin/bash
 # Frontend Team - Build script
 # Requirements: frontend-dev + auth-service + their dependencies
-# Dependencies: mongodb, influxdb (for auth-service)
+# Dependencies: mongodb, influxdb (for auth-service), mongo-express (admin UI)
 
 set -e
 
@@ -44,8 +44,8 @@ fi
 
 echo "Building: ${SERVICES[*]} (and their dependencies)"
 
-# Build services with their dependencies (mongodb, influxdb will be pulled as images, not built)
-docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
+# Build services with their dependencies (mongodb, influxdb, mongo-express will be pulled as images, not built)
+docker compose -f docker-compose.frontend-team.yml build "${SERVICES[@]}"
 
 echo "✅ Frontend Team services built successfully!"
 

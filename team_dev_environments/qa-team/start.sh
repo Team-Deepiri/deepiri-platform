@@ -16,7 +16,8 @@ docker compose -f docker-compose.dev.yml up -d --no-build
 echo "✅ QA Team services started!"
 echo ""
 echo "🎨 Frontend: http://localhost:5173"
-echo "🌐 API Gateway: http://localhost:5000"
+API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
+echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🤖 Cyrex: http://localhost:8000"
 echo "📊 MLflow: http://localhost:5500"
 echo "📓 Jupyter: http://localhost:8888"

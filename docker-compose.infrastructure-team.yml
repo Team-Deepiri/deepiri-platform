@@ -113,7 +113,7 @@ services:
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "5000:5000"
+      - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
     environment:
       NODE_ENV: development
       PORT: 5000
