@@ -1,5 +1,14 @@
 name: deepiri-platform-engineers
 
+# Platform Engineers Docker Compose Configuration
+# 
+# This file matches the services referenced in:
+# - team_dev_environments/platform-engineers/build.sh
+# - team_dev_environments/platform-engineers/start.sh
+# - team_dev_environments/platform-engineers/stop.sh
+#
+# Services: ALL SERVICES (complete stack)
+#
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
 

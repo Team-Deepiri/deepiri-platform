@@ -1,8 +1,14 @@
 name: deepiri-qa-team
 
-# QA Team Configuration
-# All services for end-to-end testing
-
+# QA Team Docker Compose Configuration
+# 
+# This file matches the services referenced in:
+# - team_dev_environments/qa-team/build.sh
+# - team_dev_environments/qa-team/start.sh
+# - team_dev_environments/qa-team/stop.sh
+#
+# Services: ALL SERVICES (complete stack for end-to-end testing)
+#
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
 

@@ -1,5 +1,15 @@
 name: deepiri-ml-team
 
+# ML Team Docker Compose Configuration
+# 
+# This file matches the services referenced in:
+# - team_dev_environments/ml-team/build.sh
+# - team_dev_environments/ml-team/start.sh
+# - team_dev_environments/ml-team/stop.sh
+#
+# Primary services: cyrex
+# Dependencies: influxdb, milvus, etcd, minio
+#
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
 

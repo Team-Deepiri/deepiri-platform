@@ -1,5 +1,18 @@
 name: deepiri-infrastructure-team
 
+# Infrastructure Team Docker Compose Configuration
+# 
+# This file matches the services referenced in:
+# - team_dev_environments/infrastructure-team/build.sh
+# - team_dev_environments/infrastructure-team/start.sh
+# - team_dev_environments/infrastructure-team/stop.sh
+#
+# Services: All services EXCEPT frontend-dev
+# Includes: mongodb, redis, influxdb, mongo-express, etcd, minio, milvus,
+#   api-gateway, auth-service, task-orchestrator, engagement-service,
+#   platform-analytics-service, notification-service, external-bridge-service,
+#   challenge-service, realtime-gateway, cyrex, cyrex-interface, mlflow, jupyter
+#
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
 

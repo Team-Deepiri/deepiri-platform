@@ -1,5 +1,15 @@
 name: deepiri-frontend-team
 
+# Frontend Team Docker Compose Configuration
+# 
+# This file matches the services referenced in:
+# - team_dev_environments/frontend-team/build.sh
+# - team_dev_environments/frontend-team/start.sh
+# - team_dev_environments/frontend-team/stop.sh
+#
+# Primary services: frontend-dev, auth-service
+# Dependencies: mongodb, influxdb
+#
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
 

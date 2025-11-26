@@ -1,5 +1,16 @@
 name: deepiri-ai-team
 
+# AI Team Docker Compose Configuration
+# 
+# This file matches the services referenced in:
+# - team_dev_environments/ai-team/build.sh
+# - team_dev_environments/ai-team/start.sh
+# - team_dev_environments/ai-team/stop.sh
+#
+# Primary services: cyrex, api-gateway, engagement-service, challenge-service, external-bridge-service
+# Dependencies: mongodb, redis, influxdb, etcd, minio, milvus, auth-service, task-orchestrator,
+#   platform-analytics-service, notification-service, realtime-gateway
+#
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
 
