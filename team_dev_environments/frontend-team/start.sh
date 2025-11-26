@@ -1,10 +1,7 @@
 #!/bin/bash
 # Frontend Team - Start script
-# Services from SERVICE_COMMUNICATION_AND_TEAMS.md:
-# - Frontend Service (Port 5173)
-# - Realtime Gateway (Port 5008)
-# - Backend Services: auth-service, task-orchestrator, engagement-service, platform-analytics-service, notification-service, challenge-service
-# - Infrastructure: mongodb, redis, influxdb (optional)
+# Requirements: frontend-dev + auth-service + their dependencies
+# Dependencies: mongodb, influxdb (for auth-service)
 
 set -e
 
@@ -13,10 +10,8 @@ cd "$(dirname "$0")/../.." || exit 1
 echo "🚀 Starting Frontend Team services..."
 
 # Start services that exist (skip submodules if not initialized)
-# Based on SERVICE_COMMUNICATION_AND_TEAMS.md Frontend Team section
-# Note: mongodb, redis, influxdb are optional for direct DB access
 SERVICES=()
-for service in mongodb redis influxdb auth-service task-orchestrator engagement-service platform-analytics-service notification-service challenge-service realtime-gateway frontend-dev; do
+for service in frontend-dev auth-service; do
   case $service in
     auth-service)
       if [ -f "platform-services/backend/deepiri-auth-service/Dockerfile" ]; then
@@ -43,13 +38,14 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Starting: ${SERVICES[*]}"
+echo "Starting: ${SERVICES[*]} (and their dependencies: mongodb, influxdb)"
 
 # Use --no-build to prevent automatic building (images should already be built)
+# Dependencies (mongodb, influxdb) will be started automatically
 docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
 
 echo "✅ Frontend Team services started!"
 echo ""
 echo "🎨 Frontend: http://localhost:5173"
-echo "⚡ Realtime Gateway: http://localhost:5008"
+echo "🔐 Auth Service: http://localhost:5001"
 

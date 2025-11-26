@@ -189,10 +189,10 @@ services:
       - engagement-service
       - platform-analytics-service
       - notification-service
-      - external-bridge-service
       - challenge-service
       - realtime-gateway
       - cyrex
+      # external-bridge-service dependency removed - only needed by Backend Team
     networks:
       - deepiri-dev-network
 
@@ -568,8 +568,8 @@ services:
     volumes:
       - ./deepiri-web-frontend:/app
       - /app/node_modules
-    depends_on:
-      - api-gateway
+    depends_on: []
+      # api-gateway dependency removed - frontend can work without it
     networks:
       - deepiri-dev-network
 

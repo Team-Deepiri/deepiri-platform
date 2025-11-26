@@ -1,6 +1,7 @@
 #!/bin/bash
 # Frontend Team - Build script
-# Builds: frontend-dev + backend services (excluding api-gateway and external-bridge-service)
+# Requirements: frontend-dev + auth-service + their dependencies
+# Dependencies: mongodb, influxdb (for auth-service)
 
 set -e
 
@@ -14,7 +15,7 @@ echo "🔨 Building Frontend Team services..."
 
 # Build services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in frontend-dev auth-service task-orchestrator engagement-service platform-analytics-service notification-service challenge-service realtime-gateway; do
+for service in frontend-dev auth-service; do
   case $service in
     auth-service)
       if [ -f "platform-services/backend/deepiri-auth-service/Dockerfile" ]; then
@@ -41,10 +42,10 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Building: ${SERVICES[*]}"
+echo "Building: ${SERVICES[*]} (and their dependencies)"
 
-# Use --no-deps to prevent building dependencies we don't need (like cyrex)
-docker compose -f docker-compose.dev.yml build --no-deps "${SERVICES[@]}"
+# Build services with their dependencies (mongodb, influxdb will be pulled as images, not built)
+docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
 
 echo "✅ Frontend Team services built successfully!"
 
