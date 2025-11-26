@@ -19,7 +19,7 @@ This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_
 ## Services
 
 **Primary Services:**
-- ✅ **API Gateway** (Port 5000) - Entry point
+- ✅ **API Gateway** (Port 5100) - Entry point (uses 5100 to avoid macOS AirPlay conflict on 5000)
 - ✅ **Auth Service** (Port 5001) - Authentication
 - ✅ **Task Orchestrator** (Port 5002) - Task management
 - ✅ **Engagement Service** (Port 5003) - Gamification
@@ -153,7 +153,7 @@ docker compose -f docker-compose.dev.yml logs -f task-orchestrator
 
 ## Service URLs
 
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Auth Service**: http://localhost:5001
 - **Task Orchestrator**: http://localhost:5002
 - **Engagement Service**: http://localhost:5003

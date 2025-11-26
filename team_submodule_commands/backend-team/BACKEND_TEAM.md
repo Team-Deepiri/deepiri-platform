@@ -2,12 +2,12 @@
 
 ## 🎯 Required Submodules
 
-The Backend Team needs access to:
-- **deepiri-core-api** - Main backend API
-- **deepiri-api-gateway** - API Gateway service
-- **deepiri-auth-service** - Authentication service
-- **deepiri-external-bridge-service** - External integrations bridge
-- **deepiri-web-frontend** - Frontend application (for API integration testing)
+The Backend Team has **direct access** to these repositories:
+- **Team-Deepiri/deepiri-core-api** - Main backend API
+- **Team-Deepiri/deepiri-api-gateway** - API Gateway service
+- **Team-Deepiri/deepiri-auth-service** - Authentication service
+- **Team-Deepiri/deepiri-external-bridge-service** - External integrations bridge
+- **Team-Deepiri/deepiri-web-frontend** - Frontend application (for API integration testing)
 
 ## 📥 After Pulling Main Repo
 

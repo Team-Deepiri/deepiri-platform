@@ -34,57 +34,100 @@ git pull origin main || echo "⚠️  Could not pull main repo (may be on differ
 echo ""
 
 # Backend Team required submodules
+# Backend Team has direct access to these repositories:
+# - Team-Deepiri/deepiri-core-api
+# - Team-Deepiri/deepiri-api-gateway
+# - Team-Deepiri/deepiri-auth-service
+# - Team-Deepiri/deepiri-external-bridge-service
+# - Team-Deepiri/deepiri-web-frontend
 echo "🔧 Initializing Backend Team submodules..."
 echo ""
 
 # Ensure platform-services/backend directory exists
 mkdir -p platform-services/backend
 
+# Helper function to check if submodule is valid (handles both .git directory and .git file)
+check_submodule() {
+    local submodule_path="$1"
+    if [ ! -d "$submodule_path" ]; then
+        return 1
+    fi
+    # Check if .git exists as either directory or file (newer Git uses gitfile)
+    if [ ! -d "$submodule_path/.git" ] && [ ! -f "$submodule_path/.git" ]; then
+        return 1
+    fi
+    # Verify it's actually a git repo by checking git status
+    if ! (cd "$submodule_path" && git rev-parse --git-dir > /dev/null 2>&1); then
+        return 1
+    fi
+    return 0
+}
+
+# Helper function to clean up invalid submodule directory
+cleanup_invalid_submodule() {
+    local submodule_path="$1"
+    if [ -d "$submodule_path" ] && ! check_submodule "$submodule_path"; then
+        echo "    ⚠️  Directory exists but is not a valid submodule. Cleaning up..."
+        rm -rf "$submodule_path"
+        echo "    ✅ Cleaned up invalid directory"
+    fi
+}
+
 # deepiri-core-api
-echo "  📦 deepiri-core-api (Core API)..."
-git submodule update --init --recursive deepiri-core-api
-if [ ! -d "deepiri-core-api/.git" ]; then
+echo "  📦 deepiri-core-api (Core API - Team-Deepiri/deepiri-core-api)..."
+cleanup_invalid_submodule "deepiri-core-api"
+git submodule update --init --recursive deepiri-core-api 2>&1 || true
+if ! check_submodule "deepiri-core-api"; then
     echo "    ❌ ERROR: deepiri-core-api not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive deepiri-core-api"
     exit 1
 fi
 echo "    ✅ core-api initialized at: $(pwd)/deepiri-core-api"
 echo ""
 
 # deepiri-api-gateway
-echo "  📦 deepiri-api-gateway (API Gateway)..."
-git submodule update --init --recursive platform-services/backend/deepiri-api-gateway
-if [ ! -d "platform-services/backend/deepiri-api-gateway/.git" ]; then
+echo "  📦 deepiri-api-gateway (API Gateway - Team-Deepiri/deepiri-api-gateway)..."
+cleanup_invalid_submodule "platform-services/backend/deepiri-api-gateway"
+git submodule update --init --recursive platform-services/backend/deepiri-api-gateway 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-api-gateway"; then
     echo "    ❌ ERROR: deepiri-api-gateway not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/backend/deepiri-api-gateway"
     exit 1
 fi
 echo "    ✅ api-gateway initialized at: $(pwd)/platform-services/backend/deepiri-api-gateway"
 echo ""
 
 # deepiri-auth-service
-echo "  📦 deepiri-auth-service (Auth Service)..."
-git submodule update --init --recursive platform-services/backend/deepiri-auth-service
-if [ ! -d "platform-services/backend/deepiri-auth-service/.git" ]; then
+echo "  📦 deepiri-auth-service (Auth Service - Team-Deepiri/deepiri-auth-service)..."
+cleanup_invalid_submodule "platform-services/backend/deepiri-auth-service"
+git submodule update --init --recursive platform-services/backend/deepiri-auth-service 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-auth-service"; then
     echo "    ❌ ERROR: deepiri-auth-service not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/backend/deepiri-auth-service"
     exit 1
 fi
 echo "    ✅ auth-service initialized at: $(pwd)/platform-services/backend/deepiri-auth-service"
 echo ""
 
 # deepiri-external-bridge-service
-echo "  📦 deepiri-external-bridge-service (External Bridge)..."
-git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service
-if [ ! -d "platform-services/backend/deepiri-external-bridge-service/.git" ]; then
+echo "  📦 deepiri-external-bridge-service (External Bridge - Team-Deepiri/deepiri-external-bridge-service)..."
+cleanup_invalid_submodule "platform-services/backend/deepiri-external-bridge-service"
+git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-external-bridge-service"; then
     echo "    ❌ ERROR: deepiri-external-bridge-service not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service"
     exit 1
 fi
 echo "    ✅ external-bridge-service initialized at: $(pwd)/platform-services/backend/deepiri-external-bridge-service"
 echo ""
 
 # deepiri-web-frontend
-echo "  📦 deepiri-web-frontend (Web Frontend)..."
-git submodule update --init --recursive deepiri-web-frontend
-if [ ! -d "deepiri-web-frontend/.git" ]; then
+echo "  📦 deepiri-web-frontend (Web Frontend - Team-Deepiri/deepiri-web-frontend)..."
+cleanup_invalid_submodule "deepiri-web-frontend"
+git submodule update --init --recursive deepiri-web-frontend 2>&1 || true
+if ! check_submodule "deepiri-web-frontend"; then
     echo "    ❌ ERROR: deepiri-web-frontend not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive deepiri-web-frontend"
     exit 1
 fi
 echo "    ✅ web-frontend initialized at: $(pwd)/deepiri-web-frontend"
@@ -112,9 +155,20 @@ echo ""
 
 echo "✅ Backend Team submodules ready!"
 echo ""
+echo "📋 Backend Team Repositories (Direct Access):"
+echo "  ✅ Team-Deepiri/deepiri-core-api"
+echo "  ✅ Team-Deepiri/deepiri-api-gateway"
+echo "  ✅ Team-Deepiri/deepiri-auth-service"
+echo "  ✅ Team-Deepiri/deepiri-external-bridge-service"
+echo "  ✅ Team-Deepiri/deepiri-web-frontend"
+echo ""
 echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status"
 echo "  - Update all: git submodule update --remote"
 echo "  - Work in Core API: cd deepiri-core-api"
+echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
+echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-service"
+echo "  - Work in External Bridge: cd platform-services/backend/deepiri-external-bridge-service"
+echo "  - Work in Frontend: cd deepiri-web-frontend"
 echo ""
 

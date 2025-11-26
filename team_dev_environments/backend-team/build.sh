@@ -2,10 +2,9 @@
 # Backend Team - Build script
 # Requirements: core-api, web-frontend, api-gateway, auth + all their dependencies
 # Dependencies: api-gateway needs (auth-service, task-orchestrator, engagement-service, 
-#   platform-analytics-service, notification-service, challenge-service, realtime-gateway, cyrex)
-#   cyrex needs (influxdb, milvus), milvus needs (etcd, minio)
+#   platform-analytics-service, notification-service, challenge-service, realtime-gateway)
 #   engagement-service needs (mongodb, redis)
-#   challenge-service needs (mongodb, cyrex)
+#   challenge-service needs (mongodb)
 #   auth-service needs (mongodb, influxdb)
 
 set -e
@@ -20,7 +19,7 @@ echo "🔨 Building Backend Team services..."
 
 # Build services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in frontend-dev api-gateway auth-service task-orchestrator engagement-service platform-analytics-service notification-service external-bridge-service challenge-service realtime-gateway cyrex; do
+for service in frontend-dev api-gateway auth-service task-orchestrator engagement-service platform-analytics-service notification-service external-bridge-service challenge-service realtime-gateway; do
   case $service in
     api-gateway)
       if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
@@ -38,13 +37,6 @@ for service in frontend-dev api-gateway auth-service task-orchestrator engagemen
       ;;
     external-bridge-service)
       if [ -f "platform-services/backend/deepiri-external-bridge-service/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    cyrex)
-      if [ -f "diri-cyrex/Dockerfile" ]; then
         SERVICES+=("$service")
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
@@ -78,7 +70,7 @@ fi
 echo "Building: ${SERVICES[*]} (and their dependencies)"
 
 # Build services with their dependencies
-docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
+docker compose -f docker-compose.backend-team.yml build "${SERVICES[@]}"
 
 echo "✅ Backend Team services built successfully!"
 
