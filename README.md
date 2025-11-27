@@ -1,4 +1,4 @@
-# Deepiri - AI-Powered Learning Platform
+# Deepiri 
 
 > ** NEW TO THE PROJECT?** Start here: [START_HERE.md](START_HERE.md)  
 > **FIND YOUR TEAM:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)  
@@ -243,4 +243,5 @@ See [LICENSE.md](LICENSE.md)
 ---
 
 **Note:** Old Skaffold-based build docs are archived in `docs/archive/skaffold/` for reference only. Use the Docker Compose workflow documented in [HOW_TO_BUILD.md](HOW_TO_BUILD.md).
+
 
