@@ -2,12 +2,12 @@
 
 > ** NEW TO THE PROJECT?** Start here: [START_HERE.md](START_HERE.md)  
 > **FIND YOUR TEAM:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)  
-> ** Quick Start:** Run `./build.sh` (Linux/Mac/WSL) or `.\build.ps1` (Windows), then `docker compose -f docker-compose.dev.yml up -d`
+> ** Quick Start for all services:** Run `./build.sh` (Linux/Mac/WSL) or `.\build.ps1` (Windows), then `docker compose -f docker-compose.dev.yml up -d`
 
 
 ### For New Team Members
 
-1. **Find your team:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
+1. **Find your roles:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
 2. **Follow your team's path:** [START_HERE.md](START_HERE.md)
 3. **Git hooks:** Automatically configured on clone (protects main and dev branches)
 
@@ -15,7 +15,7 @@
 
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
+git clone <deepiri-platform repo>
 cd deepiri-platform
 
 # 2. Git hooks are automatically configured! (protects main and dev branches)
@@ -243,5 +243,6 @@ See [LICENSE.md](LICENSE.md)
 ---
 
 **Note:** Old Skaffold-based build docs are archived in `docs/archive/skaffold/` for reference only. Use the Docker Compose workflow documented in [HOW_TO_BUILD.md](HOW_TO_BUILD.md).
+
 
 
