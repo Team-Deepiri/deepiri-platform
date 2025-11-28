@@ -84,6 +84,7 @@ docker compose -f docker-compose.dev.yml down
 
 ### AI/ML Services
 - **Cyrex** (Port 8000) - AI agent API
+- **Cyrex UI** (Port 5175) - UI for AI agent testing
 - **Jupyter** (Port 8888) - Research notebooks
 - **MLflow** (Port 5500) - Experiment tracking
 
@@ -243,6 +244,7 @@ See [LICENSE.md](LICENSE.md)
 ---
 
 **Note:** Old Skaffold-based build docs are archived in `docs/archive/skaffold/` for reference only. Use the Docker Compose workflow documented in [HOW_TO_BUILD.md](HOW_TO_BUILD.md).
+
 
 
 
