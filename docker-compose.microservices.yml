@@ -56,20 +56,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5000:5000"
+    env_file:
+      - .env-k8s/api-gateway.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5000
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
-      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here}
-      # Service URLs
-      AUTH_SERVICE_URL: http://auth-service:5001
-      TASK_ORCHESTRATOR_URL: http://task-orchestrator:5002
-      CHALLENGE_SERVICE_URL: http://challenge-service:5003
-      ENGAGEMENT_SERVICE_URL: http://engagement-service:5004
-      PLATFORM_ANALYTICS_SERVICE_URL: http://platform-analytics-service:5005
-      EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
-      NOTIFICATION_SERVICE_URL: http://notification-service:5007
     depends_on:
       - mongodb
       - redis
@@ -88,11 +80,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5001:5001"
+    env_file:
+      - .env-k8s/auth-service.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5001
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here}
     depends_on:
       - mongodb
     networks:
@@ -110,8 +103,10 @@ services:
     logging: *minimal-logging
     ports:
       - "5002:5002"
+    env_file:
+      - .env-k8s/task-orchestrator.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5002
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
     depends_on:
@@ -131,11 +126,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5003:5003"
+    env_file:
+      - .env-k8s/challenge-service.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5003
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      AI_SERVICE_URL: http://cyrex:8000
     depends_on:
       - mongodb
       - cyrex
@@ -154,11 +150,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5004:5004"
+    env_file:
+      - .env-k8s/engagement-service.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5004
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
     depends_on:
       - mongodb
       - redis
@@ -177,8 +174,10 @@ services:
     logging: *minimal-logging
     ports:
       - "5005:5005"
+    env_file:
+      - .env-k8s/platform-analytics-service.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5005
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
     depends_on:
@@ -198,8 +197,10 @@ services:
     logging: *minimal-logging
     ports:
       - "5006:5006"
+    env_file:
+      - .env-k8s/external-bridge-service.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5006
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
     depends_on:
@@ -219,8 +220,10 @@ services:
     logging: *minimal-logging
     ports:
       - "5007:5007"
+    env_file:
+      - .env-k8s/notification-service.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5007
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
     depends_on:
@@ -240,11 +243,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5008:5008"
+    env_file:
+      - .env-k8s/realtime-gateway.env
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Override or add docker-specific variables here if needed
       PORT: 5008
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
     depends_on:
       - mongodb
       - redis
@@ -261,11 +265,10 @@ services:
     container_name: deepiri-cyrex
     restart: unless-stopped
     logging: *minimal-logging
+    env_file:
+      - .env-k8s/cyrex.env
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      NODE_BACKEND_URL: http://api-gateway:5000
-      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"
     networks:

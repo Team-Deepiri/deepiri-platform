@@ -94,27 +94,10 @@ services:
     container_name: deepiri-cyrex-ml
     restart: unless-stopped
     logging: *minimal-logging
+    env_file:
+      - .env-k8s/cyrex.env
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      CORS_ORIGIN: http://localhost:5173
-      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
-      WANDB_API_KEY: ${WANDB_API_KEY}
-      MODEL_REGISTRY_PATH: /app/model_registry
-      STAGING_MODEL_PATH: /app/models/staging
-      PRODUCTION_MODEL_PATH: /app/models/production
-      PINECONE_API_KEY: ${PINECONE_API_KEY}
-      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT:-us-east1-gcp}
-      PINECONE_INDEX: ${PINECONE_INDEX:-deepiri}
-      WEAVIATE_URL: ${WEAVIATE_URL}
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
-      TRANSFORMERS_CACHE: /app/.cache/huggingface
-      HF_HOME: /app/.cache/huggingface
-      SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
+      # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"
     volumes:
@@ -205,14 +188,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5004:5004"
+    env_file:
+      - .env-k8s/platform-analytics-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5004
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
     volumes:
       - ./platform-services/backend/deepiri-platform-analytics-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils

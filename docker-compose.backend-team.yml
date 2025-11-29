@@ -118,17 +118,11 @@ services:
     logging: *minimal-logging
     ports:
       - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
+    env_file:
+      - .env-k8s/api-gateway.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5000
-      AUTH_SERVICE_URL: http://auth-service:5001
-      TASK_ORCHESTRATOR_URL: http://task-orchestrator:5002
-      ENGAGEMENT_SERVICE_URL: http://engagement-service:5003
-      PLATFORM_ANALYTICS_SERVICE_URL: http://platform-analytics-service:5004
-      NOTIFICATION_SERVICE_URL: http://notification-service:5005
-      EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
-      CHALLENGE_SERVICE_URL: http://challenge-service:5007
-      REALTIME_GATEWAY_URL: http://realtime-gateway:5008
     volumes:
       - ./platform-services/backend/deepiri-api-gateway:/app
       - /app/node_modules
@@ -158,16 +152,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5001:5001"
+    env_file:
+      - .env-k8s/auth-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5001
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
-      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
     volumes:
       - ./platform-services/backend/deepiri-auth-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -191,8 +181,10 @@ services:
     logging: *minimal-logging
     ports:
       - "5002:5002"
+    env_file:
+      - .env-k8s/task-orchestrator.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5002
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
     volumes:
@@ -217,13 +209,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5003:5003"
+    env_file:
+      - .env-k8s/engagement-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5003
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
     volumes:
       - ./platform-services/backend/deepiri-engagement-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -247,14 +238,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5004:5004"
+    env_file:
+      - .env-k8s/platform-analytics-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5004
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
     volumes:
       - ./platform-services/backend/deepiri-platform-analytics-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -278,13 +267,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5005:5005"
+    env_file:
+      - .env-k8s/notification-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5005
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      FCM_SERVER_KEY: ${FCM_SERVER_KEY}
-      APNS_KEY_ID: ${APNS_KEY_ID}
-      APNS_TEAM_ID: ${APNS_TEAM_ID}
     volumes:
       - ./platform-services/backend/deepiri-notification-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -307,19 +295,12 @@ services:
     logging: *minimal-logging
     ports:
       - "5006:5006"
+    env_file:
+      - .env-k8s/external-bridge-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5006
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      NOTION_CLIENT_ID: ${NOTION_CLIENT_ID}
-      NOTION_CLIENT_SECRET: ${NOTION_CLIENT_SECRET}
-      TRELLO_API_KEY: ${TRELLO_API_KEY}
-      TRELLO_API_SECRET: ${TRELLO_API_SECRET}
-      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
-      NOTION_WEBHOOK_SECRET: ${NOTION_WEBHOOK_SECRET}
-      TRELLO_WEBHOOK_SECRET: ${TRELLO_WEBHOOK_SECRET}
     volumes:
       - ./platform-services/backend/deepiri-external-bridge-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -342,8 +323,10 @@ services:
     logging: *minimal-logging
     ports:
       - "5007:5007"
+    env_file:
+      - .env-k8s/challenge-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5007
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
     volumes:
@@ -368,8 +351,10 @@ services:
     logging: *minimal-logging
     ports:
       - "5008:5008"
+    env_file:
+      - .env-k8s/realtime-gateway.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5008
     volumes:
       - ./platform-services/backend/deepiri-realtime-gateway:/app
@@ -391,11 +376,11 @@ services:
     logging: *minimal-logging
     ports:
       - "5173:5173"
+    env_file:
+      - .env-k8s/frontend-dev.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
-      CHOKIDAR_USEPOLLING: true
-      WATCHPACK_POLLING: true
     volumes:
       - ./deepiri-web-frontend:/app
       - /app/node_modules
