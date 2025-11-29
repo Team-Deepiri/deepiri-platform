@@ -14,7 +14,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}Generating .env files from Kubernetes ConfigMaps and Secrets...${NC}"
+echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║  Syncing K8s ConfigMaps & Secrets → Docker Compose .env   ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
 
 # Create .env-k8s directory if it doesn't exist
 mkdir -p "$ENV_DIR"
@@ -41,17 +44,18 @@ extract_configmap() {
     }' "$configmap_file" > "$output_file"
 }
 
-# Function to extract data from Secret YAML
-extract_secret() {
-    local secret_file="$1"
-    local output_file="$2"
+# Function to extract ALL secrets from the shared secrets.yaml file
+extract_shared_secrets() {
+    local secret_file="$SCRIPT_DIR/secrets/secrets.yaml"
+    local output_file="$1"
     
     if [ ! -f "$secret_file" ]; then
-        echo -e "${YELLOW}⚠️  Secret file not found: $secret_file${NC}"
+        echo -e "${YELLOW}⚠️  Shared secrets file not found: $secret_file${NC}"
         return 1
     fi
     
     # Extract stringData section and convert YAML key-value pairs to KEY=value format
+    # This appends all secrets to every service (they can use what they need)
     awk '/^stringData:/{flag=1; next} /^[^ ]/{flag=0} flag && /^  [A-Z_]+:/ {
         key = $1
         gsub(/^  /, "", key)
@@ -80,51 +84,36 @@ SERVICES=(
 # Generate .env files for each service
 for service in "${SERVICES[@]}"; do
     configmap_file="$SCRIPT_DIR/configmaps/${service}-configmap.yaml"
-    secret_file="$SCRIPT_DIR/secrets/${service}-secret.yaml"
     env_file="$ENV_DIR/${service}.env"
     
-    echo -e "Processing ${GREEN}$service${NC}..."
+    echo -e "${GREEN}📦 $service${NC}"
     
     # Start with ConfigMap (public vars)
     if [ -f "$configmap_file" ]; then
         extract_configmap "$configmap_file" "$env_file"
-        echo -e "  ✓ Added ConfigMap values"
+        echo -e "   ✓ ConfigMap synced"
     else
-        echo -e "  ${YELLOW}⚠️  No ConfigMap found${NC}"
+        echo -e "   ${YELLOW}⚠️  No ConfigMap found${NC}"
         touch "$env_file"
     fi
     
-    # Append Secret (confidential vars)
-    if [ -f "$secret_file" ]; then
-        extract_secret "$secret_file" "$env_file"
-        echo -e "  ✓ Added Secret values"
-    else
-        echo -e "  ${YELLOW}⚠️  No Secret found${NC}"
-    fi
+    # Append shared secrets (all services get all secrets - they use what they need)
+    extract_shared_secrets "$env_file"
+    echo -e "   ✓ Secrets synced"
     
-    # Replace placeholders with actual values from environment or defaults
-    # This allows overriding values via environment variables
+    # Count variables
     if [ -f "$env_file" ]; then
-        # Replace MongoDB credentials if MONGO_ROOT_USER and MONGO_ROOT_PASSWORD are set
-        if [ -n "$MONGO_ROOT_USER" ] && [ -n "$MONGO_ROOT_PASSWORD" ]; then
-            sed -i.bak "s|mongodb://admin:password@|mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@|g" "$env_file"
-            rm -f "${env_file}.bak"
-        fi
-        
-        # Replace Redis password if REDIS_PASSWORD is set
-        if [ -n "$REDIS_PASSWORD" ]; then
-            sed -i.bak "s|REDIS_PASSWORD=redispassword|REDIS_PASSWORD=${REDIS_PASSWORD}|g" "$env_file"
-            rm -f "${env_file}.bak"
-        fi
-        
-        # Replace API Gateway port if API_GATEWAY_PORT is set
-        if [ -n "$API_GATEWAY_PORT" ]; then
-            sed -i.bak "s|VITE_API_URL=http://localhost:5100|VITE_API_URL=http://localhost:${API_GATEWAY_PORT}|g" "$env_file"
-            rm -f "${env_file}.bak"
-        fi
+        var_count=$(grep -c "=" "$env_file" || echo "0")
+        echo -e "   ${GREEN}→ $var_count variables${NC}"
     fi
+    echo ""
 done
 
-echo -e "\n${GREEN}✓ Generated .env files in: $ENV_DIR${NC}"
-echo -e "${YELLOW}Note: Update the Secret YAML files with actual values before using in production!${NC}"
+echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║  ✓ Sync Complete: $ENV_DIR                        ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${YELLOW}💡 Tip: Run this script whenever you update k8s configmaps/secrets${NC}"
+echo -e "${YELLOW}💡 Tip: Add to git hooks for automatic sync${NC}"
+echo ""
 

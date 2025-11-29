@@ -21,13 +21,21 @@
 !*env.example*
 
 # Kubernetes Secrets
-/ops/k8s/secrets/
-ops/k8s/secrets/
-secrets/
-secrets.yaml
+# Ignore actual secrets in ops/k8s/secrets/ but allow examples and docs
+ops/k8s/secrets/secrets.yaml
+ops/k8s/secrets/*-prod.*
+ops/k8s/secrets/*-production.*
+ops/k8s/secrets/*-staging.*
+# Don't ignore example files and documentation
+!ops/k8s/secrets/*.example
+!ops/k8s/secrets/*.example.*
+!ops/k8s/secrets/*-template.*
+!ops/k8s/secrets/*.template
+!ops/k8s/secrets/README.md
+!ops/k8s/secrets/.gitkeep
+# Generic secrets files
 *.secrets.yaml
-secrets/*.yaml
-secrets/*.yml
+*.secrets.yml
 
 # Firebase Admin SDK
 firebase-admin*.json

@@ -188,15 +188,55 @@ VITE_CYREX_URL=http://localhost:8000
 
 ### ConfigMap vs Secrets
 
-**ConfigMap** (`ops/k8s/configmap.yaml`):
+**ConfigMaps** (`ops/k8s/configmaps/*.yaml`):
 - Non-sensitive configuration
 - Ports, feature flags, URLs
-- Service names (e.g., `mongodb-service:27017`)
+- Service names (e.g., `mongodb:27017`)
+- Each service has its own configmap file
 
 **Secrets** (`ops/k8s/secrets/secrets.yaml`):
 - Sensitive data (passwords, API keys)
 - JWT secrets, database passwords
 - API keys
+- Shared across all services
+
+### Using K8s Config with Docker Compose
+
+**Docker Compose automatically loads environment variables from your k8s configmaps and secrets.**
+
+Configuration files location:
+```
+ops/k8s/
+├── configmaps/
+│   ├── api-gateway-configmap.yaml
+│   ├── auth-service-configmap.yaml
+│   ├── cyrex-configmap.yaml
+│   └── ... (one per service)
+└── secrets/
+    └── secrets.yaml (shared by all services)
+```
+
+**To run containers with k8s config:**
+
+```bash
+# Use the k8s wrapper script (auto-loads configmaps & secrets)
+./docker-compose-k8s.sh -f docker-compose.backend-team.yml up -d    # Linux/Mac
+.\docker-compose-k8s.ps1 -f docker-compose.backend-team.yml up -d   # Windows
+
+# Or use team start scripts (already configured)
+cd team_dev_environments/backend-team
+./start.sh          # Linux/Mac
+.\start.ps1         # Windows
+```
+
+**How it works:**
+1. Wrapper script reads all `ops/k8s/configmaps/*.yaml` files
+2. Extracts environment variables from `data:` sections
+3. Reads `ops/k8s/secrets/secrets.yaml`
+4. Extracts secrets from `stringData:` section
+5. Passes all variables to `docker compose`
+
+**Single source of truth:** Edit k8s YAML files → restart containers → done!
 
 ### Kubernetes Service Names
 
@@ -206,6 +246,12 @@ In Kubernetes, services communicate using service names:
 - `backend-service:5000` (not `localhost:5000`)
 - `cyrex-service:8000` (not `localhost:8000`)
 - `localai-service:8080` (not `localhost:8080`)
+
+In Docker Compose, use docker service names:
+- `mongodb:27017`
+- `redis:6379`
+- `api-gateway:5000`
+- `cyrex:8000`
 
 ---
 

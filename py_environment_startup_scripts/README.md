@@ -1,218 +1,152 @@
-# Deepiri Python Environment Startup Scripts
+# Python Environment Startup Scripts
 
-Python-based Docker management scripts for starting services based on team roles. These scripts replace docker-compose for role-specific service orchestration.
+🎯 **Professional microservices workflow** - these scripts mimic Kubernetes by reading ConfigMaps and Secrets YAMLs and injecting them directly into the environment.
 
-## Installation
+**No `.env` files needed!** Just like in production Kubernetes.
 
-1. Install Python dependencies:
+---
+
+## 🚀 Quick Start
+
 ```bash
-cd py_environment_startup_scripts
-pip install -r requirements.txt
+# Backend Team
+python py_environment_startup_scripts/run_backend_team.py
+
+# AI Team
+python py_environment_startup_scripts/run_ai_team.py
+
+# Platform Engineers (Full Stack)
+python py_environment_startup_scripts/run_platform_engineers.py
+
+# Other teams...
+python py_environment_startup_scripts/run_<team>.py
 ```
 
-2. Ensure Docker is running on your system.
+---
 
-3. Make sure you have a `.env` file in the project root with necessary environment variables.
+## 📋 Available Scripts
 
-## Available Scripts
+| Script | Team | Services |
+|--------|------|----------|
+| `run_backend_team.py` | Backend | Frontend + All backend microservices |
+| `run_ai_team.py` | AI | Cyrex, MLflow, Jupyter, Challenge Service |
+| `run_frontend_team.py` | Frontend | Frontend + API Gateway |
+| `run_ml_team.py` | ML | Cyrex, MLflow, Jupyter, Platform Analytics |
+| `run_infrastructure_team.py` | Infrastructure | MongoDB, Redis, InfluxDB, etc. |
+| `run_platform_engineers.py` | Platform Engineers | Everything (full stack) |
+| `run_qa_team.py` | QA | Everything (for testing) |
 
-### Team-Specific Scripts
+---
 
-#### 1. AI Team (`start_ai_team.py`)
-Starts services needed by the AI team:
-- **Cyrex** (AI Service) - Port 8000
-- **MLflow** - Port 5001
-- **Jupyter Notebook** - Port 8888
-- **Challenge Service** - Port 5007
-- **MongoDB** - Port 27017
-- **Redis** - Port 6379
+## 🔧 How It Works
 
-**Usage:**
+Each script:
+
+1. **Reads k8s ConfigMaps** from `ops/k8s/configmaps/*.yaml`
+2. **Reads k8s Secrets** from `ops/k8s/secrets/*.yaml`
+3. **Extracts environment variables** from `data:` and `stringData:` sections
+4. **Injects them into `os.environ`** (mimics Kubernetes pod injection)
+5. **Runs `docker compose`** with those environment variables
+
+**This mimics exactly how Kubernetes works in production!**
+
+---
+
+## ✨ Advantages Over `.env` Files
+
+✅ **No `.env` files** - secrets stay in k8s YAML format  
+✅ **Single source of truth** - same config for local dev and k8s  
+✅ **Production-like** - mimics Kubernetes secret injection  
+✅ **No drift** - local dev matches production exactly  
+✅ **Cleaner** - no scattered `.env` files to maintain  
+
+---
+
+## 📝 Example Workflow
+
 ```bash
-python start_ai_team.py
+# 1. Edit your k8s config
+vim ops/k8s/configmaps/auth-service-configmap.yaml
+vim ops/k8s/secrets/secrets.yaml
+
+# 2. Run the script - it auto-loads your changes
+python py_environment_startup_scripts/run_backend_team.py
+
+# 3. That's it! Your containers have the updated config
 ```
 
-#### 2. Frontend Team (`start_frontend_team.py`)
-Starts services needed by frontend developers:
-- **Frontend** (Vite HMR) - Port 5173
-- **API Gateway** - Port 5000
-- **MongoDB** - Port 27017
-- **Mongo Express** - Port 8081
-- **Redis** - Port 6379
+**No manual syncing. No `.env` file generation. Just works.**
 
-**Usage:**
+---
+
+## 🔒 Security
+
+- ✅ `secrets.yaml` is gitignored (never committed)
+- ✅ `secrets.yaml.example` is committed (safe template)
+- ✅ Scripts skip `*.example` files when loading secrets
+- ✅ Same security model as production Kubernetes
+
+---
+
+## 🆚 vs Other Methods
+
+### This approach (Python scripts + k8s YAMLs):
 ```bash
-python start_frontend_team.py
+python py_environment_startup_scripts/run_backend_team.py
 ```
+- ✅ No `.env` files
+- ✅ Mimics Kubernetes exactly
+- ✅ Single source of truth
+- ✅ Professional microservices workflow
 
-#### 3. Backend Team (`start_backend_team.py`)
-Starts all microservices and infrastructure:
-- **API Gateway** - Port 5000
-- **User Service** - Port 5001
-- **Task Service** - Port 5002
-- **Gamification Service** - Port 5003
-- **Analytics Service** - Port 5004
-- **Notification Service** - Port 5005
-- **Integration Service** - Port 5006
-- **WebSocket Service** - Port 5008
-- **MongoDB** - Port 27017
-- **Mongo Express** - Port 8081
-- **Redis** - Port 6379
-- **InfluxDB** - Port 8086
-
-**Usage:**
+### Old approach (shell wrappers):
 ```bash
-python start_backend_team.py
+./docker-compose-k8s.sh -f docker-compose.backend-team.yml up -d
 ```
+- ⚠️ Shell-specific (bash/powershell)
+- ⚠️ Platform-dependent
+- ✅ Still works, but Python is cleaner
 
-#### 4. ML Team (`start_ml_team.py`)
-Starts services for ML engineers:
-- **Cyrex** (AI Service) - Port 8000
-- **MLflow** - Port 5001
-- **Jupyter Notebook** - Port 8888
-- **MongoDB** - Port 27017
-- **Redis** - Port 6379
-- **InfluxDB** - Port 8086
-
-**Usage:**
+### Manual approach (plain docker-compose):
 ```bash
-python start_ml_team.py
+docker compose -f docker-compose.backend-team.yml up -d
 ```
+- ❌ No k8s config loaded
+- ❌ Requires manual `.env` files
+- ❌ Easy to get out of sync
 
-#### 5. AI Research Team (`start_ai_research_team.py`)
-Starts services for AI researchers:
-- **Jupyter Notebook** - Port 8888
-- **MLflow** - Port 5001
-- **Cyrex** (AI Service) - Port 8000
-- **MongoDB** - Port 27017
+---
 
-**Usage:**
+## 🔄 Stopping Services
+
 ```bash
-python start_ai_research_team.py
+# Stop services (same for all teams)
+docker compose -f docker-compose.backend-team.yml down
+docker compose -f docker-compose.ai-team.yml down
+# etc...
 ```
 
-#### 6. ML Ops Team (`start_mlops_team.py`)
-Starts services for ML Ops engineers:
-- **MLflow** - Port 5001
-- **Prometheus** - Port 9090
-- **Grafana** - Port 3001
-- **ML Ops Service** - Port 8001
-- **Cyrex** - Port 8000
+---
 
-**Usage:**
-```bash
-python start_mlops_team.py
-```
+## 📦 Requirements
 
-#### 7. QA Testing Team (`start_qa_team.py`)
-Starts all services needed for QA testing:
-- **Frontend** - Port 5173
-- **API Gateway** - Port 5000
-- **All Microservices** - Ports 5001-5008
-- **Cyrex** (AI Service) - Port 8000
-- **MongoDB** - Port 27017
-- **Mongo Express** - Port 8081
-- **Redis** - Port 6379
-- **InfluxDB** - Port 8086
+- Python 3.7+
+- PyYAML (`pip install pyyaml`)
+- Docker & Docker Compose
 
-**Usage:**
-```bash
-python start_qa_team.py
-```
+---
 
-#### 8. Infrastructure Team (`start_infrastructure_team.py`)
-Starts infrastructure monitoring and management tools:
-- **Prometheus** - Port 9090
-- **Grafana** - Port 3001
-- **MLflow** - Port 5001
-- **All Services** (for monitoring) - Full stack
-- **MongoDB** - Port 27017
-- **Mongo Express** - Port 8081
-- **Redis** - Port 6379
-- **InfluxDB** - Port 8086
+## 🎯 This Is How Professional Teams Do It
 
-**Usage:**
-```bash
-python start_infrastructure_team.py
-```
+This workflow matches how modern microservices teams work:
 
-#### 9. All Services (`start_all_services.py`)
-Starts the complete platform with all services:
-- All microservices
-- Frontend
-- AI services
-- Databases
-- Monitoring tools
+1. **ConfigMaps & Secrets** as YAML (k8s format)
+2. **Python bootstrap script** reads them
+3. **Injects into environment**
+4. **Runs containers** with injected config
 
-**Usage:**
-```bash
-python start_all_services.py
-```
+**No `.env` files. No manual syncing. Production-like from day one.** 🚀
 
-## Stopping Services
+---
 
-To stop services, you can:
-1. Use Docker directly:
-```bash
-docker stop $(docker ps -q --filter "name=deepiri")
-```
-
-2. Or create stop scripts (similar to start scripts) that call:
-```python
-manager.stop_services(container_names)
-```
-
-## Environment Variables
-
-Ensure your `.env` file in the project root contains:
-
-```env
-# Database
-MONGO_ROOT_USER=admin
-MONGO_ROOT_PASSWORD=password
-MONGO_DB=deepiri
-REDIS_PASSWORD=redispassword
-
-# AI Services
-OPENAI_API_KEY=your_key_here
-OPENAI_MODEL=gpt-4o-mini
-CYREX_API_KEY=change-me
-WANDB_API_KEY=your_key_here
-
-# InfluxDB
-INFLUXDB_USER=admin
-INFLUXDB_PASSWORD=adminpassword
-INFLUXDB_ORG=deepiri
-INFLUXDB_BUCKET=analytics
-INFLUXDB_TOKEN=your-influxdb-token
-
-# External APIs (optional)
-GITHUB_CLIENT_ID=...
-GITHUB_CLIENT_SECRET=...
-NOTION_CLIENT_ID=...
-NOTION_CLIENT_SECRET=...
-
-# Monitoring
-GRAFANA_ADMIN_PASSWORD=admin
-```
-
-## Architecture
-
-- **docker_manager.py**: Core Docker management utility
-- **start_*.py**: Role-specific startup scripts
-- All scripts use the Docker SDK to manage containers programmatically
-
-## Troubleshooting
-
-1. **Docker not running**: Ensure Docker Desktop (or Docker daemon) is running
-2. **Port conflicts**: Check if ports are already in use and stop conflicting services
-3. **Build failures**: Ensure Dockerfiles exist in the specified paths
-4. **Network issues**: Scripts automatically create the `deepiri-network` if it doesn't exist
-
-## Notes
-
-- Services are started with `restart_policy: unless-stopped`
-- Volumes are created automatically for data persistence
-- Services wait for dependencies before starting (configurable delays)
-- All containers are prefixed with `deepiri-` for easy identification
-
+**For more info, see:** [ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md)

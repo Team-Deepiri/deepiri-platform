@@ -166,8 +166,8 @@ services:
     logging: *minimal-logging
     ports:
       - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
-    env_file:
-      - .env-k8s/api-gateway.env
+    # Variables loaded from ops/k8s/configmaps/api-gateway-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5000
@@ -201,8 +201,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5001:5001"
-    env_file:
-      - .env-k8s/auth-service.env
+    # Variables loaded from ops/k8s/configmaps/auth-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5001
@@ -230,8 +230,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5002:5002"
-    env_file:
-      - .env-k8s/task-orchestrator.env
+    # Variables loaded from ops/k8s/configmaps/task-orchestrator-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5002
@@ -258,8 +258,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5003:5003"
-    env_file:
-      - .env-k8s/engagement-service.env
+    # Variables loaded from ops/k8s/configmaps/engagement-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5003
@@ -287,8 +287,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5004:5004"
-    env_file:
-      - .env-k8s/platform-analytics-service.env
+    # Variables loaded from ops/k8s/configmaps/platform-analytics-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5004
@@ -316,8 +316,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5005:5005"
-    env_file:
-      - .env-k8s/notification-service.env
+    # Variables loaded from ops/k8s/configmaps/notification-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5005
@@ -344,8 +344,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5006:5006"
-    env_file:
-      - .env-k8s/external-bridge-service.env
+    # Variables loaded from ops/k8s/configmaps/external-bridge-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5006
@@ -372,8 +372,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5007:5007"
-    env_file:
-      - .env-k8s/challenge-service.env
+    # Variables loaded from ops/k8s/configmaps/challenge-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5007
@@ -401,8 +401,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5008:5008"
-    env_file:
-      - .env-k8s/realtime-gateway.env
+    # Variables loaded from ops/k8s/configmaps/realtime-gateway-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5008
@@ -429,9 +429,35 @@ services:
     container_name: deepiri-cyrex-dev
     restart: unless-stopped
     logging: *minimal-logging
-    env_file:
-      - .env-k8s/cyrex.env
+    # Variables loaded from ops/k8s/configmaps/cyrex-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      CORS_ORIGIN: http://localhost:5173
+      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      WANDB_API_KEY: ${WANDB_API_KEY}
+      MODEL_REGISTRY_PATH: /app/model_registry
+      STAGING_MODEL_PATH: /app/models/staging
+      PRODUCTION_MODEL_PATH: /app/models/production
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT:-us-east1-gcp}
+      PINECONE_INDEX: ${PINECONE_INDEX:-deepiri}
+      WEAVIATE_URL: ${WEAVIATE_URL}
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+      MILVUS_HOST: milvus
+      MILVUS_PORT: 19530
+      # Local LLM Configuration
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LOCAL_LLM_BACKEND: ${LOCAL_LLM_BACKEND:-ollama}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3:8b}
+      TRANSFORMERS_CACHE: /app/.cache/huggingface
+      HF_HOME: /app/.cache/huggingface
+      SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
       # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"
@@ -523,8 +549,8 @@ services:
     logging: *minimal-logging
     ports:
       - "5173:5173"
-    env_file:
-      - .env-k8s/frontend-dev.env
+    # Variables loaded from ops/k8s/configmaps/frontend-dev-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       # Override or add docker-specific variables here if needed
       VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api

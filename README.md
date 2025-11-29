@@ -55,8 +55,9 @@ docker compose -f docker-compose.dev.yml down
 - **[SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)** - Architecture overview
 
 ### Environment Setup
-- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - All environment variables
+- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - All environment variables (includes k8s config integration)
 - **[docker-compose.dev.yml](docker-compose.dev.yml)** - Development configuration
+- **[ops/k8s/](ops/k8s/)** - Kubernetes configmaps and secrets (also used by Docker Compose)
 
 ### Troubleshooting
 - **[scripts/STORAGE-TROUBLESHOOTING.md](scripts/STORAGE-TROUBLESHOOTING.md)** - Disk space issues
@@ -136,12 +137,22 @@ docker compose -f docker-compose.dev.yml down
 ```
 
 ### Running only services you need for your team
+
+**Recommended:** Use team start scripts (auto-loads k8s config):
 ```bash
-docker compose -f docker-compose.<team_name>-team.yml up -d
-# Examples:
-docker compose -f docker-compose.ai-team.yml up -d
+cd team_dev_environments/backend-team
+./start.sh             # Linux/Mac
+.\start.ps1            # Windows
+```
+
+**Or use docker compose with k8s wrapper:**
+```bash
+# With k8s config (recommended)
+./docker-compose-k8s.sh -f docker-compose.backend-team.yml up -d    # Linux/Mac
+.\docker-compose-k8s.ps1 -f docker-compose.backend-team.yml up -d   # Windows
+
+# Without k8s config (uses inline environment only)
 docker compose -f docker-compose.backend-team.yml up -d
-docker compose -f docker-compose.frontend-team.yml up -d
 ```
 
 ### Stopping those services

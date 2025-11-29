@@ -1,72 +1,28 @@
 #!/bin/bash
-# Backend Team - Start script
-# Requirements: core-api, web-frontend, api-gateway, auth + all their dependencies
-# Dependencies will be started automatically by docker compose
+# Backend Team - Start Script
+# Starts all backend services with k8s configmaps and secrets
 
-set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-cd "$(dirname "$0")/../.." || exit 1
+cd "$PROJECT_ROOT"
 
-echo "🚀 Starting Backend Team services..."
-
-# Start services that exist (skip submodules if not initialized)
-# api-gateway depends on all these services, so we need to start them all
-SERVICES=()
-for service in frontend-dev api-gateway auth-service task-orchestrator engagement-service platform-analytics-service notification-service external-bridge-service challenge-service realtime-gateway; do
-  case $service in
-    api-gateway)
-      if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    auth-service)
-      if [ -f "platform-services/backend/deepiri-auth-service/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    external-bridge-service)
-      if [ -f "platform-services/backend/deepiri-external-bridge-service/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    frontend-dev)
-      if [ -f "deepiri-web-frontend/Dockerfile.dev" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    *)
-      SERVICES+=("$service")
-      ;;
-  esac
-done
-
-if [ ${#SERVICES[@]} -eq 0 ]; then
-  echo "❌ No services to start!"
-  exit 1
-fi
-
-echo "Starting: ${SERVICES[*]} (and their dependencies)"
-
-# Use --no-build to prevent automatic building (images should already be built)
-# Dependencies (mongodb, redis, influxdb, mongo-express) will be started automatically
-# All platform-services are explicitly listed above to ensure they're built and started
-docker compose -f docker-compose.backend-team.yml up -d --no-build "${SERVICES[@]}"
-
-# Get API Gateway port from environment or use default
-API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
-
-echo "✅ Backend Team services started!"
+echo "🚀 Starting Backend Team Environment..."
+echo "   (Using k8s configmaps and secrets from ops/k8s/)"
 echo ""
-echo "🎨 Frontend: http://localhost:5173"
-echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
-echo "🔐 Auth Service: http://localhost:5001"
-echo "🗄️  Mongo Express: http://localhost:8081"
 
+# Use wrapper to auto-load k8s config
+./docker-compose-k8s.sh -f docker-compose.backend-team.yml up -d
+
+echo ""
+echo "✅ Backend Team Environment Started!"
+echo ""
+echo "Access your services:"
+echo "  - Frontend:        http://localhost:5173"
+echo "  - API Gateway:     http://localhost:5100"
+echo "  - Auth Service:    http://localhost:5001"
+echo "  - MongoDB Express: http://localhost:8081"
+echo ""
+echo "View logs:"
+echo "  docker compose -f docker-compose.backend-team.yml logs -f"
+echo ""
