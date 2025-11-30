@@ -1,12 +1,8 @@
 #!/bin/bash
 # Backend Team - Build script
-# Requirements: core-api, web-frontend, api-gateway, auth + all their dependencies
-# Dependencies: api-gateway needs (auth-service, task-orchestrator, engagement-service, 
-#   platform-analytics-service, notification-service, challenge-service, realtime-gateway)
-#   engagement-service needs (postgres, redis)
-#   challenge-service needs (postgres)
-#   auth-service needs (postgres, influxdb)
-#   Infrastructure: postgres, redis, influxdb, pgadmin (pulled as images, not built)
+# Builds: All backend microservices (no frontend)
+# Based on SERVICE_TEAM_MAPPING.md: API Gateway, Auth, Task Orchestrator, 
+#   Engagement, Analytics, Notification, External Bridge, Challenge, Realtime Gateway
 
 set -e
 
@@ -20,10 +16,10 @@ echo "🔨 Building Backend Team services..."
 
 # Build services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in frontend-dev api-gateway auth-service task-orchestrator engagement-service platform-analytics-service notification-service external-bridge-service challenge-service realtime-gateway; do
+for service in api-gateway auth-service task-orchestrator engagement-service platform-analytics-service notification-service external-bridge-service challenge-service realtime-gateway; do
   case $service in
     api-gateway)
-      if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
+      if [ -f "platform-services/api-gateway/Dockerfile" ] || [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
         SERVICES+=("$service")
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
@@ -43,35 +39,20 @@ for service in frontend-dev api-gateway auth-service task-orchestrator engagemen
         echo "⚠️  Skipping $service (submodule not initialized)"
       fi
       ;;
-    frontend-dev)
-      if [ -f "deepiri-web-frontend/Dockerfile.dev" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
     *)
       SERVICES+=("$service")
       ;;
   esac
 done
 
-# Note: deepiri-core-api is not in docker-compose.dev.yml
-# If you need it, add it to the compose file or use a different compose file
-if [ -f "deepiri-core-api/Dockerfile" ]; then
-  echo "⚠️  Note: deepiri-core-api found but not in docker-compose.dev.yml"
-  echo "   You may need to add it to the compose file or use a different compose file"
-fi
-
 if [ ${#SERVICES[@]} -eq 0 ]; then
   echo "❌ No services to build!"
   exit 1
 fi
 
-echo "Building: ${SERVICES[*]} (and their dependencies)"
+echo "Building: ${SERVICES[*]}"
 
-# Build services with their dependencies
+# Build services using team-specific compose file
 docker compose -f docker-compose.backend-team.yml build "${SERVICES[@]}"
 
 echo "✅ Backend Team services built successfully!"
-

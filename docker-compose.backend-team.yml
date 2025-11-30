@@ -8,7 +8,7 @@ name: deepiri-backend-team
 # - team_dev_environments/backend-team/stop.sh
 #
 # Primary services: frontend-dev, api-gateway, auth-service
-# Dependencies: mongodb, redis, influxdb, task-orchestrator, engagement-service,
+# Dependencies: postgres, redis, influxdb, task-orchestrator, engagement-service,
 #   platform-analytics-service, notification-service, external-bridge-service,
 #   challenge-service, realtime-gateway
 #

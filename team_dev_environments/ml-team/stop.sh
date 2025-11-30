@@ -1,39 +1,34 @@
 #!/bin/bash
 # ML Team - Stop script
-# Stops: cyrex + its dependencies
+# Stops and removes all containers started by ml-team/run.py
 
 set -e
 
-cd "$(dirname "$0")/../.." || exit 1
-
 echo "🛑 Stopping ML Team services..."
 
-# Stop services that exist (skip submodules if not initialized)
-SERVICES=()
-for service in cyrex; do
-  case $service in
-    cyrex)
-      if [ -f "diri-cyrex/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    *)
-      SERVICES+=("$service")
-      ;;
-  esac
+# List of containers started by ml-team/run.py
+CONTAINERS=(
+    "deepiri-postgres-ml"
+    "deepiri-pgadmin-ml"
+    "deepiri-adminer-ml"
+    "deepiri-redis-ml"
+    "deepiri-influxdb-ml"
+    "deepiri-cyrex-ml"
+    "deepiri-mlflow-ml"
+    "deepiri-jupyter-ml"
+    "deepiri-platform-analytics-service-ml"
+)
+
+# Stop and remove containers
+for container in "${CONTAINERS[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        echo "Stopping ${container}..."
+        docker stop "${container}" 2>/dev/null || true
+        echo "Removing ${container}..."
+        docker rm "${container}" 2>/dev/null || true
+    else
+        echo "⚠️  Container ${container} not found, skipping..."
+    fi
 done
 
-if [ ${#SERVICES[@]} -eq 0 ]; then
-  echo "❌ No services to stop!"
-  exit 1
-fi
-
-echo "Stopping: ${SERVICES[*]} (and their dependencies: influxdb, milvus, etcd, minio)"
-
-# Stop the services (dependencies will be stopped if not used by other services)
-docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}"
-
-echo "✅ ML Team services stopped!"
-
+echo "✅ ML Team services stopped and removed!"

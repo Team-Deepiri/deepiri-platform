@@ -1,5 +1,5 @@
 import express, { Express, Request, Response, ErrorRequestHandler } from 'express';
-import mongoose from 'mongoose';
+// MongoDB removed - analytics uses InfluxDB for time-series and PostgreSQL for metadata
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -21,10 +21,8 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-const MONGO_URI: string = process.env.MONGO_URI || 'mongodb://mongodb:27017/deepiri';
-mongoose.connect(MONGO_URI)
-  .then(() => logger.info('Platform Analytics Service: Connected to MongoDB'))
-  .catch((err: Error) => logger.error('Platform Analytics Service: MongoDB connection error', err));
+// PostgreSQL connection via Prisma (if needed for analytics metadata)
+// Primary analytics data stored in InfluxDB
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'platform-analytics-service', timestamp: new Date().toISOString() });

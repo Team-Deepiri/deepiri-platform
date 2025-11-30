@@ -21,7 +21,7 @@ Complete reference for all environment variables used in Deepiri. This guide cov
 # Root .env (Docker Compose)
 AI_PROVIDER=localai
 LOCALAI_API_BASE=http://localhost:8080/v1
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
@@ -30,7 +30,7 @@ DEV_CYREX_URL=http://localhost:8000
 # deepiri-core-api/.env
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 AI_PROVIDER=localai
 LOCALAI_API_BASE=http://localhost:8080/v1
@@ -84,7 +84,7 @@ HOST=0.0.0.0
 
 **Database Configuration:**
 ```bash
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 POSTGRES_USER=deepiri
 POSTGRES_PASSWORD=deepiripassword
 POSTGRES_DB=deepiri
@@ -122,7 +122,7 @@ HOST=0.0.0.0
 
 **Database:**
 ```bash
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 ```
 
@@ -314,7 +314,7 @@ In Docker Compose, use docker service names:
 ```bash
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 ```
 
 ### Cloud/Production
@@ -328,7 +328,7 @@ MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
 **Example (Kubernetes Secret):**
 ```yaml
 # In cloud K8s Secret (not .env file)
-MONGODB_URI: mongodb+srv://user:pass@cluster.mongodb.net/deepiri_prod
+DATABASE_URL: postgresql://user:pass@postgres-cluster.example.com:5432/deepiri_prod
 CLIENT_URL: https://deepiri.com
 API_URL: https://api.deepiri.com
 ```
@@ -402,7 +402,7 @@ API_URL: https://api.deepiri.com
 # Root .env
 AI_PROVIDER=localai
 LOCALAI_API_BASE=http://localhost:8080/v1
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
@@ -417,7 +417,7 @@ AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_API_BASE=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
@@ -430,7 +430,7 @@ DEV_CYREX_URL=http://localhost:8000
 ```yaml
 AI_PROVIDER: "localai"
 LOCALAI_API_BASE: "http://localai-service:8080/v1"
-MONGODB_URI: "mongodb://admin:password@mongodb-service:27017/deepiri?authSource=admin"
+DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres-service:5432/deepiri"
 REDIS_URL: "redis://:password@redis-service:6379"
 ```
 

@@ -1,22 +1,32 @@
 #!/bin/bash
 # Frontend Team - Stop script
-# Stops all frontend team services and their dependencies
+# Stops and removes all containers started by frontend-team/run.py
 
 set -e
 
-cd "$(dirname "$0")/../.." || exit 1
-
 echo "🛑 Stopping Frontend Team services..."
 
-# Stop all services in the frontend-team compose file
-# This stops all services defined in docker-compose.frontend-team.yml:
-# - frontend-dev, api-gateway, auth-service
-# - task-orchestrator, engagement-service, platform-analytics-service
-# - notification-service, challenge-service
-# - realtime-gateway
-# - postgres, redis, influxdb, pgadmin
-# Note: external-bridge-service excluded - frontend team doesn't need integrations
-docker compose -f docker-compose.frontend-team.yml stop
+# List of containers started by frontend-team/run.py
+CONTAINERS=(
+    "deepiri-postgres-frontend"
+    "deepiri-pgadmin-frontend"
+    "deepiri-adminer-frontend"
+    "deepiri-redis-frontend"
+    "deepiri-frontend-frontend"
+    "deepiri-api-gateway-frontend"
+    "deepiri-realtime-gateway-frontend"
+)
 
-echo "✅ Frontend Team services stopped!"
+# Stop and remove containers
+for container in "${CONTAINERS[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        echo "Stopping ${container}..."
+        docker stop "${container}" 2>/dev/null || true
+        echo "Removing ${container}..."
+        docker rm "${container}" 2>/dev/null || true
+    else
+        echo "⚠️  Container ${container} not found, skipping..."
+    fi
+done
 
+echo "✅ Frontend Team services stopped and removed!"

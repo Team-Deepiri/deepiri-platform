@@ -1,53 +1,37 @@
 #!/bin/bash
 # AI Team - Stop script
-# Stops: cyrex, api-gateway, engagement-service, challenge-service, external-bridge-service + their dependencies
+# Stops and removes all containers started by ai-team/run.py
 
 set -e
 
-cd "$(dirname "$0")/../.." || exit 1
-
 echo "🛑 Stopping AI Team services..."
 
-# Stop services that exist (skip submodules if not initialized)
-SERVICES=()
-for service in cyrex api-gateway engagement-service challenge-service external-bridge-service; do
-  case $service in
-    api-gateway)
-      if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    external-bridge-service)
-      if [ -f "platform-services/backend/deepiri-external-bridge-service/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    cyrex)
-      if [ -f "diri-cyrex/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    *)
-      SERVICES+=("$service")
-      ;;
-  esac
+# List of containers started by ai-team/run.py
+CONTAINERS=(
+    "deepiri-postgres-ai"
+    "deepiri-pgadmin-ai"
+    "deepiri-adminer-ai"
+    "deepiri-redis-ai"
+    "deepiri-influxdb-ai"
+    "deepiri-etcd-ai"
+    "deepiri-minio-ai"
+    "deepiri-milvus-ai"
+    "deepiri-cyrex-ai"
+    "deepiri-mlflow-ai"
+    "deepiri-jupyter-ai"
+    "deepiri-challenge-service-ai"
+)
+
+# Stop and remove containers
+for container in "${CONTAINERS[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        echo "Stopping ${container}..."
+        docker stop "${container}" 2>/dev/null || true
+        echo "Removing ${container}..."
+        docker rm "${container}" 2>/dev/null || true
+    else
+        echo "⚠️  Container ${container} not found, skipping..."
+    fi
 done
 
-if [ ${#SERVICES[@]} -eq 0 ]; then
-  echo "❌ No services to stop!"
-  exit 1
-fi
-
-echo "Stopping: ${SERVICES[*]} (and their dependencies)"
-
-# Stop the services (dependencies will be stopped if not used by other services)
-docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}"
-
-echo "✅ AI Team services stopped!"
-
+echo "✅ AI Team services stopped and removed!"

@@ -1,21 +1,39 @@
 #!/bin/bash
 # Backend Team - Stop script
-# Stops all backend team services and their dependencies
+# Stops and removes all containers started by backend-team/run.py
 
 set -e
 
-cd "$(dirname "$0")/../.." || exit 1
-
 echo "🛑 Stopping Backend Team services..."
 
-# Stop all services in the backend-team compose file
-# This stops all services defined in docker-compose.backend-team.yml:
-# - frontend-dev, api-gateway, auth-service
-# - task-orchestrator, engagement-service, platform-analytics-service
-# - notification-service, external-bridge-service, challenge-service
-# - realtime-gateway
-# - postgres, redis, influxdb, pgadmin
-docker compose -f docker-compose.backend-team.yml stop
+# List of containers started by backend-team/run.py
+CONTAINERS=(
+    "deepiri-postgres-backend"
+    "deepiri-pgadmin-backend"
+    "deepiri-adminer-backend"
+    "deepiri-redis-backend"
+    "deepiri-influxdb-backend"
+    "deepiri-api-gateway-backend"
+    "deepiri-auth-service-backend"
+    "deepiri-task-orchestrator-backend"
+    "deepiri-engagement-service-backend"
+    "deepiri-platform-analytics-service-backend"
+    "deepiri-notification-service-backend"
+    "deepiri-external-bridge-service-backend"
+    "deepiri-challenge-service-backend"
+    "deepiri-realtime-gateway-backend"
+)
 
-echo "✅ Backend Team services stopped!"
+# Stop and remove containers
+for container in "${CONTAINERS[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        echo "Stopping ${container}..."
+        docker stop "${container}" 2>/dev/null || true
+        echo "Removing ${container}..."
+        docker rm "${container}" 2>/dev/null || true
+    else
+        echo "⚠️  Container ${container} not found, skipping..."
+    fi
+done
 
+echo "✅ Backend Team services stopped and removed!"

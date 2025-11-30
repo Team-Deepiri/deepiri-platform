@@ -100,12 +100,25 @@ git submodule update --init --recursive platform-services/backend/deepiri-auth-s
 echo "    ✅ auth-service initialized at: $(pwd)/platform-services/backend/deepiri-auth-service"
 echo ""
 
+# deepiri-api-gateway
+echo "  📦 deepiri-api-gateway (API Gateway)..."
+git submodule update --init --recursive platform-services/backend/deepiri-api-gateway
+if [ ! -d "platform-services/backend/deepiri-api-gateway/.git" ]; then
+    echo "    ❌ ERROR: deepiri-api-gateway not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/backend/deepiri-api-gateway"
+    exit 1
+fi
+echo "    ✅ api-gateway initialized at: $(pwd)/platform-services/backend/deepiri-api-gateway"
+echo ""
+
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote deepiri-web-frontend
 ensure_submodule_on_main "deepiri-web-frontend"
 git submodule update --remote platform-services/backend/deepiri-auth-service
 ensure_submodule_on_main "platform-services/backend/deepiri-auth-service"
+git submodule update --remote platform-services/backend/deepiri-api-gateway
+ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
 echo "    ✅ All frontend submodules updated and on main branch"
 echo ""
 
@@ -113,6 +126,10 @@ echo ""
 echo "📊 Submodule Status:"
 echo ""
 git submodule status deepiri-web-frontend
+echo ""
+git submodule status platform-services/backend/deepiri-auth-service
+echo ""
+git submodule status platform-services/backend/deepiri-api-gateway
 echo ""
 
 echo "✅ Frontend Team submodules ready!"
@@ -122,4 +139,8 @@ echo "  - Check status: git submodule status deepiri-web-frontend"
 echo "  - Update: git submodule update --remote deepiri-web-frontend"
 echo "  - Work in submodule: cd deepiri-web-frontend"
 echo "  - Install deps: cd deepiri-web-frontend && npm install"
+echo ""
+echo "  - API Gateway status: git submodule status platform-services/backend/deepiri-api-gateway"
+echo "  - Update API Gateway: git submodule update --remote platform-services/backend/deepiri-api-gateway"
+echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
 echo ""

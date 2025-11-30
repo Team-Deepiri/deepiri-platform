@@ -1,4 +1,4 @@
-# 🚀 Quick Start - Team Development Environments
+# Quick Start - Team Development Environments
 
 ## Professional K8s-Like Local Development (No `.env` Files!)
 
@@ -8,8 +8,7 @@
 # Install Python dependency
 pip install pyyaml
 
-# Create secrets file (see ops/k8s/secrets/README.md for template)
-touch ops/k8s/secrets/secrets.yaml
+# Get the secrets off of a secured source from the organization
 
 # For local dev, you can use minimal defaults - see README for template
 # Or just run with empty secrets.yaml for now
@@ -25,7 +24,6 @@ cd team_dev_environments/backend-team
 python run.py
 ```
 
-That's it! 🎉
 
 ### What Happens?
 

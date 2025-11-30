@@ -1,6 +1,7 @@
 #!/bin/bash
 # Infrastructure Team - Build script
-# Requirements: All services EXCEPT frontend + their dependencies
+# Builds: All infrastructure + API Gateway + All Microservices (no frontend)
+# Based on SERVICE_TEAM_MAPPING.md: All Infrastructure Services + API Gateway + All Microservices
 
 set -e
 
@@ -14,17 +15,16 @@ echo "🔨 Building Infrastructure Team services..."
 
 # Build all services except frontend-dev
 ALL_SERVICES=(
-  postgres pgadmin redis influxdb etcd minio milvus
   api-gateway auth-service task-orchestrator engagement-service platform-analytics-service
   notification-service external-bridge-service challenge-service realtime-gateway
-  cyrex cyrex-interface mlflow jupyter
+  cyrex jupyter mlflow
 )
 
 SERVICES_TO_BUILD=()
 for service in "${ALL_SERVICES[@]}"; do
   case $service in
     api-gateway)
-      if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
+      if [ -f "platform-services/api-gateway/Dockerfile" ] || [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
         SERVICES_TO_BUILD+=("$service")
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
@@ -65,8 +65,7 @@ fi
 
 echo "Building: ${SERVICES_TO_BUILD[*]} (excluding frontend-dev)"
 
-# Build services with their dependencies
-docker compose -f docker-compose.dev.yml build "${SERVICES_TO_BUILD[@]}"
+# Build services using team-specific compose file
+docker compose -f docker-compose.infrastructure-team.yml build "${SERVICES_TO_BUILD[@]}"
 
 echo "✅ Infrastructure Team services built successfully!"
-

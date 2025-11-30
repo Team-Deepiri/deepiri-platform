@@ -24,8 +24,8 @@ spec:
                 name: deepiri-secrets
           env:
             # Override with Kubernetes service names
-            - name: MONGODB_URI
-              value: "mongodb://$(MONGO_ROOT_USER):$(MONGO_ROOT_PASSWORD)@mongodb-service:27017/$(MONGO_DB)?authSource=admin"
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/$(POSTGRES_DB)"
             - name: REDIS_URL
               value: "redis://:$(REDIS_PASSWORD)@redis-service:6379"
             - name: REDIS_HOST

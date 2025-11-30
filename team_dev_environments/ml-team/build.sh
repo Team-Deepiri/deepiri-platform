@@ -1,7 +1,7 @@
 #!/bin/bash
 # ML Team - Build script
-# Requirements: Just cyrex + its dependencies
-# Dependencies: cyrex needs (influxdb, milvus), milvus needs (etcd, minio)
+# Builds: Cyrex, Jupyter, MLflow, Platform Analytics Service
+# Based on SERVICE_TEAM_MAPPING.md: Cyrex AI Service, Jupyter, MLflow, Analytics Service
 
 set -e
 
@@ -15,7 +15,7 @@ echo "🔨 Building ML Team services..."
 
 # Build services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in cyrex; do
+for service in cyrex jupyter mlflow platform-analytics-service; do
   case $service in
     cyrex)
       if [ -f "diri-cyrex/Dockerfile" ]; then
@@ -23,6 +23,17 @@ for service in cyrex; do
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
       fi
+      ;;
+    jupyter)
+      if [ -f "diri-cyrex/Dockerfile.jupyter" ]; then
+        SERVICES+=("$service")
+      else
+        echo "⚠️  Skipping $service (Dockerfile.jupyter not found)"
+      fi
+      ;;
+    mlflow)
+      # MLflow uses pre-built image, but we can still include it
+      SERVICES+=("$service")
       ;;
     *)
       SERVICES+=("$service")
@@ -35,10 +46,9 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Building: ${SERVICES[*]} (and their dependencies: influxdb, milvus, etcd, minio)"
+echo "Building: ${SERVICES[*]}"
 
-# Build services with their dependencies
-docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
+# Build services using team-specific compose file
+docker compose -f docker-compose.ml-team.yml build "${SERVICES[@]}"
 
 echo "✅ ML Team services built successfully!"
-

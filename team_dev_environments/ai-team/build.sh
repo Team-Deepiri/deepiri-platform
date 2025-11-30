@@ -1,12 +1,7 @@
 #!/bin/bash
 # AI Team - Build script
-# Requirements: cyrex, api-gateway, engagement-service, challenge-service, external-bridge-service + their dependencies
-# Dependencies: cyrex needs (influxdb, milvus), milvus needs (etcd, minio)
-#   api-gateway needs (auth-service, task-orchestrator, engagement-service, platform-analytics-service, 
-#     notification-service, challenge-service, realtime-gateway, cyrex)
-#   engagement-service needs (postgres, redis)
-#   challenge-service needs (postgres, cyrex)
-#   external-bridge-service needs (postgres)
+# Builds: Cyrex, Jupyter, MLflow, Challenge Service
+# Based on SERVICE_TEAM_MAPPING.md: Cyrex AI Service, Jupyter, MLflow, Challenge Service
 
 set -e
 
@@ -20,28 +15,25 @@ echo "🔨 Building AI Team services..."
 
 # Build services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in cyrex api-gateway engagement-service challenge-service external-bridge-service; do
+for service in cyrex jupyter mlflow challenge-service; do
   case $service in
-    api-gateway)
-      if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    external-bridge-service)
-      if [ -f "platform-services/backend/deepiri-external-bridge-service/Dockerfile" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
     cyrex)
       if [ -f "diri-cyrex/Dockerfile" ]; then
         SERVICES+=("$service")
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
       fi
+      ;;
+    jupyter)
+      if [ -f "diri-cyrex/Dockerfile.jupyter" ]; then
+        SERVICES+=("$service")
+      else
+        echo "⚠️  Skipping $service (Dockerfile.jupyter not found)"
+      fi
+      ;;
+    mlflow)
+      # MLflow uses pre-built image, but we can still include it
+      SERVICES+=("$service")
       ;;
     *)
       SERVICES+=("$service")
@@ -54,10 +46,9 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Building: ${SERVICES[*]} (and their dependencies)"
+echo "Building: ${SERVICES[*]}"
 
-# Build services with their dependencies
-docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
+# Build services using team-specific compose file
+docker compose -f docker-compose.ai-team.yml build "${SERVICES[@]}"
 
 echo "✅ AI Team services built successfully!"
-

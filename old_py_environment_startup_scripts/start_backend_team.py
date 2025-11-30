@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Startup script for Backend Team
-Starts: All microservices, mongodb, redis, influxdb, mongo-express
+Starts: All microservices, postgres, redis, influxdb, pgadmin, adminer
 """
 import sys
 from pathlib import Path
@@ -17,37 +17,45 @@ def main():
     env = load_env_file()
     
     project_root = Path(__file__).parent.parent
-    mongo_uri = f"mongodb://{env.get('MONGO_ROOT_USER', 'admin')}:{env.get('MONGO_ROOT_PASSWORD', 'password')}@mongodb:27017/{env.get('MONGO_DB', 'deepiri')}?authSource=admin"
+    database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
     redis_url = f"redis://:{env.get('REDIS_PASSWORD', 'redispassword')}@redis:6379"
     
     # Define services for backend team
     services = [
         # Infrastructure Services
         {
-            "image": "mongo:7.0",
-            "name": "deepiri-mongodb-backend",
-            "ports": {"27017/tcp": 27017},
+            "image": "postgres:16-alpine",
+            "name": "deepiri-postgres-backend",
+            "ports": {"5432/tcp": 5432},
             "environment": {
-                "MONGO_INITDB_ROOT_USERNAME": env.get("MONGO_ROOT_USER", "admin"),
-                "MONGO_INITDB_ROOT_PASSWORD": env.get("MONGO_ROOT_PASSWORD", "password"),
-                "MONGO_INITDB_DATABASE": env.get("MONGO_DB", "deepiri"),
+                "POSTGRES_USER": env.get("POSTGRES_USER", "deepiri"),
+                "POSTGRES_PASSWORD": env.get("POSTGRES_PASSWORD", "deepiripassword"),
+                "POSTGRES_DB": env.get("POSTGRES_DB", "deepiri"),
             },
             "volumes": {
-                "mongodb_backend_data": "/data/db"
+                "postgres_backend_data": "/var/lib/postgresql/data"
             },
             "wait_url": None,
         },
         {
-            "image": "mongo-express:1.0.2",
-            "name": "deepiri-mongo-express-backend",
-            "ports": {"8081/tcp": 8081},
+            "image": "dpage/pgadmin4:latest",
+            "name": "deepiri-pgadmin-backend",
+            "ports": {"5050/tcp": 5050},
             "environment": {
-                "ME_CONFIG_MONGODB_ADMINUSERNAME": env.get("MONGO_ROOT_USER", "admin"),
-                "ME_CONFIG_MONGODB_ADMINPASSWORD": env.get("MONGO_ROOT_PASSWORD", "password"),
-                "ME_CONFIG_MONGODB_URL": f"mongodb://{env.get('MONGO_ROOT_USER', 'admin')}:{env.get('MONGO_ROOT_PASSWORD', 'password')}@mongodb:27017/",
-                "ME_CONFIG_BASICAUTH": "false",
+                "PGADMIN_DEFAULT_EMAIL": env.get("PGADMIN_EMAIL", "admin@deepiri.local"),
+                "PGADMIN_DEFAULT_PASSWORD": env.get("PGADMIN_PASSWORD", "admin"),
+                "PGADMIN_CONFIG_SERVER_MODE": "False",
             },
-            "depends_on": [("mongodb", 5)],
+            "depends_on": [("postgres", 5)],
+        },
+        {
+            "image": "adminer:latest",
+            "name": "deepiri-adminer-backend",
+            "ports": {"8080/tcp": 8080},
+            "environment": {
+                "ADMINER_DEFAULT_SERVER": "postgres",
+            },
+            "depends_on": [("postgres", 5)],
         },
         {
             "image": "redis:7.2-alpine",
@@ -86,7 +94,7 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5000",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
                 "REDIS_URL": redis_url,
                 "AUTH_SERVICE_URL": "http://deepiri-auth-service:5001",
                 "TASK_ORCHESTRATOR_URL": "http://deepiri-task-orchestrator:5002",
@@ -101,7 +109,7 @@ def main():
                 str(project_root / "services" / "api-gateway"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5), ("redis", 2)],
+            "depends_on": [("postgres", 5), ("redis", 2)],
         },
         {
             "image": None,
@@ -114,13 +122,13 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5001",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
             },
             "volumes": {
                 str(project_root / "services" / "deepiri-auth-service"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5)],
+            "depends_on": [("postgres", 5)],
         },
         {
             "image": None,
@@ -133,13 +141,13 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5002",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
             },
             "volumes": {
                 str(project_root / "services" / "deepiri-task-orchestrator"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5)],
+            "depends_on": [("postgres", 5)],
         },
         {
             "image": None,
@@ -152,14 +160,14 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5003",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
                 "REDIS_URL": redis_url,
             },
             "volumes": {
                 str(project_root / "services" / "deepiri-engagement-service"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5), ("redis", 2)],
+            "depends_on": [("postgres", 5), ("redis", 2)],
         },
         {
             "image": None,
@@ -172,7 +180,7 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5004",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
                 "INFLUXDB_URL": "http://influxdb:8086",
                 "INFLUXDB_TOKEN": env.get("INFLUXDB_TOKEN", "your-influxdb-token"),
                 "INFLUXDB_ORG": env.get("INFLUXDB_ORG", "deepiri"),
@@ -182,7 +190,7 @@ def main():
                 str(project_root / "services" / "deepiri-platform-analytics-service"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5), ("influxdb", 5)],
+            "depends_on": [("postgres", 5), ("influxdb", 5)],
         },
         {
             "image": None,
@@ -195,13 +203,13 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5005",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
             },
             "volumes": {
                 str(project_root / "services" / "notification-service"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5)],
+            "depends_on": [("postgres", 5)],
         },
         {
             "image": None,
@@ -214,7 +222,7 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5006",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
                 "GITHUB_CLIENT_ID": env.get("GITHUB_CLIENT_ID", ""),
                 "GITHUB_CLIENT_SECRET": env.get("GITHUB_CLIENT_SECRET", ""),
                 "NOTION_CLIENT_ID": env.get("NOTION_CLIENT_ID", ""),
@@ -224,7 +232,7 @@ def main():
                 str(project_root / "services" / "deepiri-external-bridge-service"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5)],
+            "depends_on": [("postgres", 5)],
         },
         {
             "image": None,
@@ -237,14 +245,14 @@ def main():
             "environment": {
                 "NODE_ENV": "development",
                 "PORT": "5008",
-                "MONGO_URI": mongo_uri,
+                "DATABASE_URL": database_url,
                 "REDIS_URL": redis_url,
             },
             "volumes": {
                 str(project_root / "services" / "deepiri-realtime-gateway"): "/app",
                 "/app/node_modules": {},
             },
-            "depends_on": [("mongodb", 5), ("redis", 2)],
+            "depends_on": [("postgres", 5), ("redis", 2)],
         },
     ]
     
@@ -267,7 +275,8 @@ def main():
         print("  • Notification Service: http://localhost:5005")
         print("  • Integration Service: http://localhost:5006")
         print("  • WebSocket Service: http://localhost:5008")
-        print("  • Mongo Express: http://localhost:8081")
+        print("  • pgAdmin: http://localhost:5050")
+        print("  • Adminer: http://localhost:8080")
         print("  • InfluxDB: http://localhost:8086")
         print("\nTo stop services, use: python stop_backend_team.py")
         

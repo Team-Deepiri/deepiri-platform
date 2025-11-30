@@ -1,7 +1,10 @@
 #!/bin/bash
 # Frontend Team - Build script
-# Requirements: frontend-dev + all platform-services needed by api-gateway
-# Dependencies: postgres, influxdb, pgadmin (pulled as images, not built)
+# Builds: Frontend, Auth Service, API Gateway, Realtime Gateway
+# Frontend connects to: 
+#   - API Gateway (port 5100) for REST API calls
+#   - Realtime Gateway (port 5008) for WebSocket connections
+#   - Auth Service (via API Gateway for authentication)
 
 set -e
 
@@ -13,14 +16,17 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 
 echo "🔨 Building Frontend Team services..."
 
-# Build all platform-services that frontend needs (api-gateway depends on all of these)
-# Services to build: frontend-dev, api-gateway, auth-service, task-orchestrator,
-# engagement-service, platform-analytics-service, notification-service,
-# challenge-service, realtime-gateway
-# Note: external-bridge-service excluded - frontend team doesn't need integrations
+# Build services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in frontend-dev api-gateway auth-service task-orchestrator engagement-service platform-analytics-service notification-service challenge-service realtime-gateway; do
+for service in frontend-dev auth-service api-gateway realtime-gateway; do
   case $service in
+    frontend-dev)
+      if [ -f "deepiri-web-frontend/Dockerfile.dev" ] || [ -f "deepiri-web-frontend/Dockerfile" ]; then
+        SERVICES+=("$service")
+      else
+        echo "⚠️  Skipping $service (submodule not initialized)"
+      fi
+      ;;
     api-gateway)
       if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
         SERVICES+=("$service")
@@ -35,15 +41,7 @@ for service in frontend-dev api-gateway auth-service task-orchestrator engagemen
         echo "⚠️  Skipping $service (submodule not initialized)"
       fi
       ;;
-    frontend-dev)
-      if [ -f "deepiri-web-frontend/Dockerfile.dev" ]; then
-        SERVICES+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
     *)
-      # For services without specific Dockerfile checks (task-orchestrator, engagement-service, etc.)
       SERVICES+=("$service")
       ;;
   esac
@@ -54,10 +52,9 @@ if [ ${#SERVICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Building: ${SERVICES[*]} (and their dependencies)"
+echo "Building: ${SERVICES[*]}"
 
-# Build services with their dependencies (postgres, influxdb, pgadmin will be pulled as images, not built)
+# Build services using team-specific compose file
 docker compose -f docker-compose.frontend-team.yml build "${SERVICES[@]}"
 
 echo "✅ Frontend Team services built successfully!"
-

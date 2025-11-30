@@ -1,7 +1,7 @@
 import express, { Express, Request, Response, ErrorRequestHandler } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import mongoose from 'mongoose';
+// MongoDB removed - using PostgreSQL via Prisma if needed
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -28,10 +28,8 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-const MONGO_URI: string = process.env.MONGO_URI || 'mongodb://mongodb:27017/deepiri';
-mongoose.connect(MONGO_URI)
-  .then(() => logger.info('Notification Service: Connected to MongoDB'))
-  .catch((err: Error) => logger.error('Notification Service: MongoDB connection error', err));
+// PostgreSQL connection via Prisma (if needed for notifications storage)
+// For now, notifications are primarily real-time via WebSocket
 
 websocket.initialize(io);
 
