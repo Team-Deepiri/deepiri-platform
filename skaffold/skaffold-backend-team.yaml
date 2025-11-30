@@ -1,0 +1,71 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: deepiri-backend-team
+  # Backend Team Configuration - All backend microservices
+
+build:
+  local:
+    useBuildkit: true
+    push: false
+  tagPolicy:
+    sha256: {}
+  artifacts:
+    # API Gateway
+    - image: deepiri-dev-api-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-api-gateway/Dockerfile
+    
+    # Auth Service
+    - image: deepiri-dev-auth-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-auth-service/Dockerfile
+    
+    # Task Orchestrator
+    - image: deepiri-dev-task-orchestrator
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+    
+    # Engagement Service
+    - image: deepiri-dev-engagement-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-engagement-service/Dockerfile
+    
+    # Platform Analytics Service
+    - image: deepiri-dev-platform-analytics-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+    
+    # Notification Service
+    - image: deepiri-dev-notification-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-notification-service/Dockerfile
+    
+    # External Bridge Service
+    - image: deepiri-dev-external-bridge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+    
+    # Challenge Service
+    - image: deepiri-dev-challenge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-challenge-service/Dockerfile
+    
+    # Realtime Gateway
+    - image: deepiri-dev-realtime-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+
+deploy:
+  kubectl:
+    manifests: []
+

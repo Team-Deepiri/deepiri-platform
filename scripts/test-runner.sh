@@ -97,22 +97,22 @@ install_test_deps() {
     log_info "Installing test dependencies..."
     
     # Install API server test dependencies
-    if [ -f "api-server/package.json" ]; then
-        cd api-server
+    if [ -f "deepiri-core-api/package.json" ]; then
+        cd deepiri-core-api
         npm install --silent
         cd ..
     fi
     
-    # Install frontend test dependencies
-    if [ -f "frontend/package.json" ]; then
-        cd frontend
+    # Install deepiri-web-frontend test dependencies
+    if [ -f "deepiri-web-frontend/package.json" ]; then
+        cd deepiri-web-frontend
         npm install --silent
         cd ..
     fi
     
     # Install Python test dependencies
-    if [ -f "python_backend/requirements.txt" ]; then
-        cd python_backend
+    if [ -f "diri-cyrex/requirements.txt" ]; then
+        cd diri-cyrex
         pip install -r requirements.txt --quiet
         cd ..
     fi
@@ -124,12 +124,12 @@ install_test_deps() {
 test_server() {
     log_info "Testing Node.js API server..."
     
-    if [ -f "api-server/package.json" ]; then
-        run_test "API Server Unit Tests" "npm test" "api-server"
+    if [ -f "deepiri-core-api/package.json" ]; then
+        run_test "API Server Unit Tests" "npm test" "deepiri-core-api"
         
         # Run API server integration tests if they exist
-        if [ -f "api-server/tests/integration.test.js" ]; then
-            run_test "API Server Integration Tests" "npm run test:integration" "api-server"
+        if [ -f "deepiri-core-api/tests/integration.test.js" ]; then
+            run_test "API Server Integration Tests" "npm run test:integration" "deepiri-core-api"
         fi
         
         # Run API server linting
@@ -144,11 +144,11 @@ test_server() {
 }
 
 # Run Python backend tests
-test_python_backend() {
+test_diri-cyrex() {
     log_info "Testing Python backend..."
     
-    if [ -f "python_backend/requirements.txt" ]; then
-        run_test "Python Unit Tests" "python -m pytest tests/ -v" "python_backend"
+    if [ -f "diri-cyrex/requirements.txt" ]; then
+        run_test "Python Unit Tests" "python -m pytest tests/ -v" "diri-cyrex"
         
         # Run Python linting
         if command -v flake8 &> /dev/null; then
@@ -172,28 +172,28 @@ test_python_backend() {
     fi
 }
 
-# Run frontend tests
+# Run deepiri-web-frontend tests
 test_client() {
-    log_info "Testing React frontend..."
+    log_info "Testing React deepiri-web-frontend..."
     
-    if [ -f "frontend/package.json" ]; then
-        run_test "Frontend Unit Tests" "npm test -- --run" "frontend"
+    if [ -f "deepiri-web-frontend/package.json" ]; then
+        run_test "Frontend Unit Tests" "npm test -- --run" "deepiri-web-frontend"
         
-        # Run frontend linting
+        # Run deepiri-web-frontend linting
         if npm run lint --silent 2>/dev/null; then
             log_success "Frontend linting passed"
         else
             log_warning "Frontend linting issues found"
         fi
         
-        # Run frontend build test
+        # Run deepiri-web-frontend build test
         if npm run build --silent 2>/dev/null; then
             log_success "Frontend build test passed"
         else
             log_error "Frontend build test failed"
         fi
     else
-        log_warning "Frontend package.json not found, skipping frontend tests"
+        log_warning "Frontend package.json not found, skipping deepiri-web-frontend tests"
     fi
 }
 
@@ -240,8 +240,8 @@ test_security() {
     log_info "Running security tests..."
     
     # Run npm audit for Node.js projects
-    if [ -f "api-server/package.json" ]; then
-        cd api-server
+    if [ -f "deepiri-core-api/package.json" ]; then
+        cd deepiri-core-api
         if npm audit --audit-level=moderate; then
             log_success "Server security audit passed"
         else
@@ -250,8 +250,8 @@ test_security() {
         cd ..
     fi
     
-    if [ -f "frontend/package.json" ]; then
-        cd frontend
+    if [ -f "deepiri-web-frontend/package.json" ]; then
+        cd deepiri-web-frontend
         if npm audit --audit-level=moderate; then
             log_success "Client security audit passed"
         else
@@ -336,7 +336,7 @@ main() {
     
     # Run tests
     test_server
-    test_python_backend
+    test_diri-cyrex
     test_client
     test_integration
     test_security
@@ -372,9 +372,9 @@ case "${1:-all}" in
     python)
         check_dependencies
         install_test_deps
-        test_python_backend
+        test_diri-cyrex
         ;;
-    frontend)
+    deepiri-web-frontend)
         check_dependencies
         install_test_deps
         test_client
@@ -399,7 +399,7 @@ case "${1:-all}" in
         echo "Commands:"
         echo "  server       Run API server tests only"
         echo "  python       Run Python backend tests only"
-        echo "  frontend     Run frontend tests only"
+        echo "  deepiri-web-frontend     Run deepiri-web-frontend tests only"
         echo "  integration  Run integration tests only"
         echo "  security     Run security tests only"
         echo "  performance  Run performance tests only"

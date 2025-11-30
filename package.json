@@ -1,69 +1,45 @@
 {
   "name": "deepiri",
-  "version": "3.0.0",
-  "description": "Deepiri - AI-Powered Digital Productivity Playground",
+  "version": "1.0.0",
+  "description": "Deepiri - AI-Powered Task Management Platform",
   "private": true,
-  "type": "module",
-  "dependencies": {
-    "firebase": "^11.6.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^6.22.1",
-    "web-vitals": "^3.5.0"
-  },
+  "workspaces": [
+    "platform-services/backend/*",
+    "platform-services/shared/deepiri-shared-utils",
+    "deepiri-core-api",
+    "deepiri-web-frontend"
+  ],
   "scripts": {
-    "start": "cd api-server && npm start",
-    "build": "cd frontend && npm run build",
-    "build:frontend": "npm --prefix frontend run build",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "preview:frontend": "npm --prefix frontend run preview",
-    "docker:build:frontend": "docker compose up -d --build frontend",
-    "docker:logs:frontend": "docker logs -f deepiri-frontend",
-    "preview": "vite preview",
-    "test": "npm run test:node && npm run test:python",
-    "test:node": "cd api-server && npm test",
-    "test:python": "cd python_backend && pip install -q -r requirements.txt && pytest -q",
-    "start:all": "docker-compose up -d",
-    "rebuild:all": "docker-compose build --no-cache && docker-compose up -d",
-    "stop:all": "docker-compose down",
-    "logs:all": "docker-compose logs -f --tail=100",
-    "smoke": "npm run start:all && node -e \"const http=require('http');const urls=['http://localhost:5000/api/health','http://localhost:8000/health'];let ok=0;let done=0;urls.forEach(u=>http.get(u,res=>{ok+=res.statusCode===200?1:0;done++;if(done===urls.length){console.log('Health OK',ok,'/',urls.length);process.exit(ok===urls.length?0:1);}}).on('error',()=>{done++;if(done===urls.length){process.exit(1);}}));\"",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "prepare": "husky install",
-    "dev": "node dev-start.js",
-    "dev:concurrent": "concurrently \"cd api-server && npm run dev\" \"cd frontend && npm run dev\"",
-    "dev:fast": "cd frontend && npm run dev:fast",
-    "setup": "npm install && cd api-server && npm install && cd ../frontend && npm install",
-    "docker:build": "docker-compose build",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down"
+    "install:all": "npm install",
+    "install:services": "npm install --workspace=platform-services/backend/*",
+    "install:shared": "npm install --workspace=platform-services/shared/deepiri-shared-utils",
+    "fix-deps": "bash scripts/fix-dependencies.sh"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/deepiri.git"
+  },
+  "keywords": [
+    "ai",
+    "task-management",
+    "microservices",
+    "nodejs",
+    "python"
+  ],
+  "author": "",
+  "license": "MIT",
+  "BUILD_TIMESTAMP": "1763293844",
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.17",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react": "^7.33.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
-    "husky": "^9.0.11",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.1",
-    "vite": "^5.2.8",
-    "vitest": "^1.5.0",
-    "concurrently": "^8.2.2"
+    "node-notifier": "^10.0.1"
+  },
+  "overrides": {
+    "node-notifier": "^10.0.1",
+    "@jest/reporters": {
+      "node-notifier": "^10.0.1"
+    }
   }
 }

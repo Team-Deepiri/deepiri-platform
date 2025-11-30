@@ -1,39 +1,76 @@
 name: deepiri-dev
 
+# IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
+# This prevents 50GB+ of dangling images on every build
+
+x-build-args: &build-args
+  # Use BuildKit for better caching and no dangling images
+  DOCKER_BUILDKIT: 1
+  BUILDKIT_PROGRESS: plain
+
+# Minimal logging - logs are automatically cleared and not saved
+x-logging: &minimal-logging
+  driver: "local"
+  options:
+    max-size: "1m"      # Only 1MB per file
+    max-file: "1"       # Only 1 file (no rotation backup)
+    compress: "false"   # No compression (faster cleanup)
+
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: deepiri-mongodb-dev
+  # PostgreSQL Database - Primary database for users, roles, tasks, quests, metadata
+  postgres:
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-dev
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
-      - "27017:27017"
+      - "5432:5432"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:-deepiri}
+      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deepiripassword}
+      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
     volumes:
-      - mongodb_dev_data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - deepiri-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deepiri}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - Database Admin UI (optional, can be commented out for production)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: deepiri-pgadmin-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@deepiri.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
     networks:
       - deepiri-dev-network
 
-  # Mongo Express - Database Admin UI
-  mongo-express:
-    image: mongo-express:1.0.2
-    container_name: deepiri-mongo-express-dev
+  # Adminer - Lightweight Database Viewer (for quick inspection)
+  adminer:
+    image: adminer:latest
+    container_name: deepiri-adminer-dev
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
-      - "8081:8081"
+      - "8080:8080"
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER:-admin}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-password}
-      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/
-      ME_CONFIG_BASICAUTH: false
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_MONGODB_PORT: 27017
+      ADMINER_DEFAULT_SERVER: postgres
     depends_on:
-      - mongodb
+      - postgres
     networks:
       - deepiri-dev-network
 
@@ -42,113 +79,526 @@ services:
     image: redis:7.2-alpine
     container_name: deepiri-redis-dev
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Using 6380 to avoid conflict with system Redis on 6379
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
     volumes:
       - redis_dev_data:/data
     networks:
       - deepiri-dev-network
 
-  # Backend API
-  backend:
-    build:
-      context: ./api-server
-      dockerfile: Dockerfile
-    container_name: deepiri-backend-dev
+  # InfluxDB for Time-Series Analytics
+  influxdb:
+    image: influxdb:2.7
+    container_name: deepiri-influxdb-dev
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
-      - "5000:5000"
+      - "8086:8086"
     environment:
-      NODE_ENV: development
-      PORT: 5000
-      
-      # Database
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      
-      # Redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
-      
-      # JWT
-      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here}
-      
-      # External APIs
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
-      EVENTBRITE_API_KEY: ${EVENTBRITE_API_KEY}
-      YELP_API_KEY: ${YELP_API_KEY}
-      
-      # Firebase
-      FIREBASE_SERVICE_ACCOUNT_PATH: /app/config/firebase-adminsdk.json
-      FIREBASE_DATABASE_URL: ${FIREBASE_DATABASE_URL}
-      
-      # Client URL (Vite dev server)
-      CLIENT_URL: http://localhost:5173
-    
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:-adminpassword}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-deepiri}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-your-influxdb-token}
     volumes:
-      - ./api-server:/app
-      - /app/node_modules
-      - ./api-server/config:/app/config:ro
-      - ./api-server/logs:/app/logs
+      - influxdb_dev_data:/var/lib/influxdb2
+    networks:
+      - deepiri-dev-network
+
+  # etcd service for Milvus metadata
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: deepiri-etcd-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: 1000
+      ETCD_QUOTA_BACKEND_BYTES: 4294967296
+      ETCD_SNAPSHOT_COUNT: 50000
+    volumes:
+      - etcd_dev_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - deepiri-dev-network
+
+  # MinIO service for Milvus object storage
+  # Updated to latest version (2024) with proper parity settings for data redundancy
+  minio:
+    image: minio/minio:latest
+    container_name: deepiri-minio-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_dev_data:/data
+    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 40s
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    networks:
+      - deepiri-dev-network
+
+  # Milvus Vector Database for RAG (needs MinIO and etcd services)
+  milvus:
+    image: milvusdb/milvus:v2.3.0
+    container_name: deepiri-milvus-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    command: ["milvus", "run", "standalone"]
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus_dev_data:/var/lib/milvus
     depends_on:
-      - mongodb
+      - etcd
+      - minio
+    networks:
+      - deepiri-dev-network
+
+  # API Gateway - Routes requests to all microservices
+  api-gateway:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-api-gateway/Dockerfile
+    image: deepiri-dev-api-gateway:latest
+    pull_policy: never
+    container_name: deepiri-api-gateway-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
+    # Variables loaded from ops/k8s/configmaps/api-gateway-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5000
+    volumes:
+      - ./platform-services/backend/deepiri-api-gateway:/app
+      - /app/node_modules
+      - /app/dist
+    command: sh -c "cd /app && npm install --legacy-peer-deps && npm run dev"
+    depends_on:
+      - auth-service
+      - task-orchestrator
+      - engagement-service
+      - platform-analytics-service
+      - notification-service
+      - challenge-service
+      - realtime-gateway
+      - cyrex
+      # external-bridge-service dependency removed - only needed by Backend Team
+    networks:
+      - deepiri-dev-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-auth-service/Dockerfile
+    image: deepiri-dev-auth-service:latest
+    pull_policy: never
+    container_name: deepiri-auth-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5001:5001"
+    # Variables loaded from ops/k8s/configmaps/auth-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+    volumes:
+      - ./platform-services/backend/deepiri-auth-service:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - postgres
+      - influxdb
+    networks:
+      - deepiri-dev-network
+
+  # Task Orchestrator Service
+  task-orchestrator:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+    image: deepiri-dev-task-orchestrator:latest
+    pull_policy: never
+    container_name: deepiri-task-orchestrator-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5002:5002"
+    # Variables loaded from ops/k8s/configmaps/task-orchestrator-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5002
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+    volumes:
+      - ./platform-services/backend/deepiri-task-orchestrator:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - postgres
+    networks:
+      - deepiri-dev-network
+
+  # Engagement Service
+  engagement-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-engagement-service/Dockerfile
+    image: deepiri-dev-engagement-service:latest
+    pull_policy: never
+    container_name: deepiri-engagement-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5003:5003"
+    # Variables loaded from ops/k8s/configmaps/engagement-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5003
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+    volumes:
+      - ./platform-services/backend/deepiri-engagement-service:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - postgres
       - redis
     networks:
       - deepiri-dev-network
 
-  # Python Agent API
-  pyagent:
+  # Platform Analytics Service
+  platform-analytics-service:
     build:
-      context: ./python_backend
-      dockerfile: Dockerfile
-    container_name: deepiri-pyagent-dev
+      context: ./platform-services
+      dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+    image: deepiri-dev-platform-analytics-service:latest
+    pull_policy: never
+    container_name: deepiri-platform-analytics-service-dev
     restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5004:5004"
+    # Variables loaded from ops/k8s/configmaps/platform-analytics-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5004
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+    volumes:
+      - ./platform-services/backend/deepiri-platform-analytics-service:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - postgres
+      - influxdb
+    networks:
+      - deepiri-dev-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-notification-service/Dockerfile
+    image: deepiri-dev-notification-service:latest
+    pull_policy: never
+    container_name: deepiri-notification-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5005:5005"
+    # Variables loaded from ops/k8s/configmaps/notification-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5005
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+    volumes:
+      - ./platform-services/backend/deepiri-notification-service:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - postgres
+    networks:
+      - deepiri-dev-network
+
+  # External Bridge Service
+  external-bridge-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+    image: deepiri-dev-external-bridge-service:latest
+    pull_policy: never
+    container_name: deepiri-external-bridge-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5006:5006"
+    # Variables loaded from ops/k8s/configmaps/external-bridge-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5006
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+    volumes:
+      - ./platform-services/backend/deepiri-external-bridge-service:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - postgres
+    networks:
+      - deepiri-dev-network
+
+  # Challenge Service
+  challenge-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-challenge-service/Dockerfile
+    image: deepiri-dev-challenge-service:latest
+    pull_policy: never
+    container_name: deepiri-challenge-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5007:5007"
+    # Variables loaded from ops/k8s/configmaps/challenge-service-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5007
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+    volumes:
+      - ./platform-services/backend/deepiri-challenge-service:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - postgres
+      - cyrex
+    networks:
+      - deepiri-dev-network
+
+  # Realtime Gateway Service
+  realtime-gateway:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+    image: deepiri-dev-realtime-gateway:latest
+    pull_policy: never
+    container_name: deepiri-realtime-gateway-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5008:5008"
+    # Variables loaded from ops/k8s/configmaps/realtime-gateway-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    environment:
+      # Override or add docker-specific variables here if needed
+      PORT: 5008
+    volumes:
+      - ./platform-services/backend/deepiri-realtime-gateway:/app
+      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    networks:
+      - deepiri-dev-network
+
+  # Python Agent API (AI Service)
+  cyrex:
+    build:
+      context: ./diri-cyrex
+      dockerfile: Dockerfile
+      args:
+        BUILD_TYPE: prebuilt
+        BASE_IMAGE: python:3.11-slim
+        PYTORCH_VERSION: 2.9.1
+        PYTHON_VERSION: 3.11
+    image: deepiri-dev-cyrex:latest
+    pull_policy: never
+    container_name: deepiri-cyrex-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    # Variables loaded from ops/k8s/configmaps/cyrex-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       CORS_ORIGIN: http://localhost:5173
-      NODE_BACKEND_URL: http://backend:5000
-      PYAGENT_API_KEY: ${PYAGENT_API_KEY:-change-me}
+      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      WANDB_API_KEY: ${WANDB_API_KEY}
+      MODEL_REGISTRY_PATH: /app/model_registry
+      STAGING_MODEL_PATH: /app/models/staging
+      PRODUCTION_MODEL_PATH: /app/models/production
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT:-us-east1-gcp}
+      PINECONE_INDEX: ${PINECONE_INDEX:-deepiri}
+      WEAVIATE_URL: ${WEAVIATE_URL}
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+      MILVUS_HOST: milvus
+      MILVUS_PORT: 19530
+      # Local LLM Configuration
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LOCAL_LLM_BACKEND: ${LOCAL_LLM_BACKEND:-ollama}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3:8b}
+      TRANSFORMERS_CACHE: /app/.cache/huggingface
+      HF_HOME: /app/.cache/huggingface
+      SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
+      # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"
+    volumes:
+      - ./diri-cyrex/app:/app/app
+      - ./diri-cyrex/train:/app/train
+      - ./diri-cyrex/inference:/app/inference
+      - cyrex_cache:/app/.cache
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
     depends_on:
-      - backend
+      - influxdb
+      - milvus
+    networks:
+      - deepiri-dev-network
+
+  cyrex-interface:
+    image: node:20-alpine
+    container_name: deepiri-cyrex-interface-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    working_dir: /app
+    environment:
+      VITE_CYREX_BASE_URL: http://cyrex:8000
+      VITE_PORT: 5175
+    ports:
+      - "5175:5175"
+    volumes:
+      - ./diri-cyrex/cyrex-interface:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
+    depends_on:
+      - cyrex
+    networks:
+      - deepiri-dev-network
+
+  # MLflow for AI Experiment Tracking
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.8.1
+    container_name: deepiri-mlflow-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5500:5000"
+    environment:
+      BACKEND_STORE_URI: file:/mlflow
+      DEFAULT_ARTIFACT_ROOT: file:/mlflow/artifacts
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:/mlflow --default-artifact-root file:/mlflow/artifacts
+    volumes:
+      - mlflow_dev_data:/mlflow
+    networks:
+      - deepiri-dev-network
+
+  # Jupyter Notebook for AI Research
+  jupyter:
+    build:
+      context: ./diri-cyrex
+      dockerfile: Dockerfile.jupyter
+      args:
+        BUILD_TYPE: prebuilt
+        BASE_IMAGE: python:3.11-slim
+        PYTORCH_VERSION: 2.9.1
+        PYTHON_VERSION: 3.11
+    image: deepiri-dev-jupyter:latest
+    pull_policy: never
+    container_name: deepiri-jupyter-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./diri-cyrex/train/notebooks:/app/notebooks
+      - ./diri-cyrex/train/data:/app/data
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
     networks:
       - deepiri-dev-network
 
   # Frontend with Vite HMR
   frontend-dev:
     build:
-      context: ./frontend
+      context: ./deepiri-web-frontend
       dockerfile: Dockerfile.dev
+    image: deepiri-dev-frontend:latest
+    pull_policy: never
     container_name: deepiri-frontend-dev
     restart: unless-stopped
+    logging: *minimal-logging
     ports:
-      - "5173:5173"  # Vite dev server port
+      - "5173:5173"
+    # Variables loaded from ops/k8s/configmaps/frontend-dev-configmap.yaml
+    # Variables loaded from ops/k8s/secrets/secrets.yaml
     environment:
-      NODE_ENV: development
-      VITE_API_URL: http://localhost:5000/api
-      VITE_PYAGENT_URL: http://localhost:8000
-      CHOKIDAR_USEPOLLING: true  # Enable polling for file changes in Docker
-      WATCHPACK_POLLING: true    # Additional polling for better file watching
+      # Override or add docker-specific variables here if needed
+      VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
     volumes:
-      # Mount source code for real-time updates
-      - ./frontend:/app
-      - /app/node_modules  # Prevent node_modules from being overwritten
-    depends_on:
-      - backend
+      - ./deepiri-web-frontend:/app
+      - /app/node_modules
+    depends_on: []
+      # api-gateway dependency removed - frontend can work without it
     networks:
       - deepiri-dev-network
 
 volumes:
-  mongodb_dev_data:
+  postgres_dev_data:
+    driver: local
+  pgadmin_dev_data:
     driver: local
   redis_dev_data:
+    driver: local
+  mlflow_dev_data:
+    driver: local
+  influxdb_dev_data:
+    driver: local
+  milvus_dev_data:
+    driver: local
+  etcd_dev_data:
+    driver: local
+  minio_dev_data:
+    driver: local
+  cyrex_cache:
     driver: local
 
 networks:

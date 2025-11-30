@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: challenge-service-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Challenge Service - public configuration"
+data:
+  # Server Configuration
+  NODE_ENV: "development"
+  PORT: "5007"
+  
+  # Database URLs (using Docker service names)
+  DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres:5432/deepiri"
+  
+  # Service URLs
+  CYREX_URL: "http://cyrex:8000"
+

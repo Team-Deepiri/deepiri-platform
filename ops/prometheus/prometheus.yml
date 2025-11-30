@@ -22,9 +22,9 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 30s
 
-  - job_name: 'tripblip-pyagent'
+  - job_name: 'tripblip-cyrex'
     static_configs:
-      - targets: ['pyagent:8000']
+      - targets: ['cyrex:8000']
     metrics_path: '/metrics'
     scrape_interval: 30s
 

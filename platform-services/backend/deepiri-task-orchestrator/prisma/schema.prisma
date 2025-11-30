@@ -1,0 +1,116 @@
+// Prisma Schema for Task Orchestrator Service
+// PostgreSQL database schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Tasks table
+model Task {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  projectId       String?   @map("project_id") @db.Uuid
+  questId         String?   @map("quest_id") @db.Uuid
+  parentTaskId    String?   @map("parent_task_id") @db.Uuid
+  title           String    @db.VarChar(500)
+  description     String?  @db.Text
+  status          String    @default("todo") @db.VarChar(50)
+  priority        String    @default("medium") @db.VarChar(50)
+  difficulty      String    @default("medium") @db.VarChar(50)
+  momentumReward  Int       @default(0) @map("momentum_reward")
+  estimatedMinutes Int?    @map("estimated_minutes")
+  actualMinutes   Int?     @map("actual_minutes")
+  dueDate         DateTime? @map("due_date") @db.Timestamp
+  completedAt     DateTime? @map("completed_at") @db.Timestamp
+  aiSuggestions   Json?     @default("[]") @map("ai_suggestions")
+  tags            String[]  @default([])
+  metadata        Json?     @default("{}")
+  version         Int       @default(1)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project         Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  quest           Quest?    @relation(fields: [questId], references: [id], onDelete: SetNull)
+  parentTask      Task?     @relation("TaskHierarchy", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks        Task[]    @relation("TaskHierarchy")
+  dependencies    TaskDependency[] @relation("TaskDependencies")
+  dependsOn       TaskDependency[] @relation("DependsOnTask")
+  versions        TaskVersion[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([questId])
+  @@index([parentTaskId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+// Task Versions table
+model TaskVersion {
+  id            String    @id @default(uuid()) @db.Uuid
+  taskId        String    @map("task_id") @db.Uuid
+  version       Int
+  title         String?   @db.VarChar(500)
+  description   String?   @db.Text
+  status        String?   @db.VarChar(50)
+  priority      String?   @db.VarChar(50)
+  changesSummary String? @map("changes_summary") @db.Text
+  changedBy     String?   @map("changed_by") @db.Uuid
+  metadata      Json?     @default("{}")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  task          Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  changedByUser User?     @relation(fields: [changedBy], references: [id])
+
+  @@unique([taskId, version])
+  @@index([taskId])
+  @@index([version])
+  @@map("task_versions")
+}
+
+// Task Dependencies table
+model TaskDependency {
+  id              String    @id @default(uuid()) @db.Uuid
+  taskId          String    @map("task_id") @db.Uuid
+  dependsOnTaskId String    @map("depends_on_task_id") @db.Uuid
+  dependencyType  String    @default("blocks") @map("dependency_type") @db.VarChar(50)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  task            Task      @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnTask   Task      @relation("DependsOnTask", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId])
+  @@index([taskId])
+  @@index([dependsOnTaskId])
+  @@map("task_dependencies")
+}
+
+// Placeholder models (referenced but not fully defined here)
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  tasks     Task[]
+  taskVersions TaskVersion[]
+}
+
+model Project {
+  id        String   @id @default(uuid()) @db.Uuid
+  tasks     Task[]
+}
+
+model Quest {
+  id        String   @id @default(uuid()) @db.Uuid
+  tasks     Task[]
+}
+

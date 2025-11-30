@@ -1,0 +1,338 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: deepiri
+
+build:
+  local:
+    useBuildkit: true
+    push: false  # Use local registry (minikube docker-env)
+  tagPolicy:
+    customTemplate:
+      template: "latest"  # ALWAYS :latest - overwrites, no duplicates
+  artifacts:
+    # Backend API Service (Monolith - Legacy)
+    - image: deepiri-core-api
+      context: ./deepiri-core-api
+      docker:
+        dockerfile: Dockerfile
+        # cacheFrom removed - using local builds with Minikube (Docker's local cache is sufficient)
+      sync:
+        manual:
+          - src: '**/*.ts'
+            dest: /app/src/
+          - src: '**/*.js'
+            dest: /app/dist/
+          - src: '**/*.json'
+            dest: /app/
+          - src: '**/*.md'
+            dest: /app/
+    
+    # AI/ML Service (Cyrex)
+    - image: deepiri-cyrex
+      context: ./diri-cyrex
+      docker:
+        dockerfile: Dockerfile
+        # cacheFrom removed - using local builds with Minikube (Docker's local cache is sufficient)
+        buildArgs:
+          BUILD_TYPE: prebuilt
+          BASE_IMAGE: python:3.11-slim
+          PYTORCH_VERSION: 2.9.1
+          PYTHON_VERSION: 3.11
+      sync:
+        manual:
+          - src: '**/*.py'
+            dest: /app/
+          - src: '**/*.txt'
+            dest: /app/
+          - src: '**/*.md'
+            dest: /app/
+          - src: '**/*.yml'
+            dest: /app/
+          - src: '**/*.yaml'
+            dest: /app/
+    
+    # Jupyter Notebook for AI Research
+    - image: deepiri-jupyter
+      context: ./diri-cyrex
+      docker:
+        dockerfile: Dockerfile.jupyter
+        #target: base-prebuilt  # Skip ML downloads (faster build)
+        buildArgs:
+          BUILD_TYPE: prebuilt
+          BASE_IMAGE: python:3.11-slim
+          PYTORCH_VERSION: 2.9.1
+          PYTHON_VERSION: 3.11
+      sync:
+        manual:
+          - src: '**/*.py'
+            dest: /app/
+          - src: '**/*.ipynb'
+            dest: /app/notebooks/
+          - src: '**/*.txt'
+            dest: /app/
+          - src: '**/*.md'
+            dest: /app/
+          - src: '**/*.yml'
+            dest: /app/
+          - src: '**/*.yaml'
+            dest: /app/
+    
+    # Frontend
+    - image: deepiri-frontend
+      context: ./deepiri-web-frontend
+      docker:
+        dockerfile: Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: '**/*.tsx'
+            dest: /app/src/
+          - src: '**/*.ts'
+            dest: /app/src/
+          - src: '**/*.jsx'
+            dest: /app/src/
+          - src: '**/*.js'
+            dest: /app/src/
+          - src: '**/*.css'
+            dest: /app/src/
+          - src: '**/*.html'
+            dest: /app/
+    
+    # Microservices - API Gateway
+    - image: deepiri-api-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-api-gateway/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-api-gateway/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-api-gateway/**/*.json'
+            dest: /app/
+    
+    # Microservices - Auth Service
+    - image: deepiri-auth-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-auth-service/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-auth-service/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-auth-service/**/*.json'
+            dest: /app/
+    
+    # Microservices - Task Orchestrator
+    - image: deepiri-task-orchestrator
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-task-orchestrator/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-task-orchestrator/**/*.json'
+            dest: /app/
+    
+    # Microservices - Challenge Service
+    - image: deepiri-challenge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-challenge-service/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-challenge-service/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-challenge-service/**/*.json'
+            dest: /app/
+    
+    # Microservices - Engagement Service (Gamification)
+    - image: deepiri-engagement-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-engagement-service/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-engagement-service/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-engagement-service/**/*.json'
+            dest: /app/
+    
+    # Microservices - Platform Analytics Service
+    - image: deepiri-platform-analytics-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-platform-analytics-service/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-platform-analytics-service/**/*.json'
+            dest: /app/
+    
+    # Microservices - External Bridge Service
+    - image: deepiri-external-bridge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-external-bridge-service/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-external-bridge-service/**/*.json'
+            dest: /app/
+    
+    # Microservices - Notification Service
+    - image: deepiri-notification-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-notification-service/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-notification-service/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-notification-service/**/*.json'
+            dest: /app/
+    
+    # Microservices - Realtime Gateway (WebSocket)
+    - image: deepiri-realtime-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+        # cacheFrom removed - using local builds with Minikube
+      sync:
+        manual:
+          - src: 'backend/deepiri-realtime-gateway/**/*.ts'
+            dest: /app/src/
+          - src: 'backend/deepiri-realtime-gateway/**/*.json'
+            dest: /app/
+
+deploy:
+  kubectl:
+    manifests:
+      # Infrastructure services (deploy first)
+      - ops/k8s/mongodb-deployment.yaml
+      - ops/k8s/redis-deployment.yaml
+      - ops/k8s/localai-deployment.yaml
+      
+      # Application services
+      - ops/k8s/backend-deployment.yaml
+      - ops/k8s/cyrex-deployment.yaml
+      
+      # Configuration
+      - ops/k8s/configmaps/configmap.yaml
+      - ops/k8s/secrets/secrets.yaml
+      
+      # Networking
+      - ops/k8s/services.yaml
+      - ops/k8s/ingress.yaml
+
+portForward:
+  # Auto-port-forward for development
+  - resourceType: service
+    resourceName: backend-service
+    namespace: default
+    port: 5000
+    localPort: 5000
+  - resourceType: service
+    resourceName: cyrex-service
+    namespace: default
+    port: 8000
+    localPort: 8000
+  - resourceType: service
+    resourceName: mongodb-service
+    namespace: default
+    port: 27017
+    localPort: 27017
+  - resourceType: service
+    resourceName: redis-service
+    namespace: default
+    port: 6379
+    localPort: 6379
+  - resourceType: service
+    resourceName: localai-service
+    namespace: default
+    port: 8080
+    localPort: 8080
+
+# Automatically clean up dangling images after build (saves storage)
+hooks:
+  after:
+    - host:
+        command: ["sh", "-c", "docker image prune -f > /dev/null 2>&1 || true"]
+        os: [linux, darwin]
+    - host:
+        command: ["powershell", "-Command", "docker image prune -f | Out-Null"]
+        os: [windows]
+
+profiles:
+  # Development profile with enhanced sync and debugging
+  - name: dev
+    build:
+      local:
+        push: false
+      artifacts:
+        - image: deepiri-core-api
+          sync:
+            manual:
+              - src: '**/*'
+                dest: /app/
+        - image: deepiri-cyrex
+          sync:
+            manual:
+              - src: '**/*'
+                dest: /app/
+    deploy:
+      kubectl:
+        flags:
+          global: ['--force']
+  
+  # GPU profile - uses CUDA-enabled PyTorch image for Cyrex
+  # Note: Requires NVIDIA GPU with CUDA support (Intel Iris Xe not supported)
+  - name: gpu
+    build:
+      artifacts:
+        - image: deepiri-cyrex
+          context: ./diri-cyrex
+          docker:
+            dockerfile: Dockerfile
+            buildArgs:
+              BUILD_TYPE: prebuilt
+              BASE_IMAGE: pytorch/pytorch:2.9.1-cuda12.6-cudnn9-runtime
+              PYTORCH_VERSION: 2.9.1
+              PYTHON_VERSION: 3.11
+  
+  # CPU profile - uses Python slim (default, works everywhere including Intel Iris Xe)
+  - name: cpu
+    build:
+      artifacts:
+        - image: deepiri-cyrex
+          context: ./diri-cyrex
+          docker:
+            dockerfile: Dockerfile
+            buildArgs:
+              BUILD_TYPE: prebuilt
+              BASE_IMAGE: python:3.11-slim
+              PYTORCH_VERSION: 2.9.1
+              PYTHON_VERSION: 3.11
+  
+  # Production profile (for cloud deployments)
+  - name: prod
+    build:
+      local:
+        push: true
+        useBuildkit: true
+      googleCloudBuild:
+        projectId: your-gcp-project-id  # Update with your GCP project
+        region: us-central1
+        machineType: n1-highcpu-8
+

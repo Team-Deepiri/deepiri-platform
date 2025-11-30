@@ -1,0 +1,79 @@
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: deepiri-infrastructure-team
+  # Infrastructure Team Configuration - All services for monitoring and scaling
+
+build:
+  local:
+    useBuildkit: true
+    push: false
+  tagPolicy:
+    sha256: {}
+  artifacts:
+    # API Gateway (for routing and load balancing)
+    - image: deepiri-dev-api-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-api-gateway/Dockerfile
+    
+    # All microservices (for monitoring)
+    - image: deepiri-dev-auth-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-auth-service/Dockerfile
+    
+    - image: deepiri-dev-task-orchestrator
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+    
+    - image: deepiri-dev-engagement-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-engagement-service/Dockerfile
+    
+    - image: deepiri-dev-platform-analytics-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+    
+    - image: deepiri-dev-notification-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-notification-service/Dockerfile
+    
+    - image: deepiri-dev-external-bridge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+    
+    - image: deepiri-dev-challenge-service
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-challenge-service/Dockerfile
+    
+    - image: deepiri-dev-realtime-gateway
+      context: ./platform-services
+      docker:
+        dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+    
+    - image: deepiri-dev-cyrex
+      context: ./diri-cyrex
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          BUILD_TYPE: prebuilt
+          BASE_IMAGE: python:3.11-slim
+          PYTORCH_VERSION: 2.9.1
+          PYTHON_VERSION: 3.11
+    
+    - image: deepiri-dev-frontend
+      context: ./deepiri-web-frontend
+      docker:
+        dockerfile: Dockerfile.dev
+
+deploy:
+  kubectl:
+    manifests: []
+

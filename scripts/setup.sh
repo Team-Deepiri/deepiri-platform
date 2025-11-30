@@ -24,17 +24,17 @@ fi
 
 # Create necessary directories
 echo "📁 Creating necessary directories..."
-mkdir -p api-server/logs
-mkdir -p api-server/config
+mkdir -p deepiri-core-api/logs
+mkdir -p deepiri-core-api/config
 mkdir -p nginx/ssl
 
 # Install dependencies
 echo "📦 Installing API server dependencies..."
-cd api-server && npm install
+cd deepiri-core-api && npm install
 cd ..
 
-echo "📦 Installing frontend dependencies..."
-cd frontend && npm install
+echo "📦 Installing deepiri-web-frontend dependencies..."
+cd deepiri-web-frontend && npm install
 cd ..
 
 # Generate JWT secret if not provided

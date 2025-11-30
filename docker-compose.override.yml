@@ -1,0 +1,8 @@
+# Docker Compose Override - Auto-loaded by docker compose
+# This file provides automatic cleanup after builds to prevent disk space issues
+
+version: '3.8'
+
+# Note: Add any local overrides here
+# The build sections are already in docker-compose.dev.yml
+

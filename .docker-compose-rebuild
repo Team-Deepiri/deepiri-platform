@@ -1,0 +1,12 @@
+#!/bin/bash
+# This file is automatically used by docker-compose when rebuilding
+# It ensures old images are removed before building new ones
+
+# Remove old images created by this compose file
+docker-compose -f docker-compose.dev.yml down --rmi local 2>/dev/null || true
+
+# Clean build cache
+docker builder prune -af
+
+# Now build (docker-compose will continue with the build)
+

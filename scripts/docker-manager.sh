@@ -153,7 +153,7 @@ reset_all() {
 health_check() {
     log_info "Performing health checks..."
     
-    local services=("backend" "pyagent" "frontend" "mongodb" "redis")
+    local services=("backend" "cyrex" "deepiri-web-frontend" "mongodb" "redis")
     local all_healthy=true
     
     for service in "${services[@]}"; do
@@ -225,13 +225,13 @@ dev_setup() {
     npm install
     
     log_info "Installing API server dependencies..."
-    cd api-server && npm install && cd ..
+    cd deepiri-core-api && npm install && cd ..
     
-    log_info "Installing frontend dependencies..."
-    cd frontend && npm install && cd ..
+    log_info "Installing deepiri-web-frontend dependencies..."
+    cd deepiri-web-frontend && npm install && cd ..
     
     log_info "Installing Python dependencies..."
-    cd python_backend && pip install -r requirements.txt && cd ..
+    cd diri-cyrex && pip install -r requirements.txt && cd ..
     
     log_success "Development environment setup completed!"
 }

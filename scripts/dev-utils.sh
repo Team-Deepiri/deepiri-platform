@@ -39,19 +39,19 @@ install_deps() {
     
     # API server dependencies
     log_info "Installing API server dependencies..."
-    cd api-server
+    cd deepiri-core-api
     npm install
     cd ..
     
     # Frontend dependencies
-    log_info "Installing frontend dependencies..."
-    cd frontend
+    log_info "Installing deepiri-web-frontend dependencies..."
+    cd deepiri-web-frontend
     npm install
     cd ..
     
     # Python dependencies
     log_info "Installing Python dependencies..."
-    cd python_backend
+    cd diri-cyrex
     pip install -r requirements.txt
     cd ..
     
@@ -64,19 +64,19 @@ run_tests() {
     
     # Node.js API server tests
     log_info "Running API server tests..."
-    cd api-server
+    cd deepiri-core-api
     npm test
     cd ..
     
     # Python backend tests
     log_info "Running Python backend tests..."
-    cd python_backend
+    cd diri-cyrex
     python -m pytest tests/ -v
     cd ..
     
     # Frontend tests
-    log_info "Running frontend tests..."
-    cd frontend
+    log_info "Running deepiri-web-frontend tests..."
+    cd deepiri-web-frontend
     npm test
     cd ..
     
@@ -89,13 +89,13 @@ lint_all() {
     
     # API server linting
     log_info "Linting API server code..."
-    cd api-server
+    cd deepiri-core-api
     npm run lint || true
     cd ..
     
     # Frontend linting
-    log_info "Linting frontend code..."
-    cd frontend
+    log_info "Linting deepiri-web-frontend code..."
+    cd deepiri-web-frontend
     npm run lint || true
     cd ..
     
@@ -108,19 +108,19 @@ format_all() {
     
     # Server formatting
     log_info "Formatting server code..."
-    cd api-server
+    cd deepiri-core-api
     npx prettier --write "**/*.{js,json}" || true
     cd ..
     
     # Client formatting
     log_info "Formatting client code..."
-    cd frontend
+    cd deepiri-web-frontend
     npx prettier --write "**/*.{js,jsx,json,css}" || true
     cd ..
     
     # Python formatting
     log_info "Formatting Python code..."
-    cd python_backend
+    cd diri-cyrex
     python -m black . || true
     python -m isort . || true
     cd ..
@@ -134,13 +134,13 @@ generate_docs() {
     
     # Server API docs
     log_info "Generating API server API docs..."
-    cd api-server
+    cd deepiri-core-api
     npx swagger-jsdoc -d swaggerDef.js -o swagger.json routes/*.js || true
     cd ..
     
     # Python API docs
     log_info "Generating Python API docs..."
-    cd python_backend
+    cd diri-cyrex
     python -m pydoc -w app || true
     cd ..
     
@@ -183,8 +183,8 @@ clean_build() {
     rm -rf server/dist
     
     # Remove Python cache
-    find python_backend -name "__pycache__" -type d -exec rm -rf {} + || true
-    find python_backend -name "*.pyc" -type f -delete || true
+    find diri-cyrex -name "__pycache__" -type d -exec rm -rf {} + || true
+    find diri-cyrex -name "*.pyc" -type f -delete || true
     
     # Remove logs
     rm -rf logs/*
@@ -200,17 +200,17 @@ security_audit() {
     log_info "Auditing Node.js dependencies..."
     npm audit || true
     
-    cd api-server
+    cd deepiri-core-api
     npm audit || true
     cd ..
     
-    cd frontend
+    cd deepiri-web-frontend
     npm audit || true
     cd ..
     
     # Python security audit
     log_info "Auditing Python dependencies..."
-    cd python_backend
+    cd diri-cyrex
     pip-audit || true
     cd ..
     
@@ -223,7 +223,7 @@ performance_analysis() {
     
     # Node.js performance
     log_info "Analyzing Node.js performance..."
-    cd api-server
+    cd deepiri-core-api
     npx clinic doctor -- node server.js &
     SERVER_PID=$!
     sleep 10
@@ -232,7 +232,7 @@ performance_analysis() {
     
     # Python performance
     log_info "Analyzing Python performance..."
-    cd python_backend
+    cd diri-cyrex
     python -m cProfile -o profile.prof app/main.py || true
     cd ..
     
@@ -279,8 +279,8 @@ backup_config() {
     mkdir -p "$backup_dir"
     
     # Copy configuration files
-    cp -r api-server/config "$backup_dir/" || true
-    cp -r python_backend/app/settings.py "$backup_dir/" || true
+    cp -r deepiri-core-api/config "$backup_dir/" || true
+    cp -r diri-cyrex/app/settings.py "$backup_dir/" || true
     cp docker-compose.yml "$backup_dir/"
     cp .env "$backup_dir/" || true
     cp env.example "$backup_dir/" || true
@@ -312,8 +312,8 @@ restore_config() {
     local backup_dir=$(basename "$backup_file" .tar.gz)
     
     # Restore files
-    cp -r "$backup_dir/config" api-server/ || true
-    cp "$backup_dir/settings.py" python_backend/app/ || true
+    cp -r "$backup_dir/config" deepiri-core-api/ || true
+    cp "$backup_dir/settings.py" diri-cyrex/app/ || true
     cp "$backup_dir/docker-compose.yml" . || true
     cp "$backup_dir/.env" . || true
     
@@ -329,19 +329,19 @@ dev_server() {
     
     # Start all services in development mode
     log_info "Starting backend server..."
-    cd api-server
+    cd deepiri-core-api
     npm run dev &
     SERVER_PID=$!
     cd ..
     
     log_info "Starting Python agent..."
-    cd python_backend
+    cd diri-cyrex
     python -m uvicorn app.main:app --reload --port 8000 &
     PYTHON_PID=$!
     cd ..
     
-    log_info "Starting frontend..."
-    cd frontend
+    log_info "Starting deepiri-web-frontend..."
+    cd deepiri-web-frontend
     npm run dev &
     CLIENT_PID=$!
     cd ..
@@ -362,7 +362,7 @@ prod_build() {
     
     # Build client
     log_info "Building client..."
-    cd frontend
+    cd deepiri-web-frontend
     npm run build
     cd ..
     

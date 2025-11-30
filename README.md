@@ -1,308 +1,272 @@
-# Deepiri - AI-Powered Digital Productivity Playground
+# Deepiri 
 
-Welcome to Deepiri, your AI-powered digital productivity playground that gamifies your tasks, study material, coding projects, and creative work into engaging mini-games, challenges, and interactive experiences.
+> **NEW TO THE PROJECT?** Start here: [START_HERE.md](START_HERE.md)  
+> **FIND YOUR TEAM:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)  
+> **🌟 Quick Start (All Services):** `python run_dev.py` - Runs full stack with K8s config!
 
-## Core Concept
 
-Gamify your productivity by turning tasks, study material, coding projects, or creative work into mini-games, challenges, and interactive experiences. Rewards, progress tracking, and adaptive difficulty make boring tasks fun. AI adapts challenges to your workflow and style, with optional multiplayer/competitive features.
+### For New Team Members
 
-## Target Users
+1. **Find your roles:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
+2. **Follow your team's path:** [START_HERE.md](START_HERE.md)
+3. **Git hooks:** Automatically configured on clone (protects main and dev branches)
 
-- Students, knowledge workers, creatives, developers
-- Anyone looking to increase productivity in a fun, engaging way
-- Users who enjoy gamification, streaks, badges, and challenges
+### Quick Build & Run
 
-## Key Features
+```bash
+# 1. Clone the repository
+git clone <deepiri-platform repo>
+cd deepiri-platform
 
-### Task Gamification
-- Input tasks manually, via integrations (Trello, Notion, GitHub, Google Docs), or via AI scan of documents/code
-- Convert tasks into mini-games (e.g., puzzle, quiz, coding challenge, timed completion challenge)
+# 2. One-time setup
+pip install pyyaml
+touch ops/k8s/secrets/secrets.yaml  # Create empty secrets file (see ops/k8s/secrets/README.md)
 
-### Adaptive AI Challenges
-- AI analyzes user behavior, performance, and preferences
-- Generates adaptive challenges, e.g., "You typically code slowly in the morning — here's a short 15-min coding sprint."
+# 3. Build all services (auto-cleans dangling images)
+./build.sh              # Linux/Mac/WSL
+.\build.ps1             # Windows PowerShell
 
-### Rewards & Progression
-- Points, badges, streaks, leaderboards
-- Optional peer/competitor comparison
+# 4. Start the full stack (with K8s config!)
+python run_dev.py       # 🌟 Recommended - loads k8s configmaps & secrets
 
-### Content/Task Integration
-- Supports different media types: text documents, spreadsheets, PDFs, code repos, notes
-- Can ingest multiple task types at once and turn them into daily "missions."
+# OR use docker compose directly
+docker compose -f docker-compose.dev.yml up -d
 
-### Analytics & Insights
-- Tracks efficiency, time management, and improvement trends
-- Suggests optimized schedules or break timing
+# 5. Access services
+# - Frontend: http://localhost:5173
+# - API Gateway: http://localhost:5100
+# - Cyrex AI: http://localhost:8000
+# - Jupyter: http://localhost:8888
+# - MLflow: http://localhost:5500
+```
 
-### Optional Multiplayer
-- Challenges friends or coworkers to productivity duels
-- Shared missions and collaborative mini-games
+### Prerequisites
+- Docker & Docker Compose
+- WSL2 (Windows only)
+- 8GB+ RAM recommended
+
+### Stop All Services
+
+```bash
+docker compose -f docker-compose.dev.yml down
+```
+
+**Pro Tip:** Use `python run_dev.py` instead of `docker compose` - it auto-loads your k8s config!
+
+## Documentation
+
+### Essential Guides
+- **[RUN_DEV_GUIDE.md](RUN_DEV_GUIDE.md)** - 🌟 Run full stack with `python run_dev.py`
+- **[team_dev_environments/QUICK_START.md](team_dev_environments/QUICK_START.md)** - Team-specific environments
+- **[HOW_TO_BUILD.md](HOW_TO_BUILD.md)** - THE definitive build guide
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup walkthrough
+- **[SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)** - Architecture overview
+
+### Environment Setup
+- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - All environment variables (includes k8s config integration)
+- **[docker-compose.dev.yml](docker-compose.dev.yml)** - Development configuration
+- **[ops/k8s/](ops/k8s/)** - Kubernetes configmaps and secrets (also used by Docker Compose)
+
+### Troubleshooting
+- **[scripts/STORAGE-TROUBLESHOOTING.md](scripts/STORAGE-TROUBLESHOOTING.md)** - Disk space issues
+- **[docs/LOG_INSPECTION_GUIDE.md](docs/LOG_INSPECTION_GUIDE.md)** - Debugging logs
+
+### Team-Specific (Find Your Team First!)
+- **👉 Start here:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md) - Find your team and role
+- **👉 Complete setup:** [START_HERE.md](START_HERE.md) - Step-by-step getting started guide
+- **[docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)** - AI/ML development
+- **[docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)** - Backend services
+- **[docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)** - Frontend development
 
 ## Architecture
 
-Deepiri follows a modern microservices architecture:
+### Microservices
+- **API Gateway** (Port 5000) - Routes all requests
+- **Auth Service** (Port 5001) - Authentication & authorization
+- **Task Orchestrator** (Port 5002) - Task management
+- **Engagement Service** (Port 5003) - Gamification
+- **Platform Analytics** (Port 5004) - Analytics
+- **Notification Service** (Port 5005) - Notifications
+- **External Bridge** (Port 5006) - External integrations
+- **Challenge Service** (Port 5007) - Challenges
+- **Realtime Gateway** (Port 5008) - WebSockets
 
-### Backend Services
+### AI/ML Services
+- **Cyrex** (Port 8000) - AI agent API
+- **Cyrex UI** (Port 5175) - UI for AI agent testing
+- **Jupyter** (Port 8888) - Research notebooks
+- **MLflow** (Port 5500) - Experiment tracking
 
-- **User Service**: Authentication, profiles, progress, preferences
-- **Task Service**: CRUD tasks, fetch tasks from integrations, store metadata
-- **AI Challenge Service**: Generates challenges from tasks using NLP + RL models
-- **Gamification Service**: Points, badges, leaderboards, streaks
-- **Analytics Service**: Tracks performance, creates insights, suggests optimizations
-- **Notification Service**: Sends reminders, daily missions, streak updates
-- **Integration Service**: Connects to Notion, Trello, Google Docs, GitHub for task ingestion
+### Infrastructure
+- **PostgreSQL** (Port 5432) - Primary database for users, roles, tasks, quests, metadata
+- **Redis** (Port 6380) - Cache & sessions
+- **InfluxDB** (Port 8086) - Time-series analytics
 
-### Python Agent (FastAPI)
-- **AI Challenge Generation**: NLP models for task parsing and challenge creation
-- **Reinforcement Learning**: Adaptive difficulty optimization
-- **Task Understanding**: Classifies and categorizes tasks
+## Quick Reference
 
-### Frontend (React + Vite)
-- **Modern React 18**: Hooks, Context API, and modern patterns
-- **Responsive Design**: Mobile-first design with Tailwind CSS
-- **Real-time Updates**: Socket.IO integration for live progress
-- **Progressive Web App**: Offline support and mobile optimization
-
-### Database & Infrastructure
-- **MongoDB**: Primary database for all application data
-- **Redis**: Caching layer and leaderboard storage
-- **Docker**: Containerized deployment
-- **NGINX**: Load balancing and reverse proxy
-
-## Quick Start
-
-### Prerequisites
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-- Git
-
-### Using Docker (Recommended)
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd deepiri
-   ```
-
-2. **Run the setup script**
-   ```bash
-   ./scripts/setup.sh
-   ```
-
-3. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys and configuration
-   ```
-
-4. **Start the application**
-   ```bash
-   docker-compose up -d
-   ```
-
-5. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000
-   - Python Agent: http://localhost:8000
-   - API Documentation: http://localhost:5000/api-docs
-
-### Local Development
-
-1. **Install dependencies**
-   ```bash
-   npm run setup
-   ```
-
-2. **Start MongoDB and Redis**
-   ```bash
-   docker-compose up -d mongodb redis
-   ```
-
-3. **Start the development servers**
-   ```bash
-   npm run dev
-   ```
-
-## Configuration
-
-### Environment Variables
-
-Copy `.env.example` to `.env` and configure the following:
-
-#### Required API Keys
+### Setup Minikube (for Kubernetes/Skaffold builds)
 ```bash
-# OpenAI for AI-powered challenge generation
-OPENAI_API_KEY=your_openai_api_key
+# Check if Minikube is running
+minikube status
 
-# Integration APIs (optional for Phase 1)
-NOTION_API_KEY=your_notion_api_key
-TRELLO_API_KEY=your_trello_api_key
-GITHUB_TOKEN=your_github_token
+# If not running, start Minikube
+minikube start --driver=docker --cpus=4 --memory=8192
+
+# Configure Docker to use Minikube's Docker daemon
+eval $(minikube docker-env)
 ```
 
-#### Firebase Configuration
+### Build
 ```bash
-# Firebase for authentication and notifications
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-# ... other Firebase config
+# Build all services
+docker compose -f docker-compose.dev.yml build
+
+# Or use build script
+./build.sh              # Linux/Mac/WSL
+.\build.ps1             # Windows PowerShell
 ```
 
-#### Database Configuration
+### When you DO need to build / rebuild
+Only build if:
+1. **Dockerfile changes**
+2. **package.json/requirements.txt changes** (dependencies)
+3. **First time setup**
+
+**Note:** With hot reload enabled, code changes don't require rebuilds - just restart the service!
+
+### Run all services
 ```bash
-# MongoDB
-MONGO_ROOT_USER=admin
-MONGO_ROOT_PASSWORD=your_secure_password
-MONGO_DB=deepiri
-
-# Redis
-REDIS_PASSWORD=your_redis_password
-
-# JWT Secret
-JWT_SECRET=your_jwt_secret_key
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-## API Documentation
-
-The API is fully documented with Swagger/OpenAPI. Once the application is running, visit:
-- **Swagger UI**: http://localhost:5000/api-docs
-
-### Main API Endpoints
-
-#### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-
-#### Tasks
-- `POST /api/tasks` - Create new task
-- `GET /api/tasks` - Get user's tasks
-- `GET /api/tasks/:id` - Get task details
-- `PATCH /api/tasks/:id` - Update task
-- `DELETE /api/tasks/:id` - Delete task
-
-#### Challenges
-- `POST /api/challenges/generate` - Generate challenge from task
-- `GET /api/challenges` - Get user's challenges
-- `POST /api/challenges/:id/complete` - Complete challenge
-
-#### Gamification
-- `GET /api/gamification/profile` - Get user progress
-- `GET /api/gamification/leaderboard` - Get leaderboard
-- `GET /api/gamification/badges` - Get user badges
-
-#### Integrations
-- `POST /api/integrations/connect` - Connect external service
-- `GET /api/integrations/sync` - Sync tasks from integration
-
-## Testing
-
-### Backend Tests (Node)
+### Stop all services
 ```bash
-cd api-server
-npm test
+docker compose -f docker-compose.dev.yml down
 ```
 
-### Python Agent Tests
+### Running only services you need for your team
+
+**🌟 Recommended:** Use Python scripts (professional K8s-like workflow):
 ```bash
-cd python_backend
-pytest -q
+cd team_dev_environments/backend-team
+python run.py         # Auto-loads k8s configmaps & secrets!
 ```
 
-### Frontend Tests
+**Alternative:** Use shell scripts:
 ```bash
-cd frontend
-npm test
+cd team_dev_environments/backend-team
+./start.sh            # Linux/Mac
+.\start.ps1           # Windows
 ```
 
-## Deployment
+**Or use docker compose directly:**
+```bash
+docker compose -f docker-compose.backend-team.yml up -d
+```
 
-### Production Deployment with Docker
+**👉 Python scripts are recommended** - they mimic Kubernetes by loading config from `ops/k8s/` automatically. No `.env` files needed!
 
-1. **Set production environment**
-   ```bash
-   export NODE_ENV=production
-   ```
+### Stopping those services
+```bash
+docker compose -f docker-compose.<team_name>-team.yml down
+```
 
-2. **Build and start with production profile**
-   ```bash
-   docker-compose --profile production up -d
-   ```
+### Logs (All services)
+```bash
+docker compose -f docker-compose.dev.yml logs -f
+```
 
-3. **Enable NGINX reverse proxy**
-   The production setup includes NGINX for:
-   - SSL termination
-   - Load balancing
-   - Static file serving
-   - API proxying
+### Logs (Individual services)
+```bash
+docker compose -f docker-compose.dev.yml logs -f api-gateway
+docker compose -f docker-compose.dev.yml logs -f cyrex
+docker compose -f docker-compose.dev.yml logs -f auth-service
+# ... etc for all services
+```
 
-### Cloud Deployment
+## Common Commands
 
-The application is designed to be cloud-native and can be deployed on:
-- **AWS**: ECS, EKS, or EC2 with Docker
-- **Google Cloud**: GKE or Cloud Run
-- **Azure**: AKS or Container Instances
-- **DigitalOcean**: App Platform or Kubernetes
+```bash
+# Build specific service
+./build.sh cyrex
 
-## Development
+# View logs
+docker compose -f docker-compose.dev.yml logs -f
 
-### Adding New Features
+# View specific service logs
+docker compose -f docker-compose.dev.yml logs -f cyrex
 
-1. **Backend Feature**
-   - Add model in `api-server/models/`
-   - Create service in `api-server/services/`
-   - Add routes in `api-server/routes/`
-   - Update controllers in `api-server/controllers/`
+# Check status
+docker compose -f docker-compose.dev.yml ps
 
-2. **Frontend Feature**
-   - Create components in `frontend/src/components/`
-   - Add pages in `frontend/src/pages/`
-   - Update API layer in `frontend/src/api/`
-   - Add routing to `frontend/src/App.jsx`
+# Restart service
+docker compose -f docker-compose.dev.yml restart cyrex
 
-### Code Style
+# Clean up disk space
+./scripts/remove-dangling-images.sh        # Linux/Mac/WSL
+.\scripts\remove-dangling-images.ps1       # Windows
+```
 
-- **Backend**: ESLint + Prettier
-- **Frontend**: ESLint + Prettier
-- **Git Hooks**: Husky for pre-commit checks
+## Development Workflow
+
+### With Hot Reload (Recommended)
+1. Make code changes → **Changes appear immediately** (no rebuild needed!)
+2. Only rebuild when dependencies change (`package.json`/`requirements.txt`)
+3. Check logs: `docker compose -f docker-compose.dev.yml logs -f <service>`
+
+### Without Hot Reload (if needed)
+1. Make code changes
+2. Run `./build.sh <service>` (or `.\build.ps1 <service>`)
+3. Run `docker compose -f docker-compose.dev.yml restart <service>`
+4. Check logs: `docker compose -f docker-compose.dev.yml logs -f <service>`
+
+The build scripts automatically clean up dangling Docker images, so you never get disk space bloat.
+
+## Project Structure
+
+```
+deepiri/
+├── deepiri-core-api/          # Legacy monolith (deprecated)
+├── platform-services/         # Microservices
+│   └── backend/
+│       ├── deepiri-api-gateway/
+│       ├── deepiri-auth-service/
+│       ├── deepiri-task-orchestrator/
+│       └── ... (other services)
+├── diri-cyrex/               # AI/ML service
+├── deepiri-web-frontend/     # React frontend
+├── ops/                      # Kubernetes configs
+├── scripts/                  # Utility scripts
+├── docs/                     # Documentation
+├── build.sh / build.ps1      # Build scripts
+└── docker-compose.dev.yml    # Development config
+```
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Run tests: `npm test`
-5. Commit your changes: `git commit -m "Add feature"`
-6. Push to the branch: `git push origin feature-name`
-7. Submit a pull request
+1. **Git hooks:** Automatically configured on clone (protects main and dev branches)
+2. Fork the repository
+3. Create a feature branch (NOT from main or dev)
+4. Make your changes
+5. Run `./build.sh` to test
+6. Submit a pull request to `staging` (NOT main or dev)
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for complete workflow details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+See [LICENSE.md](LICENSE.md)
 
 ## Support
 
-### Common Issues
-
-**Port already in use**
-```bash
-# Stop existing containers
-docker-compose down
-# Or change ports in docker-compose.yml
-```
-
-**API key errors**
-- Ensure all required API keys are set in `.env`
-- Check API key permissions and quotas
-
-**Database connection issues**
-- Ensure MongoDB is running: `docker-compose up -d mongodb`
-- Check database credentials in `.env`
-
-## Acknowledgments
-
-- OpenAI for GPT-4 integration
-- React and Node.js communities
-- Hugging Face for transformer models
+- Documentation: See `docs/` directory
+- Issues: Use GitHub issues
+- Architecture: See [SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)
 
 ---
+
+**Note:** Old Skaffold-based build docs are archived in `docs/archive/skaffold/` for reference only. Use the Docker Compose workflow documented in [HOW_TO_BUILD.md](HOW_TO_BUILD.md).
+
+
+
+

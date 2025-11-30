@@ -1,0 +1,13 @@
+#!/bin/sh
+
+protected_branches="main dev"
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+for branch in $protected_branches; do
+  if [ "$current_branch" = "$branch" ]; then
+    echo "❌ ERROR: You cannot push directly to '$branch'."
+    echo "   Make a feature branch and use a Pull Request."
+    exit 1
+  fi
+done
+

@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepiri-cyrex
+spec:
+  replicas: 1  # Start with 1 for local dev
+  selector:
+    matchLabels:
+      app: deepiri-cyrex
+  template:
+    metadata:
+      labels:
+        app: deepiri-cyrex
+    spec:
+      containers:
+        - name: cyrex
+          image: deepiri-cyrex:latest  # Build locally or use your registry
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: deepiri-config
+            - secretRef:
+                name: deepiri-secrets
+          env:
+            # Override with Kubernetes service names
+            - name: NODE_BACKEND_URL
+              value: "http://backend-service:5000"
+            - name: INTERNAL_BACKEND_URL
+              value: "http://backend-service:5000"
+            - name: INTERNAL_LOCALAI_URL
+              value: "http://localai-service:8080/v1"
+            - name: REDIS_CACHE_URL
+              value: "redis://:$(REDIS_PASSWORD)@redis-service:6379/1"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyrex-service
+spec:
+  selector:
+    app: deepiri-cyrex
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+---
+# Optional: HorizontalPodAutoscaler (for cloud/production)
+# Uncomment when deploying to cloud K8s
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: deepiri-cyrex-hpa
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: deepiri-cyrex
+#   minReplicas: 2
+#   maxReplicas: 10
+#   metrics:
+#     - type: Resource
+#       resource:
+#         name: cpu
+#         target:
+#           type: Utilization
+#           averageUtilization: 60
+

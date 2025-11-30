@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Automatically configure hooksPath if not already set
+# This runs on every checkout, ensuring hooks are always active
+
+CURRENT_HOOKS_PATH="$(git config core.hooksPath)"
+
+if [ -z "$CURRENT_HOOKS_PATH" ] || [ "$CURRENT_HOOKS_PATH" != ".git-hooks" ]; then
+    git config core.hooksPath .git-hooks
+    echo "🔧 Git hooks automatically configured (hooksPath = .git-hooks)"
+    echo "✔ You are now protected from pushing to 'main' or 'dev'."
+fi
+

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-service-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Notification Service - public configuration"
+data:
+  # Server Configuration
+  NODE_ENV: "development"
+  PORT: "5005"
+  
+  # Database URLs (using Docker service names)
+  DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres:5432/deepiri"
+

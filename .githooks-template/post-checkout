@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# This hook runs automatically when you clone or checkout the repository
+# It configures Git to use the .git-hooks directory for all hooks
+
+# Check if hooksPath is already configured
+CURRENT_HOOKS_PATH="$(git config core.hooksPath)"
+
+if [ -z "$CURRENT_HOOKS_PATH" ] || [ "$CURRENT_HOOKS_PATH" != ".git-hooks" ]; then
+    # Set hooksPath to use our shared hooks directory
+    git config core.hooksPath .git-hooks
+    
+    if [ -f .git-hooks/pre-push ]; then
+        echo "🔧 Git hooks automatically configured (hooksPath = .git-hooks)"
+        echo "✔ You are now protected from pushing to 'main' or 'dev'."
+    fi
+fi

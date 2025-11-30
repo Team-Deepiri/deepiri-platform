@@ -1,0 +1,144 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# ========================================
+# SECRETS & ENVIRONMENT FILES
+# ========================================
+# NEVER commit secrets or environment files
+# BUT allow example files to be committed (env.example, env.example.*, etc.)
+.env
+.env.*
+!.env.example
+!.env.example.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging.local
+# Ignore files ending in .env (but example files don't end in .env, so they're safe)
+*.env
+# Explicitly allow example files (env.example, env.example.api-server, etc.)
+!env.example*
+!*env.example*
+
+# Kubernetes Secrets
+/ops/k8s/secrets/
+ops/k8s/secrets/
+secrets/
+secrets.yaml
+*.secrets.yaml
+secrets/*.yaml
+secrets/*.yml
+
+# Firebase Admin SDK
+firebase-admin*.json
+*-firebase-adminsdk-*.json
+config/firebase-admin.js
+firebase-adminsdk-*.json
+**/firebase-adminsdk-*.json
+
+# API Keys & Certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.jks
+*.keystore
+*.pfx
+
+# ========================================
+# DEPENDENCIES
+# ========================================
+/node_modules
+/.pnp
+.pnp.js
+node_modules/
+**/node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Development virtual environment (one level above deepiri)
+../.dev_venv/
+
+# ========================================
+# TESTING
+# ========================================
+/coverage
+coverage/
+*.lcov
+.nyc_output
+*/assets
+*/dist/
+/dist/
+
+# ========================================
+# PRODUCTION
+# ========================================
+/build
+build/
+dist/
+
+# ========================================
+# LOGS
+# ========================================
+*.log
+.log
+.logs
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# ========================================
+# OS & EDITOR
+# ========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# ========================================
+# MISC
+# ========================================
+.husky
+.github
+.dockerignore
+*.cache
+.cache/
+.temp/
+temp/
+
+# ========================================
+# BINARY FILES & EXECUTABLES
+# ========================================
+minikube-*
+kubectl
+skaffold
+*.bin
+binary/
+# Kubernetes binary (should be installed globally)
+kubectl

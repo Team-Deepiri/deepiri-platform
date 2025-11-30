@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-dev-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Frontend Dev Service - public configuration"
+data:
+  # Server Configuration
+  NODE_ENV: "development"
+  
+  # API URLs (external URLs for browser access)
+  VITE_API_URL: "http://localhost:5100/api"
+  VITE_CYREX_URL: "http://localhost:8000"
+  
+  # File Watching Configuration
+  CHOKIDAR_USEPOLLING: "true"
+  WATCHPACK_POLLING: "true"
+

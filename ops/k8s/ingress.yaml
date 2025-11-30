@@ -26,7 +26,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: tripblip-pyagent
+                name: tripblip-cyrex
                 port:
                   number: 80
 
