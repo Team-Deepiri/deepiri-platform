@@ -218,6 +218,7 @@ services:
     container_name: deepiri-auth-service-dev
     restart: unless-stopped
     logging: *minimal-logging
+    user: root
     ports:
       - "5001:5001"
     # Variables loaded from ops/k8s/configmaps/auth-service-configmap.yaml
@@ -230,7 +231,8 @@ services:
       - ./platform-services/backend/deepiri-auth-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    command: sh -c "mkdir -p /shared-utils/node_modules && chown -R nodejs:nodejs /shared-utils/node_modules && cd /shared-utils && su -s /bin/sh nodejs -c 'npm cache clean --force && npm install --legacy-peer-deps && npm run build' && cd /app && mkdir -p /app/node_modules && chown -R nodejs:nodejs /app/node_modules && su -s /bin/sh nodejs -c 'npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npx prisma generate && npm run dev'"
     depends_on:
       - postgres
       - influxdb

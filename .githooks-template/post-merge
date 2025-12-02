@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# This hook runs automatically after every pull/merge
+# It ensures hooks are installed and configured
+
+# Check if hooks are already installed
+if [ ! -f ".git/hooks/post-merge" ] || [ ".git/hooks/post-merge" -ot ".git-hooks/post-merge" ]; then
+    # Install all hooks from .git-hooks to .git/hooks
+    if [ -d ".git-hooks" ]; then
+        mkdir -p .git/hooks
+        for hook in .git-hooks/*; do
+            if [ -f "$hook" ] && [ -x "$hook" ]; then
+                hook_name=$(basename "$hook")
+                cp "$hook" ".git/hooks/$hook_name"
+                chmod +x ".git/hooks/$hook_name"
+            fi
+        done
+        echo "🔧 Git hooks automatically installed and configured"
+        echo "✔ You are now protected from pushing to 'main' or 'dev'."
+    fi
+fi
+
+# Configure hooksPath to use .git-hooks for future operations
+CURRENT_HOOKS_PATH="$(git config core.hooksPath)"
+if [ -z "$CURRENT_HOOKS_PATH" ] || [ "$CURRENT_HOOKS_PATH" != ".git-hooks" ]; then
+    git config core.hooksPath .git-hooks
+fi
+

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Automatically install and configure hooks
-# This runs on every checkout, ensuring hooks are always active
+# This runs after every pull/merge, ensuring hooks are always active
 
 # Install hooks from .git-hooks to .git/hooks if needed
 if [ -d ".git-hooks" ]; then

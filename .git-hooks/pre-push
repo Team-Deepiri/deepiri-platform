@@ -1,13 +1,26 @@
 #!/bin/sh
 
-protected_branches="main dev"
-current_branch=$(git rev-parse --abbrev-ref HEAD)
+# Pre-push hook to protect main and dev branches
+# This hook receives ref information via stdin in the format:
+# <local_ref> <local_sha1> <remote_ref> <remote_sha1>
 
-for branch in $protected_branches; do
-  if [ "$current_branch" = "$branch" ]; then
-    echo "❌ ERROR: You cannot push directly to '$branch'."
-    echo "   Make a feature branch and use a Pull Request."
-    exit 1
-  fi
+protected_branches="main dev"
+
+# Read the refs being pushed from stdin
+while read local_ref local_sha remote_ref remote_sha; do
+  # Extract branch name from ref (e.g., refs/heads/main -> main)
+  branch_name=$(echo "$remote_ref" | sed 's|refs/heads/||')
+  
+  # Check if this branch is protected
+  for protected in $protected_branches; do
+    if [ "$branch_name" = "$protected" ]; then
+      echo "❌ ERROR: You cannot push directly to '$protected'."
+      echo "   Make a feature branch and use a Pull Request."
+      echo "   Protected branches: $protected_branches"
+      exit 1
+    fi
+  done
 done
+
+exit 0
 

@@ -1,39 +1,56 @@
 # Git Hooks Template Directory
 
-This directory contains Git hooks that will be automatically installed when someone clones the repository.
+This directory contains Git hooks that are **automatically installed** when you clone or pull the repository.
 
-## How It Works
+## 🚀 Automatic Installation
 
-**Option 1: Automatic (Recommended)**
+Hooks are automatically installed using Git's template directory feature. No manual setup required!
 
-If you set up Git's template directory globally (one-time setup):
+### How It Works
+
+1. **On Clone**: Git copies hooks from `.githooks-template/` to `.git/hooks/`
+2. **On Checkout/Pull**: The `post-checkout` and `post-merge` hooks ensure hooks are up-to-date
+3. **On Push**: The `pre-push` hook blocks pushes to `main` or `dev`
+
+### Setup (One-Time, Per Repository)
+
+Run this once per repository to enable automatic installation:
+
+```bash
+./scripts/auto-install-hooks.sh
+```
+
+Or manually:
+
+```bash
+git config init.templateDir .githooks-template
+```
+
+### Global Setup (Optional)
+
+To enable automatic hooks for ALL new repositories:
+
 ```bash
 git config --global init.templateDir "$(pwd)/.githooks-template"
 ```
 
-Then all new Git repositories will automatically get the hooks configured.
+## 📦 What Gets Installed
 
-**Option 2: Manual Copy**
+- **post-checkout**: Installs hooks on checkout and configures hooksPath
+- **post-merge**: Installs hooks after pull and configures hooksPath  
+- **pre-push**: Blocks pushes to `main` and `dev` branches
 
-For existing repositories, copy the hooks:
-```bash
-cp .githooks-template/post-checkout .git/hooks/post-checkout
-chmod +x .git/hooks/post-checkout
-```
+## ✅ Benefits
 
-**Option 3: Use Setup Script**
+- ✅ **Zero manual configuration** after initial setup
+- ✅ **Automatic updates** on every pull
+- ✅ **Works for all developers** automatically
+- ✅ **No global Git config required** (per-repo setup works too)
 
-Run the setup script:
-```bash
-./setup-hooks.sh
-```
+## 🔧 Troubleshooting
 
-## What Gets Configured
+If hooks aren't working:
 
-The `post-checkout` hook automatically sets:
-```gitconfig
-[core]
-    hooksPath = .git-hooks
-```
-
-This ensures all Git hooks use the shared `.git-hooks/` directory.
+1. Run the auto-install script: `./scripts/auto-install-hooks.sh`
+2. Or manually install: `cp .githooks-template/* .git/hooks/ && chmod +x .git/hooks/*`
+3. Configure hooksPath: `git config core.hooksPath .git-hooks`
