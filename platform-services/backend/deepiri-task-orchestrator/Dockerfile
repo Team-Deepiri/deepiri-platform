@@ -1,7 +1,7 @@
 # Build shared-utils first
 FROM node:18-alpine AS shared-utils-builder
 WORKDIR /shared-utils
-COPY shared/deepiri-shared-utils/package*.json ./
+COPY shared/deepiri-shared-utils/package.json ./
 COPY shared/deepiri-shared-utils/tsconfig.json ./
 COPY shared/deepiri-shared-utils/src ./src
 # Add retry logic for network issues
@@ -22,7 +22,7 @@ WORKDIR /app
 RUN apk add --no-cache curl dumb-init
 
 # Copy package files
-COPY backend/deepiri-task-orchestrator/package*.json ./
+COPY backend/deepiri-task-orchestrator/package.json ./
 COPY backend/deepiri-task-orchestrator/tsconfig.json ./
 
 # Copy built shared-utils to a temp location
