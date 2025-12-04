@@ -1,6 +1,13 @@
 # Git Hooks Directory
 
-This directory contains Git hooks that protect the `main` and `dev` branches.
+This directory contains Git hooks that protect the `main`, `dev`, `master`, and team-dev branches.
+
+## Protected Branches
+
+- **main** - Production branch
+- **dev** - Development branch  
+- **master** - Legacy production branch (protected for compatibility)
+- **{repo-name}-team-dev** - Team development branches (automatically detected for repos ending in `-team-dev`)
 
 ## Automatic Setup
 
@@ -23,12 +30,13 @@ git config core.hooksPath .git-hooks
 
 ## Hooks
 
-- **pre-push**: Blocks direct pushes to `main` and `dev` branches
+- **pre-push**: Blocks direct pushes to protected branches (main, dev, master, and team-dev branches)
 - **post-checkout**: Automatically configures hooksPath on checkout (if not already set)
+- **post-merge**: Automatically syncs hooks to submodules on pull
 
 ## Testing
 
-Try pushing to main or dev - you should see an error:
+Try pushing to a protected branch - you should see an error:
 ```bash
 git checkout main
 git push origin main

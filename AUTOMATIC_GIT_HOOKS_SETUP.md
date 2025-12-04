@@ -1,14 +1,10 @@
-# 🚀 Automatic Git Hooks - Zero Configuration Required
-
-Git hooks are **100% automatic** - your developers don't need to do anything! Hooks install and configure themselves on every checkout and pull.
-
-## ✨ How It Works (Fully Automatic)
+# Automatic Git Hooks 
 
 1. **On Checkout/Clone**: The `post-checkout` hook automatically installs all hooks from `.git-hooks/` into `.git/hooks/`
 2. **On Pull**: The `post-merge` hook automatically installs/updates hooks from `.git-hooks/` into `.git/hooks/`
-3. **On Push**: The `pre-push` hook blocks pushes to `main` or `dev` branches
+3. **On Push**: The `pre-push` hook blocks pushes to `main`, `dev`, `master`, or team-dev branches
 
-## 🎯 Zero Setup Required
+##  Zero Setup Required
 
 **Developers don't need to run any scripts!** The hooks install themselves automatically:
 
@@ -34,6 +30,8 @@ All Deepiri repositories have automatic branch protection:
 The following branches are protected in all repositories:
 - `main` - Production branch
 - `dev` - Development branch
+- `master` - Legacy production branch (protected for compatibility)
+- `{repo-name}-team-dev` - Team development branches (automatically detected for repos ending in `-team-dev`)
 
 ## 🔄 Automatic Installation Flow
 

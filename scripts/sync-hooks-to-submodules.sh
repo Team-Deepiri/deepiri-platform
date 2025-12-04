@@ -1,49 +1,35 @@
 #!/bin/sh
-
-# Automatically install and configure hooks
-# This runs on every checkout, ensuring hooks are always active
+# Sync git hooks from main repo to all submodules
+# This ensures all submodules have the same branch protection hooks
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-cd "$REPO_ROOT" || exit 0
+cd "$REPO_ROOT" || exit 1
 
-# Install hooks from .git-hooks to .git/hooks if needed
-if [ -d ".git-hooks" ]; then
-    mkdir -p .git/hooks
-    for hook in .git-hooks/*; do
-        if [ -f "$hook" ] && [ -x "$hook" ]; then
-            hook_name=$(basename "$hook")
-            # Only copy if missing or outdated
-            if [ ! -f ".git/hooks/$hook_name" ] || [ ".git/hooks/$hook_name" -ot "$hook" ]; then
-                cp "$hook" ".git/hooks/$hook_name"
-                chmod +x ".git/hooks/$hook_name"
-            fi
-        fi
-    done
+if [ ! -d ".git-hooks" ]; then
+    echo "❌ Error: .git-hooks directory not found in main repository"
+    exit 1
 fi
 
-# Configure hooksPath to use .git-hooks
-CURRENT_HOOKS_PATH="$(git config core.hooksPath)"
-if [ -z "$CURRENT_HOOKS_PATH" ] || [ "$CURRENT_HOOKS_PATH" != ".git-hooks" ]; then
-    git config core.hooksPath .git-hooks
-    if [ -f ".git-hooks/pre-push" ]; then
-        echo "🔧 Git hooks automatically configured (hooksPath = .git-hooks)"
-        echo "✔ You are now protected from pushing to 'main', 'dev', 'master', or team-dev branches."
-    fi
-fi
+echo "🔄 Syncing git hooks to all submodules..."
+echo ""
 
-# Automatically sync hooks to all submodules
+# Function to sync hooks to a submodule
 sync_hooks_to_submodule() {
     local submodule_path=$1
     local submodule_name=$2
     
     if [ ! -d "$submodule_path" ]; then
+        echo "⚠️  Skipping $submodule_name (directory not found)"
         return
     fi
     
     # Check if it's actually a git repository (submodule)
     if [ ! -d "$submodule_path/.git" ] && [ ! -f "$submodule_path/.git" ]; then
+        echo "⚠️  Skipping $submodule_name (not a git repository)"
         return
     fi
+    
+    echo "📦 Syncing hooks to $submodule_name..."
     
     # Create .git-hooks directory in submodule
     mkdir -p "$submodule_path/.git-hooks"
@@ -72,23 +58,32 @@ sync_hooks_to_submodule() {
     # Configure hooksPath for submodule
     git config core.hooksPath .git-hooks
     
+    echo "✔ Hooks synced and installed for $submodule_name"
     cd "$REPO_ROOT" || return
 }
 
 # Sync hooks to all submodules listed in .gitmodules
 if [ -f ".gitmodules" ]; then
+    echo "📋 Found submodules in .gitmodules:"
     # Extract submodule paths from .gitmodules (handles tabs and spaces)
     # This ensures we catch ALL submodules regardless of formatting
+    submodule_count=0
     grep -E "^\s*path\s*=\s*" .gitmodules | sed -E 's/^\s*path\s*=\s*//' | sed 's/[[:space:]]*$//' | while IFS= read -r submodule_path; do
         # Skip empty lines
         [ -z "$submodule_path" ] && continue
         
+        submodule_count=$((submodule_count + 1))
         submodule_name=$(basename "$submodule_path")
+        echo "   $submodule_count. $submodule_name ($submodule_path)"
         sync_hooks_to_submodule "$submodule_path" "$submodule_name"
     done
+    echo ""
 else
-    # If .gitmodules doesn't exist, this might be a submodule itself
-    # In that case, we're done (hooks already installed by parent)
-    :
+    echo "⚠️  Warning: .gitmodules file not found"
 fi
+
+echo ""
+echo "✅ Git hooks sync complete for all submodules!"
+echo ""
+echo "📝 All submodules are now protected from pushes to 'main', 'dev', 'master', or team-dev branches."
 

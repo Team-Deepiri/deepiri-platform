@@ -1,10 +1,20 @@
 #!/bin/sh
 
-# Pre-push hook to protect main and dev branches
+# Pre-push hook to protect main, dev, master, and team-dev branches
 # This hook receives ref information via stdin in the format:
 # <local_ref> <local_sha1> <remote_ref> <remote_sha1>
 
-protected_branches="main dev"
+# Base protected branches (always protected)
+protected_branches="main dev master"
+
+# Get repository name to check for team-dev branches
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+REPO_NAME=$(basename "$REPO_ROOT")
+
+# If repo name ends with -team-dev, also protect that branch name
+if echo "$REPO_NAME" | grep -qE '-team-dev$'; then
+    protected_branches="$protected_branches $REPO_NAME"
+fi
 
 # Read the refs being pushed from stdin
 while read local_ref local_sha remote_ref remote_sha; do
