@@ -118,8 +118,8 @@ class TaskVersioningService {
           changedByUser: {
             select: {
               id: true,
-              name: true,
-              email: true
+              //name: true,
+              //email: true
             }
           }
         }
@@ -143,8 +143,8 @@ class TaskVersioningService {
           changedByUser: {
             select: {
               id: true,
-              name: true,
-              email: true
+              //name: true,
+              //email: true
             }
           }
         }
@@ -159,7 +159,7 @@ class TaskVersioningService {
           priority: v.priority
         },
         changeType: 'update',
-        changedBy: v.changedByUser,
+        changedBy: v.changedBy,
         changeReason: v.changesSummary,
         createdAt: v.createdAt,
         metadata: v.metadata

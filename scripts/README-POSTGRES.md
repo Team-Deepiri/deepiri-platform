@@ -38,7 +38,7 @@ psql -h localhost -p 5432 -U deepiri -d deepiri -f scripts/postgres-seed.sql
 
 **Test Users:**
 ```
-admin@deepiri.local - Admin User (full access)
+admin@deepiri.com - Admin User (full access)
 alice@deepiri.local - Product Manager
 bob@deepiri.local - Senior Developer
 carol@deepiri.local - UX Designer
@@ -121,7 +121,7 @@ docker exec -i deepiri-postgres-dev psql -U deepiri -d deepiri < scripts/postgre
 
 4. **Access pgAdmin:**
 - URL: http://localhost:5050
-- Email: admin@deepiri.local
+- Email: admin@deepiri.com
 - Password: admin
 
 ---

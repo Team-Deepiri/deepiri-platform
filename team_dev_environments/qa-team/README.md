@@ -140,7 +140,7 @@ docker compose -f docker-compose.dev.yml logs -f frontend-dev
 - **MLflow**: http://localhost:5500
 - **Jupyter**: http://localhost:8888
 - **PostgreSQL**: localhost:5432
-- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.local, password: admin)
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
 - **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
 
 ## Database Setup

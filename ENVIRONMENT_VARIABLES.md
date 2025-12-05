@@ -88,7 +88,7 @@ DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 POSTGRES_USER=deepiri
 POSTGRES_PASSWORD=deepiripassword
 POSTGRES_DB=deepiri
-PGADMIN_EMAIL=admin@deepiri.local
+PGADMIN_EMAIL=admin@deepiri.com
 PGADMIN_PASSWORD=admin
 
 REDIS_URL=redis://localhost:6379
@@ -353,7 +353,7 @@ API_URL: https://api.deepiri.com
 | `POSTGRES_USER` | PostgreSQL database user | `deepiri` | Yes |
 | `POSTGRES_PASSWORD` | PostgreSQL database password | `deepiripassword` | Yes |
 | `POSTGRES_DB` | PostgreSQL database name | `deepiri` | Yes |
-| `PGADMIN_EMAIL` | pgAdmin admin email | `admin@deepiri.local` | No |
+| `PGADMIN_EMAIL` | pgAdmin admin email | `admin@deepiri.com` | No |
 | `PGADMIN_PASSWORD` | pgAdmin admin password | `admin` | No |
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379` | Yes |
 | `REDIS_PASSWORD` | Redis password | `redispassword` | Optional |

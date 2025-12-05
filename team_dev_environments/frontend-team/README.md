@@ -145,7 +145,7 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 - **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Realtime Gateway**: http://localhost:5008
 - **PostgreSQL**: localhost:5432
-- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.local, password: admin)
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
 - **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
 
 ## Database Setup

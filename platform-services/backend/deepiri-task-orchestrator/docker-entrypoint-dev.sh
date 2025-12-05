@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Development entrypoint: ensures dependencies are installed and built
 
-echo "[entrypoint-dev] Starting engagement-service in development mode..."
+echo "[entrypoint-dev] Starting task-orchestrator in development mode..."
 
 # Fix permissions for mounted volumes (run as root, then switch to nodejs user)
 if [ "$(id -u)" = "0" ]; then
@@ -46,4 +46,3 @@ fi
 # Run the service
 echo "[entrypoint-dev] Starting service..."
 exec /usr/bin/dumb-init -- npm start
-

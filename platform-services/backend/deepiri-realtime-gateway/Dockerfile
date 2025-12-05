@@ -9,6 +9,7 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-timeout 300000 && \
+    
     npm install --legacy-peer-deps || \
     (sleep 10 && npm install --legacy-peer-deps) || \
     (sleep 20 && npm install --legacy-peer-deps) && \
@@ -19,7 +20,7 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache curl dumb-init
+RUN apk add --no-cache bash curl dumb-init su-exec
 
 # Copy package files
 COPY backend/deepiri-realtime-gateway/package.json ./
@@ -52,9 +53,9 @@ RUN npm run build && \
 # Create non-root user and set up directories
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
-    mkdir -p logs && chown -R nodejs:nodejs /app
-
-USER nodejs
+    mkdir -p logs && \
+    mkdir -p /shared-utils && \
+    chown -R nodejs:nodejs /app /shared-utils
 
 EXPOSE 5008
 

@@ -24,7 +24,7 @@ END $$;
 -- Password for all seed users: "password123" (bcrypt hashed)
 -- CHANGE THIS IN PRODUCTION!
 INSERT INTO public.users (id, email, password, name, bio, status, email_verified) VALUES
-    ('00000000-0000-0000-0000-000000000001', 'admin@deepiri.local', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Admin User', 'System administrator', 'active', true),
+    ('00000000-0000-0000-0000-000000000001', 'admin@deepiri.com', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Admin User', 'System administrator', 'active', true),
     ('00000000-0000-0000-0000-000000000002', 'alice@deepiri.local', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Alice Johnson', 'Product manager who loves shipping features', 'active', true),
     ('00000000-0000-0000-0000-000000000003', 'bob@deepiri.local', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Bob Smith', 'Senior developer and code review champion', 'active', true),
     ('00000000-0000-0000-0000-000000000004', 'carol@deepiri.local', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Carol Davis', 'UX designer focused on user experience', 'active', true),
@@ -39,7 +39,7 @@ INSERT INTO public.user_roles (user_id, role_id, granted_by)
 SELECT u.id, r.id, '00000000-0000-0000-0000-000000000001'::UUID
 FROM public.users u
 CROSS JOIN public.roles r
-WHERE u.email = 'admin@deepiri.local' AND r.name = 'admin'
+WHERE u.email = 'admin@deepiri.com' AND r.name = 'admin'
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
 INSERT INTO public.user_roles (user_id, role_id, granted_by)
@@ -269,7 +269,7 @@ BEGIN
     RAISE NOTICE '  Password: password123';
     RAISE NOTICE '';
     RAISE NOTICE 'Test users:';
-    RAISE NOTICE '  admin@deepiri.local - Admin User';
+    RAISE NOTICE '  admin@deepiri.com - Admin User';
     RAISE NOTICE '  alice@deepiri.local - Alice Johnson (Product Manager)';
     RAISE NOTICE '  bob@deepiri.local - Bob Smith (Developer)';
     RAISE NOTICE '  carol@deepiri.local - Carol Davis (Designer)';

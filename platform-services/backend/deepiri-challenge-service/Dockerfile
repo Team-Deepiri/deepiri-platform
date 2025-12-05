@@ -19,7 +19,7 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache curl dumb-init
+RUN apk add --no-cache bash curl dumb-init su-exec
 
 # Copy package files
 COPY backend/deepiri-challenge-service/package.json ./
@@ -52,9 +52,9 @@ RUN npm run build && \
 # Create non-root user and set up directories
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
-    mkdir -p logs && chown -R nodejs:nodejs /app
-
-USER nodejs
+    mkdir -p logs && \
+    mkdir -p /shared-utils && \
+    chown -R nodejs:nodejs /app /shared-utils
 
 EXPOSE 5007
 

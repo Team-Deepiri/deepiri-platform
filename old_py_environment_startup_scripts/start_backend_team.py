@@ -42,7 +42,7 @@ def main():
             "name": "deepiri-pgadmin-backend",
             "ports": {"5050/tcp": 5050},
             "environment": {
-                "PGADMIN_DEFAULT_EMAIL": env.get("PGADMIN_EMAIL", "admin@deepiri.local"),
+                "PGADMIN_DEFAULT_EMAIL": env.get("PGADMIN_EMAIL", "admin@deepiri.com"),
                 "PGADMIN_DEFAULT_PASSWORD": env.get("PGADMIN_PASSWORD", "admin"),
                 "PGADMIN_CONFIG_SERVER_MODE": "False",
             },

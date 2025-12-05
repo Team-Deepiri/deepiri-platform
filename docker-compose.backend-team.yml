@@ -66,7 +66,7 @@ services:
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@deepiri.local}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@deepiri.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
@@ -146,7 +146,7 @@ services:
       - ./platform-services/backend/deepiri-api-gateway:/app
       - /app/node_modules
       - /app/dist
-    command: sh -c "if [ ! -d node_modules ]; then npm install --legacy-peer-deps; fi && npm run dev"
+    command: sh -c "if [ ! -d node_modules ]; then npm install --legacy-peer-deps; fi && npm start"
     depends_on:
       - auth-service
       - task-orchestrator
@@ -181,7 +181,9 @@ services:
       - ./platform-services/backend/deepiri-auth-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+      - /app/dist
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     depends_on:
       - postgres
       - influxdb
@@ -209,7 +211,8 @@ services:
       - ./platform-services/backend/deepiri-task-orchestrator:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     depends_on:
       - postgres
     networks:
@@ -236,7 +239,8 @@ services:
       - ./platform-services/backend/deepiri-engagement-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     depends_on:
       - postgres
       - redis
@@ -264,7 +268,8 @@ services:
       - ./platform-services/backend/deepiri-platform-analytics-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     depends_on:
       - postgres
       - influxdb
@@ -292,7 +297,8 @@ services:
       - ./platform-services/backend/deepiri-notification-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     depends_on:
       - postgres
     networks:
@@ -319,7 +325,8 @@ services:
       - ./platform-services/backend/deepiri-external-bridge-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     depends_on:
       - postgres
     networks:
@@ -346,7 +353,8 @@ services:
       - ./platform-services/backend/deepiri-challenge-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     depends_on:
       - postgres
     networks:
@@ -372,7 +380,8 @@ services:
       - ./platform-services/backend/deepiri-realtime-gateway:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - /shared-utils/node_modules
+    entrypoint: ["/bin/bash", "/app/docker-entrypoint-dev.sh"]
     networks:
       - deepiri-backend-network
 

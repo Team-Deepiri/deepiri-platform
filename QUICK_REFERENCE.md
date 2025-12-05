@@ -143,7 +143,7 @@ redis-cli -h localhost -p 6380 -a redispassword
 
 | Tool | URL | Credentials |
 |------|-----|-------------|
-| pgAdmin | http://localhost:5050 | admin@deepiri.local / admin |
+| pgAdmin | http://localhost:5050 | admin@deepiri.com / admin |
 | Adminer | http://localhost:8080 | System: PostgreSQL<br>Server: postgres<br>Username: deepiri<br>Password: deepiripassword<br>Database: deepiri |
 | MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
 | MLflow | http://localhost:5500 | No auth required |
@@ -178,7 +178,7 @@ redis-cli -h localhost -p 6380 -a redispassword
 |---------|----------|----------|-------|
 | PostgreSQL | deepiri | deepiripassword | Set via `POSTGRES_PASSWORD` |
 | Redis | - | redispassword | Set via `REDIS_PASSWORD` |
-| pgAdmin | admin@deepiri.local | admin | Set via `PGADMIN_PASSWORD` |
+| pgAdmin | admin@deepiri.com | admin | Set via `PGADMIN_PASSWORD` |
 | InfluxDB | admin | adminpassword | Set via `INFLUXDB_PASSWORD` |
 | MinIO | minioadmin | minioadmin | Set via `MINIO_ROOT_PASSWORD` |
 

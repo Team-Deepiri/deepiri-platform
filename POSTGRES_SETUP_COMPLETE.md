@@ -58,7 +58,7 @@
 
 **Login Credentials:**
 ```
-Email: admin@deepiri.local    | Password: password123
+Email: admin@deepiri.com    | Password: password123
 Email: alice@deepiri.local    | Password: password123
 Email: bob@deepiri.local      | Password: password123
 Email: carol@deepiri.local    | Password: password123
@@ -229,7 +229,7 @@ docker exec -i deepiri-postgres-dev psql -U deepiri -d deepiri < scripts/postgre
 ### **4. Access pgAdmin**
 ```
 URL: http://localhost:5050
-Email: admin@deepiri.local
+Email: admin@deepiri.com
 Password: admin
 ```
 
