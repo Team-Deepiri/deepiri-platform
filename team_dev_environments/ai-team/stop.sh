@@ -16,6 +16,7 @@ CONTAINERS=(
     "deepiri-etcd-ai"
     "deepiri-minio-ai"
     "deepiri-milvus-ai"
+    "deepiri-ollama-ai"
     "deepiri-cyrex-ai"
     "deepiri-mlflow-ai"
     "deepiri-jupyter-ai"

@@ -7,9 +7,11 @@ name: deepiri-ai-team
 # - team_dev_environments/ai-team/start.sh
 # - team_dev_environments/ai-team/stop.sh
 #
-# Primary services: cyrex, api-gateway, engagement-service, challenge-service, external-bridge-service
+# Primary services: cyrex, ollama, api-gateway, engagement-service, challenge-service, external-bridge-service
 # Dependencies: postgres, redis, influxdb, etcd, minio, milvus, auth-service, task-orchestrator,
 #   platform-analytics-service, notification-service, realtime-gateway
+#
+# Note: Ollama (local LLM) is only included in the AI team environment
 #
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
@@ -93,7 +95,7 @@ services:
     logging: *minimal-logging
     ports:
       - "6380:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_ai_data:/data
     networks:
@@ -185,6 +187,27 @@ services:
     networks:
       - deepiri-ai-network
 
+  # Ollama (Local LLM Service)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: deepiri-ollama-ai
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_ai_data:/root/.ollama
+    networks:
+      - deepiri-ai-network
+    # Optional: Uncomment for GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
   # Python Agent API (AI Service)
   cyrex:
     build:
@@ -220,6 +243,10 @@ services:
       INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
       MILVUS_HOST: milvus
       MILVUS_PORT: 19530
+      # Local LLM (Ollama) Configuration
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      LOCAL_LLM_BACKEND: ${LOCAL_LLM_BACKEND:-ollama}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3:8b}
       TRANSFORMERS_CACHE: /app/.cache/huggingface
       HF_HOME: /app/.cache/huggingface
       SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
@@ -234,6 +261,7 @@ services:
     depends_on:
       - influxdb
       - milvus
+      - ollama
     networks:
       - deepiri-ai-network
 
@@ -351,6 +379,8 @@ volumes:
   minio_ai_data:
     driver: local
   cyrex_ai_cache:
+    driver: local
+  ollama_ai_data:
     driver: local
 
 networks:

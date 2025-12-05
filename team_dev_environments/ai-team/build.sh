@@ -1,7 +1,8 @@
 #!/bin/bash
 # AI Team - Build script
-# Builds: Cyrex, Jupyter, MLflow, Challenge Service
+# Builds: Cyrex, Jupyter, MLflow, Challenge Service, Ollama
 # Based on SERVICE_TEAM_MAPPING.md: Cyrex AI Service, Jupyter, MLflow, Challenge Service
+# Ollama is included as it's needed for local LLM functionality
 
 set -e
 
@@ -12,6 +13,10 @@ export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 
 echo "🔨 Building AI Team services..."
+
+# Pull Ollama image (it's a pre-built image, not built from source)
+echo "📥 Pulling Ollama Docker image..."
+docker pull ollama/ollama:latest || echo "⚠️  Failed to pull Ollama image, will try again during start"
 
 # Build services that exist (skip submodules if not initialized)
 SERVICES=()

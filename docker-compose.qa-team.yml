@@ -91,7 +91,7 @@ services:
     logging: *minimal-logging
     ports:
       - "6380:6379"  # Using 6380 to avoid conflict with system Redis on 6379
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_qa_data:/data
     networks:

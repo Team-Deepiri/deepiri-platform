@@ -1,39 +1,26 @@
 #!/bin/bash
 # Backend Team - Stop script
-# Stops and removes all containers started by backend-team/run.py
+# Stops and removes all containers defined in docker-compose.backend-team.yml
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+cd "$PROJECT_ROOT"
+
 echo "🛑 Stopping Backend Team services..."
+echo "   (Matching docker-compose.backend-team.yml)"
+echo ""
 
-# List of containers started by backend-team/run.py
-CONTAINERS=(
-    "deepiri-postgres-backend"
-    "deepiri-pgadmin-backend"
-    "deepiri-adminer-backend"
-    "deepiri-redis-backend"
-    "deepiri-influxdb-backend"
-    "deepiri-api-gateway-backend"
-    "deepiri-auth-service-backend"
-    "deepiri-task-orchestrator-backend"
-    "deepiri-engagement-service-backend"
-    "deepiri-platform-analytics-service-backend"
-    "deepiri-notification-service-backend"
-    "deepiri-external-bridge-service-backend"
-    "deepiri-challenge-service-backend"
-    "deepiri-realtime-gateway-backend"
-)
+# Use docker-compose to stop and remove all services
+# This automatically handles all containers defined in the compose file
+docker compose -f docker-compose.backend-team.yml down
 
-# Stop and remove containers
-for container in "${CONTAINERS[@]}"; do
-    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-        echo "Stopping ${container}..."
-        docker stop "${container}" 2>/dev/null || true
-        echo "Removing ${container}..."
-        docker rm "${container}" 2>/dev/null || true
-    else
-        echo "⚠️  Container ${container} not found, skipping..."
-    fi
-done
-
+echo ""
 echo "✅ Backend Team services stopped and removed!"
+echo ""
+echo "Note: Volumes are preserved by default."
+echo "To remove volumes as well, run:"
+echo "  docker compose -f docker-compose.backend-team.yml down -v"
+echo ""

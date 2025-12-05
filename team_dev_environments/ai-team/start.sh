@@ -1,6 +1,6 @@
 #!/bin/bash
 # AI Team - Start script
-# Requirements: cyrex, api-gateway, engagement-service, challenge-service, external-bridge-service + their dependencies
+# Requirements: cyrex, api-gateway, engagement-service, challenge-service, external-bridge-service, ollama + their dependencies
 # Dependencies will be started automatically by docker compose
 
 set -e
@@ -11,7 +11,7 @@ echo "🚀 Starting AI Team services..."
 
 # Start services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in cyrex api-gateway engagement-service challenge-service external-bridge-service; do
+for service in ollama cyrex api-gateway engagement-service challenge-service external-bridge-service; do
   case $service in
     api-gateway)
       if [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
@@ -34,6 +34,10 @@ for service in cyrex api-gateway engagement-service challenge-service external-b
         echo "⚠️  Skipping $service (submodule not initialized)"
       fi
       ;;
+    ollama)
+      # Ollama uses pre-built image, always include it
+      SERVICES+=("$service")
+      ;;
     *)
       SERVICES+=("$service")
       ;;
@@ -50,15 +54,18 @@ echo "Starting: ${SERVICES[*]} (and their dependencies)"
 # Use --no-build to prevent automatic building (images should already be built)
 # Dependencies (postgres, redis, influxdb, etcd, minio, milvus, auth-service, task-orchestrator,
 # platform-analytics-service, notification-service, realtime-gateway) will be started automatically
-docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
+docker compose -f docker-compose.ai-team.yml up -d --no-build "${SERVICES[@]}"
 
 echo "✅ AI Team services started!"
 echo ""
 echo "🤖 Cyrex: http://localhost:8000"
+echo "🤖 Ollama: http://localhost:11434"
 API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
 echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🎮 Engagement Service: http://localhost:5003"
 echo "🏆 Challenge Service: http://localhost:5007"
 echo "🌉 External Bridge: http://localhost:5006"
 echo "🔍 Adminer: http://localhost:8080"
+echo ""
+echo "💡 To pull models into Ollama: docker exec -it deepiri-ollama-ai ollama pull llama3:8b"
 
