@@ -130,6 +130,7 @@ Thumbs.db
 .husky
 .github
 .dockerignore
+.docker-dependency-cache.json
 *.cache
 .cache/
 .temp/
