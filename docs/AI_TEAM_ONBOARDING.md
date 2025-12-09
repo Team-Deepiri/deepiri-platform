@@ -107,10 +107,22 @@ docker compose -f docker-compose.dev.yml logs -f challenge-service
 
 ```bash
 git clone <repository-url>
-cd Deepiri/deepiri
+cd deepiri-platform
 ```
 
-### 2. Docker Setup (Required)
+### 2. Set Up Git Hooks (REQUIRED)
+
+**⚠️ IMPORTANT:** This protects the `main` and `dev` branches from accidental pushes.
+
+```bash
+./setup-hooks.sh
+```
+
+This enables local Git hooks that prevent you from pushing directly to protected branches. You'll need to use Pull Requests instead.
+
+**Why?** See [BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) for details.
+
+### 3. Docker Setup (Required)
 
 **For WSL2 users (Recommended): Use Docker Engine instead of Docker Desktop**
 

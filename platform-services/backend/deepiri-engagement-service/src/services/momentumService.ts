@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import mongoose, { Types } from 'mongoose';
 import { createLogger } from '@deepiri/shared-utils';
-import Momentum, { IMomentum } from '../models/Momentum';
+import prisma from '../db';
 
 const logger = createLogger('momentum-service');
 
@@ -19,18 +18,37 @@ class MomentumService {
   /**
    * Get or create momentum profile for a user
    */
-  async getOrCreateProfile(userId: string): Promise<IMomentum> {
+  async getOrCreateProfile(userId: string) {
     try {
-      let profile = await Momentum.findOne({ userId: new Types.ObjectId(userId) });
+      let profile = await prisma.momentum.findUnique({
+        where: { userId },
+        include: {
+          levelProgress: { orderBy: { reachedAt: 'desc' }, take: 10 },
+          achievements: { orderBy: { unlockedAt: 'desc' } }
+        }
+      });
       
       if (!profile) {
-        profile = new Momentum({
-          userId: new Types.ObjectId(userId),
-          totalMomentum: 0,
-          currentLevel: 1,
-          momentumToNextLevel: 100
+        profile = await prisma.momentum.create({
+          data: {
+            userId,
+            totalMomentum: 0,
+            currentLevel: 1,
+            momentumToNextLevel: 100,
+            commits: 0,
+            docs: 0,
+            tasks: 0,
+            reviews: 0,
+            comments: 0,
+            attendance: 0,
+            featuresShipped: 0,
+            designEdits: 0
+          },
+          include: {
+            levelProgress: true,
+            achievements: true
+          }
         });
-        await profile.save();
       }
       
       return profile;
@@ -41,6 +59,15 @@ class MomentumService {
   }
 
   /**
+   * Calculate momentum to next level
+   */
+  private calculateMomentumToNextLevel(level: number): number {
+    const baseMomentum = 100;
+    const growthFactor = 1.5;
+    return Math.floor(baseMomentum * Math.pow(growthFactor, level - 1));
+  }
+
+  /**
    * Award momentum to a user
    */
   async awardMomentum(
@@ -48,24 +75,60 @@ class MomentumService {
     amount: number, 
     source: MomentumSource,
     metadata?: Record<string, any>
-  ): Promise<IMomentum> {
+  ) {
     try {
       const profile = await this.getOrCreateProfile(userId);
       
-      // Add to total momentum
-      profile.totalMomentum += amount;
-      
-      // Add to specific skill mastery
-      if (profile.skillMastery[source] !== undefined) {
-        profile.skillMastery[source] += amount;
-      }
-      
-      // Check for level up (handled in pre-save hook)
+      // Map source to field name
+      const sourceFieldMap: Record<MomentumSource, string> = {
+        commits: 'commits',
+        docs: 'docs',
+        tasks: 'tasks',
+        reviews: 'reviews',
+        comments: 'comments',
+        attendance: 'attendance',
+        featuresShipped: 'featuresShipped',
+        designEdits: 'designEdits'
+      };
+
+      const fieldName = sourceFieldMap[source];
       const previousLevel = profile.currentLevel;
-      await profile.save();
+      const newTotalMomentum = profile.totalMomentum + amount;
+      const newMomentumToNextLevel = this.calculateMomentumToNextLevel(profile.currentLevel);
       
-      if (profile.currentLevel > previousLevel) {
-        logger.info(`User ${userId} leveled up to level ${profile.currentLevel}`);
+      // Check for level up
+      let newLevel = profile.currentLevel;
+      if (newTotalMomentum >= newMomentumToNextLevel) {
+        newLevel = profile.currentLevel + 1;
+      }
+
+      // Update momentum
+      const updated = await prisma.momentum.update({
+        where: { userId },
+        data: {
+          totalMomentum: { increment: amount },
+          [fieldName]: { increment: amount },
+          currentLevel: newLevel,
+          momentumToNextLevel: this.calculateMomentumToNextLevel(newLevel),
+          metadata: metadata ? { ...(profile.metadata as any || {}), ...metadata } : profile.metadata
+        },
+        include: {
+          levelProgress: { orderBy: { reachedAt: 'desc' }, take: 10 },
+          achievements: { orderBy: { unlockedAt: 'desc' } }
+        }
+      });
+
+      // Record level up if it occurred
+      if (newLevel > previousLevel) {
+        await prisma.levelProgress.create({
+          data: {
+            momentumId: updated.id,
+            level: newLevel,
+            totalMomentumAtTime: newTotalMomentum
+          }
+        });
+
+        logger.info(`User ${userId} leveled up to level ${newLevel}`);
         
         // Emit level up event via realtime gateway
         try {
@@ -75,8 +138,8 @@ class MomentumService {
             userId,
             type: 'level_up',
             data: {
-              newLevel: profile.currentLevel,
-              totalMomentum: profile.totalMomentum
+              newLevel,
+              totalMomentum: newTotalMomentum
             }
           });
         } catch (error: any) {
@@ -94,15 +157,15 @@ class MomentumService {
           data: {
             amount,
             source,
-            newTotal: profile.totalMomentum,
-            currentLevel: profile.currentLevel
+            newTotal: newTotalMomentum,
+            currentLevel: newLevel
           }
         });
       } catch (error: any) {
         logger.error('Failed to emit momentum event:', error.message);
       }
       
-      return profile;
+      return updated;
     } catch (error: any) {
       logger.error('Error awarding momentum:', error);
       throw error;
@@ -129,10 +192,32 @@ class MomentumService {
           totalMomentum: profile.totalMomentum,
           currentLevel: profile.currentLevel,
           momentumToNextLevel: profile.momentumToNextLevel,
-          skillMastery: profile.skillMastery,
-          levelHistory: profile.levelHistory,
-          achievements: profile.achievements,
-          publicProfile: profile.publicProfile
+          skillMastery: {
+            commits: profile.commits,
+            docs: profile.docs,
+            tasks: profile.tasks,
+            reviews: profile.reviews,
+            comments: profile.comments,
+            attendance: profile.attendance,
+            featuresShipped: profile.featuresShipped,
+            designEdits: profile.designEdits
+          },
+          levelHistory: profile.levelProgress.map((lp: typeof profile.levelProgress[0]) => ({
+            level: lp.level,
+            reachedAt: lp.reachedAt,
+            totalMomentum: lp.totalMomentumAtTime
+          })),
+          achievements: profile.achievements.map((a: typeof profile.achievements[0]) => ({
+            achievementId: a.achievementId,
+            name: a.name,
+            description: a.description,
+            unlockedAt: a.unlockedAt,
+            showcaseable: a.showcaseable
+          })),
+          publicProfile: {
+            displayMomentum: profile.displayMomentum,
+            showcaseAchievements: profile.showcaseAchievements
+          }
         }
       });
     } catch (error: any) {
@@ -171,7 +256,16 @@ class MomentumService {
           totalMomentum: profile.totalMomentum,
           currentLevel: profile.currentLevel,
           momentumToNextLevel: profile.momentumToNextLevel,
-          skillMastery: profile.skillMastery
+          skillMastery: {
+            commits: profile.commits,
+            docs: profile.docs,
+            tasks: profile.tasks,
+            reviews: profile.reviews,
+            comments: profile.comments,
+            attendance: profile.attendance,
+            featuresShipped: profile.featuresShipped,
+            designEdits: profile.designEdits
+          }
         }
       });
     } catch (error: any) {
@@ -187,22 +281,45 @@ class MomentumService {
     try {
       const { limit = 100, sortBy = 'totalMomentum' } = req.query;
       
-      const sortField = sortBy === 'level' ? 'currentLevel' : 'totalMomentum';
+      const orderBy = sortBy === 'level' 
+        ? { currentLevel: 'desc' as const }
+        : { totalMomentum: 'desc' as const };
       
-      const profiles = await Momentum.find()
-        .sort({ [sortField]: -1 })
-        .limit(parseInt(limit as string))
-        .select('userId totalMomentum currentLevel skillMastery')
-        .lean();
+      const profiles = await prisma.momentum.findMany({
+        orderBy,
+        take: parseInt(limit as string),
+        select: {
+          userId: true,
+          totalMomentum: true,
+          currentLevel: true,
+          commits: true,
+          docs: true,
+          tasks: true,
+          reviews: true,
+          comments: true,
+          attendance: true,
+          featuresShipped: true,
+          designEdits: true
+        }
+      });
       
       res.json({
         success: true,
-        data: profiles.map((profile, index) => ({
+        data: profiles.map((profile: typeof profiles[0], index: number) => ({
           rank: index + 1,
           userId: profile.userId,
           totalMomentum: profile.totalMomentum,
           currentLevel: profile.currentLevel,
-          skillMastery: profile.skillMastery
+          skillMastery: {
+            commits: profile.commits,
+            docs: profile.docs,
+            tasks: profile.tasks,
+            reviews: profile.reviews,
+            comments: profile.comments,
+            attendance: profile.attendance,
+            featuresShipped: profile.featuresShipped,
+            designEdits: profile.designEdits
+          }
         }))
       });
     } catch (error: any) {
@@ -226,14 +343,16 @@ class MomentumService {
       const profile = await this.getOrCreateProfile(userId);
       
       // Count users with higher momentum
-      const rank = await Momentum.countDocuments({
-        $or: [
-          { totalMomentum: { $gt: profile.totalMomentum } },
-          { 
-            totalMomentum: profile.totalMomentum,
-            _id: { $lt: profile._id }
-          }
-        ]
+      const rank = await prisma.momentum.count({
+        where: {
+          OR: [
+            { totalMomentum: { gt: profile.totalMomentum } },
+            { 
+              totalMomentum: profile.totalMomentum,
+              userId: { lt: userId }
+            }
+          ]
+        }
       }) + 1;
       
       res.json({
@@ -252,4 +371,3 @@ class MomentumService {
 }
 
 export default new MomentumService();
-

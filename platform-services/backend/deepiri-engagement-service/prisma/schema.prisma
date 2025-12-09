@@ -1,0 +1,460 @@
+// Prisma Schema for Engagement Service
+// PostgreSQL database schema - Full schema with all models
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["analytics", "public", "audit"]
+}
+
+// ===========================
+// PUBLIC SCHEMA MODELS
+// ===========================
+
+// Seasons table (public schema)
+model Season {
+  id                String    @id @default(uuid()) @db.Uuid
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  startDate         DateTime  @map("start_date") @db.Timestamp
+  endDate           DateTime  @map("end_date") @db.Timestamp
+  isActive          Boolean   @default(false) @map("is_active")
+  theme             Json?     @default("{}")
+  rewards           Json?     @default("{}")
+  metadata          Json?     @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  quests            Quest[]
+  seasonBoosts      SeasonBoost[]
+
+  @@index([isActive])
+  @@index([startDate])
+  @@schema("public")
+  @@map("seasons")
+}
+
+// Season Boosts table (public schema)
+model SeasonBoost {
+  id                String    @id @default(uuid()) @db.Uuid
+  seasonId          String    @map("season_id") @db.Uuid
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  boostType         String    @map("boost_type") @db.VarChar(100)
+  boostMultiplier   Float     @default(1.0) @map("boost_multiplier")
+  durationMinutes   Int?      @map("duration_minutes")
+  costCredits       Int       @default(0) @map("cost_credits")
+  isActive          Boolean   @default(true) @map("is_active")
+  metadata          Json?     @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  season            Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@index([seasonId])
+  @@index([boostType])
+  @@index([isActive])
+  @@schema("public")
+  @@map("season_boosts")
+}
+
+// Quests table (Odysseys) - public schema
+model Quest {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  seasonId          String?   @map("season_id") @db.Uuid
+  title             String    @db.VarChar(200)
+  description       String?   @db.Text
+  scale             String    @default("week") @db.VarChar(50) // 'hours', 'day', 'week', 'month', 'custom'
+  status            String    @default("planning") @db.VarChar(50) // 'planning', 'active', 'completed', 'paused', 'cancelled'
+  objectivesCompleted Int     @default(0) @map("objectives_completed")
+  totalObjectives   Int       @default(0) @map("total_objectives")
+  progressPercentage Float    @default(0) @map("progress_percentage")
+  currentStage      String    @default("start") @map("current_stage") @db.VarChar(100)
+  aiSummary         String?   @map("ai_summary") @db.Text
+  aiAnimation       String?   @map("ai_animation") @db.VarChar(255)
+  metadata          Json?     @default("{}")
+  startDate         DateTime  @default(now()) @map("start_date") @db.Timestamp
+  endDate           DateTime? @map("end_date") @db.Timestamp
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  updatedBy         String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  season            Season?   @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+  tasks              Task[]
+  questMilestones    QuestMilestone[]
+
+  @@index([userId])
+  @@index([seasonId])
+  @@index([status])
+  @@index([metadata], type: Gin)
+  @@schema("public")
+  @@map("quests")
+}
+
+// Quest Milestones table
+model QuestMilestone {
+  id                String    @id @default(uuid()) @db.Uuid
+  questId           String    @map("quest_id") @db.Uuid
+  title             String    @db.VarChar(255)
+  description       String?   @db.Text
+  completed         Boolean   @default(false)
+  completedAt       DateTime? @map("completed_at") @db.Timestamp
+  momentumReward    Int       @default(0) @map("momentum_reward")
+  sortOrder         Int       @default(0) @map("sort_order")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  quest             Quest     @relation(fields: [questId], references: [id], onDelete: Cascade)
+
+  @@index([questId])
+  @@index([completed])
+  @@index([sortOrder])
+  @@schema("public")
+  @@map("quest_milestones")
+}
+
+// Tasks table (Objectives) - public schema
+model Task {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  projectId         String?   @map("project_id") @db.Uuid
+  questId           String?   @map("quest_id") @db.Uuid
+  parentTaskId      String?   @map("parent_task_id") @db.Uuid
+  title             String    @db.VarChar(500)
+  description       String?   @db.Text
+  status            String    @default("todo") @db.VarChar(50) // 'todo', 'in_progress', 'blocked', 'review', 'done', 'cancelled'
+  priority          String    @default("medium") @db.VarChar(50) // 'low', 'medium', 'high', 'urgent'
+  difficulty        String    @default("medium") @db.VarChar(50) // 'trivial', 'easy', 'medium', 'hard', 'epic'
+  momentumReward    Int       @default(0) @map("momentum_reward")
+  estimatedMinutes  Int?      @map("estimated_minutes")
+  actualMinutes     Int?      @map("actual_minutes")
+  dueDate           DateTime? @map("due_date") @db.Timestamp
+  completedAt       DateTime? @map("completed_at") @db.Timestamp
+  aiSuggestions     Json      @default("[]") @map("ai_suggestions")
+  tags              String[]  @default([])
+  metadata          Json?     @default("{}")
+  version           Int       @default(1)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+  updatedBy         String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  quest             Quest?    @relation(fields: [questId], references: [id], onDelete: SetNull)
+  parentTask        Task?     @relation("TaskParent", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subtasks          Task[]    @relation("TaskParent")
+  subtaskItems      Subtask[]
+  taskCompletions   TaskCompletion[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([questId])
+  @@index([parentTaskId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([tags], type: Gin)
+  @@index([aiSuggestions], type: Gin)
+  @@index([metadata], type: Gin)
+  @@schema("public")
+  @@map("tasks")
+}
+
+// Subtasks table
+model Subtask {
+  id                String    @id @default(uuid()) @db.Uuid
+  taskId            String    @map("task_id") @db.Uuid
+  title             String    @db.VarChar(255)
+  completed         Boolean   @default(false)
+  completedAt       DateTime? @map("completed_at") @db.Timestamp
+  momentumReward    Int       @default(0) @map("momentum_reward")
+  sortOrder         Int       @default(0) @map("sort_order")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  task              Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([completed])
+  @@index([sortOrder])
+  @@schema("public")
+  @@map("subtasks")
+}
+
+// Rewards table (public schema) - needs to be added to SQL
+model Reward {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  rewardType        String    @map("reward_type") @db.VarChar(50) // 'boost_credits', 'momentum_bonus', 'skip_day', 'break_time', 'custom'
+  amount            Int       // Amount of credits, momentum, minutes, etc.
+  source            String    @db.VarChar(50) // 'streak', 'momentum', 'season', 'achievement', 'manual'
+  sourceId          String?   @map("source_id") @db.Uuid // ID of the source
+  description       String    @db.Text
+  status            String    @default("pending") @db.VarChar(50) // 'pending', 'claimed', 'expired'
+  claimedAt         DateTime? @map("claimed_at") @db.Timestamp
+  expiresAt         DateTime? @map("expires_at") @db.Timestamp
+  metadata          Json?     @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([rewardType])
+  @@schema("public")
+  @@map("rewards")
+}
+
+// ===========================
+// ANALYTICS SCHEMA MODELS
+// ===========================
+
+// Momentum table (analytics schema)
+model Momentum {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @unique @map("user_id") @db.Uuid
+  totalMomentum     Int       @default(0) @map("total_momentum")
+  currentLevel      Int       @default(1) @map("current_level")
+  momentumToNextLevel Int     @default(100) @map("momentum_to_next_level")
+  
+  // Skill mastery counters
+  commits            Int       @default(0)
+  docs               Int       @default(0)
+  tasks              Int       @default(0)
+  reviews            Int       @default(0)
+  comments           Int       @default(0)
+  attendance         Int       @default(0)
+  featuresShipped    Int       @default(0) @map("features_shipped")
+  designEdits         Int       @default(0) @map("design_edits")
+  
+  // Public profile settings
+  displayMomentum    Boolean   @default(true) @map("display_momentum")
+  showcaseAchievements String[] @default([]) @map("showcase_achievements") @db.Uuid
+  
+  metadata           Json?     @default("{}")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  levelProgress      LevelProgress[]
+  achievements       Achievement[]
+
+  @@index([userId])
+  @@index([totalMomentum(sort: Desc)])
+  @@index([currentLevel(sort: Desc)])
+  @@schema("analytics")
+  @@map("momentum")
+}
+
+// Level Progress table
+model LevelProgress {
+  id                String    @id @default(uuid()) @db.Uuid
+  momentumId        String    @map("momentum_id") @db.Uuid
+  level             Int
+  reachedAt         DateTime  @default(now()) @map("reached_at") @db.Timestamp
+  totalMomentumAtTime Int     @map("total_momentum_at_time")
+
+  // Relations
+  momentum          Momentum  @relation(fields: [momentumId], references: [id], onDelete: Cascade)
+
+  @@index([momentumId])
+  @@index([reachedAt(sort: Desc)])
+  @@schema("analytics")
+  @@map("level_progress")
+}
+
+// Achievements table
+model Achievement {
+  id                String    @id @default(uuid()) @db.Uuid
+  momentumId        String    @map("momentum_id") @db.Uuid
+  achievementId     String    @map("achievement_id") @db.VarChar(100)
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  iconUrl           String?   @map("icon_url") @db.Text
+  rarity            String    @default("common") @db.VarChar(50)
+  unlockedAt        DateTime  @default(now()) @map("unlocked_at") @db.Timestamp
+  showcaseable      Boolean   @default(false)
+  metadata          Json?     @default("{}")
+
+  // Relations
+  momentum          Momentum  @relation(fields: [momentumId], references: [id], onDelete: Cascade)
+
+  @@index([momentumId])
+  @@index([achievementId])
+  @@index([rarity])
+  @@schema("analytics")
+  @@map("achievements")
+}
+
+// Streaks table
+model Streak {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @unique @map("user_id") @db.Uuid
+  
+  // Daily streak
+  dailyCurrent      Int       @default(0) @map("daily_current")
+  dailyLongest      Int       @default(0) @map("daily_longest")
+  dailyLastDate     DateTime? @map("daily_last_date") @db.Date
+  dailyCanCashIn    Boolean   @default(false) @map("daily_can_cash_in")
+  
+  // Weekly streak
+  weeklyCurrent     Int       @default(0) @map("weekly_current")
+  weeklyLongest     Int       @default(0) @map("weekly_longest")
+  weeklyLastWeek    Int?      @map("weekly_last_week")
+  weeklyCanCashIn   Boolean   @default(false) @map("weekly_can_cash_in")
+  
+  // Project streak
+  projectCurrent    Int       @default(0) @map("project_current")
+  projectLongest    Int       @default(0) @map("project_longest")
+  projectId         String?   @map("project_id") @db.Uuid
+  projectLastDate   DateTime? @map("project_last_date") @db.Date
+  projectCanCashIn  Boolean   @default(false) @map("project_can_cash_in")
+  
+  // PR/Review streak
+  prCurrent         Int       @default(0) @map("pr_current")
+  prLongest         Int       @default(0) @map("pr_longest")
+  prLastDate        DateTime? @map("pr_last_date") @db.Date
+  prCanCashIn       Boolean   @default(false) @map("pr_can_cash_in")
+  
+  // Healthy/Sustainable streak
+  healthyCurrent    Int       @default(0) @map("healthy_current")
+  healthyLongest    Int       @default(0) @map("healthy_longest")
+  healthyLastDate   DateTime? @map("healthy_last_date") @db.Date
+  healthyCanCashIn  Boolean   @default(false) @map("healthy_can_cash_in")
+  healthyConsecutiveDaysWithoutBurnout Int @default(0) @map("healthy_consecutive_days_without_burnout")
+  
+  metadata          Json?     @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  cashedInStreaks    CashedInStreak[]
+
+  @@index([userId])
+  @@index([dailyCurrent(sort: Desc)])
+  @@schema("analytics")
+  @@map("streaks")
+}
+
+// Cashed In Streaks table
+model CashedInStreak {
+  id                String    @id @default(uuid()) @db.Uuid
+  streakId          String    @map("streak_id") @db.Uuid
+  streakType        String    @map("streak_type") @db.VarChar(50)
+  streakValue       Int       @map("streak_value")
+  boostCreditsEarned Int      @default(0) @map("boost_credits_earned")
+  cashedAt          DateTime  @default(now()) @map("cashed_at") @db.Timestamp
+
+  // Relations
+  streak            Streak    @relation(fields: [streakId], references: [id], onDelete: Cascade)
+
+  @@index([streakId])
+  @@index([cashedAt(sort: Desc)])
+  @@schema("analytics")
+  @@map("cashed_in_streaks")
+}
+
+// Boosts table
+model Boost {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @unique @map("user_id") @db.Uuid
+  boostCredits      Int       @default(0) @map("boost_credits")
+  
+  // Settings
+  maxConcurrentBoosts Int     @default(3) @map("max_concurrent_boosts")
+  maxAutopilotTimePerDay Int  @default(0) @map("max_autopilot_time_per_day")
+  autopilotTimeUsedToday Int  @default(0) @map("autopilot_time_used_today")
+  lastAutopilotReset DateTime? @map("last_autopilot_reset") @db.Date
+  
+  metadata          Json?     @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  activeBoosts       ActiveBoost[]
+  boostHistory      BoostHistory[]
+
+  @@index([userId])
+  @@schema("analytics")
+  @@map("boosts")
+}
+
+// Active Boosts table
+model ActiveBoost {
+  id                String    @id @default(uuid()) @db.Uuid
+  boostId           String    @map("boost_id") @db.Uuid
+  boostType         String    @map("boost_type") @db.VarChar(100)
+  activatedAt       DateTime  @default(now()) @map("activated_at") @db.Timestamp
+  expiresAt         DateTime  @map("expires_at") @db.Timestamp
+  durationMinutes   Int       @map("duration_minutes")
+  multiplier        Float     @default(1.0)
+  metadata          Json?     @default("{}")
+
+  // Relations
+  boost             Boost     @relation(fields: [boostId], references: [id], onDelete: Cascade)
+
+  @@index([boostId])
+  @@index([expiresAt])
+  @@index([boostType])
+  @@schema("analytics")
+  @@map("active_boosts")
+}
+
+// Boost History table
+model BoostHistory {
+  id                String    @id @default(uuid()) @db.Uuid
+  boostId           String    @map("boost_id") @db.Uuid
+  boostType         String    @map("boost_type") @db.VarChar(100)
+  activatedAt       DateTime  @map("activated_at") @db.Timestamp
+  expiredAt         DateTime? @map("expired_at") @db.Timestamp
+  durationMinutes   Int       @map("duration_minutes")
+  creditsUsed       Int       @default(0) @map("credits_used")
+  source            String?   @db.VarChar(100)
+  effectivenessScore Float?   @map("effectiveness_score")
+  metadata          Json?     @default("{}")
+
+  // Relations
+  boost             Boost     @relation(fields: [boostId], references: [id], onDelete: Cascade)
+
+  @@index([boostId])
+  @@index([activatedAt(sort: Desc)])
+  @@schema("analytics")
+  @@map("boost_history")
+}
+
+// ===========================
+// AUDIT SCHEMA MODELS
+// ===========================
+
+// Task Completions table
+model TaskCompletion {
+  id                String    @id @default(uuid()) @db.Uuid
+  taskId            String    @map("task_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  completedAt       DateTime  @default(now()) @map("completed_at") @db.Timestamp
+  momentumEarned    Int       @default(0) @map("momentum_earned")
+  timeTakenMinutes  Int?      @map("time_taken_minutes")
+  qualityRating     Int?      @map("quality_rating")
+  autoDetected      Boolean   @default(false) @map("auto_detected")
+  completionMethod  String?   @map("completion_method") @db.VarChar(100)
+  metadata          Json?     @default("{}")
+
+  // Relations
+  task              Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([completedAt(sort: Desc)])
+  @@schema("audit")
+  @@map("task_completions")
+}

@@ -4,6 +4,18 @@
 
 This directory contains build and start scripts for the AI Team's development environment.
 
+## ⚠️ Initial Setup (One-Time)
+
+**Before using this environment, set up Git hooks from the repository root:**
+
+```bash
+# From repository root
+cd ../..
+./setup-hooks.sh
+```
+
+This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../../BRANCH_PROTECTION.md) for details.
+
 ## Services
 
 **Primary Services:**
@@ -13,7 +25,7 @@ This directory contains build and start scripts for the AI Team's development en
 - ✅ **Challenge Service** (Port 5007) - Integration testing with AI
 
 **Infrastructure:**
-- ✅ **MongoDB** (Port 27017) - Training data, model metadata
+- ✅ **PostgreSQL** (Port 5432) - Training data, model metadata
 - ✅ **InfluxDB** (Port 8086) - Model performance metrics, training metrics
 - ✅ **Redis** (Port 6380) - Caching model predictions
 - ✅ **Milvus** (Port 19530) - Vector database for RAG
@@ -46,7 +58,7 @@ This starts all required infrastructure and services.
 ```bash
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
-  mongodb influxdb redis etcd minio milvus \
+  postgres influxdb redis etcd minio milvus \
   cyrex jupyter mlflow challenge-service
 ```
 
@@ -136,4 +148,11 @@ docker compose -f docker-compose.dev.yml logs -f challenge-service
 - **Jupyter**: http://localhost:8888
 - **Cyrex**: http://localhost:8000
 - **Challenge Service**: http://localhost:5007
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. The database stores training data and model metadata.
 

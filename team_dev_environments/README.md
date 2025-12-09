@@ -2,12 +2,39 @@
 
 This directory contains team-specific build and start scripts for each development team.
 
+## ⚠️ Initial Setup (One-Time - Required for All Teams)
+
+**Before using any team environment:**
+
+1. **Set up Git hooks** (from repository root):
+   ```bash
+   ./setup-hooks.sh
+   ```
+
+2. **Install Python dependencies**:
+   ```bash
+   pip install pyyaml
+   ```
+
+3. **Create secrets file** (see `ops/k8s/secrets/README.md` for template):
+   ```bash
+   touch ops/k8s/secrets/secrets.yaml
+   # Or copy structure from ops/k8s/secrets/README.md
+   ```
+
+This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) for details.
+
 ## Directory Structure
 
 Each team has its own folder with:
 - `build.sh` - Builds the services that team needs
-- `start.sh` - Starts all required services
+- `start.sh` / `start.ps1` - Shell scripts to start services
+- `run.py` - **Python script** to start services (recommended - loads k8s config)
+- `stop.sh` - Stops services
 - `README.md` - Team-specific documentation
+
+**Shared utilities:**
+- `shared/k8s_env_loader.py` - Loads k8s ConfigMaps and Secrets (used by all `run.py` scripts)
 
 ## Teams
 
@@ -21,20 +48,35 @@ Each team has its own folder with:
 
 ## Quick Start
 
-1. Navigate to your team's directory:
-   ```bash
-   cd team_dev_environments/backend-team
-   ```
+### Option 1: Python Script (Recommended - Professional K8s-like workflow)
 
-2. Build your services:
-   ```bash
-   ./build.sh
-   ```
+```bash
+# Navigate to your team's directory
+cd team_dev_environments/backend-team
 
-3. Start your services:
-   ```bash
-   ./start.sh
-   ```
+# Run Python script (auto-loads k8s configmaps & secrets)
+python run.py
+```
+
+**Benefits:**
+- ✅ No `.env` files needed
+- ✅ Mimics Kubernetes secret injection
+- ✅ Loads from `ops/k8s/configmaps/` and `ops/k8s/secrets/`
+- ✅ Professional microservices workflow
+
+### Option 2: Shell Scripts
+
+```bash
+# Navigate to your team's directory
+cd team_dev_environments/backend-team
+
+# Build your services (first time only)
+./build.sh
+
+# Start your services
+./start.sh        # Linux/Mac
+.\start.ps1       # Windows
+```
 
 ## Quick Reference
 

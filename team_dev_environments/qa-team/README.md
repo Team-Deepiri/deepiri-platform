@@ -4,6 +4,18 @@
 
 This directory contains build and start scripts for the QA Team's development environment.
 
+## ⚠️ Initial Setup (One-Time)
+
+**Before using this environment, set up Git hooks from the repository root:**
+
+```bash
+# From repository root
+cd ../..
+./setup-hooks.sh
+```
+
+This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../../BRANCH_PROTECTION.md) for details.
+
 ## Services
 
 **Primary Services:**
@@ -123,9 +135,15 @@ docker compose -f docker-compose.dev.yml logs -f frontend-dev
 ## Service URLs
 
 - **Frontend**: http://localhost:5173
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Cyrex**: http://localhost:8000
 - **MLflow**: http://localhost:5500
 - **Jupyter**: http://localhost:8888
-- **Mongo Express**: http://localhost:8081
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. For testing, you can reset the database by stopping and removing the PostgreSQL container and volume, then restarting.
 

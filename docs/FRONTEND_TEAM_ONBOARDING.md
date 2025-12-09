@@ -108,10 +108,22 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 
 ```bash
 git clone <repository-url>
-cd Deepiri/deepiri
+cd deepiri-platform
 ```
 
-### 2. deepiri-web-frontend Setup
+### 2. Set Up Git Hooks (REQUIRED)
+
+**⚠️ IMPORTANT:** This protects the `main` and `dev` branches from accidental pushes.
+
+```bash
+./setup-hooks.sh
+```
+
+This enables local Git hooks that prevent you from pushing directly to protected branches. You'll need to use Pull Requests instead.
+
+**Why?** See [BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) for details.
+
+### 3. deepiri-web-frontend Setup
 
 ```bash
 cd deepiri-web-frontend
@@ -129,7 +141,7 @@ cp env.example.deepiri-web-frontend .env.local
 # VITE_FIREBASE_API_KEY=your-key
 ```
 
-### 3. Start Required Microservices (deepiri-web-frontend Team)
+### 4. Start Required Microservices (deepiri-web-frontend Team)
 
 **deepiri-web-frontend team only needs these services:**
 - deepiri-web-frontend (for development)

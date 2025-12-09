@@ -20,14 +20,17 @@
 !env.example*
 !*env.example*
 
-# Kubernetes Secrets
-/ops/k8s/secrets/
-ops/k8s/secrets/
-secrets/
-secrets.yaml
+# Kubernetes Secrets - NEVER commit ANY secrets (including examples)
+# Ignore ALL YAML files in secrets folder
+ops/k8s/secrets/*.yaml
+ops/k8s/secrets/*.yml
+# Only allow documentation and gitignore
+!ops/k8s/secrets/README.md
+!ops/k8s/secrets/.gitignore
+!ops/k8s/secrets/.gitkeep
+# Generic secrets files anywhere
 *.secrets.yaml
-secrets/*.yaml
-secrets/*.yml
+*.secrets.yml
 
 # Firebase Admin SDK
 firebase-admin*.json
@@ -146,3 +149,4 @@ skaffold
 binary/
 # Kubernetes binary (should be installed globally)
 kubectl
+.csv

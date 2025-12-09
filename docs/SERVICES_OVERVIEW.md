@@ -430,14 +430,22 @@ These are database and cache services that support the application.
 
 ### All Service URLs
 
+#### Frontend & Visual Interfaces
 | Service | Type | URL | Port |
 |---------|------|-----|------|
 | Frontend | Visual | http://localhost:5173 | 5173 |
-| Mongo Express | Visual | http://localhost:8081 | 8081 |
+| Cyrex UI | Visual | http://localhost:5175 | 5175 |
+| pgAdmin | Visual | http://localhost:5050 | 5050 |
+| Adminer | Visual | http://localhost:8080 | 8080 |
 | InfluxDB UI | Visual | http://localhost:8086 | 8086 |
 | MLflow UI | Visual | http://localhost:5500 | 5500 |
 | Jupyter | Visual | http://localhost:8888 | 8888 |
-| API Gateway | API | http://localhost:5000 | 5000 |
+| MinIO Console | Visual | http://localhost:9001 | 9001 |
+
+#### API Services
+| Service | Type | URL | Port |
+|---------|------|-----|------|
+| API Gateway | API | http://localhost:5100 | 5100 |
 | Auth Service | API | http://localhost:5001 | 5001 |
 | Task Orchestrator | API | http://localhost:5002 | 5002 |
 | Engagement Service | API | http://localhost:5003 | 5003 |
@@ -447,8 +455,16 @@ These are database and cache services that support the application.
 | Challenge Service | API | http://localhost:5007 | 5007 |
 | Realtime Gateway | API | http://localhost:5008 | 5008 |
 | Cyrex AI | API | http://localhost:8000 | 8000 |
-| MongoDB | Database | mongodb://localhost:27017 | 27017 |
-| Redis | Data Transmission / Cache | redis://localhost:6380 | 6380 |
+
+#### Databases & Storage
+| Service | Type | URL | Port |
+|---------|------|-----|------|
+| PostgreSQL | Database | postgresql://localhost:5432 | 5432 |
+| Redis | Cache | redis://localhost:6380 | 6380 |
+| InfluxDB | Database | http://localhost:8086 | 8086 |
+| Milvus | Database | localhost:19530 | 19530 |
+| MinIO | Storage | http://localhost:9000 | 9000 |
+| etcd | Database | localhost:2379 | 2379 |
 
 ---
 
@@ -457,7 +473,7 @@ These are database and cache services that support the application.
 ### Health Check All Services
 ```bash
 # Check all services at once
-for port in 5000 5001 5002 5003 5004 5005 5006 5007 5008 8000; do
+for port in 5100 5001 5002 5003 5004 5005 5006 5007 5008 8000; do
   echo "Testing port $port..."
   curl -s http://localhost:$port/health || echo "Failed"
 done

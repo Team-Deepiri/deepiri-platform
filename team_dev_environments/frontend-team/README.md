@@ -4,15 +4,27 @@
 
 This directory contains build and start scripts for the Frontend Team's development environment.
 
+## ⚠️ Initial Setup (One-Time)
+
+**Before using this environment, set up Git hooks from the repository root:**
+
+```bash
+# From repository root
+cd ../..
+./setup-hooks.sh
+```
+
+This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../../BRANCH_PROTECTION.md) for details.
+
 ## Services
 
 **Primary Services:**
 - ✅ **Frontend Service** (Port 5173) - React application
-- ✅ **API Gateway** (Port 5000) - Backend API
+- ✅ **API Gateway** (Port 5100) - Backend API (uses 5100 to avoid macOS AirPlay conflict on 5000)
 - ✅ **Realtime Gateway** (Port 5008) - WebSocket for real-time features
 
 **Infrastructure:**
-- ✅ **MongoDB** (Port 27017) - Optional, for direct DB access in dev
+- ✅ **PostgreSQL** (Port 5432) - Optional, for direct DB access in dev
 - ✅ **Redis** (Port 6380) - Optional
 - ✅ **InfluxDB** (Port 8086) - Optional
 - ✅ **All Backend Services** - For API calls
@@ -42,7 +54,7 @@ This starts all infrastructure, backend services, and frontend.
 ```bash
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
-  mongodb redis influxdb \
+  postgres redis influxdb \
   api-gateway auth-service task-orchestrator \
   engagement-service platform-analytics-service \
   notification-service external-bridge-service \
@@ -130,6 +142,13 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 ## Service URLs
 
 - **Frontend**: http://localhost:5173
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Realtime Gateway**: http://localhost:5008
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. While the frontend team typically doesn't need direct database access, it's available for debugging and development purposes.
 

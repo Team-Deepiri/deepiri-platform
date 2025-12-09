@@ -1,10 +1,10 @@
 import express, { Express, Request, Response, ErrorRequestHandler } from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import winston from 'winston';
 import routes from './index';
+import { connectDatabase } from './db';
 
 dotenv.config();
 
@@ -21,10 +21,12 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-const MONGO_URI: string = process.env.MONGO_URI || 'mongodb://mongodb:27017/deepiri';
-mongoose.connect(MONGO_URI)
-  .then(() => logger.info('Task Orchestrator: Connected to MongoDB'))
-  .catch((err: Error) => logger.error('Task Orchestrator: MongoDB connection error', err));
+// PostgreSQL connection via Prisma
+connectDatabase()
+  .catch((err: Error) => {
+    logger.error('Task Orchestrator: Failed to connect to PostgreSQL', err);
+    process.exit(1);
+  });
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'task-orchestrator', timestamp: new Date().toISOString() });

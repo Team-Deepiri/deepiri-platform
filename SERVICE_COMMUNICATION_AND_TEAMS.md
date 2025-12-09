@@ -22,7 +22,7 @@
           └─────────────────┴─────────────────┘
                             │        
                   ┌─────────▼─────────┐
-                  │   API Gateway     │  Port 5000 
+                  │   API Gateway     │  Port 5100 (5000 internally) 
                   │  (Entry Point)    │
                   │  - Auth           │
                   │  - Rate Limiting  │
@@ -68,7 +68,7 @@
 
 #### 1. **API Gateway Pattern (Primary)**
 All external requests go through the API Gateway:
-- **Frontend** → `http://localhost:5000/api/*` → API Gateway → Microservices
+- **Frontend** → `http://localhost:5100/api/*` → API Gateway → Microservices
 - **Routing Rules**:
   ```
   /api/users/*          → auth-service:5001
@@ -89,7 +89,7 @@ Services communicate directly via HTTP:
 
 #### 3. **WebSocket Communication**
 Real-time updates via WebSocket Gateway:
-- **Frontend** → `ws://localhost:5000` → Realtime Gateway (Port 5008)
+- **Frontend** → `ws://localhost:5100` → API Gateway → Realtime Gateway (Port 5008)
 - Used for: Live notifications, multiplayer challenges, collaboration
 
 #### 4. **Database Communication**
@@ -194,7 +194,7 @@ docker compose -f docker-compose.dev.yml up -d \
   - Redis (Port 6379)
   - InfluxDB (Port 8086)
   - Mongo Express (Port 8081) - DB admin UI
-- ✅ **API Gateway** (Port 5000) - Routing and load balancing
+- ✅ **API Gateway** (Port 5100) - Routing and load balancing
 - ✅ **All Microservices** - For monitoring and scaling
 
 **Infrastructure Needed:**
@@ -222,7 +222,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 ### Backend Team
 **Primary Services:**
-- ✅ **API Gateway** (Port 5000) - Entry point
+- ✅ **API Gateway** (Port 5100) - Entry point
 - ✅ **Auth Service** (Port 5001) - Authentication
 - ✅ **Task Orchestrator** (Port 5002) - Task management
 - ✅ **Engagement Service** (Port 5003) - Gamification
@@ -246,12 +246,13 @@ docker compose -f docker-compose.dev.yml up -d
 **Start Command:**
 ```bash
 # Start all backend services
-docker compose -f docker-compose.dev.yml up -d \
-  mongodb redis influxdb \
-  api-gateway auth-service task-orchestrator \
+# Use team-specific compose file for isolated environment
+docker compose -f docker-compose.backend-team.yml up -d \
+  frontend-dev api-gateway auth-service task-orchestrator \
   engagement-service platform-analytics-service \
   notification-service external-bridge-service \
   challenge-service realtime-gateway
+# Infrastructure (mongodb, redis, influxdb, mongo-express) starts automatically
 ```
 
 ---
@@ -259,13 +260,13 @@ docker compose -f docker-compose.dev.yml up -d \
 ###  Frontend Team
 
 **Primary Services:**
-- ✅ **Frontend Service** (Port 3000) - React application
-- ✅ **API Gateway** (Port 5000) - Backend API
+- ✅ **Frontend Service** (Port 5173) - React application
 - ✅ **Realtime Gateway** (Port 5008) - WebSocket for real-time features
 
 **Infrastructure Needed:**
-- ✅ **All Backend Services** - For API calls
-- ✅ **MongoDB** (optional) - For direct DB access in dev
+- ✅ **API Gateway** (Port 5100) - Routes all API calls from frontend
+- ✅ **All Backend Services** - For API calls (auth-service, task-orchestrator, engagement-service, platform-analytics-service, notification-service, external-bridge-service, challenge-service, realtime-gateway)
+- ✅ **MongoDB, Redis, InfluxDB** - Database infrastructure
 
 **What They Work On:**
 - `deepiri-web-frontend/` - React frontend
@@ -275,13 +276,13 @@ docker compose -f docker-compose.dev.yml up -d \
 
 **Start Command:**
 ```bash
-# Start frontend + backend
-docker compose -f docker-compose.dev.yml up -d \
-  mongodb redis influxdb \
-  api-gateway auth-service task-orchestrator \
+# Start frontend + all backend services needed by api-gateway
+# Note: Frontend needs api-gateway to route API calls, and api-gateway depends on all these services
+docker compose -f docker-compose.frontend-team.yml up -d \
+  frontend-dev api-gateway auth-service task-orchestrator \
   engagement-service platform-analytics-service \
   notification-service external-bridge-service \
-  challenge-service realtime-gateway frontend
+  challenge-service realtime-gateway
 ```
 
 ---
@@ -345,7 +346,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 | Service | Port | Team |
 |---------|------|------|
-| API Gateway | 5000 | Backend, Platform, QA |
+| API Gateway | 5100 | Backend, Frontend, Platform, QA |
 | Auth Service | 5001 | Backend, QA |
 | Task Orchestrator | 5002 | Backend, QA |
 | Engagement Service | 5003 | Backend, QA |
@@ -355,7 +356,7 @@ docker compose -f docker-compose.dev.yml up -d
 | Challenge Service | 5007 | Backend, AI, QA |
 | Realtime Gateway | 5008 | Backend, Frontend, QA |
 | Cyrex AI | 8000 | AI, ML, QA |
-| Frontend | 3000 | Frontend, QA |
+| Frontend | 5173 | Frontend, QA |
 | MongoDB | 27017 | Infrastructure, All Teams |
 | Redis | 6379 | Infrastructure, Backend |
 | InfluxDB | 8086 | Infrastructure, Backend, ML, AI |
@@ -391,7 +392,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 ### Example 1: User Creates a Task
 ```
-Frontend → API Gateway (5000)
+Frontend → API Gateway (5100)
   → Task Orchestrator (5002)
     → MongoDB (stores task)
     → Engagement Service (5003) [async]
@@ -405,7 +406,7 @@ Frontend → API Gateway (5000)
 
 ### Example 2: Generate Challenge
 ```
-Frontend → API Gateway (5000)
+Frontend → API Gateway (5100)
   → Challenge Service (5007)
     → Cyrex AI Service (8000)
       → Generates challenge
@@ -432,7 +433,7 @@ Frontend → Realtime Gateway (5008) [WebSocket]
 
 All services expose `/health` endpoints:
 ```bash
-curl http://localhost:5000/health  # API Gateway
+curl http://localhost:5100/health  # API Gateway
 curl http://localhost:5001/health  # Auth Service
 curl http://localhost:5002/health # Task Orchestrator
 # ... etc

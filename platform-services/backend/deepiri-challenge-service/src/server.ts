@@ -1,5 +1,5 @@
 import express, { Express, Request, Response, ErrorRequestHandler } from 'express';
-import mongoose from 'mongoose';
+// MongoDB removed - challenge service uses Cyrex API
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -21,10 +21,8 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-const MONGO_URI: string = process.env.MONGO_URI || 'mongodb://mongodb:27017/deepiri';
-mongoose.connect(MONGO_URI)
-  .then(() => logger.info('Challenge Service: Connected to MongoDB'))
-  .catch((err: Error) => logger.error('Challenge Service: MongoDB connection error', err));
+// PostgreSQL connection via Prisma (if needed for challenge storage)
+// For now, challenges are generated via Cyrex API
 
 const CYREX_URL: string = process.env.CYREX_URL || 'http://cyrex:8000';
 

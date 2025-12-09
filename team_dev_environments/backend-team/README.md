@@ -4,10 +4,22 @@
 
 This directory contains build and start scripts for the Backend Team's development environment.
 
+## ⚠️ Initial Setup (One-Time)
+
+**Before using this environment, set up Git hooks from the repository root:**
+
+```bash
+# From repository root
+cd ../..
+./setup-hooks.sh
+```
+
+This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../../BRANCH_PROTECTION.md) for details.
+
 ## Services
 
 **Primary Services:**
-- ✅ **API Gateway** (Port 5000) - Entry point
+- ✅ **API Gateway** (Port 5100) - Entry point (uses 5100 to avoid macOS AirPlay conflict on 5000)
 - ✅ **Auth Service** (Port 5001) - Authentication
 - ✅ **Task Orchestrator** (Port 5002) - Task management
 - ✅ **Engagement Service** (Port 5003) - Gamification
@@ -18,7 +30,7 @@ This directory contains build and start scripts for the Backend Team's developme
 - ✅ **Realtime Gateway** (Port 5008) - WebSocket
 
 **Infrastructure:**
-- ✅ **MongoDB** (Port 27017) - All services use MongoDB
+- ✅ **PostgreSQL** (Port 5432) - All services use PostgreSQL
 - ✅ **Redis** (Port 6380) - Engagement and Notification services
 - ✅ **InfluxDB** (Port 8086) - Auth and Analytics services
 
@@ -54,7 +66,7 @@ This starts all infrastructure and backend services.
 ```bash
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
-  mongodb redis influxdb \
+  postgres redis influxdb \
   api-gateway auth-service task-orchestrator \
   engagement-service platform-analytics-service \
   notification-service external-bridge-service \
@@ -141,7 +153,7 @@ docker compose -f docker-compose.dev.yml logs -f task-orchestrator
 
 ## Service URLs
 
-- **API Gateway**: http://localhost:5000
+- **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Auth Service**: http://localhost:5001
 - **Task Orchestrator**: http://localhost:5002
 - **Engagement Service**: http://localhost:5003
@@ -150,4 +162,16 @@ docker compose -f docker-compose.dev.yml logs -f task-orchestrator
 - **External Bridge**: http://localhost:5006
 - **Challenge Service**: http://localhost:5007
 - **Realtime Gateway**: http://localhost:5008
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. The database includes:
+- `public` schema - Main application data (users, tasks, quests, rewards, etc.)
+- `analytics` schema - Analytics and metrics (momentum, streaks, boosts, etc.)
+- `audit` schema - Audit logs and history
+
+For services using Prisma (e.g., engagement-service), migrations are handled automatically during service startup. The Prisma client is generated during the Docker build process.
 

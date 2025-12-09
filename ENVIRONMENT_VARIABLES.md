@@ -21,7 +21,7 @@ Complete reference for all environment variables used in Deepiri. This guide cov
 # Root .env (Docker Compose)
 AI_PROVIDER=localai
 LOCALAI_API_BASE=http://localhost:8080/v1
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
@@ -30,7 +30,7 @@ DEV_CYREX_URL=http://localhost:8000
 # deepiri-core-api/.env
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 AI_PROVIDER=localai
 LOCALAI_API_BASE=http://localhost:8080/v1
@@ -84,10 +84,12 @@ HOST=0.0.0.0
 
 **Database Configuration:**
 ```bash
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
-MONGO_ROOT_USER=admin
-MONGO_ROOT_PASSWORD=password
-MONGO_DB=deepiri
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
+POSTGRES_USER=deepiri
+POSTGRES_PASSWORD=deepiripassword
+POSTGRES_DB=deepiri
+PGADMIN_EMAIL=admin@deepiri.com
+PGADMIN_PASSWORD=admin
 
 REDIS_URL=redis://localhost:6379
 REDIS_HOST=redis
@@ -120,7 +122,7 @@ HOST=0.0.0.0
 
 **Database:**
 ```bash
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 ```
 
@@ -188,15 +190,55 @@ VITE_CYREX_URL=http://localhost:8000
 
 ### ConfigMap vs Secrets
 
-**ConfigMap** (`ops/k8s/configmap.yaml`):
+**ConfigMaps** (`ops/k8s/configmaps/*.yaml`):
 - Non-sensitive configuration
 - Ports, feature flags, URLs
-- Service names (e.g., `mongodb-service:27017`)
+- Service names (e.g., `mongodb:27017`)
+- Each service has its own configmap file
 
 **Secrets** (`ops/k8s/secrets/secrets.yaml`):
 - Sensitive data (passwords, API keys)
 - JWT secrets, database passwords
 - API keys
+- Shared across all services
+
+### Using K8s Config with Docker Compose
+
+**Docker Compose automatically loads environment variables from your k8s configmaps and secrets.**
+
+Configuration files location:
+```
+ops/k8s/
+├── configmaps/
+│   ├── api-gateway-configmap.yaml
+│   ├── auth-service-configmap.yaml
+│   ├── cyrex-configmap.yaml
+│   └── ... (one per service)
+└── secrets/
+    └── secrets.yaml (shared by all services)
+```
+
+**To run containers with k8s config:**
+
+```bash
+# Use the k8s wrapper script (auto-loads configmaps & secrets)
+./docker-compose-k8s.sh -f docker-compose.backend-team.yml up -d    # Linux/Mac
+.\docker-compose-k8s.ps1 -f docker-compose.backend-team.yml up -d   # Windows
+
+# Or use team start scripts (already configured)
+cd team_dev_environments/backend-team
+./start.sh          # Linux/Mac
+.\start.ps1         # Windows
+```
+
+**How it works:**
+1. Wrapper script reads all `ops/k8s/configmaps/*.yaml` files
+2. Extracts environment variables from `data:` sections
+3. Reads `ops/k8s/secrets/secrets.yaml`
+4. Extracts secrets from `stringData:` section
+5. Passes all variables to `docker compose`
+
+**Single source of truth:** Edit k8s YAML files → restart containers → done!
 
 ### Kubernetes Service Names
 
@@ -207,6 +249,12 @@ In Kubernetes, services communicate using service names:
 - `cyrex-service:8000` (not `localhost:8000`)
 - `localai-service:8080` (not `localhost:8080`)
 
+In Docker Compose, use docker service names:
+- `mongodb:27017`
+- `redis:6379`
+- `api-gateway:5000`
+- `cyrex:8000`
+
 ---
 
 ## Variable Categories
@@ -214,7 +262,7 @@ In Kubernetes, services communicate using service names:
 ### Required Variables
 
 **For Local Development:**
-- `MONGODB_URI` - MongoDB connection string
+- `DATABASE_URL` - PostgreSQL connection string
 - `REDIS_URL` - Redis connection string
 - `JWT_SECRET` - JWT signing secret
 - `AI_PROVIDER` - AI provider (localai/openai/deepinfra)
@@ -266,7 +314,7 @@ In Kubernetes, services communicate using service names:
 ```bash
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 ```
 
 ### Cloud/Production
@@ -280,7 +328,7 @@ MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
 **Example (Kubernetes Secret):**
 ```yaml
 # In cloud K8s Secret (not .env file)
-MONGODB_URI: mongodb+srv://user:pass@cluster.mongodb.net/deepiri_prod
+DATABASE_URL: postgresql://user:pass@postgres-cluster.example.com:5432/deepiri_prod
 CLIENT_URL: https://deepiri.com
 API_URL: https://api.deepiri.com
 ```
@@ -301,9 +349,12 @@ API_URL: https://api.deepiri.com
 
 | Variable | Description | Example | Required |
 |----------|-------------|---------|----------|
-| `MONGODB_URI` | MongoDB connection string | `mongodb://admin:password@localhost:27017/deepiri?authSource=admin` | Yes |
-| `MONGO_ROOT_USER` | MongoDB admin user | `admin` | Yes |
-| `MONGO_ROOT_PASSWORD` | MongoDB admin password | `password` | Yes |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://deepiri:deepiripassword@localhost:5432/deepiri` | Yes |
+| `POSTGRES_USER` | PostgreSQL database user | `deepiri` | Yes |
+| `POSTGRES_PASSWORD` | PostgreSQL database password | `deepiripassword` | Yes |
+| `POSTGRES_DB` | PostgreSQL database name | `deepiri` | Yes |
+| `PGADMIN_EMAIL` | pgAdmin admin email | `admin@deepiri.com` | No |
+| `PGADMIN_PASSWORD` | pgAdmin admin password | `admin` | No |
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379` | Yes |
 | `REDIS_PASSWORD` | Redis password | `redispassword` | Optional |
 
@@ -351,7 +402,7 @@ API_URL: https://api.deepiri.com
 # Root .env
 AI_PROVIDER=localai
 LOCALAI_API_BASE=http://localhost:8080/v1
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
@@ -366,7 +417,7 @@ AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_API_BASE=https://api.openai.com/v1
 OPENAI_MODEL=gpt-4o-mini
-MONGODB_URI=mongodb://admin:password@localhost:27017/deepiri?authSource=admin
+DATABASE_URL=postgresql://deepiri:deepiripassword@localhost:5432/deepiri
 REDIS_URL=redis://localhost:6379
 DEV_CLIENT_URL=http://localhost:5173
 DEV_API_URL=http://localhost:5000/api
@@ -379,14 +430,14 @@ DEV_CYREX_URL=http://localhost:8000
 ```yaml
 AI_PROVIDER: "localai"
 LOCALAI_API_BASE: "http://localai-service:8080/v1"
-MONGODB_URI: "mongodb://admin:password@mongodb-service:27017/deepiri?authSource=admin"
+DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres-service:5432/deepiri"
 REDIS_URL: "redis://:password@redis-service:6379"
 ```
 
 **Secrets:**
 ```yaml
 JWT_SECRET: "your-secret-key"
-MONGO_ROOT_PASSWORD: "password"
+POSTGRES_PASSWORD: "deepiripassword"
 REDIS_PASSWORD: "redispassword"
 ```
 

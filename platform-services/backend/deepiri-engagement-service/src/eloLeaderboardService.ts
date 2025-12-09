@@ -1,14 +1,14 @@
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import prisma from './db';
 
 const logger = createLogger('elo-leaderboard-service');
 
 type Category = 'overall' | 'coding' | 'creative' | 'study' | 'productivity' | 'social';
 type MatchResult = 'win' | 'loss' | 'draw' | 1.0 | 0.5 | 0.0;
 
-interface IELORating extends Document {
-  userId: Types.ObjectId;
+interface IELORating {
+  userId: string;
   rating: number;
   peakRating: number;
   wins: number;
@@ -20,27 +20,6 @@ interface IELORating extends Document {
   category: Category;
   lastUpdated: Date;
 }
-
-const ELORatingSchema = new Schema<IELORating>({
-  userId: { type: Schema.Types.ObjectId, required: true, unique: true, index: true },
-  rating: { type: Number, default: 1500, index: true },
-  peakRating: { type: Number, default: 1500 },
-  wins: { type: Number, default: 0 },
-  losses: { type: Number, default: 0 },
-  draws: { type: Number, default: 0 },
-  totalMatches: { type: Number, default: 0 },
-  winStreak: { type: Number, default: 0 },
-  bestWinStreak: { type: Number, default: 0 },
-  category: { type: String, default: 'overall', index: true },
-  lastUpdated: { type: Date, default: Date.now }
-}, {
-  timestamps: true
-});
-
-ELORatingSchema.index({ category: 1, rating: -1 });
-ELORatingSchema.index({ userId: 1, category: 1 }, { unique: true });
-
-const ELORating: Model<IELORating> = mongoose.model<IELORating>('ELORating', ELORatingSchema);
 
 class ELOLeaderboardService {
   private readonly K_FACTOR = 32;
@@ -72,8 +51,8 @@ class ELOLeaderboardService {
       }
 
       const updateResult = await this.updateRatings(
-        new Types.ObjectId(userId1),
-        new Types.ObjectId(userId2),
+        userId1,
+        userId2,
         result,
         category as Category
       );
@@ -84,21 +63,23 @@ class ELOLeaderboardService {
     }
   }
 
-  private async getOrCreateRating(userId: Types.ObjectId, category: Category = 'overall'): Promise<IELORating> {
+  private async getOrCreateRating(userId: string, category: Category = 'overall'): Promise<IELORating> {
     try {
-      let rating = await ELORating.findOne({ userId, category });
-      
-      if (!rating) {
-        rating = new ELORating({
-          userId,
-          category,
-          rating: this.INITIAL_RATING,
-          peakRating: this.INITIAL_RATING
-        });
-        await rating.save();
-      }
-      
-      return rating;
+      // TODO: Implement with Prisma when ELO Rating model is added
+      logger.warn('ELO rating system not yet migrated to Prisma');
+      return {
+        userId,
+        category,
+        rating: this.INITIAL_RATING,
+        peakRating: this.INITIAL_RATING,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        totalMatches: 0,
+        winStreak: 0,
+        bestWinStreak: 0,
+        lastUpdated: new Date()
+      };
     } catch (error) {
       logger.error('Error getting ELO rating:', error);
       throw error;
@@ -109,7 +90,7 @@ class ELOLeaderboardService {
     return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
   }
 
-  private async updateRatings(userId1: Types.ObjectId, userId2: Types.ObjectId, result: MatchResult, category: Category = 'overall') {
+  private async updateRatings(userId1: string, userId2: string, result: MatchResult, category: Category = 'overall') {
     try {
       const rating1 = await this.getOrCreateRating(userId1, category);
       const rating2 = await this.getOrCreateRating(userId2, category);
@@ -165,8 +146,8 @@ class ELOLeaderboardService {
       rating1.lastUpdated = new Date();
       rating2.lastUpdated = new Date();
 
-      await rating1.save();
-      await rating2.save();
+      // TODO: Save with Prisma when ELO Rating model is added
+      logger.warn('ELO rating updates not yet persisted to database');
 
       logger.info('ELO ratings updated', {
         userId1,
@@ -196,27 +177,9 @@ class ELOLeaderboardService {
 
   private async getLeaderboardData(category: Category = 'overall', limit: number = 100, offset: number = 0) {
     try {
-      const ratings = await ELORating.find({ category })
-        .populate('userId', 'name email avatar')
-        .sort({ rating: -1 })
-        .skip(offset)
-        .limit(limit)
-        .select('userId rating peakRating wins losses draws totalMatches winStreak bestWinStreak');
-
-      const leaderboard = ratings.map((rating, index) => ({
-        rank: offset + index + 1,
-        user: rating.userId,
-        rating: rating.rating,
-        peakRating: rating.peakRating,
-        wins: rating.wins,
-        losses: rating.losses,
-        draws: rating.draws,
-        winRate: rating.totalMatches > 0 ? (rating.wins / rating.totalMatches) * 100 : 0,
-        winStreak: rating.winStreak,
-        bestWinStreak: rating.bestWinStreak
-      }));
-
-      return leaderboard;
+      // TODO: Implement with Prisma when ELO Rating model is added
+      logger.warn('ELO leaderboard not yet migrated to Prisma');
+      return [];
     } catch (error) {
       logger.error('Error getting leaderboard:', error);
       throw error;

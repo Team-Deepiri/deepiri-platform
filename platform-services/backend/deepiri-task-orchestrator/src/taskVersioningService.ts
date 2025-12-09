@@ -1,60 +1,10 @@
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import prisma from './db';
 
 const logger = createLogger('task-versioning-service');
 
 type ChangeType = 'create' | 'update' | 'delete' | 'restore';
-
-interface ITaskVersion extends Document {
-  taskId: Types.ObjectId;
-  version: number;
-  userId: Types.ObjectId;
-  changes: {
-    title?: string;
-    description?: string;
-    status?: string;
-    priority?: string;
-    dueDate?: Date;
-    tags?: string[];
-    metadata?: Record<string, any>;
-  };
-  changeType: ChangeType;
-  changedBy: Types.ObjectId;
-  changeReason?: string;
-  snapshot: Record<string, any>;
-  createdAt: Date;
-}
-
-const TaskVersionSchema = new Schema<ITaskVersion>({
-  taskId: { type: Schema.Types.ObjectId, required: true, index: true },
-  version: { type: Number, required: true },
-  userId: { type: Schema.Types.ObjectId, required: true, index: true },
-  changes: {
-    title: { type: String },
-    description: { type: String },
-    status: { type: String },
-    priority: { type: String },
-    dueDate: { type: Date },
-    tags: [String],
-    metadata: Schema.Types.Mixed
-  },
-  changeType: {
-    type: String,
-    enum: ['create', 'update', 'delete', 'restore'],
-    required: true
-  },
-  changedBy: { type: Schema.Types.ObjectId, required: true },
-  changeReason: { type: String },
-  snapshot: Schema.Types.Mixed,
-  createdAt: { type: Date, default: Date.now }
-}, {
-  timestamps: false
-});
-
-TaskVersionSchema.index({ taskId: 1, version: 1 }, { unique: true });
-
-const TaskVersion: Model<ITaskVersion> = mongoose.model<ITaskVersion>('TaskVersion', TaskVersionSchema);
 
 class TaskVersioningService {
   async getTasks(req: Request, res: Response): Promise<void> {
@@ -76,11 +26,7 @@ class TaskVersioningService {
         return;
       }
 
-      const version = await this.createInitialVersion(
-        new Types.ObjectId(taskId),
-        new Types.ObjectId(userId),
-        taskData
-      );
+      const version = await this.createInitialVersion(taskId, userId, taskData);
       res.json(version);
     } catch (error: any) {
       logger.error('Error creating task:', error);
@@ -98,12 +44,7 @@ class TaskVersioningService {
         return;
       }
 
-      const version = await this.createVersion(
-        new Types.ObjectId(id),
-        new Types.ObjectId(userId),
-        changes,
-        changeReason
-      );
+      const version = await this.createVersion(id, userId, changes, changeReason);
       res.json(version);
     } catch (error: any) {
       logger.error('Error updating task:', error);
@@ -115,10 +56,7 @@ class TaskVersioningService {
     try {
       const { id } = req.params;
       const { limit = 50 } = req.query;
-      const versions = await this.getVersionHistory(
-        new Types.ObjectId(id),
-        parseInt(limit as string, 10)
-      );
+      const versions = await this.getVersionHistory(id, parseInt(limit as string, 10));
       res.json(versions);
     } catch (error: any) {
       logger.error('Error getting versions:', error);
@@ -126,19 +64,22 @@ class TaskVersioningService {
     }
   }
 
-  private async createInitialVersion(taskId: Types.ObjectId, userId: Types.ObjectId, taskData: Record<string, any>) {
+  private async createInitialVersion(taskId: string, userId: string, taskData: Record<string, any>) {
     try {
-      const version = new TaskVersion({
-        taskId,
-        version: 1,
-        userId,
-        changes: taskData,
-        changeType: 'create',
-        changedBy: userId,
-        snapshot: taskData
+      const version = await prisma.taskVersion.create({
+        data: {
+          taskId,
+          version: 1,
+          title: taskData.title,
+          description: taskData.description,
+          status: taskData.status,
+          priority: taskData.priority,
+          changesSummary: 'Initial version',
+          changedBy: userId,
+          metadata: taskData as any
+        }
       });
 
-      await version.save();
       logger.info('Initial task version created', { taskId, version: 1 });
       return version;
     } catch (error) {
@@ -148,32 +89,42 @@ class TaskVersioningService {
   }
 
   private async createVersion(
-    taskId: Types.ObjectId,
-    userId: Types.ObjectId,
+    taskId: string,
+    userId: string,
     changes: Record<string, any>,
     changeReason: string | null = null
   ) {
     try {
-      const currentVersion = await TaskVersion.findOne({ taskId })
-        .sort({ version: -1 })
-        .limit(1);
-
-      const newVersionNumber = currentVersion ? currentVersion.version + 1 : 1;
-      const currentSnapshot = currentVersion?.snapshot || {};
-      const newSnapshot = { ...currentSnapshot, ...changes };
-
-      const version = new TaskVersion({
-        taskId,
-        version: newVersionNumber,
-        userId,
-        changes,
-        changeType: 'update',
-        changedBy: userId,
-        changeReason: changeReason || undefined,
-        snapshot: newSnapshot
+      const currentVersion = await prisma.taskVersion.findFirst({
+        where: { taskId },
+        orderBy: { version: 'desc' }
       });
 
-      await version.save();
+      const newVersionNumber = currentVersion ? currentVersion.version + 1 : 1;
+
+      const version = await prisma.taskVersion.create({
+        data: {
+          taskId,
+          version: newVersionNumber,
+          title: changes.title,
+          description: changes.description,
+          status: changes.status,
+          priority: changes.priority,
+          changesSummary: changeReason || 'Task updated',
+          changedBy: userId,
+          metadata: changes as any
+        },
+        include: {
+          changedByUser: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+
       logger.info('Task version created', { taskId, version: newVersionNumber });
       return version;
     } catch (error) {
@@ -182,15 +133,37 @@ class TaskVersioningService {
     }
   }
 
-  private async getVersionHistory(taskId: Types.ObjectId, limit: number = 50) {
+  private async getVersionHistory(taskId: string, limit: number = 50) {
     try {
-      const versions = await TaskVersion.find({ taskId })
-        .sort({ version: -1 })
-        .limit(limit)
-        .populate('changedBy', 'name email')
-        .select('version changes changeType changedBy changeReason createdAt snapshot');
+      const versions = await prisma.taskVersion.findMany({
+        where: { taskId },
+        orderBy: { version: 'desc' },
+        take: limit,
+        include: {
+          changedByUser: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
 
-      return versions;
+      return versions.map((v: typeof versions[0]) => ({
+        version: v.version,
+        changes: {
+          title: v.title,
+          description: v.description,
+          status: v.status,
+          priority: v.priority
+        },
+        changeType: 'update',
+        changedBy: v.changedByUser,
+        changeReason: v.changesSummary,
+        createdAt: v.createdAt,
+        metadata: v.metadata
+      }));
     } catch (error) {
       logger.error('Error getting version history:', error);
       throw error;
@@ -199,4 +172,3 @@ class TaskVersioningService {
 }
 
 export default new TaskVersioningService();
-

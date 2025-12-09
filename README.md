@@ -1,68 +1,79 @@
-# Deepiri - AI-Powered Learning Platform
+# Deepiri 
 
-> **Quick Start:** Run `./build.sh` (Linux/Mac/WSL) or `.\build.ps1` (Windows), then `docker compose -f docker-compose.dev.yml up -d`
+> **NEW TO THE PROJECT?** Start here: [START_HERE.md](START_HERE.md)  
+> **FIND YOUR TEAM:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)  
+> **🌟 Quick Start (All Services):** `python run_dev.py` - Runs full stack with K8s config!
 
-## What is Deepiri?
 
-Deepiri is an AI-powered learning and development platform featuring:
-- 🤖 AI agents (Cyrex) for intelligent assistance
-- 🎮 Gamification and challenges
-- 📊 Real-time analytics
-- 🔔 Notifications and webhooks
-- 🌐 External integrations (GitHub, Notion, Trello)
-- 📝 Jupyter notebooks for research
+### For New Team Members
 
-## Getting Started
+1. **Find your roles:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
+2. **Follow your team's path:** [START_HERE.md](START_HERE.md)
+3. **Git hooks:** Automatically configured on clone (protects main and dev branches)
+
+### Quick Build & Run
+
+```bash
+# 1. Clone the repository
+git clone <deepiri-platform repo>
+cd deepiri-platform
+
+# 2. One-time setup
+pip install pyyaml
+touch ops/k8s/secrets/secrets.yaml  # Create empty secrets file (see ops/k8s/secrets/README.md)
+
+# 3. Build all services (auto-cleans dangling images)
+./build.sh              # Linux/Mac/WSL
+.\build.ps1             # Windows PowerShell
+
+# 4. Start the full stack (with K8s config!)
+python run_dev.py       # 🌟 Recommended - loads k8s configmaps & secrets
+
+# OR use docker compose directly
+docker compose -f docker-compose.dev.yml up -d
+
+# 5. Access services
+# - Frontend: http://localhost:5173
+# - API Gateway: http://localhost:5100
+# - Cyrex AI: http://localhost:8000
+# - Jupyter: http://localhost:8888
+# - MLflow: http://localhost:5500
+```
 
 ### Prerequisites
 - Docker & Docker Compose
 - WSL2 (Windows only)
 - 8GB+ RAM recommended
 
-### Build & Run
-
-```bash
-# 1. Clone the repository
-git clone <your-repo-url>
-cd deepiri
-
-# 2. Build all services (auto-cleans dangling images)
-./build.sh              # Linux/Mac/WSL
-.\build.ps1             # Windows PowerShell
-
-# 3. Start the stack
-docker compose -f docker-compose.dev.yml up -d
-
-# 4. Access services
-# - Frontend: http://localhost:5173
-# - API Gateway: http://localhost:5000
-# - Cyrex AI: http://localhost:8000
-# - Jupyter: http://localhost:8888
-# - MLflow: http://localhost:5500
-```
-
-### Stop
+### Stop All Services
 
 ```bash
 docker compose -f docker-compose.dev.yml down
 ```
 
+**Pro Tip:** Use `python run_dev.py` instead of `docker compose` - it auto-loads your k8s config!
+
 ## Documentation
 
 ### Essential Guides
+- **[RUN_DEV_GUIDE.md](RUN_DEV_GUIDE.md)** - 🌟 Run full stack with `python run_dev.py`
+- **[team_dev_environments/QUICK_START.md](team_dev_environments/QUICK_START.md)** - Team-specific environments
 - **[HOW_TO_BUILD.md](HOW_TO_BUILD.md)** - THE definitive build guide
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup walkthrough
 - **[SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)** - Architecture overview
 
 ### Environment Setup
-- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - All environment variables
+- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - All environment variables (includes k8s config integration)
 - **[docker-compose.dev.yml](docker-compose.dev.yml)** - Development configuration
+- **[ops/k8s/](ops/k8s/)** - Kubernetes configmaps and secrets (also used by Docker Compose)
 
 ### Troubleshooting
 - **[scripts/STORAGE-TROUBLESHOOTING.md](scripts/STORAGE-TROUBLESHOOTING.md)** - Disk space issues
 - **[docs/LOG_INSPECTION_GUIDE.md](docs/LOG_INSPECTION_GUIDE.md)** - Debugging logs
 
-### Team-Specific
+### Team-Specific (Find Your Team First!)
+- **👉 Start here:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md) - Find your team and role
+- **👉 Complete setup:** [START_HERE.md](START_HERE.md) - Step-by-step getting started guide
 - **[docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)** - AI/ML development
 - **[docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)** - Backend services
 - **[docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)** - Frontend development
@@ -82,11 +93,12 @@ docker compose -f docker-compose.dev.yml down
 
 ### AI/ML Services
 - **Cyrex** (Port 8000) - AI agent API
+- **Cyrex UI** (Port 5175) - UI for AI agent testing
 - **Jupyter** (Port 8888) - Research notebooks
 - **MLflow** (Port 5500) - Experiment tracking
 
 ### Infrastructure
-- **MongoDB** (Port 27017) - Primary database
+- **PostgreSQL** (Port 5432) - Primary database for users, roles, tasks, quests, metadata
 - **Redis** (Port 6380) - Cache & sessions
 - **InfluxDB** (Port 8086) - Time-series analytics
 
@@ -133,13 +145,26 @@ docker compose -f docker-compose.dev.yml down
 ```
 
 ### Running only services you need for your team
+
+**🌟 Recommended:** Use Python scripts (professional K8s-like workflow):
 ```bash
-docker compose -f docker-compose.<team_name>-team.yml up -d
-# Examples:
-docker compose -f docker-compose.ai-team.yml up -d
-docker compose -f docker-compose.backend-team.yml up -d
-docker compose -f docker-compose.frontend-team.yml up -d
+cd team_dev_environments/backend-team
+python run.py         # Auto-loads k8s configmaps & secrets!
 ```
+
+**Alternative:** Use shell scripts:
+```bash
+cd team_dev_environments/backend-team
+./start.sh            # Linux/Mac
+.\start.ps1           # Windows
+```
+
+**Or use docker compose directly:**
+```bash
+docker compose -f docker-compose.backend-team.yml up -d
+```
+
+**👉 Python scripts are recommended** - they mimic Kubernetes by loading config from `ops/k8s/` automatically. No `.env` files needed!
 
 ### Stopping those services
 ```bash
@@ -219,13 +244,14 @@ deepiri/
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run `./build.sh` to test
-5. Submit a pull request
+1. **Git hooks:** Automatically configured on clone (protects main and dev branches)
+2. Fork the repository
+3. Create a feature branch (NOT from main or dev)
+4. Make your changes
+5. Run `./build.sh` to test
+6. Submit a pull request to `staging` (NOT main or dev)
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for complete workflow details.
 
 ## License
 
@@ -240,3 +266,7 @@ See [LICENSE.md](LICENSE.md)
 ---
 
 **Note:** Old Skaffold-based build docs are archived in `docs/archive/skaffold/` for reference only. Use the Docker Compose workflow documented in [HOW_TO_BUILD.md](HOW_TO_BUILD.md).
+
+
+
+

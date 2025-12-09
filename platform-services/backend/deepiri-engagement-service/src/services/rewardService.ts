@@ -1,13 +1,33 @@
 import { Request, Response } from 'express';
-import mongoose, { Types } from 'mongoose';
 import { createLogger } from '@deepiri/shared-utils';
-import Reward, { IReward, RewardType } from '../models/Reward';
+import prisma from '../db';
+import { IReward, RewardType } from '../models/Reward';
 import boostService from './boostService';
 import momentumService from './momentumService';
 
 const logger = createLogger('reward-service');
 
 class RewardService {
+  /**
+   * Convert Prisma Reward to IReward
+   */
+  private rewardToInterface(reward: any): IReward {
+    return {
+      userId: reward.userId,
+      rewardType: reward.rewardType as RewardType,
+      amount: reward.amount,
+      source: reward.source as 'streak' | 'momentum' | 'season' | 'achievement' | 'manual',
+      sourceId: reward.sourceId || undefined,
+      description: reward.description,
+      status: reward.status as 'pending' | 'claimed' | 'expired',
+      claimedAt: reward.claimedAt || undefined,
+      expiresAt: reward.expiresAt || undefined,
+      metadata: (reward.metadata as Record<string, any>) || undefined,
+      createdAt: reward.createdAt,
+      updatedAt: reward.updatedAt
+    };
+  }
+
   /**
    * Create a reward
    */
@@ -21,20 +41,21 @@ class RewardService {
     expiresAt?: Date
   ): Promise<IReward> {
     try {
-      const reward = new Reward({
-        userId: new Types.ObjectId(userId),
-        rewardType,
-        amount,
-        source,
-        sourceId,
-        description,
-        status: 'pending',
-        expiresAt
+      const reward = await prisma.reward.create({
+        data: {
+          userId,
+          rewardType,
+          amount,
+          source,
+          sourceId: sourceId || undefined,
+          description,
+          status: 'pending',
+          expiresAt: expiresAt || undefined,
+          metadata: {}
+        }
       });
       
-      await reward.save();
-      
-      return reward;
+      return this.rewardToInterface(reward);
     } catch (error: any) {
       logger.error('Error creating reward:', error);
       throw error;
@@ -46,7 +67,9 @@ class RewardService {
    */
   async claimReward(rewardId: string): Promise<IReward> {
     try {
-      const reward = await Reward.findById(rewardId);
+      const reward = await prisma.reward.findUnique({
+        where: { id: rewardId }
+      });
       
       if (!reward) {
         throw new Error('Reward not found');
@@ -57,19 +80,21 @@ class RewardService {
       }
       
       if (reward.expiresAt && new Date() > reward.expiresAt) {
-        reward.status = 'expired';
-        await reward.save();
+        await prisma.reward.update({
+          where: { id: rewardId },
+          data: { status: 'expired' }
+        });
         throw new Error('Reward has expired');
       }
       
       // Apply the reward based on type
       switch (reward.rewardType) {
         case 'boost_credits':
-          await boostService.addCredits(reward.userId.toString(), reward.amount);
+          await boostService.addCredits(reward.userId, reward.amount);
           break;
         case 'momentum_bonus':
           await momentumService.awardMomentum(
-            reward.userId.toString(),
+            reward.userId,
             reward.amount,
             'tasks' // Default source
           );
@@ -81,11 +106,15 @@ class RewardService {
           break;
       }
       
-      reward.status = 'claimed';
-      reward.claimedAt = new Date();
-      await reward.save();
+      const updatedReward = await prisma.reward.update({
+        where: { id: rewardId },
+        data: {
+          status: 'claimed',
+          claimedAt: new Date()
+        }
+      });
       
-      return reward;
+      return this.rewardToInterface(updatedReward);
     } catch (error: any) {
       logger.error('Error claiming reward:', error);
       throw error;
@@ -97,17 +126,20 @@ class RewardService {
    */
   async getRewards(userId: string, status?: 'pending' | 'claimed' | 'expired'): Promise<IReward[]> {
     try {
-      const query: any = { userId: new Types.ObjectId(userId) };
+      const where: any = { userId };
       
       if (status) {
-        query.status = status;
+        where.status = status;
       }
       
-      const rewards = await Reward.find(query)
-        .sort({ createdAt: -1 })
-        .lean();
+      const rewards = await prisma.reward.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
       
-      return rewards as unknown as IReward[];
+      return rewards.map(reward => this.rewardToInterface(reward));
     } catch (error: any) {
       logger.error('Error getting rewards:', error);
       throw error;
@@ -211,13 +243,15 @@ class RewardService {
         return;
       }
       
-      const count = await Reward.countDocuments({
-        userId: new Types.ObjectId(userId),
-        status: 'pending',
-        $or: [
-          { expiresAt: { $exists: false } },
-          { expiresAt: { $gt: new Date() } }
-        ]
+      const count = await prisma.reward.count({
+        where: {
+          userId,
+          status: 'pending',
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } }
+          ]
+        }
       });
       
       res.json({
@@ -232,4 +266,3 @@ class RewardService {
 }
 
 export default new RewardService();
-

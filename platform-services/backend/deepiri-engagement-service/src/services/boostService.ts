@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import mongoose, { Types } from 'mongoose';
 import { createLogger } from '@deepiri/shared-utils';
-import Boost, { IBoost, BoostType } from '../models/Boost';
+import prisma from '../db';
 
 const logger = createLogger('boost-service');
+
+type BoostType = 'focus' | 'velocity' | 'clarity' | 'debug' | 'cleanup';
 
 const BOOST_DURATIONS: Record<BoostType, number> = {
   focus: 60,      // 60 minutes
@@ -25,19 +26,94 @@ class BoostService {
   /**
    * Get or create boost profile for a user
    */
-  async getOrCreateProfile(userId: string): Promise<IBoost> {
+  async getOrCreateProfile(userId: string) {
     try {
-      let profile = await Boost.findOne({ userId: new Types.ObjectId(userId) });
+      let profile = await prisma.boost.findUnique({
+        where: { userId },
+        include: {
+          activeBoosts: true,
+          boostHistory: { orderBy: { activatedAt: 'desc' }, take: 50 }
+        }
+      });
       
       if (!profile) {
-        profile = new Boost({
-          userId: new Types.ObjectId(userId),
-          boostCredits: 0
+        profile = await prisma.boost.create({
+          data: {
+            userId,
+            boostCredits: 0,
+            maxConcurrentBoosts: 3,
+            maxAutopilotTimePerDay: 0,
+            autopilotTimeUsedToday: 0,
+            lastAutopilotReset: new Date()
+          },
+          include: {
+            activeBoosts: true,
+            boostHistory: true
+          }
         });
-        await profile.save();
       }
       
-      return profile;
+      // Reset autopilot time if it's a new day
+      const now = new Date();
+      const lastReset = profile.lastAutopilotReset;
+      if (lastReset) {
+        const daysDiff = Math.floor((now.getTime() - lastReset.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff >= 1) {
+          profile = await prisma.boost.update({
+            where: { userId },
+            data: {
+              autopilotTimeUsedToday: 0,
+              lastAutopilotReset: now
+            },
+            include: {
+              activeBoosts: true,
+              boostHistory: { orderBy: { activatedAt: 'desc' }, take: 50 }
+            }
+          });
+        }
+      }
+      
+      // Remove expired boosts
+      const nowTime = now.getTime();
+      const activeBoosts = profile.activeBoosts || [];
+      const expiredBoosts = activeBoosts.filter((boost) => 
+        new Date(boost.expiresAt).getTime() <= nowTime
+      );
+      
+      if (expiredBoosts.length > 0) {
+        // Move expired boosts to history
+        for (const boost of expiredBoosts) {
+          await prisma.boostHistory.create({
+            data: {
+              boostId: profile.id,
+              boostType: boost.boostType,
+              activatedAt: boost.activatedAt,
+              expiredAt: new Date(boost.expiresAt),
+              durationMinutes: boost.durationMinutes,
+              creditsUsed: 0,
+              source: 'purchased'
+            }
+          });
+        }
+        
+        // Delete expired active boosts
+        await prisma.activeBoost.deleteMany({
+          where: {
+            id: { in: expiredBoosts.map((b) => b.id) }
+          }
+        });
+        
+        // Refresh profile
+        profile = await prisma.boost.findUnique({
+          where: { userId },
+          include: {
+            activeBoosts: true,
+            boostHistory: { orderBy: { activatedAt: 'desc' }, take: 50 }
+          }
+        })!;
+      }
+      
+      return profile!;
     } catch (error: any) {
       logger.error('Error getting boost profile:', error);
       throw error;
@@ -52,50 +128,61 @@ class BoostService {
     boostType: BoostType,
     source: 'purchased' | 'streak_reward' | 'momentum_reward' | 'season_reward' = 'purchased',
     duration?: number
-  ): Promise<IBoost> {
+  ) {
     try {
       const profile = await this.getOrCreateProfile(userId);
       
       // Check if user has reached max concurrent boosts
-      if (profile.activeBoosts.length >= profile.settings.maxConcurrentBoosts) {
+      if (profile.activeBoosts.length >= profile.maxConcurrentBoosts) {
         throw new Error('Maximum concurrent boosts reached');
       }
       
       // Check autopilot time limit
       const boostDuration = duration || BOOST_DURATIONS[boostType];
-      if (profile.settings.autopilotTimeUsedToday + boostDuration > profile.settings.maxAutopilotTimePerDay) {
+      if (profile.autopilotTimeUsedToday + boostDuration > profile.maxAutopilotTimePerDay) {
         throw new Error('Daily autopilot time limit reached');
       }
       
       // Check if user has enough credits (if purchasing)
+      let newCredits = profile.boostCredits;
       if (source === 'purchased') {
         const cost = BOOST_CREDIT_COSTS[boostType];
         if (profile.boostCredits < cost) {
           throw new Error('Insufficient boost credits');
         }
-        profile.boostCredits -= cost;
+        newCredits = profile.boostCredits - cost;
       }
       
       // Activate boost
       const now = new Date();
       const expiresAt = new Date(now.getTime() + boostDuration * 60 * 1000);
       
-      profile.activeBoosts.push({
-        boostType,
-        activatedAt: now,
-        expiresAt,
-        duration: boostDuration,
-        metadata: { source }
+      const activeBoost = await prisma.activeBoost.create({
+        data: {
+          boostId: profile.id,
+          boostType,
+          expiresAt,
+          durationMinutes: boostDuration,
+          multiplier: 1.0
+        }
       });
       
-      // Update autopilot time
-      profile.settings.autopilotTimeUsedToday += boostDuration;
-      
-      await profile.save();
+      // Update boost profile
+      const updated = await prisma.boost.update({
+        where: { userId },
+        data: {
+          boostCredits: newCredits,
+          autopilotTimeUsedToday: profile.autopilotTimeUsedToday + boostDuration
+        },
+        include: {
+          activeBoosts: true,
+          boostHistory: { orderBy: { activatedAt: 'desc' }, take: 50 }
+        }
+      });
       
       logger.info(`Boost activated: ${boostType} for user ${userId}`);
       
-      return profile;
+      return updated;
     } catch (error: any) {
       logger.error('Error activating boost:', error);
       throw error;
@@ -105,13 +192,11 @@ class BoostService {
   /**
    * Get active boosts for a user
    */
-  async getActiveBoosts(userId: string): Promise<IBoost['activeBoosts']> {
+  async getActiveBoosts(userId: string) {
     try {
       const profile = await this.getOrCreateProfile(userId);
-      
-      // Remove expired boosts (handled in pre-save, but check here too)
       const now = new Date();
-      return profile.activeBoosts.filter(boost => boost.expiresAt > now);
+      return profile.activeBoosts.filter((boost) => new Date(boost.expiresAt) > now);
     } catch (error: any) {
       logger.error('Error getting active boosts:', error);
       throw error;
@@ -121,12 +206,16 @@ class BoostService {
   /**
    * Add boost credits
    */
-  async addCredits(userId: string, amount: number): Promise<IBoost> {
+  async addCredits(userId: string, amount: number) {
     try {
       const profile = await this.getOrCreateProfile(userId);
-      profile.boostCredits += amount;
-      await profile.save();
-      return profile;
+      const updated = await prisma.boost.update({
+        where: { userId },
+        data: {
+          boostCredits: { increment: amount }
+        }
+      });
+      return updated;
     } catch (error: any) {
       logger.error('Error adding boost credits:', error);
       throw error;
@@ -161,9 +250,15 @@ class BoostService {
       res.json({
         success: true,
         data: {
-          activeBoosts: profile.activeBoosts,
+          activeBoosts: profile.activeBoosts.map((ab) => ({
+            boostType: ab.boostType,
+            activatedAt: ab.activatedAt,
+            expiresAt: ab.expiresAt,
+            duration: ab.durationMinutes,
+            metadata: ab.metadata
+          })),
           boostCredits: profile.boostCredits,
-          autopilotTimeRemaining: profile.settings.maxAutopilotTimePerDay - profile.settings.autopilotTimeUsedToday
+          autopilotTimeRemaining: profile.maxAutopilotTimePerDay - profile.autopilotTimeUsedToday
         }
       });
     } catch (error: any) {
@@ -189,10 +284,21 @@ class BoostService {
       res.json({
         success: true,
         data: {
-          activeBoosts: profile.activeBoosts,
+          activeBoosts: profile.activeBoosts.map((ab) => ({
+            boostType: ab.boostType,
+            activatedAt: ab.activatedAt,
+            expiresAt: ab.expiresAt,
+            duration: ab.durationMinutes,
+            metadata: ab.metadata
+          })),
           boostCredits: profile.boostCredits,
-          settings: profile.settings,
-          autopilotTimeRemaining: profile.settings.maxAutopilotTimePerDay - profile.settings.autopilotTimeUsedToday
+          settings: {
+            maxConcurrentBoosts: profile.maxConcurrentBoosts,
+            maxAutopilotTimePerDay: profile.maxAutopilotTimePerDay,
+            autopilotTimeUsedToday: profile.autopilotTimeUsedToday,
+            lastAutopilotReset: profile.lastAutopilotReset
+          },
+          autopilotTimeRemaining: profile.maxAutopilotTimePerDay - profile.autopilotTimeUsedToday
         }
       });
     } catch (error: any) {
@@ -247,4 +353,3 @@ class BoostService {
 }
 
 export default new BoostService();
-

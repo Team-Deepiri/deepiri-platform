@@ -73,6 +73,21 @@ docker compose -f docker-compose.dev.yml logs -f jupyter
 
 ## Quick Start
 
+### 0. Initial Repository Setup
+
+**First, clone the repository and set up Git hooks:**
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd deepiri-platform
+
+# Set up Git hooks (REQUIRED - protects main and dev branches)
+./setup-hooks.sh
+```
+
+**⚠️ IMPORTANT:** Git hooks protect the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) for details.
+
 ### 1. Environment Setup
 
 ```bash

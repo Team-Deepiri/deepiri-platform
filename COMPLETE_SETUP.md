@@ -11,7 +11,7 @@ This guide covers:
 
 ## Quick Reference
 
-### Setup Minikube (for Kubernetes/Skaffold builds)
+### Setup Minikube (ONLY FOR PRODUCTION / USING  Kubernetes/Skaffold builds)
 ```bash
 # Check if Minikube is running
 minikube status
@@ -40,6 +40,9 @@ Only build if:
 3. **First time setup**
 
 **Note:** With hot reload enabled, code changes don't require rebuilds - just restart the service!
+
+
+## TYPICALLY JUST USE DOCKER / DOCKER COMPOSE / PYTHON IMPORTING DOCKER UTILS, --> FOR LOCAL DEV WORK!!!:
 
 ### Run all services
 ```bash
@@ -85,13 +88,16 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 1. [Prerequisites](#prerequisites)
 2. [System Requirements](#system-requirements)
 3. [Initial Setup](#initial-setup)
-4. [Docker Setup](#docker-setup)
-5. [Kubernetes Setup (Skaffold)](#kubernetes-setup-skaffold)
-6. [Environment Configuration](#environment-configuration)
-7. [Building All Services](#building-all-services)
-8. [Running the Application](#running-the-application)
-9. [Verification](#verification)
-10. [Troubleshooting](#troubleshooting)
+4. [Git Hooks Setup](#git-hooks-setup)
+5. [Submodule Management](#submodule-management)
+6. [Team Development Environments](#team-development-environments)
+7. [Docker Setup](#docker-setup)
+8. [Kubernetes Setup (Skaffold)](#kubernetes-setup-skaffold)
+9. [Environment Configuration](#environment-configuration)
+10. [Building All Services](#building-all-services)
+11. [Running the Application](#running-the-application)
+12. [Verification](#verification)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -169,14 +175,16 @@ git --version
 ### 1. Clone the Repository
 
 ```bash
-# Clone the repository
-git clone <repository-url>
+# Clone the repository with all submodules
+git clone --recursive <repository-url>
 cd Deepiri/deepiri
 
 # Verify you're in the correct directory
 ls -la
-# You should see: skaffold.yaml, docker-compose.yml, platform-services/, etc.
+# You should see: skaffold.yaml, docker-compose.yml, platform-services/, team_submodule_commands/, team_dev_environments/, etc.
 ```
+
+**Important:** Use `--recursive` to clone all submodules, or run `git submodule update --init --recursive` after cloning.
 
 ### 2. Install System Dependencies
 
@@ -206,6 +214,568 @@ sudo apt install -y \
 # Install dependencies
 brew install curl wget git
 ```
+
+### 3. Set Up Git Hooks (Required)
+
+**⚠️ CRITICAL:** Git hooks must be set up before proceeding. They protect critical branches from accidental pushes.
+
+```bash
+# From repository root
+./scripts/fix-all-git-hooks.sh
+
+# Verify hooks are working
+git config core.hooksPath
+# Should output: .git-hooks
+```
+
+See [Git Hooks Setup](#git-hooks-setup) section for detailed information.
+
+### 4. Set Up Your Team's Submodules
+
+Each team only needs specific submodules. Pull only what you need:
+
+```bash
+# Navigate to your team's submodule commands directory
+cd team_submodule_commands/<your-team>
+
+# Pull your team's submodules
+./pull_submodules.sh
+
+# Set up hooks in your submodules
+./setup-hooks.sh
+```
+
+See [Submodule Management](#submodule-management) section for detailed information.
+
+### 5. Set Up Your Team's Development Environment
+
+```bash
+# Install Python dependencies (for team dev environments)
+pip install pyyaml
+
+# Navigate to your team's dev environment
+cd team_dev_environments/<your-team>
+
+# Build your services (first time only)
+./build.sh
+```
+
+See [Team Development Environments](#team-development-environments) section for detailed information.
+
+---
+
+## Git Hooks Setup
+
+### ⚠️ **CRITICAL: Git Hooks Must Be Set Up First**
+
+Git hooks protect critical branches (`main`, `dev`, `master`, and team-dev branches) from accidental direct pushes. **This setup is required for all team members.**
+
+### Automatic Setup (Recommended)
+
+Git hooks are **automatically configured** when you clone the repository. The `post-checkout` hook sets `core.hooksPath` to `.git-hooks` automatically.
+
+**Verify hooks are working:**
+```bash
+# Check if hooks are configured
+git config core.hooksPath
+# Should output: .git-hooks
+
+# Test hooks (should fail)
+git checkout main
+git push origin main
+# ❌ ERROR: You cannot push directly to 'main'.
+```
+
+### Manual Setup (If Needed)
+
+If hooks aren't working (e.g., for existing clones), run:
+
+```bash
+# From repository root
+./scripts/fix-all-git-hooks.sh
+
+# Or manually
+git config core.hooksPath .git-hooks
+```
+
+### Team-Specific Hook Setup
+
+Each team can sync hooks to their specific submodules:
+
+```bash
+# Navigate to your team's submodule commands directory
+cd team_submodule_commands/<your-team>
+
+# Run the setup-hooks script
+./setup-hooks.sh
+```
+
+**Available teams:**
+- `team_submodule_commands/ai-team/setup-hooks.sh`
+- `team_submodule_commands/backend-team/setup-hooks.sh`
+- `team_submodule_commands/frontend-team/setup-hooks.sh`
+- `team_submodule_commands/infrastructure-team/setup-hooks.sh`
+- `team_submodule_commands/ml-team/setup-hooks.sh`
+- `team_submodule_commands/qa-team/setup-hooks.sh`
+- `team_submodule_commands/platform-engineers/setup-hooks.sh`
+
+### What the Hooks Do
+
+1. **pre-push**: Blocks direct pushes to protected branches
+   - Protected branches: `main`, `dev`, `master`, `*-team-dev`
+   - Forces use of pull requests for code review
+
+2. **post-checkout**: Automatically configures hooks on checkout
+   - Sets `core.hooksPath` if not already configured
+   - Ensures hooks work in all branches
+
+3. **post-merge**: Syncs hooks to submodules after pull
+   - Copies hooks to submodules
+   - Configures `core.hooksPath` in submodules
+   - Handles `.git` as file (submodule) vs directory correctly
+
+### Protected Branches
+
+**⚠️ You cannot push directly to these branches:**
+- `main` - Production branch
+- `dev` - Development branch
+- `master` - Legacy production branch
+- `*-team-dev` - Team development branches (e.g., `backend-team-dev`)
+
+**✅ Workflow:**
+1. Create a feature branch: `git checkout -b firstname_lastname/feature/feature-name`
+2. Make your changes and commit
+3. Push your branch: `git push origin firstname_lastname/feature/feature-name`
+4. Create a Pull Request to merge into `main` or `dev`
+
+### Troubleshooting Git Hooks
+
+**Hooks not working?**
+```bash
+# Check if hooksPath is set
+git config core.hooksPath
+
+# If empty, set it manually
+git config core.hooksPath .git-hooks
+
+# Verify hooks exist
+ls -la .git-hooks/
+
+# Make hooks executable
+chmod +x .git-hooks/*
+```
+
+**Submodule hooks not syncing?**
+```bash
+# Run the fix script
+./scripts/fix-all-git-hooks.sh
+
+# Or manually sync to a specific submodule
+cd <submodule-path>
+git config core.hooksPath .git-hooks
+cd ..
+```
+
+---
+
+## Submodule Management
+
+### Overview
+
+The Deepiri project uses Git submodules to manage multiple repositories. Each team only needs to work with their specific submodules.
+
+### First-Time Setup
+
+```bash
+# Clone the repository with all submodules
+git clone --recursive <repository-url>
+cd Deepiri/deepiri
+
+# OR if you already cloned without submodules
+git submodule update --init --recursive
+```
+
+### Team-Specific Submodule Setup
+
+Each team has a dedicated script to pull only the submodules they need:
+
+```bash
+# Navigate to your team's submodule commands directory
+cd team_submodule_commands/<your-team>
+
+# Run the pull script
+./pull_submodules.sh
+```
+
+**Available teams and their submodules:**
+
+| Team | Script | Submodules |
+|------|--------|------------|
+| **AI Team** | `team_submodule_commands/ai-team/pull_submodules.sh` | `diri-cyrex`, `deepiri-external-bridge-service` |
+| **ML Team** | `team_submodule_commands/ml-team/pull_submodules.sh` | `diri-cyrex` |
+| **Backend Team** | `team_submodule_commands/backend-team/pull_submodules.sh` | `deepiri-core-api`, `deepiri-api-gateway`, `deepiri-auth-service`, `deepiri-external-bridge-service`, `deepiri-web-frontend` |
+| **Frontend Team** | `team_submodule_commands/frontend-team/pull_submodules.sh` | `deepiri-web-frontend`, `deepiri-auth-service`, `deepiri-api-gateway` |
+| **Infrastructure Team** | `team_submodule_commands/infrastructure-team/pull_submodules.sh` | All except `deepiri-web-frontend` |
+| **QA Team** | `team_submodule_commands/qa-team/pull_submodules.sh` | All submodules (for comprehensive testing) |
+| **Platform Engineers** | `team_submodule_commands/platform-engineers/pull_submodules.sh` | All submodules (platform management) |
+
+### After Pulling Main Repository
+
+```bash
+# Update main repository
+git pull origin main
+
+# Update your team's submodules
+cd team_submodule_commands/<your-team>
+./pull_submodules.sh
+```
+
+### Working with Submodules
+
+**Check submodule status:**
+```bash
+# Check all submodules
+git submodule status
+
+# Check specific submodule
+git submodule status <submodule-path>
+```
+
+**Update submodules:**
+```bash
+# Update all submodules to latest
+git submodule update --remote --recursive
+
+# Update specific submodule
+git submodule update --remote <submodule-path>
+```
+
+**Work inside a submodule:**
+```bash
+# Navigate to submodule
+cd <submodule-path>
+
+# Create feature branch (follow naming convention!)
+git checkout -b firstname_lastname/feature/your_feature_name
+
+# Make changes, commit, and push
+git add .
+git commit -m "feat: your change"
+git push origin firstname_lastname/feature/your_feature_name
+
+# Return to main repo
+cd ..
+
+# Update main repo to reference new submodule commit
+git add <submodule-path>
+git commit -m "chore: update <submodule-name>"
+git push origin main
+```
+
+### Branch Naming Convention
+
+**⚠️ REQUIRED FOR ALL TEAMS:**
+
+All feature and bug fix branches must follow this naming convention:
+- **Features**: `firstname_lastname/feature/feature_name`
+- **Bug Fixes**: `firstname_lastname/bug/bug_fix_name`
+
+**Examples:**
+- `john_doe/feature/add-user-authentication`
+- `jane_smith/feature/improve-api-performance`
+- `bob_jones/bug/fix-database-connection-pool`
+
+### Setting Up Hooks in Submodules
+
+After pulling submodules, sync hooks to them:
+
+```bash
+# From your team's submodule commands directory
+cd team_submodule_commands/<your-team>
+./setup-hooks.sh
+```
+
+This will:
+- Copy hooks from main repo to your team's submodules
+- Configure `core.hooksPath` in each submodule
+- Ensure submodules are protected from direct pushes
+
+### Common Submodule Commands
+
+```bash
+# Initialize all submodules
+git submodule update --init --recursive
+
+# Update all submodules to latest commits
+git submodule update --remote --recursive
+
+# Update specific submodule
+git submodule update --remote <submodule-path>
+
+# Check submodule status
+git submodule status
+
+# Enter submodule directory
+cd <submodule-path>
+
+# Return to main repo
+cd ../..
+```
+
+### Troubleshooting Submodules
+
+**Submodule not found?**
+```bash
+# Initialize and update
+git submodule update --init --recursive <submodule-path>
+```
+
+**Submodule out of sync?**
+```bash
+# Update to latest
+git submodule update --remote <submodule-path>
+```
+
+**Submodule hooks not working?**
+```bash
+# Run team setup-hooks script
+cd team_submodule_commands/<your-team>
+./setup-hooks.sh
+```
+
+For complete submodule documentation, see [team_submodule_commands/README.md](team_submodule_commands/README.md).
+
+---
+
+## Team Development Environments
+
+### Overview
+
+Each team has a dedicated development environment with scripts to build and run only the services they need. This saves resources and simplifies development.
+
+### Directory Structure
+
+```
+team_dev_environments/
+├── shared/                          # Shared utilities
+│   ├── k8s_env_loader.py           # Loads k8s ConfigMaps & Secrets
+│   ├── docker_utils.py              # Docker helper functions
+│   └── service_definitions.py       # Service definitions
+│
+├── ai-team/                         # AI Team environment
+│   ├── run.py                       # ⭐ Python runner (recommended)
+│   ├── start.sh / start.ps1        # Shell alternatives
+│   ├── build.sh                     # Build script
+│   ├── stop.sh                      # Stop script
+│   └── README.md                    # Team-specific docs
+│
+├── backend-team/                    # Backend Team environment
+├── frontend-team/                   # Frontend Team environment
+├── infrastructure-team/             # Infrastructure Team environment
+├── ml-team/                         # ML Team environment
+├── platform-engineers/              # Platform Engineers environment
+└── qa-team/                         # QA Team environment
+```
+
+### One-Time Setup
+
+**Before using any team environment:**
+
+1. **Set up Git hooks** (from repository root):
+   ```bash
+   ./scripts/fix-all-git-hooks.sh
+   ```
+
+2. **Install Python dependencies**:
+   ```bash
+   pip install pyyaml
+   ```
+
+3. **Create secrets file** (optional for local dev):
+   ```bash
+   # See ops/k8s/secrets/README.md for template
+   touch ops/k8s/secrets/secrets.yaml
+   ```
+
+### Using Team Development Environments
+
+#### Option 1: Python Script (Recommended)
+
+**Professional K8s-like workflow - No `.env` files needed!**
+
+```bash
+# Navigate to your team's directory
+cd team_dev_environments/<your-team>
+
+# Run Python script (auto-loads k8s configmaps & secrets)
+python run.py
+```
+
+**Benefits:**
+- ✅ No `.env` files needed
+- ✅ Mimics Kubernetes secret injection
+- ✅ Loads from `ops/k8s/configmaps/` and `ops/k8s/secrets/`
+- ✅ Professional microservices workflow
+- ✅ Single source of truth for configuration
+
+**What happens:**
+1. Script reads k8s ConfigMaps from `ops/k8s/configmaps/*.yaml`
+2. Script reads k8s Secrets from `ops/k8s/secrets/*.yaml`
+3. Injects them into environment (mimics Kubernetes!)
+4. Starts Docker containers with environment loaded
+
+#### Option 2: Shell Scripts
+
+```bash
+# Navigate to your team's directory
+cd team_dev_environments/<your-team>
+
+# Build your services (first time only)
+./build.sh
+
+# Start your services
+./start.sh        # Linux/Mac/WSL
+.\start.ps1       # Windows PowerShell
+```
+
+### Team-Specific Services
+
+| Team | Services | Command |
+|------|----------|---------|
+| **AI Team** | Cyrex, Ollama, MLflow, Jupyter | `cd team_dev_environments/ai-team && python run.py` |
+| **ML Team** | Cyrex, MLflow, Analytics | `cd team_dev_environments/ml-team && python run.py` |
+| **Backend Team** | All backend microservices + Frontend | `cd team_dev_environments/backend-team && python run.py` |
+| **Frontend Team** | Frontend + API Gateway + Auth Service | `cd team_dev_environments/frontend-team && python run.py` |
+| **Infrastructure Team** | PostgreSQL, Redis, InfluxDB, API Gateway, External Bridge | `cd team_dev_environments/infrastructure-team && python run.py` |
+| **Platform Engineers** | Everything (full stack) | `cd team_dev_environments/platform-engineers && python run.py` |
+| **QA Team** | Everything (for comprehensive testing) | `cd team_dev_environments/qa-team && python run.py` |
+
+### Building Services
+
+**When to build:**
+- First time setup
+- Dockerfile changes
+- `package.json` or `requirements.txt` changes (dependencies)
+
+**Build commands:**
+```bash
+# From your team's directory
+cd team_dev_environments/<your-team>
+./build.sh
+
+# Or build manually
+docker compose -f ../../docker-compose.dev.yml build <service-names>
+```
+
+**Note:** With hot reload enabled, code changes don't require rebuilds - just restart the service!
+
+### Starting Services
+
+```bash
+# Recommended: Python script (loads k8s config)
+cd team_dev_environments/<your-team>
+python run.py
+
+# Alternative: Shell script
+./start.sh        # Linux/Mac/WSL
+.\start.ps1       # Windows
+```
+
+### Stopping Services
+
+```bash
+# From your team's directory
+cd team_dev_environments/<your-team>
+./stop.sh
+
+# Or from repository root
+cd ../..
+docker compose -f docker-compose.dev.yml down
+```
+
+### Viewing Logs
+
+```bash
+# All services
+docker compose -f docker-compose.dev.yml logs -f
+
+# Specific service
+docker compose -f docker-compose.dev.yml logs -f <service-name>
+
+# Multiple services
+docker compose -f docker-compose.dev.yml logs -f <service1> <service2>
+```
+
+### Accessing Services
+
+After starting your team environment, services will be available at:
+
+**Common ports:**
+- Frontend: `http://localhost:5173`
+- API Gateway: `http://localhost:5100`
+- Auth Service: `http://localhost:5001`
+- Core API: `http://localhost:5000`
+- Cyrex: `http://localhost:8000`
+- PostgreSQL: `localhost:5432`
+- Redis: `localhost:6379`
+- pgAdmin: `http://localhost:5050`
+
+**Check your team's README.md for specific URLs:**
+```bash
+cat team_dev_environments/<your-team>/README.md
+```
+
+### How It Works
+
+All scripts use the main `docker-compose.dev.yml` file. They:
+- **Build scripts**: Use `docker compose -f docker-compose.dev.yml build <services>`
+- **Start scripts**: Use `docker compose -f docker-compose.dev.yml up -d <services>`
+
+This means:
+- ✅ Single source of truth (`docker-compose.dev.yml`)
+- ✅ No duplicate configuration
+- ✅ Easy to maintain
+- ✅ Each team only builds/starts what they need
+
+### Troubleshooting Team Environments
+
+**Services not starting?**
+```bash
+# Check Docker is running
+docker ps
+
+# Check logs
+docker compose -f docker-compose.dev.yml logs <service-name>
+
+# Rebuild if needed
+cd team_dev_environments/<your-team>
+./build.sh
+```
+
+**Python script errors?**
+```bash
+# Install dependencies
+pip install pyyaml
+
+# Check k8s config files exist
+ls ops/k8s/configmaps/
+ls ops/k8s/secrets/
+```
+
+**Port conflicts?**
+```bash
+# Find what's using the port
+lsof -i :5000
+# Or
+netstat -tulpn | grep :5000
+
+# Change port in docker-compose.dev.yml or stop conflicting service
+```
+
+For detailed team-specific documentation, see:
+- `team_dev_environments/README.md` - General overview
+- `team_dev_environments/QUICK_START.md` - Quick start guide
+- `team_dev_environments/<your-team>/README.md` - Team-specific guide
 
 ---
 
@@ -672,14 +1242,39 @@ After completing setup:
 ## Summary
 
 ✅ **Prerequisites installed** (Docker, Minikube, Skaffold, Node.js, Python)  
+✅ **Git hooks configured** (Branch protection enabled)  
+✅ **Submodules set up** (Team-specific submodules pulled)  
+✅ **Team dev environment ready** (Services built and configured)  
 ✅ **Docker configured** (Docker Engine in WSL2)  
 ✅ **Minikube running** (Kubernetes cluster ready)  
-✅ **Environment configured** (.env files set up)  
+✅ **Environment configured** (.env files or k8s config set up)  
 ✅ **All services built** (Docker images created)  
 ✅ **Application running** (All services deployed)  
 ✅ **Verified** (Health checks passing, frontend accessible)
 
 **You're all set! 🎉**
+
+### Next Steps
+
+1. **Read Team-Specific Guides:**
+   - Git Hooks: See [Git Hooks Setup](#git-hooks-setup)
+   - Submodules: See [Submodule Management](#submodule-management)
+   - Dev Environments: See [Team Development Environments](#team-development-environments)
+   - Team Onboarding: See [docs/](docs/) for team-specific guides
+
+2. **Explore the Codebase:**
+   - `deepiri-core-api/` - Main API server
+   - `deepiri-web-frontend/` - React frontend
+   - `diri-cyrex/` - AI/ML service
+   - `platform-services/backend/` - Microservices
+   - `team_submodule_commands/` - Submodule management
+   - `team_dev_environments/` - Team dev environments
+
+3. **Start Developing:**
+   - Use your team's dev environment: `cd team_dev_environments/<your-team> && python run.py`
+   - Make code changes (hot reload enabled)
+   - Check logs: `docker compose -f docker-compose.dev.yml logs -f <service-name>`
+   - Create feature branches: `git checkout -b firstname_lastname/feature/feature-name`
 
 For detailed information on specific services or development workflows, see the team-specific onboarding guides in [docs/](docs/).
 

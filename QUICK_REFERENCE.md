@@ -1,231 +1,204 @@
-# Quick Reference
+# Deepiri Quick Reference Guide
 
-## Setup Minikube (for Kubernetes/Skaffold builds)
+**Last Updated:** 2025-12-01
 
-### Check if Minikube is running
+## All Service URLs
+
+### Frontend & Visual Interfaces
+
+| Service | Type | URL | Port | Description |
+|---------|------|-----|------|-------------|
+| Frontend | Visual | http://localhost:5173/ | 5173 | Main web application (Vite HMR) |
+| Cyrex UI | Visual | http://localhost:5175/ | 5175 | AI/ML interface |
+| pgAdmin | Visual | http://localhost:5050/ | 5050 | PostgreSQL admin UI |
+| Adminer | Visual | http://localhost:8080/ | 8080 | Lightweight database viewer |
+| InfluxDB UI | Visual | http://localhost:8086/ | 8086 | Time-series database UI |
+| MLflow UI | Visual | http://localhost:5500/ | 5500 | ML experiment tracking |
+| Jupyter | Visual | http://localhost:8888/ | 8888 | Jupyter notebooks |
+| MinIO Console | Visual | http://localhost:9001/ | 9001 | Object storage console |
+
+### API Services
+
+| Service | Type | URL | Port | Description |
+|---------|------|-----|------|-------------|
+| API Gateway | API | http://localhost:5100/ | 5100 | Main entry point (routes to all services) |
+| Auth Service | API | http://localhost:5001/ | 5001 | Authentication & authorization |
+| Task Orchestrator | API | http://localhost:5002/ | 5002 | Task management |
+| Engagement Service | API | http://localhost:5003/ | 5003 | Gamification (momentum, streaks, boosts) |
+| Platform Analytics | API | http://localhost:5004/ | 5004 | Analytics & metrics |
+| Notification Service | API | http://localhost:5005/ | 5005 | Notifications |
+| External Bridge | API | http://localhost:5006/ | 5006 | External integrations |
+| Challenge Service | API | http://localhost:5007/ | 5007 | Challenge generation |
+| Realtime Gateway | API | http://localhost:5008/ | 5008 | WebSocket connections |
+| Cyrex AI | API | http://localhost:8000/ | 8000 | AI/ML service |
+
+### Databases & Storage
+
+| Service | Type | URL | Port | Description |
+|---------|------|-----|------|-------------|
+| PostgreSQL | Database | postgresql://localhost:5432 | 5432 | Primary database (users, tasks, quests) |
+| Redis | Cache | redis://localhost:6380 | 6380 | Caching & session storage |
+| InfluxDB | Database | http://localhost:8086 | 8086 | Time-series analytics |
+| Milvus | Database | localhost:19530 | 19530 | Vector database (RAG) |
+| MinIO | Storage | http://localhost:9000 | 9000 | Object storage (S3-compatible) |
+| etcd | Database | localhost:2379 | 2379 | Key-value store (Milvus metadata) |
+
+---
+
+## 📋 Quick Commands
+
+### Start All Services
 ```bash
-minikube status
-```
-
-### If not running, start Minikube
-```bash
-minikube start --driver=docker --cpus=4 --memory=8192
-```
-
-### Configure Docker to use Minikube's Docker daemon
-```bash
-eval $(minikube docker-env)
-```
-
-## Build
-
-### Build all services
-```bash
-# Using build script (recommended)
-./build.sh              # Linux/Mac/WSL
-.\build.ps1             # Windows PowerShell
-
-# Or using docker compose directly
-docker compose -f docker-compose.dev.yml build
-```
-
-### Build specific service
-```bash
-./build.sh <service-name>
-# or
-docker compose -f docker-compose.dev.yml build <service-name>
-```
-
-### Build without cache (slower, forces rebuild)
-```bash
-./build.sh --no-cache
-# or
-docker compose -f docker-compose.dev.yml build --no-cache
-```
-
-## When you DO need to build / rebuild
-
-Only build if:
-1. **Dockerfile changes**
-2. **package.json/requirements.txt changes** (dependencies)
-3. **First time setup**
-
-**Note:** With hot reload enabled, code changes don't require rebuilds - just restart the service!
-
-## Run
-
-### Run all services
-```bash
+cd deepiri
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-### Run only services you need for your team
-```bash
-docker compose -f docker-compose.<team_name>-team.yml up -d
-# Examples:
-docker compose -f docker-compose.ai-team.yml up -d
-docker compose -f docker-compose.backend-team.yml up -d
-docker compose -f docker-compose.frontend-team.yml up -d
-```
-
-### Stop all services
+### Stop All Services
 ```bash
 docker compose -f docker-compose.dev.yml down
 ```
 
-### Stop team-specific services
+### View Logs
 ```bash
-docker compose -f docker-compose.<team_name>-team.yml down
-```
-
-## Logs
-
-### Logs (All services)
-```bash
+# All services
 docker compose -f docker-compose.dev.yml logs -f
+
+# Specific service
+docker compose -f docker-compose.dev.yml logs -f <service-name>
 ```
 
-### Logs (Individual services)
-```bash
-docker compose -f docker-compose.dev.yml logs -f api-gateway
-docker compose -f docker-compose.dev.yml logs -f cyrex
-docker compose -f docker-compose.dev.yml logs -f auth-service
-docker compose -f docker-compose.dev.yml logs -f frontend-dev
-# ... etc for all services
-```
-
-### Additional log options
-```bash
-# Last 50 lines
-docker compose -f docker-compose.dev.yml logs --tail=50 <service-name>
-
-# Last 10 minutes
-docker compose -f docker-compose.dev.yml logs --since 10m <service-name>
-
-# All available logs (limited to 1MB per service)
-docker compose -f docker-compose.dev.yml logs <service-name>
-```
-
-### Clear Logs
-
-```bash
-# PowerShell (Windows)
-.\scripts\clear-docker-logs.ps1
-
-# Bash (Linux/Mac/WSL)
-./scripts/clear-docker-logs.sh
-
-# Or restart services
-docker compose -f docker-compose.dev.yml restart
-```
-
-**Note:** Logs are automatically limited to 1MB per service and cleared on restart.
-
-## Service Names
-
-Use these names with `docker compose logs`:
-- `api-gateway` - API Gateway (port 5000)
-- `auth-service` - Authentication service (port 5001)
-- `task-orchestrator` - Task management (port 5002)
-- `engagement-service` - Gamification (port 5003)
-- `platform-analytics-service` - Analytics (port 5004)
-- `notification-service` - Notifications (port 5005)
-- `external-bridge-service` - External integrations (port 5006)
-- `challenge-service` - Challenges (port 5007)
-- `realtime-gateway` - WebSocket/real-time (port 5008)
-- `cyrex` - AI/ML service (port 8000)
-- `frontend-dev` - Frontend (port 5173)
-- `mongodb` - MongoDB (port 27017)
-- `redis` - Redis (port 6380)
-- `influxdb` - InfluxDB (port 8086)
-- `mlflow` - MLflow (port 5000)
-- `jupyter` - Jupyter (port 8888)
-
-## Common Tasks
-
-### Rebuild a Single Service
-
-```bash
-./build.sh <service-name>
-docker compose -f docker-compose.dev.yml up -d <service-name>
-```
-
-### Restart a Service
-
-```bash
-docker compose -f docker-compose.dev.yml restart <service-name>
-```
-
-### View Service Status
-
+### Check Service Status
 ```bash
 docker compose -f docker-compose.dev.yml ps
 ```
 
-### Execute Command in Container
-
+### Restart a Service
 ```bash
-docker compose -f docker-compose.dev.yml exec <service-name> sh
+docker compose -f docker-compose.dev.yml restart <service-name>
 ```
 
-### Remove All Containers and Volumes
-
+### Rebuild a Service
 ```bash
-docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up -d --build <service-name>
 ```
-
-## Disk Space Management
-
-### Clear Docker Images
-
-```bash
-# PowerShell (Windows)
-.\scripts\remove-dangling-images.ps1
-
-# Bash (Linux/Mac/WSL)
-./scripts/remove-dangling-images.sh
-```
-
-### Reclaim WSL2 Disk Space (Windows)
-
-```bash
-# PowerShell (run as Administrator)
-.\scripts\GET_SPACE_BACK.ps1
-```
-
-See `GET_SPACE_BACK.md` for details.
-
-## Documentation
-
-- `docs/HOW_TO_BUILD.md` - Complete build guide
-- `docs/SERVICES_OVERVIEW.md` - Service architecture and access
-- `docs/DOCKER_LOG_MANAGEMENT.md` - Log management details
-- `GET_SPACE_BACK.md` - Disk space recovery (WSL2)
-- `AUTO_COMPACT_OPTIONS.md` - Automatic disk space management
-- `DOCUMENTATION_INDEX.md` - All documentation
-
-## Ports
-
-| Service | Port |
-|---------|------|
-| Frontend | 5173 |
-| API Gateway | 5000 |
-| Auth Service | 5001 |
-| Task Orchestrator | 5002 |
-| Engagement Service | 5003 |
-| Platform Analytics | 5004 |
-| Notification Service | 5005 |
-| External Bridge | 5006 |
-| Challenge Service | 5007 |
-| Realtime Gateway | 5008 |
-| Cyrex (AI) | 8000 |
-| MongoDB | 27017 |
-| Redis | 6380 |
-| InfluxDB | 8086 |
-| MLflow | 5000 |
-| Jupyter | 8888 |
-| Mongo Express | 8081 |
 
 ---
 
-**Last Updated:** 2025-11-22
+## 🔍 Health Checks
+
+### Test All API Services
+```bash
+# PowerShell
+5100, 5001, 5002, 5003, 5004, 5005, 5006, 5007, 5008, 8000 | ForEach-Object {
+  Write-Host "Testing port $_..."
+  try {
+    $response = Invoke-WebRequest -Uri "http://localhost:$_/health" -TimeoutSec 2 -ErrorAction Stop
+    Write-Host "✓ Port $_: OK" -ForegroundColor Green
+  } catch {
+    Write-Host "✗ Port $_: Failed" -ForegroundColor Red
+  }
+}
+
+# Bash
+for port in 5100 5001 5002 5003 5004 5005 5006 5007 5008 8000; do
+  echo "Testing port $port..."
+  curl -s http://localhost:$port/health && echo "✓ OK" || echo "✗ Failed"
+done
+```
+
+---
+
+## 🗄️ Database Access
+
+### PostgreSQL
+```bash
+# Connection string
+postgresql://deepiri:deepiripassword@localhost:5432/deepiri
+
+# Using psql
+psql -h localhost -p 5432 -U deepiri -d deepiri
+```
+
+### Redis
+```bash
+# Connection string
+redis://localhost:6380
+
+# Using redis-cli
+redis-cli -h localhost -p 6380 -a redispassword
+```
+
+### InfluxDB
+- **URL:** http://localhost:8086
+- **Default Username:** admin
+- **Default Password:** adminpassword
+- **Organization:** deepiri
+- **Bucket:** analytics
+
+---
+
+## 🛠️ Development Tools
+
+### Access Services
+
+| Tool | URL | Credentials |
+|------|-----|-------------|
+| pgAdmin | http://localhost:5050 | admin@deepiri.com / admin |
+| Adminer | http://localhost:8080 | System: PostgreSQL<br>Server: postgres<br>Username: deepiri<br>Password: deepiripassword<br>Database: deepiri |
+| MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
+| MLflow | http://localhost:5500 | No auth required |
+| Jupyter | http://localhost:8888 | No token required |
+
+---
+
+## 📊 Service Dependencies
+
+### Core Infrastructure
+- **PostgreSQL** → All backend services
+- **Redis** → Engagement Service, Notification Service
+- **InfluxDB** → Auth Service, Platform Analytics, Cyrex
+
+### AI/ML Stack
+- **Milvus** → Cyrex (vector search)
+- **MinIO** → Milvus (object storage)
+- **etcd** → Milvus (metadata)
+- **MLflow** → Cyrex (experiment tracking)
+
+### Service Dependencies
+- **API Gateway** → All microservices
+- **Frontend** → API Gateway
+- **Challenge Service** → Cyrex
+- **All Services** → PostgreSQL
+
+---
+
+## 🔐 Default Credentials
+
+| Service | Username | Password | Notes |
+|---------|----------|----------|-------|
+| PostgreSQL | deepiri | deepiripassword | Set via `POSTGRES_PASSWORD` |
+| Redis | - | redispassword | Set via `REDIS_PASSWORD` |
+| pgAdmin | admin@deepiri.com | admin | Set via `PGADMIN_PASSWORD` |
+| InfluxDB | admin | adminpassword | Set via `INFLUXDB_PASSWORD` |
+| MinIO | minioadmin | minioadmin | Set via `MINIO_ROOT_PASSWORD` |
+
+**⚠️ Change these in production!**
+
+---
+
+## 📝 Notes
+
+- **API Gateway** uses port **5100** externally (to avoid macOS AirPlay conflict on 5000)
+- **Redis** uses port **6380** externally (to avoid system Redis on 6379)
+- All services run on the `deepiri-dev-network` Docker network
+- Services use environment variables from `.env` file or `ops/k8s/configmaps/`
+- Development mode uses volume mounts for hot-reload
+
+---
+
+## 🔗 Related Documentation
+
+- `docs/SERVICES_OVERVIEW.md` - Detailed service architecture
+- `docs/HOW_TO_BUILD.md` - Build instructions
+- `SERVICE_COMMUNICATION_AND_TEAMS.md` - Team-specific service lists
+- `GETTING_STARTED.md` - Onboarding guide

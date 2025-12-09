@@ -148,9 +148,80 @@ deepiri/
 
 ---
 
+## Branch Protection Rules
+
+### 🚫 Protected Branches: `main` and `dev`
+
+**Direct pushes to `main` and `dev` are blocked** by multiple layers of protection:
+
+1. **Server-side CI enforcement** - GitHub Actions automatically reject any direct push
+2. **Local Git hooks** - Prevent accidental pushes before they reach GitHub
+3. **PR blocking** - Pull Requests targeting `main` or `dev` are automatically blocked
+
+You **must** create feature branches and open Pull Requests to merge your work.
+
+### ✔ Allowed Workflow
+
+1. **Create a feature branch:**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Push your branch:**
+   ```bash
+   git push -u origin feature/your-feature-name
+   ```
+
+3. **Open a Pull Request** into `staging` or another feature branch (NOT `main` or `dev`)
+
+4. **CI will merge** `staging` → `dev` → `main` only during official deployments
+
+### 🔧 Setup Git Hooks (One-Time Setup)
+
+Run this once after cloning the repository:
+
+```bash
+./setup-hooks.sh
+```
+
+This ensures you can never accidentally push to `main` or `dev` from your local machine.
+
+---
+
 ## Development Workflow
 
-### 1. Create a Branch
+### 0. Initial Setup (Automatic!)
+
+**Git hooks are automatically configured when you clone the repository!**
+
+The hooks protect the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) for details.
+
+**If hooks aren't working** (e.g., existing clone), run:
+```bash
+./setup-hooks.sh
+```
+
+### 1. Find Your Team
+
+**Not sure which team you're on?** → [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
+
+This will help you:
+- Identify your role and responsibilities
+- Find your team-specific documentation
+- Understand which services you work with
+
+### 2. Follow Your Team's Path
+
+After identifying your team, follow your team-specific onboarding:
+- **AI Team:** [docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)
+- **ML Team:** [docs/ML_ENGINEER_COMPLETE_GUIDE.md](docs/ML_ENGINEER_COMPLETE_GUIDE.md)
+- **Backend Team:** [docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)
+- **Frontend Team:** [docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)
+- **Infrastructure Team:** [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md)
+- **Platform Engineers:** [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md)
+- **QA Team:** [docs/SECURITY_QA_TEAM_ONBOARDING.md](docs/SECURITY_QA_TEAM_ONBOARDING.md)
+
+### 3. Create a Branch
 
 Always create a new branch for your work:
 
@@ -166,6 +237,8 @@ git checkout -b fix/your-bug-fix
 # or
 git checkout -b docs/your-documentation-update
 ```
+
+**⚠️ Remember:** You cannot push directly to `main` or `dev`. All changes must go through Pull Requests.
 
 ### Branch Naming Convention
 

@@ -1,5 +1,15 @@
 name: deepiri-ml-team
 
+# ML Team Docker Compose Configuration
+# 
+# This file matches the services referenced in:
+# - team_dev_environments/ml-team/build.sh
+# - team_dev_environments/ml-team/start.sh
+# - team_dev_environments/ml-team/stop.sh
+#
+# Primary services: cyrex
+# Dependencies: influxdb, milvus, etcd, minio
+#
 # IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
 # This prevents 50GB+ of dangling images on every build
 
@@ -17,21 +27,60 @@ x-logging: &minimal-logging
     compress: "false"   # No compression (faster cleanup)
 
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: deepiri-mongodb-ml
+  # PostgreSQL Database - Primary database for users, roles, tasks, quests, metadata
+  postgres:
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-ml
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "27017:27017"
+      - "5432:5432"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:-deepiri}
+      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deepiripassword}
+      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
     volumes:
-      - mongodb_ml_data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - postgres_ml_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - deepiri-ml-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deepiri}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - Database Admin UI
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: deepiri-pgadmin-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@deepiri.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_ml_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - deepiri-ml-network
+
+  # Adminer - Lightweight Database Viewer (for quick inspection)
+  adminer:
+    image: adminer:latest
+    container_name: deepiri-adminer-ml
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
     networks:
       - deepiri-ml-network
 
@@ -43,7 +92,7 @@ services:
     logging: *minimal-logging
     ports:
       - "6380:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_ml_data:/data
     networks:
@@ -84,27 +133,10 @@ services:
     container_name: deepiri-cyrex-ml
     restart: unless-stopped
     logging: *minimal-logging
+    env_file:
+      - .env-k8s/cyrex.env
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      CORS_ORIGIN: http://localhost:5173
-      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
-      WANDB_API_KEY: ${WANDB_API_KEY}
-      MODEL_REGISTRY_PATH: /app/model_registry
-      STAGING_MODEL_PATH: /app/models/staging
-      PRODUCTION_MODEL_PATH: /app/models/production
-      PINECONE_API_KEY: ${PINECONE_API_KEY}
-      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT:-us-east1-gcp}
-      PINECONE_INDEX: ${PINECONE_INDEX:-deepiri}
-      WEAVIATE_URL: ${WEAVIATE_URL}
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
-      TRANSFORMERS_CACHE: /app/.cache/huggingface
-      HF_HOME: /app/.cache/huggingface
-      SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
+      # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"
     volumes:
@@ -195,27 +227,29 @@ services:
     logging: *minimal-logging
     ports:
       - "5004:5004"
+    env_file:
+      - .env-k8s/platform-analytics-service.env
     environment:
-      NODE_ENV: development
+      # Override or add docker-specific variables here if needed
       PORT: 5004
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGO_DB:-deepiri}?authSource=admin
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
     volumes:
       - ./platform-services/backend/deepiri-platform-analytics-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
     command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
     depends_on:
-      - mongodb
+      - postgres
       - influxdb
     networks:
       - deepiri-ml-network
 
 volumes:
-  mongodb_ml_data:
+  postgres_ml_data:
+    driver: local
+  pgadmin_ml_data:
+    driver: local
+  adminer_ml_data:
     driver: local
   redis_ml_data:
     driver: local

@@ -1,42 +1,16 @@
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import prisma from './db';
 
 const logger = createLogger('dependency-graph-service');
 
 type DependencyType = 'blocks' | 'precedes' | 'related' | 'subtask';
 
-interface ITaskDependency extends Document {
-  taskId: Types.ObjectId;
-  dependsOn: Types.ObjectId;
-  dependencyType: DependencyType;
-  userId: Types.ObjectId;
-  createdAt: Date;
-}
-
-const TaskDependencySchema = new Schema<ITaskDependency>({
-  taskId: { type: Schema.Types.ObjectId, required: true, index: true },
-  dependsOn: { type: Schema.Types.ObjectId, required: true, index: true },
-  dependencyType: {
-    type: String,
-    enum: ['blocks', 'precedes', 'related', 'subtask'],
-    default: 'blocks'
-  },
-  userId: { type: Schema.Types.ObjectId, required: true, index: true },
-  createdAt: { type: Date, default: Date.now }
-}, {
-  timestamps: false
-});
-
-TaskDependencySchema.index({ taskId: 1, dependsOn: 1 }, { unique: true });
-
-const TaskDependency: Model<ITaskDependency> = mongoose.model<ITaskDependency>('TaskDependency', TaskDependencySchema);
-
 class DependencyGraphService {
   async getDependencies(req: Request, res: Response): Promise<void> {
     try {
       const { taskId } = req.params;
-      const dependencies = await this.getDependenciesForTask(new Types.ObjectId(taskId));
+      const dependencies = await this.getDependenciesForTask(taskId);
       res.json(dependencies);
     } catch (error: any) {
       logger.error('Error getting dependencies:', error);
@@ -53,12 +27,7 @@ class DependencyGraphService {
         return;
       }
 
-      const dependency = await this.addDependencyToTask(
-        new Types.ObjectId(taskId),
-        new Types.ObjectId(dependsOn),
-        dependencyType as DependencyType,
-        new Types.ObjectId(userId)
-      );
+      const dependency = await this.addDependencyToTask(taskId, dependsOn, dependencyType as DependencyType, userId);
       res.json(dependency);
     } catch (error: any) {
       logger.error('Error adding dependency:', error);
@@ -67,29 +36,48 @@ class DependencyGraphService {
   }
 
   private async addDependencyToTask(
-    taskId: Types.ObjectId,
-    dependsOn: Types.ObjectId,
+    taskId: string,
+    dependsOn: string,
     dependencyType: DependencyType = 'blocks',
-    userId: Types.ObjectId
+    userId: string
   ) {
     try {
       if (await this._wouldCreateCycle(taskId, dependsOn)) {
         throw new Error('Circular dependency detected');
       }
 
-      const existing = await TaskDependency.findOne({ taskId, dependsOn });
+      const existing = await prisma.taskDependency.findUnique({
+        where: {
+          taskId_dependsOnTaskId: {
+            taskId,
+            dependsOnTaskId: dependsOn
+          }
+        }
+      });
+
       if (existing) {
         return existing;
       }
 
-      const dependency = new TaskDependency({
-        taskId,
-        dependsOn,
-        dependencyType,
-        userId
+      const dependency = await prisma.taskDependency.create({
+        data: {
+          taskId,
+          dependsOnTaskId: dependsOn,
+          dependencyType: dependencyType === 'precedes' ? 'blocks' : dependencyType // Map to DB enum
+        },
+        include: {
+          dependsOnTask: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              priority: true,
+              dueDate: true
+            }
+          }
+        }
       });
 
-      await dependency.save();
       logger.info('Task dependency added', { taskId, dependsOn, dependencyType });
       return dependency;
     } catch (error) {
@@ -98,14 +86,26 @@ class DependencyGraphService {
     }
   }
 
-  private async getDependenciesForTask(taskId: Types.ObjectId) {
+  private async getDependenciesForTask(taskId: string) {
     try {
-      const dependencies = await TaskDependency.find({ taskId })
-        .populate('dependsOn', 'title status priority dueDate')
-        .select('dependsOn dependencyType createdAt');
+      const dependencies = await prisma.taskDependency.findMany({
+        where: { taskId },
+        include: {
+          dependsOnTask: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              priority: true,
+              dueDate: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'asc' }
+      });
 
-      return dependencies.map(dep => ({
-        task: dep.dependsOn,
+      return dependencies.map((dep: typeof dependencies[0]) => ({
+        task: dep.dependsOnTask,
         type: dep.dependencyType,
         createdAt: dep.createdAt
       }));
@@ -115,48 +115,55 @@ class DependencyGraphService {
     }
   }
 
-  private async _wouldCreateCycle(taskId: Types.ObjectId, dependsOn: Types.ObjectId): Promise<boolean> {
+  private async _wouldCreateCycle(taskId: string, dependsOn: string): Promise<boolean> {
     try {
-      const reverseDependency = await TaskDependency.findOne({
-        taskId: dependsOn,
-        dependsOn: taskId
+      // Check for direct reverse dependency
+      const reverseDependency = await prisma.taskDependency.findUnique({
+        where: {
+          taskId_dependsOnTaskId: {
+            taskId: dependsOn,
+            dependsOnTaskId: taskId
+          }
+        }
       });
 
       if (reverseDependency) {
         return true;
       }
 
+      // Check for indirect cycles using DFS
       const visited = new Set<string>();
-      const stack: Types.ObjectId[] = [dependsOn];
+      const stack: string[] = [dependsOn];
 
       while (stack.length > 0) {
         const current = stack.pop()!;
         
-        if (current.toString() === taskId.toString()) {
+        if (current === taskId) {
           return true;
         }
 
-        if (visited.has(current.toString())) {
+        if (visited.has(current)) {
           continue;
         }
 
-        visited.add(current.toString());
+        visited.add(current);
 
-        const deps = await TaskDependency.find({ taskId: current })
-          .select('dependsOn');
+        const deps = await prisma.taskDependency.findMany({
+          where: { taskId: current },
+          select: { dependsOnTaskId: true }
+        });
         
-        deps.forEach(dep => {
-          stack.push(dep.dependsOn);
+        deps.forEach((dep: { dependsOnTaskId: string }) => {
+          stack.push(dep.dependsOnTaskId);
         });
       }
 
       return false;
     } catch (error) {
       logger.error('Error checking for cycles:', error);
-      return true;
+      return true; // Fail safe - assume cycle exists if we can't check
     }
   }
 }
 
 export default new DependencyGraphService();
-

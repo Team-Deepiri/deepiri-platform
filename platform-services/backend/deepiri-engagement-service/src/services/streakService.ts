@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import mongoose, { Types } from 'mongoose';
 import { createLogger } from '@deepiri/shared-utils';
-import Streak, { IStreak } from '../models/Streak';
+import prisma from '../db';
 
 const logger = createLogger('streak-service');
 
@@ -11,15 +10,34 @@ class StreakService {
   /**
    * Get or create streak profile for a user
    */
-  async getOrCreateProfile(userId: string): Promise<IStreak> {
+  async getOrCreateProfile(userId: string) {
     try {
-      let profile = await Streak.findOne({ userId: new Types.ObjectId(userId) });
+      let profile = await prisma.streak.findUnique({
+        where: { userId },
+        include: {
+          cashedInStreaks: { orderBy: { cashedAt: 'desc' }, take: 20 }
+        }
+      });
       
       if (!profile) {
-        profile = new Streak({
-          userId: new Types.ObjectId(userId)
+        profile = await prisma.streak.create({
+          data: {
+            userId,
+            dailyCurrent: 0,
+            dailyLongest: 0,
+            weeklyCurrent: 0,
+            weeklyLongest: 0,
+            projectCurrent: 0,
+            projectLongest: 0,
+            prCurrent: 0,
+            prLongest: 0,
+            healthyCurrent: 0,
+            healthyLongest: 0
+          },
+          include: {
+            cashedInStreaks: true
+          }
         });
-        await profile.save();
       }
       
       return profile;
@@ -32,15 +50,18 @@ class StreakService {
   /**
    * Update daily streak
    */
-  async updateDailyStreak(userId: string): Promise<IStreak> {
+  async updateDailyStreak(userId: string) {
     try {
       const profile = await this.getOrCreateProfile(userId);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const lastDate = profile.daily.lastDate 
-        ? new Date(profile.daily.lastDate)
+      const lastDate = profile.dailyLastDate 
+        ? new Date(profile.dailyLastDate)
         : null;
+      
+      let newCurrent = profile.dailyCurrent;
+      let newCanCashIn = profile.dailyCanCashIn;
       
       if (lastDate) {
         lastDate.setHours(0, 0, 0, 0);
@@ -48,25 +69,31 @@ class StreakService {
         
         if (daysDiff === 1) {
           // Consecutive day
-          profile.daily.current += 1;
+          newCurrent = profile.dailyCurrent + 1;
         } else if (daysDiff > 1) {
           // Streak broken
-          profile.daily.current = 1;
+          newCurrent = 1;
         }
         // If daysDiff === 0, same day, don't update
       } else {
         // First time
-        profile.daily.current = 1;
+        newCurrent = 1;
       }
       
-      if (profile.daily.current > profile.daily.longest) {
-        profile.daily.longest = profile.daily.current;
-      }
+      const newLongest = newCurrent > profile.dailyLongest ? newCurrent : profile.dailyLongest;
+      newCanCashIn = newCurrent >= 7;
       
-      profile.daily.lastDate = today;
-      await profile.save();
+      const updated = await prisma.streak.update({
+        where: { userId },
+        data: {
+          dailyCurrent: newCurrent,
+          dailyLongest: newLongest,
+          dailyLastDate: today,
+          dailyCanCashIn: newCanCashIn
+        }
+      });
       
-      return profile;
+      return updated;
     } catch (error: any) {
       logger.error('Error updating daily streak:', error);
       throw error;
@@ -76,41 +103,51 @@ class StreakService {
   /**
    * Update weekly streak
    */
-  async updateWeeklyStreak(userId: string): Promise<IStreak> {
+  async updateWeeklyStreak(userId: string) {
     try {
       const profile = await this.getOrCreateProfile(userId);
       const now = new Date();
       const weekStart = new Date(now);
       weekStart.setDate(now.getDate() - now.getDay());
       weekStart.setHours(0, 0, 0, 0);
-      const weekKey = `${weekStart.getFullYear()}-W${this.getWeekNumber(weekStart)}`;
+      const weekNumber = this.getWeekNumber(weekStart);
+      const weekKey = weekNumber;
       
-      if (profile.weekly.lastWeek !== weekKey) {
-        const lastWeek = profile.weekly.lastWeek;
+      let newCurrent = profile.weeklyCurrent;
+      let newLongest = profile.weeklyLongest;
+      let newCanCashIn = profile.weeklyCanCashIn;
+      
+      if (profile.weeklyLastWeek !== weekKey) {
+        const lastWeek = profile.weeklyLastWeek;
         
         if (lastWeek) {
           // Check if consecutive week
-          const lastWeekDate = this.parseWeekKey(lastWeek);
-          const weeksDiff = Math.floor((weekStart.getTime() - lastWeekDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
+          const weeksDiff = weekKey - lastWeek;
           
           if (weeksDiff === 1) {
-            profile.weekly.current += 1;
+            newCurrent = profile.weeklyCurrent + 1;
           } else if (weeksDiff > 1) {
-            profile.weekly.current = 1;
+            newCurrent = 1;
           }
         } else {
-          profile.weekly.current = 1;
+          newCurrent = 1;
         }
         
-        if (profile.weekly.current > profile.weekly.longest) {
-          profile.weekly.longest = profile.weekly.current;
-        }
-        
-        profile.weekly.lastWeek = weekKey;
-        await profile.save();
+        newLongest = newCurrent > profile.weeklyLongest ? newCurrent : profile.weeklyLongest;
+        newCanCashIn = newCurrent >= 2;
       }
       
-      return profile;
+      const updated = await prisma.streak.update({
+        where: { userId },
+        data: {
+          weeklyCurrent: newCurrent,
+          weeklyLongest: newLongest,
+          weeklyLastWeek: weekKey,
+          weeklyCanCashIn: newCanCashIn
+        }
+      });
+      
+      return updated;
     } catch (error: any) {
       logger.error('Error updating weekly streak:', error);
       throw error;
@@ -120,16 +157,20 @@ class StreakService {
   /**
    * Update project streak
    */
-  async updateProjectStreak(userId: string, projectId: string): Promise<IStreak> {
+  async updateProjectStreak(userId: string, projectId: string) {
     try {
       const profile = await this.getOrCreateProfile(userId);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      if (profile.project.projectId === projectId) {
+      let newCurrent = profile.projectCurrent;
+      let newLongest = profile.projectLongest;
+      let newCanCashIn = profile.projectCanCashIn;
+      
+      if (profile.projectId === projectId) {
         // Same project, check if consecutive day
-        const lastDate = profile.project.lastProjectDate 
-          ? new Date(profile.project.lastProjectDate)
+        const lastDate = profile.projectLastDate 
+          ? new Date(profile.projectLastDate)
           : null;
         
         if (lastDate) {
@@ -137,27 +178,33 @@ class StreakService {
           const daysDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
           
           if (daysDiff === 1) {
-            profile.project.current += 1;
+            newCurrent = profile.projectCurrent + 1;
           } else if (daysDiff > 1) {
-            profile.project.current = 1;
+            newCurrent = 1;
           }
         } else {
-          profile.project.current = 1;
+          newCurrent = 1;
         }
       } else {
-        // Different project, reset or continue based on date
-        profile.project.current = 1;
-        profile.project.projectId = projectId;
+        // Different project, reset
+        newCurrent = 1;
       }
       
-      if (profile.project.current > profile.project.longest) {
-        profile.project.longest = profile.project.current;
-      }
+      newLongest = newCurrent > profile.projectLongest ? newCurrent : profile.projectLongest;
+      newCanCashIn = newCurrent >= 3;
       
-      profile.project.lastProjectDate = today;
-      await profile.save();
+      const updated = await prisma.streak.update({
+        where: { userId },
+        data: {
+          projectCurrent: newCurrent,
+          projectLongest: newLongest,
+          projectId,
+          projectLastDate: today,
+          projectCanCashIn: newCanCashIn
+        }
+      });
       
-      return profile;
+      return updated;
     } catch (error: any) {
       logger.error('Error updating project streak:', error);
       throw error;
@@ -167,37 +214,45 @@ class StreakService {
   /**
    * Update PR streak
    */
-  async updatePRStreak(userId: string): Promise<IStreak> {
+  async updatePRStreak(userId: string) {
     try {
       const profile = await this.getOrCreateProfile(userId);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const lastDate = profile.pr.lastPRDate 
-        ? new Date(profile.pr.lastPRDate)
+      const lastDate = profile.prLastDate 
+        ? new Date(profile.prLastDate)
         : null;
+      
+      let newCurrent = profile.prCurrent;
       
       if (lastDate) {
         lastDate.setHours(0, 0, 0, 0);
         const daysDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
         
         if (daysDiff === 1) {
-          profile.pr.current += 1;
+          newCurrent = profile.prCurrent + 1;
         } else if (daysDiff > 1) {
-          profile.pr.current = 1;
+          newCurrent = 1;
         }
       } else {
-        profile.pr.current = 1;
+        newCurrent = 1;
       }
       
-      if (profile.pr.current > profile.pr.longest) {
-        profile.pr.longest = profile.pr.current;
-      }
+      const newLongest = newCurrent > profile.prLongest ? newCurrent : profile.prLongest;
+      const newCanCashIn = newCurrent >= 5;
       
-      profile.pr.lastPRDate = today;
-      await profile.save();
+      const updated = await prisma.streak.update({
+        where: { userId },
+        data: {
+          prCurrent: newCurrent,
+          prLongest: newLongest,
+          prLastDate: today,
+          prCanCashIn: newCanCashIn
+        }
+      });
       
-      return profile;
+      return updated;
     } catch (error: any) {
       logger.error('Error updating PR streak:', error);
       throw error;
@@ -207,15 +262,18 @@ class StreakService {
   /**
    * Update healthy streak (no burnout)
    */
-  async updateHealthyStreak(userId: string, isHealthy: boolean = true): Promise<IStreak> {
+  async updateHealthyStreak(userId: string, isHealthy: boolean = true) {
     try {
       const profile = await this.getOrCreateProfile(userId);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
+      let newCurrent = profile.healthyCurrent;
+      let newConsecutiveDays = profile.healthyConsecutiveDaysWithoutBurnout;
+      
       if (isHealthy) {
-        const lastDate = profile.healthy.lastHealthyDate 
-          ? new Date(profile.healthy.lastHealthyDate)
+        const lastDate = profile.healthyLastDate 
+          ? new Date(profile.healthyLastDate)
           : null;
         
         if (lastDate) {
@@ -223,31 +281,37 @@ class StreakService {
           const daysDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
           
           if (daysDiff === 1) {
-            profile.healthy.current += 1;
-            profile.healthy.consecutiveDaysWithoutBurnout += 1;
+            newCurrent = profile.healthyCurrent + 1;
+            newConsecutiveDays = profile.healthyConsecutiveDaysWithoutBurnout + 1;
           } else if (daysDiff > 1) {
-            profile.healthy.current = 1;
-            profile.healthy.consecutiveDaysWithoutBurnout = 1;
+            newCurrent = 1;
+            newConsecutiveDays = 1;
           }
         } else {
-          profile.healthy.current = 1;
-          profile.healthy.consecutiveDaysWithoutBurnout = 1;
+          newCurrent = 1;
+          newConsecutiveDays = 1;
         }
-        
-        if (profile.healthy.current > profile.healthy.longest) {
-          profile.healthy.longest = profile.healthy.current;
-        }
-        
-        profile.healthy.lastHealthyDate = today;
       } else {
         // Burnout detected, reset streak
-        profile.healthy.current = 0;
-        profile.healthy.consecutiveDaysWithoutBurnout = 0;
+        newCurrent = 0;
+        newConsecutiveDays = 0;
       }
       
-      await profile.save();
+      const newLongest = newCurrent > profile.healthyLongest ? newCurrent : profile.healthyLongest;
+      const newCanCashIn = newCurrent >= 7;
       
-      return profile;
+      const updated = await prisma.streak.update({
+        where: { userId },
+        data: {
+          healthyCurrent: newCurrent,
+          healthyLongest: newLongest,
+          healthyLastDate: isHealthy ? today : profile.healthyLastDate,
+          healthyCanCashIn: newCanCashIn,
+          healthyConsecutiveDaysWithoutBurnout: newConsecutiveDays
+        }
+      });
+      
+      return updated;
     } catch (error: any) {
       logger.error('Error updating healthy streak:', error);
       throw error;
@@ -267,13 +331,23 @@ class StreakService {
       }
       
       const validTypes: StreakType[] = ['daily', 'weekly', 'project', 'pr', 'healthy'];
-      if (!validTypes.includes(streakType)) {
+      if (!validTypes.includes(streakType as StreakType)) {
         res.status(400).json({ error: `Invalid streakType. Must be one of: ${validTypes.join(', ')}` });
         return;
       }
       
       const profile = await this.getOrCreateProfile(userId);
-      const streakData = (profile as any)[streakType] as IStreak['daily'];
+      
+      // Get streak data based on type
+      const streakFieldMap: Record<StreakType, { current: number; canCashIn: boolean }> = {
+        daily: { current: profile.dailyCurrent, canCashIn: profile.dailyCanCashIn },
+        weekly: { current: profile.weeklyCurrent, canCashIn: profile.weeklyCanCashIn },
+        project: { current: profile.projectCurrent, canCashIn: profile.projectCanCashIn },
+        pr: { current: profile.prCurrent, canCashIn: profile.prCanCashIn },
+        healthy: { current: profile.healthyCurrent, canCashIn: profile.healthyCanCashIn }
+      };
+      
+      const streakData = streakFieldMap[streakType as StreakType];
       
       if (!streakData.canCashIn) {
         res.status(400).json({ error: 'This streak cannot be cashed in yet' });
@@ -284,18 +358,25 @@ class StreakService {
       const boostCredits = streakData.current;
       
       // Record the cash-in
-      profile.cashedInStreaks.push({
-        streakType,
-        cashedAt: new Date(),
-        streakValue: streakData.current,
-        boostCreditsEarned: boostCredits
+      await prisma.cashedInStreak.create({
+        data: {
+          streakId: profile.id,
+          streakType,
+          streakValue: streakData.current,
+          boostCreditsEarned: boostCredits
+        }
       });
       
-      // Reset the streak
-      streakData.current = 0;
-      streakData.canCashIn = false;
+      // Reset the streak and update canCashIn
+      const updateData: any = {
+        [`${streakType}Current`]: 0,
+        [`${streakType}CanCashIn`]: false
+      };
       
-      await profile.save();
+      await prisma.streak.update({
+        where: { userId },
+        data: updateData
+      });
       
       res.json({
         success: true,
@@ -328,12 +409,44 @@ class StreakService {
       res.json({
         success: true,
         data: {
-          daily: profile.daily,
-          weekly: profile.weekly,
-          project: profile.project,
-          pr: profile.pr,
-          healthy: profile.healthy,
-          cashedInStreaks: profile.cashedInStreaks
+          daily: {
+            current: profile.dailyCurrent,
+            longest: profile.dailyLongest,
+            lastDate: profile.dailyLastDate,
+            canCashIn: profile.dailyCanCashIn
+          },
+          weekly: {
+            current: profile.weeklyCurrent,
+            longest: profile.weeklyLongest,
+            lastWeek: profile.weeklyLastWeek,
+            canCashIn: profile.weeklyCanCashIn
+          },
+          project: {
+            current: profile.projectCurrent,
+            longest: profile.projectLongest,
+            projectId: profile.projectId,
+            lastDate: profile.projectLastDate,
+            canCashIn: profile.projectCanCashIn
+          },
+          pr: {
+            current: profile.prCurrent,
+            longest: profile.prLongest,
+            lastDate: profile.prLastDate,
+            canCashIn: profile.prCanCashIn
+          },
+          healthy: {
+            current: profile.healthyCurrent,
+            longest: profile.healthyLongest,
+            lastDate: profile.healthyLastDate,
+            canCashIn: profile.healthyCanCashIn,
+            consecutiveDaysWithoutBurnout: profile.healthyConsecutiveDaysWithoutBurnout
+          },
+          cashedInStreaks: profile.cashedInStreaks.map((cis: typeof profile.cashedInStreaks[0]) => ({
+            streakType: cis.streakType,
+            cashedAt: cis.cashedAt,
+            streakValue: cis.streakValue,
+            boostCreditsEarned: cis.boostCreditsEarned
+          }))
         }
       });
     } catch (error: any) {
@@ -354,7 +467,7 @@ class StreakService {
         return;
       }
       
-      let profile: IStreak;
+      let profile;
       
       switch (streakType) {
         case 'daily':
@@ -383,7 +496,11 @@ class StreakService {
       
       res.json({
         success: true,
-        data: (profile as any)[streakType]
+        data: {
+          current: (profile as any)[`${streakType}Current`],
+          longest: (profile as any)[`${streakType}Longest`],
+          canCashIn: (profile as any)[`${streakType}CanCashIn`]
+        }
       });
     } catch (error: any) {
       logger.error('Error updating streak:', error);
@@ -399,13 +516,6 @@ class StreakService {
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   }
-
-  private parseWeekKey(weekKey: string): Date {
-    const [year, week] = weekKey.split('-W').map(Number);
-    const date = new Date(year, 0, 1 + (week - 1) * 7);
-    return date;
-  }
 }
 
 export default new StreakService();
-

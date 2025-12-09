@@ -2,14 +2,17 @@
 
 Quick navigation to all documentation.
 
-## 🚀 Getting Started
+## 🚀 Getting Started (NEW TEAM MEMBERS START HERE)
 
 | Document | Description |
 |----------|-------------|
+| **[START_HERE.md](START_HERE.md)** | **⭐ MAIN ENTRY POINT - Complete getting started guide** |
+| **[FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)** | **⭐ Find your team and understand your role** |
 | [README.md](README.md) | Project overview & quick start |
-| [HOW_TO_BUILD.md](HOW_TO_BUILD.md) | **THE** build guide - start here |
+| [HOW_TO_BUILD.md](HOW_TO_BUILD.md) | **THE** build guide |
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Complete setup walkthrough |
 | [QUICK_START.md](QUICK_START.md) | Quick start guide |
+| [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) | Branch protection rules (main & dev) |
 
 ## 🏗️ Build & Development
 
@@ -35,13 +38,23 @@ Quick navigation to all documentation.
 
 ## 👥 Team Onboarding
 
+**👉 First, find your team:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
+
 | Document | Description |
 |----------|-------------|
 | [docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md) | AI/ML team |
 | [docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md) | Backend team |
 | [docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md) | Frontend team |
 | [docs/MLOPS_TEAM_ONBOARDING.md](docs/MLOPS_TEAM_ONBOARDING.md) | MLOps team |
+| [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md) | Platform/Infrastructure team |
 | [docs/SECURITY_QA_TEAM_ONBOARDING.md](docs/SECURITY_QA_TEAM_ONBOARDING.md) | Security & QA team |
+
+### Team-Specific Resources
+
+| Resource | Description |
+|----------|-------------|
+| [team_dev_environments/](team_dev_environments/) | Team-specific dev environment scripts |
+| [team_submodule_commands/](team_submodule_commands/) | Team-specific submodule workflows |
 
 ## 🔧 Troubleshooting
 
@@ -85,12 +98,14 @@ Old/deprecated docs moved to `docs/archive/`:
 
 ## Quick Links
 
+- **⭐ NEW TO THE PROJECT?** → [START_HERE.md](START_HERE.md)
+- **⭐ FIND YOUR TEAM?** → [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
 - **Want to build?** → [HOW_TO_BUILD.md](HOW_TO_BUILD.md)
 - **First time setup?** → [GETTING_STARTED.md](GETTING_STARTED.md)
+- **Branch protection?** → [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md)
 - **Disk space issues?** → [GET_SPACE_BACK.md](GET_SPACE_BACK.md)
 - **Docker logs?** → [docs/DOCKER_LOG_MANAGEMENT.md](docs/DOCKER_LOG_MANAGEMENT.md)
 - **Need to see architecture?** → [SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)
 - **Need service details?** → [docs/SERVICES_OVERVIEW.md](docs/SERVICES_OVERVIEW.md)
 - **Core-API repurposing?** → [docs/CORE_API_REPURPOSING_STRATEGY.md](docs/CORE_API_REPURPOSING_STRATEGY.md)
-- **Looking for your team?** → See "Team Onboarding" section above
 
