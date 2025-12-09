@@ -6,111 +6,24 @@
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT" || exit 0
 
-# ============================================
-# TRIGGER FILE APPROACH: Check for hooks from any submodule
-# This allows any submodule to signal that hooks need to be installed
-# Runs early (on submodule init) without security risk
-# Works with ALL submodules listed in .gitmodules
-# ============================================
-
-# Function to sync hooks from a submodule to parent
-sync_hooks_from_submodule() {
-    local submodule_path=$1
-    
-    if [ ! -d "$submodule_path/.git-hooks" ]; then
-        return
-    fi
-    
-    echo "🔄 Syncing hooks from $submodule_path submodule..."
-    
-    # Create .git-hooks directory in parent
-    mkdir -p .git-hooks
-    
-    # Copy hooks from submodule (with conflict resolution: parent hooks take precedence)
-    for hook in "$submodule_path/.git-hooks"/*; do
-        if [ -f "$hook" ]; then
-            hook_name=$(basename "$hook")
-            # Only copy if parent doesn't have this hook, or if submodule's is newer
-            if [ ! -f ".git-hooks/$hook_name" ] || [ "$hook" -nt ".git-hooks/$hook_name" ]; then
-                cp "$hook" ".git-hooks/$hook_name"
-                chmod +x ".git-hooks/$hook_name"
+# Install hooks from .git-hooks to .git/hooks if needed
+# NOTE: For submodules, .git is usually a FILE, not a directory
+# We only create .git/hooks if .git is actually a directory
+if [ -d ".git-hooks" ]; then
+    # Only create .git/hooks if .git is actually a directory (not a file)
+    if [ -d ".git" ] && [ ! -f ".git" ]; then
+        mkdir -p .git/hooks
+        for hook in .git-hooks/*; do
+            if [ -f "$hook" ] && [ -x "$hook" ]; then
+                hook_name=$(basename "$hook")
+                # Only copy if missing or outdated
+                if [ ! -f ".git/hooks/$hook_name" ] || [ ".git/hooks/$hook_name" -ot "$hook" ]; then
+                    cp "$hook" ".git/hooks/$hook_name"
+                    chmod +x ".git/hooks/$hook_name"
+                fi
             fi
-        fi
-    done
-    
-    echo "✅ Hooks synced from $submodule_path"
-}
-
-# Check for global trigger file (any submodule can create this)
-if [ -f ".hooks-need-install" ]; then
-    # Check all submodules for hooks
-    if [ -f ".gitmodules" ]; then
-        grep -E "^\s*path\s*=\s*" .gitmodules | sed -E 's/^\s*path\s*=\s*//' | sed 's/[[:space:]]*$//' | while IFS= read -r submodule_path; do
-            [ -z "$submodule_path" ] && continue
-            sync_hooks_from_submodule "$submodule_path"
         done
     fi
-    
-    # Remove global trigger file
-    rm -f .hooks-need-install
-fi
-
-# Check for per-submodule trigger files (format: .hooks-need-install-<submodule-path>)
-# Replace slashes with dashes for filename safety
-if [ -f ".gitmodules" ]; then
-    grep -E "^\s*path\s*=\s*" .gitmodules | sed -E 's/^\s*path\s*=\s*//' | sed 's/[[:space:]]*$//' | while IFS= read -r submodule_path; do
-        [ -z "$submodule_path" ] && continue
-        
-        # Create safe trigger filename (replace / with -)
-        trigger_name=".hooks-need-install-$(echo "$submodule_path" | tr '/' '-')"
-        
-        if [ -f "$trigger_name" ]; then
-            sync_hooks_from_submodule "$submodule_path"
-            rm -f "$trigger_name"
-        fi
-    done
-fi
-
-# Also check all submodules directly (in case trigger files weren't created)
-# This provides a fallback and ensures hooks are synced on every checkout
-if [ -f ".gitmodules" ]; then
-    grep -E "^\s*path\s*=\s*" .gitmodules | sed -E 's/^\s*path\s*=\s*//' | sed 's/[[:space:]]*$//' | while IFS= read -r submodule_path; do
-        [ -z "$submodule_path" ] && continue
-        
-        # Check if submodule has hooks and they're newer than parent's
-        if [ -d "$submodule_path/.git-hooks" ]; then
-            # Only sync if submodule hooks are newer (to avoid unnecessary work)
-            needs_sync=false
-            for hook in "$submodule_path/.git-hooks"/*; do
-                if [ -f "$hook" ]; then
-                    hook_name=$(basename "$hook")
-                    if [ ! -f ".git-hooks/$hook_name" ] || [ "$hook" -nt ".git-hooks/$hook_name" ]; then
-                        needs_sync=true
-                        break
-                    fi
-                fi
-            done
-            
-            if [ "$needs_sync" = true ]; then
-                sync_hooks_from_submodule "$submodule_path"
-            fi
-        fi
-    done
-fi
-
-# Install hooks from .git-hooks to .git/hooks if needed
-if [ -d ".git-hooks" ]; then
-    mkdir -p .git/hooks
-    for hook in .git-hooks/*; do
-        if [ -f "$hook" ] && [ -x "$hook" ]; then
-            hook_name=$(basename "$hook")
-            # Only copy if missing or outdated
-            if [ ! -f ".git/hooks/$hook_name" ] || [ ".git/hooks/$hook_name" -ot "$hook" ]; then
-                cp "$hook" ".git/hooks/$hook_name"
-                chmod +x ".git/hooks/$hook_name"
-            fi
-        fi
-    done
 fi
 
 # Configure hooksPath to use .git-hooks
@@ -123,7 +36,7 @@ if [ -z "$CURRENT_HOOKS_PATH" ] || [ "$CURRENT_HOOKS_PATH" != ".git-hooks" ]; th
     fi
 fi
 
-# Automatically sync hooks to all submodules (PROTECT ALL SUBMODULES)
+# Automatically sync hooks to all submodules
 sync_hooks_to_submodule() {
     local submodule_path=$1
     local submodule_name=$2
@@ -138,17 +51,14 @@ sync_hooks_to_submodule() {
     fi
     
     # Create .git-hooks directory in submodule
-    mkdir -p "$submodule_path/.git-hooks" || return
+    mkdir -p "$submodule_path/.git-hooks"
     
     # Copy all hooks from main repo to submodule
-    hooks_copied=0
     for hook in .git-hooks/*; do
-        if [ -f "$hook" ] && [ -x "$hook" ]; then
+        if [ -f "$hook" ]; then
             hook_name=$(basename "$hook")
-            if cp "$hook" "$submodule_path/.git-hooks/$hook_name" 2>/dev/null; then
-                chmod +x "$submodule_path/.git-hooks/$hook_name" 2>/dev/null || true
-                hooks_copied=$((hooks_copied + 1))
-            fi
+            cp "$hook" "$submodule_path/.git-hooks/$hook_name"
+            chmod +x "$submodule_path/.git-hooks/$hook_name"
         fi
     done
     
@@ -159,27 +69,21 @@ sync_hooks_to_submodule() {
     
     # Only create .git/hooks if .git is actually a directory (not a file)
     if [ -d ".git" ] && [ ! -f ".git" ]; then
-        mkdir -p .git/hooks 2>/dev/null || true
+        mkdir -p .git/hooks
         for hook in .git-hooks/*; do
             if [ -f "$hook" ]; then
                 hook_name=$(basename "$hook")
-                cp "$hook" ".git/hooks/$hook_name" 2>/dev/null || true
-                chmod +x ".git/hooks/$hook_name" 2>/dev/null || true
+                cp "$hook" ".git/hooks/$hook_name"
+                chmod +x ".git/hooks/$hook_name"
             fi
         done
     fi
     
-    # Configure hooksPath for submodule (CRITICAL for protection)
-    if git config core.hooksPath .git-hooks 2>/dev/null; then
-        # Verify hooksPath was set correctly
-        configured_path="$(git config core.hooksPath 2>/dev/null)"
-        if [ "$configured_path" = ".git-hooks" ] && [ $hooks_copied -gt 0 ]; then
-            # Submodule is now protected
-            :
-        fi
-    fi
+    # Configure hooksPath for submodule
+    git config core.hooksPath .git-hooks
     
     # Copy .gitconfig to submodule if it exists in main repo
+    # Make sure the submodule directory exists before copying
     cd "$REPO_ROOT" || return
     if [ -f "$REPO_ROOT/.gitconfig" ] && [ -d "$submodule_path" ]; then
         # Use full path to ensure we copy to the correct location
@@ -188,33 +92,16 @@ sync_hooks_to_submodule() {
 }
 
 # Sync hooks to all submodules listed in .gitmodules
-# This ensures ALL submodules are protected with branch protection hooks
-PROTECTED_SUBMODULES=0
-TOTAL_SUBMODULES=0
-
 if [ -f ".gitmodules" ]; then
     # Extract submodule paths from .gitmodules (handles tabs and spaces)
     # This ensures we catch ALL submodules regardless of formatting
-    while IFS= read -r submodule_path; do
+    grep -E "^\s*path\s*=\s*" .gitmodules | sed -E 's/^\s*path\s*=\s*//' | sed 's/[[:space:]]*$//' | while IFS= read -r submodule_path; do
         # Skip empty lines
         [ -z "$submodule_path" ] && continue
         
-        TOTAL_SUBMODULES=$((TOTAL_SUBMODULES + 1))
         submodule_name=$(basename "$submodule_path")
-        
-        # Sync hooks to protect this submodule
-        if sync_hooks_to_submodule "$submodule_path" "$submodule_name"; then
-            # Verify protection was successful
-            if [ -d "$submodule_path/.git-hooks" ] && [ -f "$submodule_path/.git-hooks/pre-push" ]; then
-                PROTECTED_SUBMODULES=$((PROTECTED_SUBMODULES + 1))
-            fi
-        fi
-    done < <(grep -E "^\s*path\s*=\s*" .gitmodules | sed -E 's/^\s*path\s*=\s*//' | sed 's/[[:space:]]*$//')
-    
-    # Provide feedback if in verbose mode or if there were issues
-    if [ $TOTAL_SUBMODULES -gt 0 ] && [ "$GIT_HOOKS_VERBOSE" = "1" ]; then
-        echo "🛡️  Protected $PROTECTED_SUBMODULES/$TOTAL_SUBMODULES submodules with hooks"
-    fi
+        sync_hooks_to_submodule "$submodule_path" "$submodule_name"
+    done
 else
     # If .gitmodules doesn't exist, this might be a submodule itself
     # In that case, we're done (hooks already installed by parent)

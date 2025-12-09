@@ -545,28 +545,21 @@ if ($ubuntuCompactionSuccess) {
 }
 Write-Output ""
 
-# Step 18: Restart Docker Desktop and WSL
-Write-ColorOutput Yellow "Restarting Docker Desktop and WSL..."
-$dockerDesktopPaths = @(
-    "C:\Program Files\Docker\Docker\Docker Desktop.exe",
-    "${env:ProgramFiles(x86)}\Docker\Docker\Docker Desktop.exe",
-    "$env:LOCALAPPDATA\Programs\Docker\Docker\Docker Desktop.exe"
-)
-$dockerDesktopFound = $false
-foreach ($dockerPath in $dockerDesktopPaths) {
-    if (Test-Path $dockerPath) {
-        Start-Process $dockerPath -ErrorAction SilentlyContinue
-        Write-ColorOutput Green "[OK] Docker Desktop restarting..."
-        $dockerDesktopFound = $true
-        break
-    }
-}
-if (-not $dockerDesktopFound) {
-    Write-ColorOutput Yellow "[INFO] Docker Desktop executable not found (may not be installed)"
-}
-wsl --distribution Ubuntu 2>$null | Out-Null
-Start-Sleep -Seconds 2
-Write-ColorOutput Green "[OK] WSL restarted"
+# Step 18: Note about restarting Docker Desktop and WSL (user must do manually)
+Write-ColorOutput Yellow "=========================================="
+Write-ColorOutput Yellow "Manual Restart Required"
+Write-ColorOutput Yellow "=========================================="
+Write-Output ""
+Write-ColorOutput Cyan "Docker Desktop and WSL have been shut down."
+Write-ColorOutput Cyan "Please restart them manually when ready:"
+Write-Output ""
+Write-ColorOutput Yellow "To restart Docker Desktop:"
+Write-Output "  - Open Docker Desktop from Start Menu, or"
+Write-Output "  - Run: Start-Process 'C:\Program Files\Docker\Docker\Docker Desktop.exe'"
+Write-Output ""
+Write-ColorOutput Yellow "To restart WSL:"
+Write-Output "  - Run: wsl --distribution Ubuntu"
+Write-Output "  - Or simply open a WSL terminal"
 Write-Output ""
 
 # Step 19: Summary

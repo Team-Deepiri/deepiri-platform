@@ -452,7 +452,7 @@ services:
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "11434:11434"
+      - "${OLLAMA_PORT:-11435}:11434"  # Use 11435 externally to avoid conflict with local Ollama
     volumes:
       - ollama_dev_data:/root/.ollama
     networks:
@@ -524,6 +524,12 @@ services:
       - ./diri-cyrex/tests:/app/tests
       - cyrex_cache:/app/.cache
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       - influxdb
       - milvus
