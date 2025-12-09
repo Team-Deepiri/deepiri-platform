@@ -149,3 +149,4 @@ skaffold
 binary/
 # Kubernetes binary (should be installed globally)
 kubectl
+.csv
