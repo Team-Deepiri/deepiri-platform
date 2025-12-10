@@ -36,10 +36,17 @@ sync_hooks_to_submodule() {
         return
     fi
     
+    # Additional safety: verify git commands work in the submodule
+    # If .git is a file but the submodule isn't properly initialized, git commands will fail
+    if ! (cd "$submodule_path" && git rev-parse --git-dir >/dev/null 2>&1); then
+        echo "  ⏭️  Skipping $submodule_path (git repository not properly initialized)"
+        return
+    fi
+    
     echo "  📦 Syncing hooks to: $submodule_path"
     
     # Create .git-hooks directory in submodule
-    mkdir -p "$submodule_path/.git-hooks"
+    mkdir -p "$submodule_path/.git-hooks" 2>/dev/null || true
     
     # Copy all hooks from main repo to submodule
     if [ -d ".git-hooks" ]; then
@@ -50,11 +57,14 @@ sync_hooks_to_submodule() {
     # Configure hooksPath for submodule
     # Note: For submodules, .git is usually a FILE (not a directory) pointing to parent's .git/modules
     # We should NOT try to create .git/hooks/ in submodules - just configure hooksPath
-    (cd "$submodule_path" && git config core.hooksPath .git-hooks) || true
+    (cd "$submodule_path" && git config core.hooksPath .git-hooks) 2>/dev/null || true
     
     # Copy .gitconfig to submodule if it exists in main repo
     if [ -f "$REPO_ROOT/.gitconfig" ] && [ -d "$submodule_path" ]; then
-        cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
+        # Ensure the submodule directory exists and is writable
+        if [ -w "$submodule_path" ] 2>/dev/null; then
+            cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
+        fi
     fi
     
     echo "    ✅ Hooks synced to $submodule_path"

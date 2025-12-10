@@ -40,10 +40,17 @@ if [ -f ".gitmodules" ]; then
             continue
         fi
         
+        # Additional safety: verify git commands work in the submodule
+        # If .git is a file but the submodule isn't properly initialized, git commands will fail
+        if ! (cd "$submodule_path" && git rev-parse --git-dir >/dev/null 2>&1); then
+            echo "  ⏭️  Skipping $submodule_path (git repository not properly initialized)"
+            continue
+        fi
+        
         echo "📦 Submodule: $submodule_path"
         
         # Create .git-hooks directory if it doesn't exist
-        mkdir -p "$submodule_path/.git-hooks"
+        mkdir -p "$submodule_path/.git-hooks" 2>/dev/null || true
         
         # Copy hooks from main repo
         if [ -d ".git-hooks" ]; then
@@ -55,13 +62,13 @@ if [ -f ".gitmodules" ]; then
         # Note: For submodules, .git is usually a FILE (not a directory) pointing to parent's .git/modules
         # We should NOT try to create .git/hooks/ in submodules - just configure hooksPath
         (cd "$submodule_path" && \
-            git config core.hooksPath .git-hooks)
+            git config core.hooksPath .git-hooks) 2>/dev/null || true
         
         # Only try to install hooks in .git/hooks if .git is actually a directory (not a file)
         # This is rare for submodules, but can happen in some git configurations
         if [ -d "$submodule_path/.git" ] && [ ! -f "$submodule_path/.git" ]; then
             (cd "$submodule_path" && \
-                mkdir -p .git/hooks && \
+                mkdir -p .git/hooks 2>/dev/null || true && \
                 cp .git-hooks/* .git/hooks/ 2>/dev/null || true && \
                 chmod +x .git/hooks/* 2>/dev/null || true)
         fi

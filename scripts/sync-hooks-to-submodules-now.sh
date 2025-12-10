@@ -26,17 +26,24 @@ sync_hooks_to_submodule() {
         return
     fi
     
+    # Additional safety: verify git commands work in the submodule
+    # If .git is a file but the submodule isn't properly initialized, git commands will fail
+    if ! (cd "$submodule_path" && git rev-parse --git-dir >/dev/null 2>&1); then
+        echo "⚠️  Skipping $submodule_name (git repository not properly initialized)"
+        return
+    fi
+    
     echo "📦 Syncing hooks to $submodule_name..."
     
     # Create .git-hooks directory in submodule
-    mkdir -p "$submodule_path/.git-hooks"
+    mkdir -p "$submodule_path/.git-hooks" 2>/dev/null || true
     
     # Copy all hooks from main repo to submodule
     for hook in .git-hooks/*; do
         if [ -f "$hook" ]; then
             hook_name=$(basename "$hook")
-            cp "$hook" "$submodule_path/.git-hooks/$hook_name"
-            chmod +x "$submodule_path/.git-hooks/$hook_name"
+            cp "$hook" "$submodule_path/.git-hooks/$hook_name" 2>/dev/null || true
+            chmod +x "$submodule_path/.git-hooks/$hook_name" 2>/dev/null || true
             echo "   ✓ Copied $hook_name"
         fi
     done
@@ -48,23 +55,27 @@ sync_hooks_to_submodule() {
     
     # Only create .git/hooks if .git is actually a directory (not a file)
     if [ -d ".git" ] && [ ! -f ".git" ]; then
-        mkdir -p .git/hooks
+        mkdir -p .git/hooks 2>/dev/null || true
         for hook in .git-hooks/*; do
             if [ -f "$hook" ]; then
                 hook_name=$(basename "$hook")
-                cp "$hook" ".git/hooks/$hook_name"
-                chmod +x ".git/hooks/$hook_name"
+                cp "$hook" ".git/hooks/$hook_name" 2>/dev/null || true
+                chmod +x ".git/hooks/$hook_name" 2>/dev/null || true
             fi
         done
     fi
     
-    # Configure hooksPath for submodule
-    git config core.hooksPath .git-hooks
+    # Configure hooksPath for submodule (this works even if .git is a file)
+    git config core.hooksPath .git-hooks 2>/dev/null || true
     
     # Copy .gitconfig to submodule if it exists in main repo
-    if [ -f "$REPO_ROOT/.gitconfig" ]; then
-        cp "$REPO_ROOT/.gitconfig" "$submodule_path/.gitconfig"
-        echo "   ✓ Copied .gitconfig"
+    cd "$REPO_ROOT" || return
+    if [ -f "$REPO_ROOT/.gitconfig" ] && [ -d "$submodule_path" ]; then
+        # Ensure the submodule directory exists and is writable
+        if [ -w "$submodule_path" ] 2>/dev/null; then
+            cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
+            echo "   ✓ Copied .gitconfig"
+        fi
     fi
     
     echo "   ✅ $submodule_name hooks configured"
