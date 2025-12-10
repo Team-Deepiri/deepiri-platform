@@ -191,9 +191,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
     volumes:
       - ./platform-services/backend/deepiri-auth-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
@@ -221,9 +220,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
     volumes:
       - ./platform-services/backend/deepiri-task-orchestrator:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
@@ -254,9 +252,8 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
     volumes:
       - ./platform-services/backend/deepiri-engagement-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
@@ -284,9 +281,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
     volumes:
       - ./platform-services/backend/deepiri-platform-analytics-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
@@ -314,9 +310,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
     volumes:
       - ./platform-services/backend/deepiri-notification-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
@@ -342,9 +337,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
     volumes:
       - ./platform-services/backend/deepiri-external-bridge-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
@@ -370,10 +364,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
     volumes:
       - ./platform-services/backend/deepiri-challenge-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-      - /shared-utils/node_modules
-    command: sh -c "cd /shared-utils && rm -rf node_modules/.caniuse-lite* 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps && npm run build && cd /app && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm cache clean --force && npm run dev"
     depends_on:
       postgres:
         condition: service_healthy
@@ -398,9 +390,8 @@ services:
       PORT: 5008
     volumes:
       - ./platform-services/backend/deepiri-realtime-gateway:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /app && npm run dev"
     networks:
       - deepiri-backend-network
 
