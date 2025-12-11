@@ -7,13 +7,14 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
-# Backend team services
+# QA team services
 SERVICES=(
   postgres redis influxdb
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
+  frontend-dev
 )
 
 echo "🚀 Starting QA Team Environment..."
