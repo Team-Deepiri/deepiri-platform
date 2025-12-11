@@ -32,7 +32,7 @@ if [ -z "$CURRENT_HOOKS_PATH" ] || [ "$CURRENT_HOOKS_PATH" != ".git-hooks" ]; th
     git config core.hooksPath .git-hooks
     if [ -f ".git-hooks/pre-push" ]; then
         echo "🔧 Git hooks automatically configured (hooksPath = .git-hooks)"
-        echo "✔ You are now protected from pushing to 'main', 'dev', 'master', or team-dev branches."
+        echo "✔ You are now protected from pushing to 'main', 'dev', 'master', or branches containing 'team-dev'."
     fi
 fi
 
@@ -96,7 +96,7 @@ sync_hooks_to_submodule() {
     if [ -f "$REPO_ROOT/.gitconfig" ] && [ -d "$submodule_path" ]; then
         # Ensure the submodule directory exists and is writable
         if [ -w "$submodule_path" ] 2>/dev/null; then
-            cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
+        cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
         fi
     fi
 }

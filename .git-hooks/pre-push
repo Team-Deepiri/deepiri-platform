@@ -4,33 +4,52 @@
 # This hook receives ref information via stdin in the format:
 # <local_ref> <local_sha1> <remote_ref> <remote_sha1>
 
-# Base protected branches (always protected)
-protected_branches="main dev master"
-
-# Get repository name to check for team-dev branches
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-REPO_NAME=$(basename "$REPO_ROOT")
-
-# If repo name ends with -team-dev, also protect that branch name
-# Use -- to prevent grep from interpreting -t as an option
-if echo "$REPO_NAME" | grep -qE -- '-team-dev$'; then
-    protected_branches="$protected_branches $REPO_NAME"
-fi
+# Base protected branches (always protected) - EXACT MATCH ONLY
+# These must match character-for-character with no prefix or suffix
+protected_branches="main master"
 
 # Read the refs being pushed from stdin
 while read local_ref local_sha remote_ref remote_sha; do
   # Extract branch name from ref (e.g., refs/heads/main -> main)
   branch_name=$(echo "$remote_ref" | sed 's|refs/heads/||')
   
-  # Check if this branch is protected
+  # PROTECTION RULE 1: Exact match for "main" and "master"
+  # Character-for-character matching - no prefix, no suffix, no variations
   for protected in $protected_branches; do
     if [ "$branch_name" = "$protected" ]; then
       echo "❌ ERROR: You cannot push directly to '$protected'."
+      echo "   Branch name must match exactly (character-for-character)."
       echo "   Make a feature branch and use a Pull Request."
       echo "   Protected branches: $protected_branches"
       exit 1
     fi
   done
+  
+  # PROTECTION RULE 2: Exact match for "dev"
+  # Character-for-character matching - must be exactly "dev" with no prefix, suffix, or dashes
+  # This uses exact string comparison (=), not substring matching
+  if [ "$branch_name" = "dev" ]; then
+    echo "❌ ERROR: You cannot push directly to 'dev'."
+    echo "   Branch name must match exactly 'dev' (character-for-character)."
+    echo "   Make a feature branch and use a Pull Request."
+    echo "   Note: Branches like 'name-dev' or 'dev-something' are allowed (they have dashes)."
+    exit 1
+  fi
+  
+  # PROTECTION RULE 3: Exact substring match for "team-dev"
+  # Must contain the exact substring "team-dev" (character-for-character including the dash)
+  # Can have prefix (e.g., "ai-team-dev", "frontend-team-dev", "backend-team-dev" - all blocked)
+  # Can have suffix (e.g., "team-dev-branch" - also blocked because it contains "team-dev")
+  # The exact string "team-dev" itself is also blocked
+  # Uses grep -qF for fixed string (non-regex) substring matching - matches anywhere in branch name
+  if echo "$branch_name" | grep -qF "team-dev"; then
+    echo "❌ ERROR: You cannot push to branches containing 'team-dev'."
+    echo "   Branch name: '$branch_name'"
+    echo "   The exact substring 'team-dev' (character-for-character) was detected."
+    echo "   Make a feature branch and use a Pull Request."
+    echo "   Note: Branches like 'name-dev' or 'dev-something' are allowed (they don't contain 'team-dev')."
+    exit 1
+  fi
 done
 
 exit 0

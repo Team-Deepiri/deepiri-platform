@@ -12,8 +12,8 @@ Write-Host ""
 
 # AI team services
 $SERVICES = @(
-  "postgres", "redis", "influxdb", "etcd", "minio", "milvus",
-  "cyrex", "jupyter", "mlflow",
+  "redis", "influxdb", "etcd", "minio", "milvus",
+  "cyrex", "cyrex-interface", "jupyter", "mlflow",
   "challenge-service", "external-bridge-service",
   "ollama"
 )

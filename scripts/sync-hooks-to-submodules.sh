@@ -76,7 +76,7 @@ sync_hooks_to_submodule() {
         # Ensure the submodule directory exists and is writable
         if [ -w "$submodule_path" ] 2>/dev/null; then
             cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
-            echo "   ✓ Copied .gitconfig"
+        echo "   ✓ Copied .gitconfig"
         fi
     fi
     
@@ -107,5 +107,5 @@ fi
 echo ""
 echo "✅ Git hooks sync complete for all submodules!"
 echo ""
-echo "📝 All submodules are now protected from pushes to 'main', 'dev', 'master', or team-dev branches."
+echo "📝 All submodules are now protected from pushes to 'main', 'dev', 'master', or branches containing 'team-dev'."
 

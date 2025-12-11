@@ -63,7 +63,7 @@ sync_hooks_to_submodule() {
     if [ -f "$REPO_ROOT/.gitconfig" ] && [ -d "$submodule_path" ]; then
         # Ensure the submodule directory exists and is writable
         if [ -w "$submodule_path" ] 2>/dev/null; then
-            cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
+        cp "$REPO_ROOT/.gitconfig" "$REPO_ROOT/$submodule_path/.gitconfig" 2>/dev/null || true
         fi
     fi
     
