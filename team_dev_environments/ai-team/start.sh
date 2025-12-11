@@ -20,8 +20,8 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Use --no-build to prevent automatic building (images should already be built)
-# Dependencies will be started automatically
-docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
+# --no-deps prevents starting dependencies unless specified
+docker compose -f docker-compose.dev.yml up -d --no-build --no-deps "${SERVICES[@]}"
 
 echo "✅ AI Team services started!"
 echo ""
@@ -35,4 +35,3 @@ echo "🌉 External Bridge: http://localhost:5006"
 echo "🔍 Adminer: http://localhost:8080"
 echo ""
 echo "💡 To pull models into Ollama: docker exec -it deepiri-ollama-ai ollama pull llama3:8b"
-
