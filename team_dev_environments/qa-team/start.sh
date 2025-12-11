@@ -7,13 +7,14 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
-# Backend team services
+# QA team services
 SERVICES=(
   postgres redis influxdb
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
+  frontend-dev
 )
 
 echo "🚀 Starting QA Team Environment..."
@@ -22,7 +23,8 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Use wrapper to auto-load k8s config, then start selected services
-./docker-compose-k8s.sh -f docker-compose.dev.yml up -d "${SERVICES[@]}"
+#./docker-compose-k8s.sh -f docker-compose.dev.yml up -d "${SERVICES[@]}"
+docker compose -f docker-compose.dev.yml up -d --no-build --no-deps "${SERVICES[@]}"
 
 echo ""
 echo "✅ QA Team Environment Started!"
@@ -54,4 +56,3 @@ echo "  View specific service:    docker compose -f docker-compose.dev.yml logs 
 echo "  Stop services:            docker compose -f docker-compose.dev.yml stop ${SERVICES[*]}"
 echo "  Restart service:          docker compose -f docker-compose.dev.yml restart <service-name>"
 echo ""
-

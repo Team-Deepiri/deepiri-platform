@@ -14,6 +14,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
+  frontend-dev
 )
 
 echo "🚀 Starting Backend Team Environment..."
@@ -22,7 +23,8 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Use wrapper to auto-load k8s config, then start selected services
-./docker-compose-k8s.sh -f docker-compose.dev.yml up -d "${SERVICES[@]}"
+#./docker-compose-k8s.sh -f docker-compose.dev.yml up -d "${SERVICES[@]}"
+docker compose -f docker-compose.dev.yml up -d --no-build --no-deps "${SERVICES[@]}"
 
 echo ""
 echo "✅ Backend Team Environment Started!"
