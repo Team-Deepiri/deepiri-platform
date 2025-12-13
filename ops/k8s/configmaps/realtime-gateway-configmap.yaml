@@ -9,4 +9,11 @@ data:
   # Server Configuration
   NODE_ENV: "development"
   PORT: "5008"
+  
+  # Streaming Service Configuration (for consuming events for real-time updates)
+  SYNAPSE_URL: "http://synapse:8002"
+  
+  # Redis Configuration (for WebSocket/pub-sub)
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
 

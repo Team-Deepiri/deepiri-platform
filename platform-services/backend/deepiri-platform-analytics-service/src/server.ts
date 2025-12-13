@@ -36,6 +36,13 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
 };
 app.use(errorHandler);
 
+// Start event consumption
+import { startEventConsumption } from './streaming/eventConsumer';
+
+startEventConsumption().catch((err) => {
+  logger.error('Failed to start event consumption:', err);
+});
+
 app.listen(PORT, () => {
   logger.info(`Platform Analytics Service running on port ${PORT}`);
 });

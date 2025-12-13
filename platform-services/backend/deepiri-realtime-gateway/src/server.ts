@@ -28,6 +28,12 @@ app.use(express.json());
 // Setup gamification events
 const gamificationEmitter = setupGamificationEvents(io);
 
+// Start event consumption for streaming events
+import { startEventConsumption } from './streaming/eventConsumer';
+startEventConsumption(io).catch((err) => {
+  logger.error('Failed to start event consumption:', err);
+});
+
 // HTTP endpoint to emit gamification events (called by engagement service)
 app.post('/emit/gamification', (req: Request, res: Response) => {
   const { userId, type, data } = req.body;

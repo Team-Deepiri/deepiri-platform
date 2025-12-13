@@ -16,6 +16,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
+  synapse
 )
 
 echo "🛑 Stopping Backend Team services..."

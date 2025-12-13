@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cyrex-agi-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Cyrex-AGI (Autonomous AI System) - Phase 5 - public configuration"
+data:
+  # Server Configuration
+  PORT: "8003"
+  HOST: "0.0.0.0"
+  
+  # Redis Configuration (for streaming/event consumption)
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  
+  # Cyrex Runtime Bridge Configuration
+  CYREX_BASE_URL: "http://cyrex:8000"
+  
+  # Platform Services Configuration
+  PLATFORM_API_URL: "http://api-gateway:5100"
+  
+  # Streaming Service Configuration
+  SYNAPSE_URL: "http://synapse:8002"
+  
+  # ModelKit Configuration
+  MODELKIT_PATH: "/app/../deepiri-modelkit"
+  
+  # AGI Configuration (Phase 5)
+  AGI_ENABLED: "true"
+  AGI_DECISION_INTERVAL: "60"  # seconds
+  AGI_SELF_IMPROVEMENT_ENABLED: "true"
+

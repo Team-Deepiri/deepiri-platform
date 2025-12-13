@@ -16,7 +16,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  cyrex cyrex-interface mlflow jupyter
+  cyrex cyrex-interface mlflow jupyter synapse
 )
 
 echo "🛑 Stopping Infrastructure Team services..."

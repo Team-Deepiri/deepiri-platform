@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
 import prisma from './db';
+import { publishTaskCreated, publishTaskCompleted, publishTaskFailed } from './streaming/eventPublisher';
 
 const logger = createLogger('task-versioning-service');
 
@@ -27,6 +28,12 @@ class TaskVersioningService {
       }
 
       const version = await this.createInitialVersion(taskId, userId, taskData);
+      
+      // Publish task-created event
+      await publishTaskCreated(taskId, userId, taskData).catch((err) => {
+        logger.warn('Failed to publish task-created event:', err);
+      });
+      
       res.json(version);
     } catch (error: any) {
       logger.error('Error creating task:', error);
@@ -45,6 +52,20 @@ class TaskVersioningService {
       }
 
       const version = await this.createVersion(id, userId, changes, changeReason);
+      
+      // Publish events based on status changes
+      if (changes.status) {
+        if (changes.status === 'completed') {
+          await publishTaskCompleted(id, userId, version).catch((err) => {
+            logger.warn('Failed to publish task-completed event:', err);
+          });
+        } else if (changes.status === 'failed' || changes.status === 'error') {
+          await publishTaskFailed(id, userId, changeReason || 'Task failed').catch((err) => {
+            logger.warn('Failed to publish task-failed event:', err);
+          });
+        }
+      }
+      
       res.json(version);
     } catch (error: any) {
       logger.error('Error updating task:', error);

@@ -28,6 +28,12 @@ connectDatabase()
     process.exit(1);
   });
 
+// Initialize event publisher
+import { initializeEventPublisher } from './streaming/eventPublisher';
+initializeEventPublisher().catch((err) => {
+  logger.error('Failed to initialize event publisher:', err);
+});
+
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'task-orchestrator', timestamp: new Date().toISOString() });
 });

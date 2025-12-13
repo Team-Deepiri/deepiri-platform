@@ -16,7 +16,8 @@ SERVICES=(
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
-  challenge-service realtime-gateway frontend-dev
+  challenge-service realtime-gateway
+  synapse
 )
 
 echo "🔨 Building Backend Team services..."
