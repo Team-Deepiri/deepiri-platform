@@ -26,7 +26,7 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Build services using docker-compose.dev.yml
-docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
+docker compose -f docker-compose.dev.yml build --no-cache "${SERVICES[@]}"
 
 echo ""
 echo "✅ Backend Team services built successfully!"

@@ -36,7 +36,6 @@ services:
     container_name: deepiri-mongo-express
     restart: unless-stopped
     logging: *minimal-logging
-    logging: *minimal-logging
     ports:
       - "8081:8081"
     environment:
@@ -161,7 +160,6 @@ services:
     container_name: deepiri-cyrex
     restart: unless-stopped
     logging: *minimal-logging
-    logging: *minimal-logging
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
@@ -253,7 +251,6 @@ services:
     container_name: deepiri-frontend
     restart: unless-stopped
     logging: *minimal-logging
-    logging: *minimal-logging
     ports:
       - "3000:80"
     depends_on:
@@ -265,7 +262,6 @@ services:
     image: prom/prometheus:latest
     container_name: deepiri-prometheus
     restart: unless-stopped
-    logging: *minimal-logging
     logging: *minimal-logging
     ports:
       - "9090:9090"
@@ -282,7 +278,6 @@ services:
     container_name: deepiri-grafana
     restart: unless-stopped
     logging: *minimal-logging
-    logging: *minimal-logging
     ports:
       - "3001:3000"
     environment:
@@ -297,7 +292,6 @@ services:
     image: influxdb:2.7
     container_name: deepiri-influxdb
     restart: unless-stopped
-    logging: *minimal-logging
     logging: *minimal-logging
     ports:
       - "8086:8086"
@@ -318,7 +312,6 @@ services:
     image: ghcr.io/mlflow/mlflow:v2.8.1
     container_name: deepiri-mlflow
     restart: unless-stopped
-    logging: *minimal-logging
     logging: *minimal-logging
     ports:
       - "5001:5000"
@@ -345,7 +338,6 @@ services:
     container_name: deepiri-jupyter
     restart: unless-stopped
     logging: *minimal-logging
-    logging: *minimal-logging
     command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
     ports:
       - "8888:8888"
@@ -364,7 +356,6 @@ services:
     image: nginx:alpine
     container_name: deepiri-nginx
     restart: unless-stopped
-    logging: *minimal-logging
     logging: *minimal-logging
     ports:
       - "80:80"
