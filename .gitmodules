@@ -16,3 +16,9 @@
 [submodule "platform-services/backend/deepiri-auth-service"]
 	path = platform-services/backend/deepiri-auth-service
 	url = git@github.com:Team-Deepiri/deepiri-auth-service.git
+[submodule "diri-helox"]
+	path = diri-helox
+	url = git@github.com:Team-Deepiri/diri-helox.git
+[submodule "deepiri-modelkit"]
+	path = deepiri-modelkit
+	url = git@github.com:Team-Deepiri/deepiri-modelkit.git
