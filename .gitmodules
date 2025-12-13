@@ -22,9 +22,3 @@
 [submodule "deepiri-modelkit"]
 	path = deepiri-modelkit
 	url = git@github.com:Team-Deepiri/deepiri-modelkit.git
-[submodule "platform-services/shared/deepiri-synapse"]
-	path = platform-services/shared/deepiri-synapse
-	url = git@github.com:Team-Deepiri/deepiri-synapse.git
-[submodule "shared/deepiri-synapse"]
-	path = shared/deepiri-synapse
-	url = git@github.com:Team-Deepiri/deepiri-synapse.git
