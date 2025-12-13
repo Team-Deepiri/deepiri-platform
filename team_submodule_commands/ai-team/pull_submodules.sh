@@ -97,15 +97,6 @@ git submodule update --init --recursive diri-cyrex
 echo "    ✅ diri-cyrex initialized"
 echo ""
 
-# deepiri-external-bridge-service - External API integrations
-echo "  📦 deepiri-external-bridge-service (External Bridge Service)..."
-git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service
-if [ ! -d "platform-services/backend/deepiri-external-bridge-service/.git" ]; then
-    echo "    ❌ ERROR: deepiri-external-bridge-service not cloned correctly!"
-    exit 1
-fi
-echo "    ✅ external-bridge-service initialized at: $(pwd)/platform-services/backend/deepiri-external-bridge-service"
-echo ""
 
 # deepiri-modelkit - Shared contracts and utilities
 echo "  📦 deepiri-modelkit (Shared Contracts & Utilities)..."
@@ -116,6 +107,16 @@ if [ ! -d "deepiri-modelkit/.git" ] && [ ! -f "deepiri-modelkit/.git" ]; then
 else
     echo "    ✅ modelkit initialized at: $(pwd)/deepiri-modelkit"
 fi
+echo ""
+
+# deepiri-external-bridge-service - External API integrations
+echo "  📦 deepiri-external-bridge-service (External Bridge Service)..."
+git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service
+if [ ! -f "platform-services/backend/deepiri-external-bridge-service/.git" ] && [ ! -d "platform-services/backend/deepiri-external-bridge-service/.git" ]; then
+    echo "    ❌ ERROR: deepiri-external-bridge-service not cloned correctly!"
+    exit 1
+fi
+echo "    ✅ external-bridge-service initialized at: $(pwd)/platform-services/backend/deepiri-external-bridge-service"
 echo ""
 
 # Update to latest and ensure on main branch
