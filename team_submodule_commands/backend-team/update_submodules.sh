@@ -113,6 +113,10 @@ echo ""
 update_submodule "deepiri-web-frontend" "deepiri-web-frontend (Web Frontend)"
 echo ""
 
+# Update deepiri-synapse
+update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Central Streaming Service)"
+echo ""
+
 # Also update via git submodule update --remote for consistency
 echo "🔄 Syncing submodule references..."
 git submodule update --remote deepiri-core-api 2>/dev/null || true
@@ -120,6 +124,7 @@ git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/d
 git submodule update --remote platform-services/backend/deepiri-auth-service 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service 2>/dev/null || true
 git submodule update --remote deepiri-web-frontend 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
 echo ""
 
 # Show status
@@ -130,6 +135,7 @@ git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
 git submodule status deepiri-web-frontend
+git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  platform-services/shared/deepiri-synapse (not initialized)"
 echo ""
 
 echo "✅ Backend Team submodules updated!"
@@ -140,5 +146,6 @@ echo "  ✅ deepiri-api-gateway"
 echo "  ✅ deepiri-auth-service"
 echo "  ✅ deepiri-external-bridge-service"
 echo "  ✅ deepiri-web-frontend"
+echo "  ✅ deepiri-synapse"
 echo ""
 

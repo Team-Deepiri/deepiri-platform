@@ -101,10 +101,20 @@ echo ""
 update_submodule "platform-services/backend/deepiri-external-bridge-service" "deepiri-external-bridge-service (External Bridge Service)"
 echo ""
 
+# Update deepiri-modelkit
+update_submodule "deepiri-modelkit" "deepiri-modelkit (Shared Contracts & Utilities)"
+echo ""
+
+# Update deepiri-synapse
+update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Central Streaming Service)"
+echo ""
+
 # Also update via git submodule update --remote for consistency
 echo "🔄 Syncing submodule references..."
 git submodule update --remote diri-cyrex 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service 2>/dev/null || true
+git submodule update --remote deepiri-modelkit 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
 echo ""
 
 # Show status
@@ -112,6 +122,8 @@ echo "📊 Submodule Status:"
 echo ""
 git submodule status diri-cyrex
 git submodule status platform-services/backend/deepiri-external-bridge-service
+git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
+git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  platform-services/shared/deepiri-synapse (not initialized)"
 echo ""
 
 echo "✅ AI Team submodules updated!"
@@ -119,5 +131,7 @@ echo ""
 echo "📋 Updated Submodules:"
 echo "  ✅ diri-cyrex"
 echo "  ✅ deepiri-external-bridge-service"
+echo "  ✅ deepiri-modelkit"
+echo "  ✅ deepiri-synapse"
 echo ""
 

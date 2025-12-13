@@ -13,7 +13,7 @@ cd "$PROJECT_ROOT"
 SERVICES=(
   postgres redis influxdb
   cyrex jupyter mlflow
-  platform-analytics-service
+  platform-analytics-service synapse
 )
 
 echo "🛑 Stopping ML Team services..."

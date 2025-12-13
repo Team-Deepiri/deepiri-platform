@@ -17,6 +17,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
+  synapse
 )
 
 echo "🔨 Building Backend Team services..."

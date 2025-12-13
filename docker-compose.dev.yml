@@ -43,7 +43,7 @@ services:
   # pgAdmin - Database Admin UI (optional, can be commented out for production)
   pgadmin:
     build:
-      context: ./docker/pgadmin
+      context: ./ops/docker/pgadmin
       dockerfile: Dockerfile
     container_name: deepiri-pgadmin-dev
     restart: unless-stopped
@@ -192,6 +192,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5000
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-api-gateway:/app
       - /app/node_modules
@@ -206,6 +207,7 @@ services:
       - challenge-service
       - realtime-gateway
       - cyrex
+      - synapse
       # external-bridge-service dependency removed - only needed by Backend Team
     networks:
       - deepiri-dev-network
@@ -229,6 +231,7 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5001
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-auth-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -238,6 +241,7 @@ services:
     depends_on:
       - postgres
       - influxdb
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -260,6 +264,7 @@ services:
       PORT: 5002
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       PRISMA_CLI_BINARY_TARGETS: "debian-openssl-3.0.x"
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-task-orchestrator:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -268,6 +273,7 @@ services:
     command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && rm -rf node_modules/.prisma 2>/dev/null || true && npx prisma generate && cd node_modules/.prisma/client && if [ -f libquery_engine-debian-openssl-3.0.x.so.node ]; then cp libquery_engine-debian-openssl-3.0.x.so.node libquery_engine-linux-musl.so.node; fi && cd /app && npm run dev"
     depends_on:
       - postgres
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -289,6 +295,7 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5003
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-engagement-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -298,6 +305,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -319,6 +327,7 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5004
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-platform-analytics-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -328,6 +337,7 @@ services:
     depends_on:
       - postgres
       - influxdb
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -349,6 +359,7 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5005
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-notification-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -357,6 +368,7 @@ services:
     command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
     depends_on:
       - postgres
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -378,6 +390,7 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5006
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-external-bridge-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -386,6 +399,7 @@ services:
     command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
     depends_on:
       - postgres
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -407,6 +421,7 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5007
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
     volumes:
       - ./platform-services/backend/deepiri-challenge-service:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
@@ -416,6 +431,7 @@ services:
     depends_on:
       - postgres
       - cyrex
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -436,12 +452,19 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5008
+      SYNAPSE_URL: http://synapse:8002
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
     volumes:
       - ./platform-services/backend/deepiri-realtime-gateway:/app
       - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - shared_utils_node_modules:/shared-utils/node_modules
       - /app/node_modules
     command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    depends_on:
+      - redis
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -469,8 +492,8 @@ services:
   # Python Agent API (AI Service)
   cyrex:
     build:
-      context: ./diri-cyrex
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./diri-cyrex/Dockerfile
       args:
         BUILD_TYPE: prebuilt
         BASE_IMAGE: python:3.11-slim
@@ -490,7 +513,14 @@ services:
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
       MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
       WANDB_API_KEY: ${WANDB_API_KEY}
+      # Model Registry Configuration (for modelkit integration)
+      MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
       MODEL_REGISTRY_PATH: /app/model_registry
+      MODEL_CACHE_DIR: /app/models/cache
+      S3_ENDPOINT_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
       STAGING_MODEL_PATH: /app/models/staging
       PRODUCTION_MODEL_PATH: /app/models/production
       PINECONE_API_KEY: ${PINECONE_API_KEY}
@@ -511,9 +541,10 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       LOCAL_LLM_BACKEND: ${LOCAL_LLM_BACKEND:-ollama}
       LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3:8b}
-      TRANSFORMERS_CACHE: /app/.cache/huggingface
       HF_HOME: /app/.cache/huggingface
       SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
+      # Streaming Service Configuration
+      SYNAPSE_URL: http://synapse:8002
       # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"
@@ -535,6 +566,8 @@ services:
       - milvus
       - redis
       - ollama
+      - synapse
+      - mlflow
     networks:
       - deepiri-dev-network
 
@@ -546,6 +579,7 @@ services:
     working_dir: /app
     environment:
       VITE_CYREX_BASE_URL: http://cyrex:8000
+      VITE_SYNAPSE_URL: http://localhost:8002
       VITE_PORT: 5175
     ports:
       - "5175:5175"
@@ -555,23 +589,103 @@ services:
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
     depends_on:
       - cyrex
+      - synapse
     networks:
       - deepiri-dev-network
 
+  # Cyrex-AGI - Commented out for now
+  # cyrex-agi:
+  #   build:
+  #     context: ./diri-cyrex/cyrex-agi
+  #     dockerfile: Dockerfile
+  #   image: deepiri-dev-cyrex-agi:latest
+  #   pull_policy: never
+  #   container_name: deepiri-cyrex-agi-dev
+  #   restart: unless-stopped
+  #   logging: *minimal-logging
+  #   environment:
+  #     # Redis Configuration for streaming
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+  #     # Cyrex Runtime Bridge
+  #     CYREX_BASE_URL: http://cyrex:8000
+  #     # Platform Services
+  #     PLATFORM_API_URL: http://api-gateway:5100
+  #     # ModelKit for contracts
+  #     MODELKIT_PATH: /app/../deepiri-modelkit
+  #   ports:
+  #     - "8003:8003"
+  #   volumes:
+  #     - ./diri-cyrex/cyrex-agi/app:/app/app
+  #     - cyrex_agi_cache:/app/.cache
+  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8003 --reload --reload-dir /app/app
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health').read()"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #   depends_on:
+  #     - cyrex
+  #     - redis
+  #     - synapse
+  #   networks:
+  #     - deepiri-dev-network
+
   # MLflow for AI Experiment Tracking
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.8.1
+    build:
+      context: ./ops/docker/mlflow
+      dockerfile: Dockerfile
+    image: deepiri-dev-mlflow:latest
+    pull_policy: never
     container_name: deepiri-mlflow-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
       - "5500:5000"
     environment:
-      BACKEND_STORE_URI: file:/mlflow
-      DEFAULT_ARTIFACT_ROOT: file:/mlflow/artifacts
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:/mlflow --default-artifact-root file:/mlflow/artifacts
-    volumes:
-      - mlflow_dev_data:/mlflow
+      # Backend Store (PostgreSQL)
+      BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      # Artifact Store (MinIO/S3)
+      DEFAULT_ARTIFACT_ROOT: s3://mlflow-artifacts/
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      # MLflow Tracking URI (for modelkit integration)
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # ModelKit Integration
+      MODELKIT_ENABLED: "true"
+      MODELKIT_TRACKING_URI: http://mlflow:5000
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      --default-artifact-root s3://mlflow-artifacts/
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - deepiri-dev-network
+
+  # Deepiri Synapse - Central Streaming Service
+  synapse:
+    build:
+      context: .
+      dockerfile: ./platform-services/shared/deepiri-synapse/Dockerfile
+    container_name: deepiri-synapse-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "8002:8002"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+    depends_on:
+      - redis
     networks:
       - deepiri-dev-network
 
@@ -599,6 +713,13 @@ services:
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
+      # Model Registry Configuration (for modelkit integration)
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
+      S3_ENDPOINT_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
     networks:
       - deepiri-dev-network
 
@@ -619,10 +740,13 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
+      VITE_SYNAPSE_URL: http://localhost:8002
+      VITE_MLFLOW_URL: http://localhost:5500
     volumes:
       - ./deepiri-web-frontend:/app
       - /app/node_modules
-    depends_on: []
+    depends_on:
+      - synapse
       # api-gateway dependency removed - frontend can work without it
     networks:
       - deepiri-dev-network
@@ -644,6 +768,8 @@ volumes:
     driver: local
   cyrex_cache:
     driver: local
+  #cyrex_agi_cache:
+  #  driver: local
   milvus_dev_data:
     driver: local
   etcd_dev_data:

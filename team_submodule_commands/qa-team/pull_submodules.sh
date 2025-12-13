@@ -21,6 +21,7 @@ declare -a SUBMODULES=(
   "platform-services/backend/deepiri-api-gateway"
   "deepiri-core-api"
   "deepiri-web-frontend"
+  "platform-services/shared/deepiri-synapse"
 )
 
 # Initialize and update only those submodules

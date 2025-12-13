@@ -33,6 +33,12 @@ app.use(express.json());
 
 websocket.initialize(io);
 
+// Start event consumption
+import { startEventConsumption } from './streaming/eventConsumer';
+startEventConsumption(io).catch((err) => {
+  logger.error('Failed to start event consumption:', err);
+});
+
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'notification-service', timestamp: new Date().toISOString() });
 });

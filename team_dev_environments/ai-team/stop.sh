@@ -14,7 +14,7 @@ SERVICES=(
   redis influxdb etcd minio milvus
   cyrex cyrex-interface jupyter mlflow
   challenge-service external-bridge-service
-  ollama
+  ollama synapse
 )
 
 echo "🛑 Stopping AI Team services..."

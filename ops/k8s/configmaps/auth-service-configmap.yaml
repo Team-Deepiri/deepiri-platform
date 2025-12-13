@@ -17,4 +17,7 @@ data:
   INFLUXDB_URL: "http://influxdb:8086"
   INFLUXDB_ORG: "deepiri"
   INFLUXDB_BUCKET: "analytics"
+  
+  # Streaming Service Configuration (for publishing auth events)
+  SYNAPSE_URL: "http://synapse:8002"
 

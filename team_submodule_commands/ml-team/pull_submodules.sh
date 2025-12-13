@@ -94,26 +94,61 @@ git submodule update --init --recursive diri-cyrex
 echo "    ✅ diri-cyrex initialized"
 echo ""
 
+# diri-helox - ML training & research
+echo "  📦 diri-helox (ML Training & Research)..."
+mkdir -p diri-helox
+git submodule update --init --recursive diri-helox 2>&1 || true
+if [ ! -d "diri-helox/.git" ] && [ ! -f "diri-helox/.git" ]; then
+    echo "    ⚠️  WARNING: diri-helox not cloned correctly!"
+else
+    echo "    ✅ helox initialized at: $(pwd)/diri-helox"
+fi
+echo ""
+
+# deepiri-modelkit - Shared contracts and utilities
+echo "  📦 deepiri-modelkit (Shared Contracts & Utilities)..."
+mkdir -p deepiri-modelkit
+git submodule update --init --recursive deepiri-modelkit 2>&1 || true
+if [ ! -d "deepiri-modelkit/.git" ] && [ ! -f "deepiri-modelkit/.git" ]; then
+    echo "    ⚠️  WARNING: deepiri-modelkit not cloned correctly!"
+else
+    echo "    ✅ modelkit initialized at: $(pwd)/deepiri-modelkit"
+fi
+echo ""
+
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote diri-cyrex
 ensure_submodule_on_main "diri-cyrex"
 echo "    ✅ diri-cyrex updated and on main branch"
+git submodule update --remote diri-helox 2>/dev/null || true
+ensure_submodule_on_main "diri-helox"
+echo "    ✅ helox updated and on main branch"
+git submodule update --remote deepiri-modelkit 2>/dev/null || true
+ensure_submodule_on_main "deepiri-modelkit"
+echo "    ✅ modelkit updated and on main branch"
 echo ""
 
 # Show status
 echo "📊 Submodule Status:"
 echo ""
 git submodule status diri-cyrex
+git submodule status diri-helox 2>/dev/null || echo "  ⚠️  diri-helox (not initialized)"
+git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
 echo ""
 
 echo "✅ ML Team submodules ready!"
 echo ""
 echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status diri-cyrex"
+echo "  - Check status: git submodule status diri-helox"
+echo "  - Check status: git submodule status deepiri-modelkit"
 echo "  - Update: git submodule update --remote diri-cyrex"
-echo "  - Work in submodule: cd diri-cyrex"
-echo "  - Training scripts: cd diri-cyrex/app/train"
+echo "  - Update: git submodule update --remote diri-helox"
+echo "  - Update: git submodule update --remote deepiri-modelkit"
+echo "  - Work in cyrex: cd diri-cyrex"
+echo "  - Work in helox: cd diri-helox"
+echo "  - Work in modelkit: cd deepiri-modelkit"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules

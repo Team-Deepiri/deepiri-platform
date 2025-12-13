@@ -11,7 +11,7 @@ SERVICES=(
   redis influxdb etcd minio milvus
   cyrex cyrex-interface jupyter mlflow
   challenge-service external-bridge-service
-  ollama
+  ollama synapse
 )
 
 echo "🚀 Starting AI Team services..."
@@ -28,6 +28,7 @@ echo ""
 echo "🤖 Cyrex: http://localhost:8000"
 echo "🎨 Cyrex Interface: http://localhost:5175"
 echo "🤖 Ollama: http://localhost:11434"
+echo "📡 Synapse: http://localhost:8002"
 API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
 echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🎮 Engagement Service: http://localhost:5003"

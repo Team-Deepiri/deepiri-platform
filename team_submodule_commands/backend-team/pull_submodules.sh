@@ -184,6 +184,17 @@ fi
 echo "    ✅ web-frontend initialized at: $(pwd)/deepiri-web-frontend"
 echo ""
 
+# deepiri-synapse - Central streaming service
+echo "  📦 deepiri-synapse (Central Streaming Service)..."
+mkdir -p platform-services/shared/deepiri-synapse
+git submodule update --init --recursive platform-services/shared/deepiri-synapse 2>&1 || true
+if ! check_submodule "platform-services/shared/deepiri-synapse"; then
+    echo "    ⚠️  WARNING: deepiri-synapse not cloned correctly!"
+else
+    echo "    ✅ synapse initialized at: $(pwd)/platform-services/shared/deepiri-synapse"
+fi
+echo ""
+
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote deepiri-core-api
@@ -196,6 +207,8 @@ git submodule update --remote platform-services/backend/deepiri-external-bridge-
 ensure_submodule_on_main "platform-services/backend/deepiri-external-bridge-service"
 git submodule update --remote deepiri-web-frontend
 ensure_submodule_on_main "deepiri-web-frontend"
+git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
+ensure_submodule_on_main "platform-services/shared/deepiri-synapse"
 echo "    ✅ All backend submodules updated and on main branch"
 echo ""
 
@@ -207,6 +220,7 @@ git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
 git submodule status deepiri-web-frontend
+git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  platform-services/shared/deepiri-synapse (not initialized)"
 echo ""
 
 echo "✅ Backend Team submodules ready!"
@@ -226,6 +240,7 @@ echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
 echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-service"
 echo "  - Work in External Bridge: cd platform-services/backend/deepiri-external-bridge-service"
 echo "  - Work in Frontend: cd deepiri-web-frontend"
+echo "  - Work in Synapse: cd platform-services/shared/deepiri-synapse"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules
