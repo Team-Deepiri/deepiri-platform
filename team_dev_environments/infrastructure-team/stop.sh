@@ -11,12 +11,11 @@ cd "$PROJECT_ROOT"
 
 # Infrastructure team services (all except frontend-dev)
 SERVICES=(
-  postgres pgadmin adminer redis influxdb etcd minio milvus
+  postgres pgadmin adminer redis influxdb etcd minio
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
-  challenge-service realtime-gateway
-  cyrex cyrex-interface mlflow jupyter synapse
+  challenge-service realtime-gateway synapse
 )
 
 echo "🛑 Stopping Infrastructure Team services..."

@@ -10,10 +10,9 @@ echo "🚀 Starting Infrastructure Team services..."
 
 # Start all services except frontend-dev
 ALL_SERVICES=(
-  postgres pgadmin redis influxdb etcd minio milvus
+  postgres pgadmin redis influxdb etcd minio
   api-gateway auth-service task-orchestrator engagement-service platform-analytics-service
-  notification-service external-bridge-service challenge-service realtime-gateway
-  cyrex cyrex-interface mlflow jupyter synapse
+  notification-service external-bridge-service challenge-service realtime-gateway synapse
 )
 
 SERVICES_TO_START=()
@@ -35,13 +34,6 @@ for service in "${ALL_SERVICES[@]}"; do
       ;;
     external-bridge-service)
       if [ -f "platform-services/backend/deepiri-external-bridge-service/Dockerfile" ]; then
-        SERVICES_TO_START+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    cyrex|jupyter)
-      if [ -f "diri-cyrex/Dockerfile" ] || [ -f "diri-cyrex/Dockerfile.jupyter" ]; then
         SERVICES_TO_START+=("$service")
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
