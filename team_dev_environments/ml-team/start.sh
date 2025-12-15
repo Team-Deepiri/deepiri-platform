@@ -11,13 +11,20 @@ echo "🚀 Starting ML Team services..."
 
 # Start services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in cyrex; do
+for service in cyrex synapse; do
   case $service in
     cyrex)
       if [ -f "diri-cyrex/Dockerfile" ]; then
         SERVICES+=("$service")
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
+      fi
+      ;;
+    synapse)
+      if [ -f "platform-services/shared/deepiri-synapse/Dockerfile" ]; then
+        SERVICES+=("$service")
+      else
+        echo "⚠️  Skipping $service (not found)"
       fi
       ;;
     *)
@@ -40,4 +47,5 @@ docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
 echo "✅ ML Team services started!"
 echo ""
 echo "🤖 Cyrex: http://localhost:8000"
+echo "📡 Synapse: http://localhost:8002"
 

@@ -14,7 +14,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  frontend-dev
+  frontend-dev synapse
 )
 
 echo "🚀 Starting QA Team Environment..."
@@ -42,6 +42,7 @@ echo "  - Notification Service:    http://localhost:5005"
 echo "  - External Bridge:         http://localhost:5006"
 echo "  - Challenge Service:       http://localhost:5007"
 echo "  - Realtime Gateway:        http://localhost:5008"
+echo "  - Synapse:                 http://localhost:8002"
 echo ""
 echo "  Infrastructure:"
 echo "  - PostgreSQL:             localhost:5432"

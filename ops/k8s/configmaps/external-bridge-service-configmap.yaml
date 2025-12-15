@@ -12,4 +12,7 @@ data:
   
   # Database URLs (using Docker service names)
   DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres:5432/deepiri"
+  
+  # Streaming Service Configuration (for publishing external API events)
+  SYNAPSE_URL: "http://synapse:8002"
 

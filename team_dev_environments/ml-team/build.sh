@@ -14,7 +14,7 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 SERVICES=(
   postgres redis influxdb
   cyrex jupyter mlflow
-  platform-analytics-service
+  platform-analytics-service synapse
 )
 
 echo "🔨 Building ML Team services..."

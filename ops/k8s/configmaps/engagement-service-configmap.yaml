@@ -16,4 +16,7 @@ data:
   # Redis Configuration
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
+  
+  # Streaming Service Configuration
+  SYNAPSE_URL: "http://synapse:8002"
 
