@@ -194,10 +194,9 @@ services:
       PORT: 5000
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-api-gateway:/app
-      - /app/node_modules
-      - /app/dist
-    command: sh -c "cd /app && npm install --legacy-peer-deps && npm run dev"
+      - ./platform-services/backend/deepiri-api-gateway/src:/app/src
+      - ./platform-services/backend/deepiri-api-gateway/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - auth-service
       - task-orchestrator
@@ -233,8 +232,6 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-auth-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
       - shared_utils_node_modules:/shared-utils/node_modules
       - /app/node_modules
     command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npx prisma generate && npm run dev"
@@ -266,11 +263,9 @@ services:
       PRISMA_CLI_BINARY_TARGETS: "debian-openssl-3.0.x"
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-task-orchestrator:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && rm -rf node_modules/.prisma 2>/dev/null || true && npx prisma generate && cd node_modules/.prisma/client && if [ -f libquery_engine-debian-openssl-3.0.x.so.node ]; then cp libquery_engine-debian-openssl-3.0.x.so.node libquery_engine-linux-musl.so.node; fi && cd /app && npm run dev"
+      - ./platform-services/backend/deepiri-task-orchestrator/src:/app/src
+      - ./platform-services/backend/deepiri-task-orchestrator/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - synapse
@@ -297,11 +292,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-engagement-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./platform-services/backend/deepiri-engagement-service/src:/app/src
+      - ./platform-services/backend/deepiri-engagement-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - redis
@@ -329,11 +322,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-platform-analytics-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./platform-services/backend/deepiri-platform-analytics-service/src:/app/src
+      - ./platform-services/backend/deepiri-platform-analytics-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - influxdb
@@ -361,11 +352,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-notification-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./platform-services/backend/deepiri-notification-service/src:/app/src
+      - ./platform-services/backend/deepiri-notification-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - synapse
@@ -392,11 +381,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-external-bridge-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./platform-services/backend/deepiri-external-bridge-service/src:/app/src
+      - ./platform-services/backend/deepiri-external-bridge-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - synapse
@@ -423,11 +410,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
     volumes:
-      - ./platform-services/backend/deepiri-challenge-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./platform-services/backend/deepiri-challenge-service/src:/app/src
+      - ./platform-services/backend/deepiri-challenge-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - synapse
@@ -457,11 +442,9 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
     volumes:
-      - ./platform-services/backend/deepiri-realtime-gateway:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./platform-services/backend/deepiri-realtime-gateway/src:/app/src
+      - ./platform-services/backend/deepiri-realtime-gateway/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - redis
       - synapse
