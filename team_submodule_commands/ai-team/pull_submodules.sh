@@ -97,19 +97,18 @@ git submodule update --init --recursive diri-cyrex
 echo "    ✅ diri-cyrex initialized"
 echo ""
 
-# deepiri-external-bridge-service - External API integrations
+deepiri-external-bridge-service - External API integrations
 echo "  📦 deepiri-external-bridge-service (External Bridge Service)..."
 git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service
 if [ ! -d "platform-services/backend/deepiri-external-bridge-service/.git" ]; then
-    echo "    ❌ ERROR: deepiri-external-bridge-service not cloned correctly!"
-    exit 1
+   echo "    ❌ ERROR: deepiri-external-bridge-service not cloned correctly!"
+   exit 1
 fi
 echo "    ✅ external-bridge-service initialized at: $(pwd)/platform-services/backend/deepiri-external-bridge-service"
-echo ""
+echo "
 
-# deepiri-modelkit - Shared contracts and utilities
+ deepiri-modelkit - Shared contracts and utilities
 echo "  📦 deepiri-modelkit (Shared Contracts & Utilities)..."
-mkdir -p deepiri-modelkit
 git submodule update --init --recursive deepiri-modelkit 2>&1 || true
 if [ ! -d "deepiri-modelkit/.git" ] && [ ! -f "deepiri-modelkit/.git" ]; then
     echo "    ⚠️  WARNING: deepiri-modelkit not cloned correctly!"
