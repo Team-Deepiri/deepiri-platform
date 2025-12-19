@@ -8,12 +8,11 @@ cd "$(dirname "$0")/../.." || exit 1
 
 echo "🚀 Starting Infrastructure Team services..."
 
-# Start all services except frontend-dev
+# Start all services except frontend-dev and AI/ML services (cyrex, ollama, mlflow, jupyter, milvus)
 ALL_SERVICES=(
-  postgres pgadmin redis influxdb etcd minio milvus
+  postgres pgadmin redis influxdb etcd minio
   api-gateway auth-service task-orchestrator engagement-service platform-analytics-service
-  notification-service external-bridge-service challenge-service realtime-gateway
-  cyrex cyrex-interface mlflow jupyter synapse
+  notification-service external-bridge-service challenge-service realtime-gateway synapse
 )
 
 SERVICES_TO_START=()
@@ -35,13 +34,6 @@ for service in "${ALL_SERVICES[@]}"; do
       ;;
     external-bridge-service)
       if [ -f "platform-services/backend/deepiri-external-bridge-service/Dockerfile" ]; then
-        SERVICES_TO_START+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    cyrex|jupyter)
-      if [ -f "diri-cyrex/Dockerfile" ] || [ -f "diri-cyrex/Dockerfile.jupyter" ]; then
         SERVICES_TO_START+=("$service")
       else
         echo "⚠️  Skipping $service (submodule not initialized)"
@@ -83,4 +75,7 @@ echo "💾 Redis: localhost:6380"
 echo "📊 InfluxDB: http://localhost:8086"
 echo "📡 Synapse: http://localhost:8002"
 echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
+echo "🔄 Synapse (Streaming): http://localhost:8002"
+echo ""
+echo "ℹ️  AI/ML services excluded: cyrex, ollama, mlflow, jupyter, milvus"
 

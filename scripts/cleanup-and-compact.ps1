@@ -445,33 +445,32 @@ exit
 }
 
 # Step 14: Locate Ubuntu VHDX
-Write-ColorOutput Yellow "Locating Ubuntu WSL virtual disk..."
-$ubuntuPackagePath = Get-ChildItem "$env:LOCALAPPDATA\Packages" | Where-Object {$_.Name -like "CanonicalGroupLimited.Ubuntu*"} | Select-Object -First 1
+Write-ColorOutput Yellow "Locating Ubuntu WSL virtual disk (authoritative)..."
 
-If (-not $ubuntuPackagePath) {
-    Write-ColorOutput Yellow "[WARNING] Ubuntu WSL package not found. Trying alternative location..."
-    # Try alternative location for WSL2
-    $vhdxPath = "$env:USERPROFILE\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu*\LocalState\ext4.vhdx"
-    $vhdxFiles = Get-ChildItem -Path "$env:USERPROFILE\AppData\Local\Packages" -Recurse -Filter "ext4.vhdx" -ErrorAction SilentlyContinue | Select-Object -First 1
-    
-    if ($vhdxFiles) {
-        $vhdxPath = $vhdxFiles.FullName
-        Write-ColorOutput Green "Found VHDX at: $vhdxPath"
-    } else {
-        Write-ColorOutput Red "[ERROR] Ubuntu VHDX file not found!"
-        Write-ColorOutput Yellow "Please ensure WSL2 with Ubuntu is installed."
-        Exit
+$lxssKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss"
+$ubuntuDistro = Get-ChildItem $lxssKey | ForEach-Object {
+    $props = Get-ItemProperty $_.PSPath
+    if ($props.DistributionName -match "^Ubuntu") {
+        [PSCustomObject]@{
+            Name = $props.DistributionName
+            BasePath = $props.BasePath
+        }
     }
-} else {
-    $vhdxPath = Join-Path $ubuntuPackagePath.FullName "LocalState\ext4.vhdx"
-    
-    If (-not (Test-Path $vhdxPath)) {
-        Write-ColorOutput Red "[ERROR] VHDX file not found at $vhdxPath"
-        Exit
-    }
-    
-    Write-ColorOutput Green "[OK] Found Ubuntu VHDX at: $vhdxPath"
+} | Select-Object -First 1
+
+if (-not $ubuntuDistro) {
+    Write-ColorOutput Red "[ERROR] No Ubuntu WSL distribution found."
+    Exit
 }
+
+$vhdxPath = Join-Path $ubuntuDistro.BasePath "ext4.vhdx"
+
+if (-not (Test-Path $vhdxPath)) {
+    Write-ColorOutput Red "[ERROR] VHDX file not found at $vhdxPath"
+    Exit
+}
+
+Write-ColorOutput Green "[OK] Found Ubuntu VHDX at: $vhdxPath"
 
 Write-Output ""
 

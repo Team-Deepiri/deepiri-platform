@@ -76,7 +76,8 @@ echo ""
 
 # List of ML Team submodules
 SUBMODULES=(
-    "diri-cyrex"
+    "diri-helox"
+    "deepiri-modelkit"
 )
 
 for submodule in "${SUBMODULES[@]}"; do

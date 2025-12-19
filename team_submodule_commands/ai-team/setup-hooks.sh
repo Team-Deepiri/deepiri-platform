@@ -77,6 +77,7 @@ echo ""
 # List of AI Team submodules
 SUBMODULES=(
     "diri-cyrex"
+    "deepiri-modelkit"
     "platform-services/backend/deepiri-external-bridge-service"
 )
 

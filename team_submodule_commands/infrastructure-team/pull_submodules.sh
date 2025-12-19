@@ -116,16 +116,6 @@ fi
 echo "    ✅ core-api initialized at: $(pwd)/deepiri-core-api"
 echo ""
 
-# diri-cyrex
-echo "  📦 diri-cyrex (AI/ML Service)..."
-git submodule update --init --recursive diri-cyrex 2>&1 || true
-if ! check_submodule "diri-cyrex"; then
-    echo "    ❌ ERROR: diri-cyrex not cloned correctly!"
-    exit 1
-fi
-echo "    ✅ diri-cyrex initialized at: $(pwd)/diri-cyrex"
-echo ""
-
 # deepiri-api-gateway
 echo "  📦 deepiri-api-gateway (API Gateway)..."
 git submodule update --init --recursive platform-services/backend/deepiri-api-gateway 2>&1 || true
