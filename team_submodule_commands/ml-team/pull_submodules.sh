@@ -88,12 +88,6 @@ echo ""
 echo "🔧 Initializing ML Team submodules..."
 echo ""
 
-# diri-cyrex - AI/ML service (contains ML models, training scripts, MLOps)
-echo "  📦 diri-cyrex (ML Service)..."
-git submodule update --init --recursive diri-cyrex
-echo "    ✅ diri-cyrex initialized"
-echo ""
-
 # diri-helox - ML training & research
 echo "  📦 diri-helox (ML Training & Research)..."
 mkdir -p diri-helox
@@ -118,9 +112,6 @@ echo ""
 
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
-git submodule update --remote diri-cyrex
-ensure_submodule_on_main "diri-cyrex"
-echo "    ✅ diri-cyrex updated and on main branch"
 git submodule update --remote diri-helox 2>/dev/null || true
 ensure_submodule_on_main "diri-helox"
 echo "    ✅ helox updated and on main branch"
