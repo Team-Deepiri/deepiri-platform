@@ -111,6 +111,16 @@ DEV_API_URL=http://localhost:5000/api
 DEV_CYREX_URL=http://localhost:8000
 ```
 
+**OAuth Configuration:**
+```bash
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+EXTERNAL_BRIDGE_BASE_URL=http://localhost:5006
+AUTH_SERVICE_URL=http://localhost:5001
+```
+
+> **Note:** For local development, set these variables in your shell environment (e.g., `export GOOGLE_CLIENT_ID=...`) or create a root `.env` file if using Docker Compose. The `docker-compose.dev.yml` will automatically pick up these variables from your environment. `AUTH_SERVICE_URL` defaults to `http://auth-service:5001` in Docker Compose if not set.
+
 ### `deepiri-core-api/.env`
 
 **Server Configuration:**
@@ -383,6 +393,10 @@ API_URL: https://api.deepiri.com
 | `JWT_SECRET` | JWT signing secret | `your-secret-key-32-chars-min` | Yes |
 | `JWT_EXPIRES_IN` | JWT expiration | `7d` | Yes |
 | `SESSION_SECRET` | Session secret | `your-session-secret` | Yes |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID used to verify ID tokens for Google sign-in | `your-google-client-id.apps.googleusercontent.com` | No (required for Google sign-in) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret used to exchange authorization codes for tokens | `your-google-client-secret` | No (required for Google OAuth flow) |
+| `EXTERNAL_BRIDGE_BASE_URL` | Base URL for external-bridge-service, used for OAuth redirect URIs | `http://localhost:5006` or `https://bridge.example.com` | No (required for OAuth flows) |
+| `AUTH_SERVICE_URL` | URL to auth-service for forwarding OAuth tokens | `http://auth-service:5001` (Docker) or `http://localhost:5001` (local) | No (defaults to `http://auth-service:5001` in Docker Compose) |
 
 ### RAG / Embeddings
 

@@ -231,6 +231,7 @@ services:
       PORT: 5001
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     volumes:
       - shared_utils_node_modules:/shared-utils/node_modules
       - /app/node_modules
@@ -380,6 +381,10 @@ services:
       PORT: 5006
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
     volumes:
       - ./platform-services/backend/deepiri-external-bridge-service/src:/app/src
       - ./platform-services/backend/deepiri-external-bridge-service/tsconfig.json:/app/tsconfig.json
