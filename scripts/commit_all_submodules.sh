@@ -51,10 +51,288 @@ MAIN_REPO_NUM=$(( ${#SUBMODULES[@]} + 1 ))
 echo "   $MAIN_REPO_NUM. [Main repository] (or type 'main'/'platform')"
 echo ""
 
+# Check which submodules have modifications
+echo "Checking for modifications..."
+MODIFIED_SUBMODULES=()
+MODIFIED_INDICES=()
+
+for i in "${!SUBMODULES[@]}"; do
+    submodule_path="${SUBMODULES[$i]}"
+    
+    if [ ! -d "$submodule_path" ]; then
+        continue
+    fi
+    
+    cd "$submodule_path" || {
+        cd "$REPO_ROOT"
+        continue
+    }
+    
+    # Check if there are any changes (staged or unstaged)
+    if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+        MODIFIED_SUBMODULES+=("$submodule_path")
+        MODIFIED_INDICES+=("$((i+1))")
+    fi
+    
+    cd "$REPO_ROOT" || exit 1
+done
+
+# Check main repository for modifications
+MAIN_REPO_MODIFIED=false
+if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    MAIN_REPO_MODIFIED=true
+fi
+
+# Display submodules with modifications
+if [ ${#MODIFIED_SUBMODULES[@]} -gt 0 ] || [ "$MAIN_REPO_MODIFIED" = true ]; then
+    echo ""
+    echo "📝 Submodules with modifications:"
+    
+    if [ ${#MODIFIED_SUBMODULES[@]} -gt 0 ]; then
+        for idx in "${MODIFIED_INDICES[@]}"; do
+            for i in "${!SUBMODULES[@]}"; do
+                if [ "$((i+1))" -eq "$idx" ]; then
+                    echo "   $idx. ${SUBMODULES[$i]}"
+                    break
+                fi
+            done
+        done
+    fi
+    
+    if [ "$MAIN_REPO_MODIFIED" = true ]; then
+        echo "   $MAIN_REPO_NUM. [Main repository]"
+    fi
+    
+    if [ ${#MODIFIED_SUBMODULES[@]} -eq 0 ] && [ "$MAIN_REPO_MODIFIED" = false ]; then
+        echo "   (none)"
+    fi
+else
+    echo ""
+    echo "📝 Submodules with modifications:"
+    echo "   (none - all repositories are clean)"
+fi
+
+echo ""
+echo "Checked ${#SUBMODULES[@]} submodule(s) and main repository for modifications"
+echo ""
+
 # Prompt user to select submodules
-echo "Select submodules/repos to commit (comma-separated numbers, e.g., 1,2,3 or 'all' for all):"
-echo "   Note: Type 'main' or 'platform' to select the main repository"
-read -r selection
+while true; do
+    echo "Select submodules/repos to commit (comma-separated numbers, e.g., 1,2,3 or 'all' for all):"
+    echo "   Note: Type 'main' or 'platform' to select the main repository"
+    echo "   Type 'status' for all, or 'status 1 2 3' or 'status main' for specific repos"
+    read -r selection
+    
+    # Check if user wants to see status
+    if [[ "$selection" =~ ^[Ss][Tt][Aa][Tt][Uu][Ss] ]]; then
+        echo ""
+        echo "=========================================="
+        
+        # Parse status command - could be "status" alone or "status 1 2 main"
+        status_args=($selection)  # Split into array
+        show_all_status=false
+        status_repos_to_show=()
+        show_main_in_status=false
+        
+        if [ ${#status_args[@]} -eq 1 ]; then
+            # Just "status" with no args - show all
+            show_all_status=true
+            echo "📊 Status of all submodules"
+        else
+            # "status X Y Z" - parse specific repos
+            echo "📊 Status of selected submodules"
+            
+            # Parse each argument after "status"
+            for (( idx=1; idx<${#status_args[@]}; idx++ )); do
+                arg="${status_args[$idx]}"
+                arg_lower=$(echo "$arg" | tr '[:upper:]' '[:lower:]')
+                
+                # Check for main/platform keywords
+                if [ "$arg_lower" = "main" ] || [ "$arg_lower" = "platform" ]; then
+                    show_main_in_status=true
+                # Check if it's a number
+                elif [[ "$arg" =~ ^[0-9]+$ ]]; then
+                    num=$((arg))
+                    if [ "$num" -eq $MAIN_REPO_NUM ]; then
+                        show_main_in_status=true
+                    elif [ "$num" -ge 1 ] && [ "$num" -le ${#SUBMODULES[@]} ]; then
+                        array_idx=$((num - 1))
+                        status_repos_to_show+=("${SUBMODULES[$array_idx]}")
+                    fi
+                else
+                    # Treat as submodule name/path
+                    # Search for matching submodule
+                    for submodule_path in "${SUBMODULES[@]}"; do
+                        if [[ "$submodule_path" == *"$arg"* ]] || [[ "$arg" == *"$submodule_path"* ]]; then
+                            status_repos_to_show+=("$submodule_path")
+                            break
+                        fi
+                    done
+                fi
+            done
+        fi
+        
+        echo "=========================================="
+        echo ""
+        
+        # Show status based on what was requested
+        if [ "$show_all_status" = true ]; then
+            # Show all submodules
+            for i in "${!SUBMODULES[@]}"; do
+                submodule_path="${SUBMODULES[$i]}"
+                echo "[$((i+1))] $submodule_path:"
+                
+                if [ ! -d "$submodule_path" ]; then
+                    echo "   ⚠️  Directory not found"
+                    echo ""
+                    continue
+                fi
+                
+                cd "$submodule_path" || {
+                    echo "   ❌ Failed to access directory"
+                    echo ""
+                    cd "$REPO_ROOT"
+                    continue
+                }
+                
+                # Check if HEAD is detached
+                current_branch=$(git symbolic-ref -q HEAD | sed 's/^refs\/heads\///')
+                if [ -z "$current_branch" ]; then
+                    echo "   Branch: (detached HEAD)"
+                else
+                    echo "   Branch: $current_branch"
+                fi
+                
+                # Show git status
+                status_output=$(git status --short 2>/dev/null)
+                if [ -z "$status_output" ]; then
+                    echo "   Status: Working tree clean"
+                else
+                    echo "   Status: Has changes"
+                    echo "$status_output" | sed 's/^/      /'
+                fi
+                
+                cd "$REPO_ROOT" || exit 1
+                echo ""
+            done
+            
+            # Show main repository status
+            echo "[$MAIN_REPO_NUM] [Main repository]:"
+            current_branch=$(git symbolic-ref -q HEAD | sed 's/^refs\/heads\///')
+            if [ -z "$current_branch" ]; then
+                echo "   Branch: (detached HEAD)"
+            else
+                echo "   Branch: $current_branch"
+            fi
+            
+            # Use full git status to capture submodule change details
+            full_status=$(git status 2>/dev/null)
+            
+            # Check if working tree is clean
+            if echo "$full_status" | grep -q "nothing to commit\|working tree clean"; then
+                echo "   Status: Working tree clean"
+            else
+                echo "   Status: Has changes"
+                
+                # Extract and show changes (files and submodules with their details)
+                # This captures lines like "modified: file.txt" and "modified: submodule (new commits)"
+                changes=$(echo "$full_status" | grep -E "^\s+(modified|new file|deleted|renamed|Untracked)" | sed 's/^[[:space:]]*/      /')
+                if [ -n "$changes" ]; then
+                    echo "$changes"
+                fi
+            fi
+            echo ""
+        else
+            # Show only selected repos
+            for submodule_path in "${status_repos_to_show[@]}"; do
+                # Find the index for display
+                repo_num=""
+                for i in "${!SUBMODULES[@]}"; do
+                    if [ "${SUBMODULES[$i]}" = "$submodule_path" ]; then
+                        repo_num="$((i+1))"
+                        break
+                    fi
+                done
+                
+                if [ -n "$repo_num" ]; then
+                    echo "[$repo_num] $submodule_path:"
+                else
+                    echo "[?] $submodule_path:"
+                fi
+                
+                if [ ! -d "$submodule_path" ]; then
+                    echo "   ⚠️  Directory not found"
+                    echo ""
+                    continue
+                fi
+                
+                cd "$submodule_path" || {
+                    echo "   ❌ Failed to access directory"
+                    echo ""
+                    cd "$REPO_ROOT"
+                    continue
+                }
+                
+                # Check if HEAD is detached
+                current_branch=$(git symbolic-ref -q HEAD | sed 's/^refs\/heads\///')
+                if [ -z "$current_branch" ]; then
+                    echo "   Branch: (detached HEAD)"
+                else
+                    echo "   Branch: $current_branch"
+                fi
+                
+                # Show git status
+                status_output=$(git status --short 2>/dev/null)
+                if [ -z "$status_output" ]; then
+                    echo "   Status: Working tree clean"
+                else
+                    echo "   Status: Has changes"
+                    echo "$status_output" | sed 's/^/      /'
+                fi
+                
+                cd "$REPO_ROOT" || exit 1
+                echo ""
+            done
+            
+            # Show main repository if requested
+            if [ "$show_main_in_status" = true ]; then
+                echo "[$MAIN_REPO_NUM] [Main repository]:"
+                current_branch=$(git symbolic-ref -q HEAD | sed 's/^refs\/heads\///')
+                if [ -z "$current_branch" ]; then
+                    echo "   Branch: (detached HEAD)"
+                else
+                    echo "   Branch: $current_branch"
+                fi
+                
+                # Use full git status to capture submodule change details
+                full_status=$(git status 2>/dev/null)
+                
+                # Check if working tree is clean
+                if echo "$full_status" | grep -q "nothing to commit\|working tree clean"; then
+                    echo "   Status: Working tree clean"
+                else
+                    echo "   Status: Has changes"
+                    
+                    # Extract and show changes (files and submodules with their details)
+                    # This captures lines like "modified: file.txt" and "modified: submodule (new commits)"
+                    changes=$(echo "$full_status" | grep -E "^\s+(modified|new file|deleted|renamed|Untracked)" | sed 's/^[[:space:]]*/      /')
+                    if [ -n "$changes" ]; then
+                        echo "$changes"
+                    fi
+                fi
+                echo ""
+            fi
+        fi
+        
+        echo "=========================================="
+        echo ""
+        # Loop back to selection prompt
+        continue
+    fi
+    
+    # If not status command, break out of loop and process selection
+    break
+done
 
 SELECTED_SUBMODULES=()
 
@@ -185,6 +463,32 @@ else
 fi
 
 echo ""
+# Prompt for branch strategy
+echo "Branch strategy:"
+echo "   1. Stay on current branch for each repository"
+echo "   2. Create new branch for all selected repositories"
+echo "Enter choice (1 or 2, default: 1):"
+read -r branch_strategy
+
+BRANCH_STRATEGY="current"
+NEW_BRANCH_NAME=""
+
+if [ "$branch_strategy" = "2" ]; then
+    BRANCH_STRATEGY="new"
+    echo "Enter name for new branch (will be created in all selected repositories):"
+    read -r NEW_BRANCH_NAME
+    
+    if [ -z "$NEW_BRANCH_NAME" ]; then
+        echo "⚠️  No branch name provided, staying on current branches"
+        BRANCH_STRATEGY="current"
+    else
+        echo "✅ Will create and switch to branch: $NEW_BRANCH_NAME"
+    fi
+else
+    echo "✅ Staying on current branches"
+fi
+
+echo ""
 echo "🚀 Starting commits..."
 echo ""
 
@@ -208,6 +512,28 @@ for submodule_path in "${SELECTED_SUBMODULES[@]}"; do
         cd "$REPO_ROOT"
         continue
     }
+    
+    # Handle branch strategy (if user chose to create new branch)
+    if [ "$BRANCH_STRATEGY" = "new" ] && [ -n "$NEW_BRANCH_NAME" ]; then
+        echo "   🌿 Creating and switching to branch: $NEW_BRANCH_NAME"
+        
+        # Check if branch already exists locally
+        if git rev-parse --verify "$NEW_BRANCH_NAME" >/dev/null 2>&1; then
+            # Branch exists, just checkout
+            if git checkout "$NEW_BRANCH_NAME" 2>/dev/null; then
+                echo "   ✅ Switched to existing branch: $NEW_BRANCH_NAME"
+            else
+                echo "   ⚠️  Failed to switch to branch, staying on current branch"
+            fi
+        else
+            # Branch doesn't exist, create it
+            if git checkout -b "$NEW_BRANCH_NAME" 2>/dev/null; then
+                echo "   ✅ Created and switched to new branch: $NEW_BRANCH_NAME"
+            else
+                echo "   ⚠️  Failed to create branch, staying on current branch"
+            fi
+        fi
+    fi
     
     # Check if HEAD is detached
     if [ -z "$(git symbolic-ref -q HEAD)" ]; then
@@ -420,6 +746,28 @@ if [ "$INCLUDE_MAIN_REPO" = true ]; then
         echo "   ❌ Failed to change to repository root"
         FAILED_SUBMODULES+=("[Main repository] (cd failed)")
     }
+    
+    # Handle branch strategy (if user chose to create new branch)
+    if [ "$BRANCH_STRATEGY" = "new" ] && [ -n "$NEW_BRANCH_NAME" ]; then
+        echo "   🌿 Creating and switching to branch: $NEW_BRANCH_NAME"
+        
+        # Check if branch already exists locally
+        if git rev-parse --verify "$NEW_BRANCH_NAME" >/dev/null 2>&1; then
+            # Branch exists, just checkout
+            if git checkout "$NEW_BRANCH_NAME" 2>/dev/null; then
+                echo "   ✅ Switched to existing branch: $NEW_BRANCH_NAME"
+            else
+                echo "   ⚠️  Failed to switch to branch, staying on current branch"
+            fi
+        else
+            # Branch doesn't exist, create it
+            if git checkout -b "$NEW_BRANCH_NAME" 2>/dev/null; then
+                echo "   ✅ Created and switched to new branch: $NEW_BRANCH_NAME"
+            else
+                echo "   ⚠️  Failed to create branch, staying on current branch"
+            fi
+        fi
+    fi
     
     # Check if HEAD is detached (same logic as submodules)
     if [ -z "$(git symbolic-ref -q HEAD)" ]; then

@@ -453,7 +453,11 @@ services:
 
   # Ollama (Local LLM Service)
   ollama:
-    image: ollama/ollama:latest
+    build:
+      context: ./ops/docker/ollama
+      dockerfile: Dockerfile
+    image: deepiri-dev-ollama:latest
+    pull_policy: never
     container_name: deepiri-ollama-dev
     restart: unless-stopped
     logging: *minimal-logging
@@ -675,8 +679,8 @@ services:
   # Jupyter Notebook for AI Research
   jupyter:
     build:
-      context: ./diri-cyrex
-      dockerfile: Dockerfile.jupyter
+      context: .
+      dockerfile: ./diri-cyrex/Dockerfile.jupyter
       args:
         BUILD_TYPE: prebuilt
         BASE_IMAGE: python:3.11-slim
