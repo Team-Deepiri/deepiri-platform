@@ -17,7 +17,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  synapse
+  synapse frontend-dev
 )
 
 echo "🔨 Building QA Team services..."
