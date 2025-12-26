@@ -1,7 +1,7 @@
 # Detonator System Implementation Plan
 
 **Project**: Autonomous Sovereignty Enforcement System  
-**Location**: `platform-services/backend/deepiri-sovereignty-enforcement-service/`  
+**Location**: `platform-services/backend/deepiri-ased/`  
 **Timeline**: 5 weeks  
 **Status**: Planning Phase
 
@@ -104,7 +104,6 @@ platform-services/backend/deepiri-sovereignty-enforcement-service/
 ├── docker/
 │   ├── Dockerfile
 │   └── docker-compose.yml
-├── .env.example
 ├── package.json
 ├── tsconfig.json
 ├── jest.config.js

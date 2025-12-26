@@ -633,14 +633,57 @@ for submodule_path in "${SELECTED_SUBMODULES[@]}"; do
     # Get commit message (individual or shared)
     submodule_commit_message=""
     if [ "$USE_SAME_MESSAGE" = false ]; then
-        echo "   Enter commit message for $submodule_path (or press Enter to skip):"
-        read -r submodule_commit_message
-        
-        if [ -z "$submodule_commit_message" ]; then
-            echo "   ℹ️  Skipping (no commit message provided)"
-            cd "$REPO_ROOT" || exit 1
-            continue
-        fi
+        while true; do
+            echo "   Enter commit message for $submodule_path (or press Enter to skip, type 'status' to see changes):"
+            read -r submodule_commit_message
+            
+            # Check if user wants to see status
+            if [ "$submodule_commit_message" = "status" ] || [ "$submodule_commit_message" = "STATUS" ] || [ "$submodule_commit_message" = "Status" ]; then
+                echo ""
+                echo "   =========================================="
+                echo "   📊 Status for $submodule_path:"
+                echo "   =========================================="
+                
+                # Check if HEAD is detached
+                current_branch=$(git symbolic-ref -q HEAD | sed 's/^refs\/heads\///')
+                if [ -z "$current_branch" ]; then
+                    echo "   Branch: (detached HEAD)"
+                else
+                    echo "   Branch: $current_branch"
+                fi
+                
+                # Show git status
+                status_output=$(git status --short 2>/dev/null)
+                if [ -z "$status_output" ]; then
+                    echo "   Status: Working tree clean"
+                else
+                    echo "   Status: Has changes"
+                    echo "$status_output" | sed 's/^/      /'
+                fi
+                
+                # Show diff if there are changes
+                if [ -n "$status_output" ]; then
+                    echo ""
+                    echo "   Changes:"
+                    git diff --stat 2>/dev/null | sed 's/^/      /' || true
+                fi
+                
+                echo "   =========================================="
+                echo ""
+                # Loop back to prompt
+                continue
+            fi
+            
+            # If empty, skip
+            if [ -z "$submodule_commit_message" ]; then
+                echo "   ℹ️  Skipping (no commit message provided)"
+                cd "$REPO_ROOT" || exit 1
+                continue
+            fi
+            
+            # Valid commit message entered, break out of loop
+            break
+        done
     else
         # Use shared commit message
         submodule_commit_message="$commit_message"
@@ -867,13 +910,64 @@ if [ "$INCLUDE_MAIN_REPO" = true ]; then
     # Get commit message (individual or shared)
     main_commit_message=""
     if [ "$USE_SAME_MESSAGE" = false ]; then
-        echo "   Enter commit message for main repository (or press Enter to skip):"
-        read -r main_commit_message
-        
-        if [ -z "$main_commit_message" ]; then
-            echo "   ℹ️  Skipping (no commit message provided)"
-            echo ""
-        fi
+        while true; do
+            echo "   Enter commit message for main repository (or press Enter to skip, type 'status' to see changes):"
+            read -r main_commit_message
+            
+            # Check if user wants to see status
+            if [ "$main_commit_message" = "status" ] || [ "$main_commit_message" = "STATUS" ] || [ "$main_commit_message" = "Status" ]; then
+                echo ""
+                echo "   =========================================="
+                echo "   📊 Status for [Main repository]:"
+                echo "   =========================================="
+                
+                # Check if HEAD is detached
+                current_branch=$(git symbolic-ref -q HEAD | sed 's/^refs\/heads\///')
+                if [ -z "$current_branch" ]; then
+                    echo "   Branch: (detached HEAD)"
+                else
+                    echo "   Branch: $current_branch"
+                fi
+                
+                # Use full git status to capture submodule change details
+                full_status=$(git status 2>/dev/null)
+                
+                # Check if working tree is clean
+                if echo "$full_status" | grep -q "nothing to commit\|working tree clean"; then
+                    echo "   Status: Working tree clean"
+                else
+                    echo "   Status: Has changes"
+                    
+                    # Extract and show changes (files and submodules with their details)
+                    changes=$(echo "$full_status" | grep -E "^\s+(modified|new file|deleted|renamed|Untracked)" | sed 's/^[[:space:]]*/      /')
+                    if [ -n "$changes" ]; then
+                        echo "$changes"
+                    fi
+                fi
+                
+                # Show diff if there are changes
+                if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+                    echo ""
+                    echo "   Changes:"
+                    git diff --stat 2>/dev/null | sed 's/^/      /' || true
+                fi
+                
+                echo "   =========================================="
+                echo ""
+                # Loop back to prompt
+                continue
+            fi
+            
+            # If empty, skip
+            if [ -z "$main_commit_message" ]; then
+                echo "   ℹ️  Skipping (no commit message provided)"
+                echo ""
+                break
+            fi
+            
+            # Valid commit message entered, break out of loop
+            break
+        done
     else
         # Use shared commit message
         main_commit_message="$commit_message"

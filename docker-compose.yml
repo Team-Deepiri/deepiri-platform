@@ -351,6 +351,61 @@ services:
     profiles:
       - ai-training
 
+  # Deepiri ASED - Autonomous Sovereignty Enforcement Detonator
+  # Zero-config security monitoring for all org repositories
+  # Configuration loaded directly from ops/k8s/configmaps/ and ops/k8s/secrets/
+  # Use docker-compose-k8s.sh wrapper to automatically load from YAML files
+  deepiri-ased:
+    build:
+      context: .
+      dockerfile: platform-services/backend/deepiri-ased/Dockerfile
+    container_name: deepiri-ased
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5010:5010"
+    # Environment variables loaded directly from k8s YAML files via docker-compose-k8s.sh
+    # No .env file generation needed - configmaps/secrets are single source of truth
+    environment:
+      # These are loaded from ops/k8s/configmaps/ased-configmap.yaml
+      - PORT=${PORT:-5010}
+      - NODE_ENV=${NODE_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - STATE_CHECK_INTERVAL=${STATE_CHECK_INTERVAL:-5}
+      - WRITE_CANARY_INTERVAL=${WRITE_CANARY_INTERVAL:-60}
+      - AUDIT_LOG_INTERVAL=${AUDIT_LOG_INTERVAL:-15}
+      - TEMPORAL_CONSISTENCY_FAILURES=${TEMPORAL_CONSISTENCY_FAILURES:-12}
+      - TEMPORAL_CONSISTENCY_HOURS=${TEMPORAL_CONSISTENCY_HOURS:-6}
+      - RISK_LOCK_THRESHOLD=${RISK_LOCK_THRESHOLD:-6}
+      - RISK_WARN_THRESHOLD=${RISK_WARN_THRESHOLD:-10}
+      - RISK_DELETE_THRESHOLD=${RISK_DELETE_THRESHOLD:-10}
+      - RISK_IMMEDIATE_THRESHOLD=${RISK_IMMEDIATE_THRESHOLD:-15}
+      - RISK_DECAY_RATE=${RISK_DECAY_RATE:-1}
+      - GRACE_PERIOD_LOCK=${GRACE_PERIOD_LOCK:-24}
+      - GRACE_PERIOD_WARN=${GRACE_PERIOD_WARN:-48}
+      - GRACE_PERIOD_DELETE=${GRACE_PERIOD_DELETE:-72}
+      - GRACE_PERIOD_IMMEDIATE=${GRACE_PERIOD_IMMEDIATE:-0}
+      - BACKUP_BEFORE_DELETE=${BACKUP_BEFORE_DELETE:-true}
+      - REVERSIBILITY_WINDOW=${REVERSIBILITY_WINDOW:-168}
+      - AUTO_DISCOVER_REPOS=${AUTO_DISCOVER_REPOS:-true}
+      - REPO_PATTERN=${REPO_PATTERN:-deepiri-.*}
+      # These are loaded from ops/k8s/secrets/ased-secret.yaml
+      - GITHUB_APP_ID=${GITHUB_APP_ID}
+      - GITHUB_INSTALLATION_ID=${GITHUB_INSTALLATION_ID}
+      - GITHUB_APP_PRIVATE_KEY=${GITHUB_APP_PRIVATE_KEY}
+      - GITHUB_ORG=${GITHUB_ORG:-Team-Deepiri}
+    volumes:
+      - ased_data:/app/data
+      - ased_logs:/app/logs
+    networks:
+      - deepiri-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # NGINX Reverse Proxy (Optional for production)
   nginx:
     image: nginx:alpine
@@ -379,6 +434,10 @@ volumes:
   mlflow_data:
     driver: local
   influxdb_data:
+    driver: local
+  ased_data:
+    driver: local
+  ased_logs:
     driver: local
 
 networks:

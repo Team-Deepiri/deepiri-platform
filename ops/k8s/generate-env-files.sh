@@ -79,6 +79,7 @@ SERVICES=(
     "realtime-gateway"
     "cyrex"
     "frontend-dev"
+    "ased"
 )
 
 # Generate .env files for each service
@@ -99,6 +100,21 @@ for service in "${SERVICES[@]}"; do
     
     # Append shared secrets (all services get all secrets - they use what they need)
     extract_shared_secrets "$env_file"
+    
+    # Also extract service-specific secrets if they exist
+    service_secret_file="$SCRIPT_DIR/secrets/${service}-secret.yaml"
+    if [ -f "$service_secret_file" ]; then
+        awk '/^stringData:/{flag=1; next} /^[^ ]/{flag=0} flag && /^  [A-Z_]+:/ {
+            key = $1
+            gsub(/^  /, "", key)
+            gsub(/:/, "", key)
+            value = substr($0, index($0, $2))
+            gsub(/^["'\'']|["'\'']$/, "", value)
+            print key "=" value
+        }' "$service_secret_file" >> "$env_file"
+        echo -e "   ✓ Service secrets synced"
+    fi
+    
     echo -e "   ✓ Secrets synced"
     
     # Count variables

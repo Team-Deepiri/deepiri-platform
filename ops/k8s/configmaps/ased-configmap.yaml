@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deepiri-ased-configmap
+  namespace: default
+data:
+  # Service Configuration
+  PORT: "5010"
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  
+  # Detection Intervals (minutes)
+  STATE_CHECK_INTERVAL: "5"
+  WRITE_CANARY_INTERVAL: "60"
+  AUDIT_LOG_INTERVAL: "15"
+  TEMPORAL_CONSISTENCY_FAILURES: "12"
+  TEMPORAL_CONSISTENCY_HOURS: "6"
+  
+  # Risk Scoring
+  RISK_LOCK_THRESHOLD: "6"
+  RISK_WARN_THRESHOLD: "10"
+  RISK_DELETE_THRESHOLD: "10"
+  RISK_IMMEDIATE_THRESHOLD: "15"
+  RISK_DECAY_RATE: "1"
+  
+  # Response Configuration (hours)
+  GRACE_PERIOD_LOCK: "24"
+  GRACE_PERIOD_WARN: "48"
+  GRACE_PERIOD_DELETE: "72"
+  GRACE_PERIOD_IMMEDIATE: "0"
+  BACKUP_BEFORE_DELETE: "true"
+  REVERSIBILITY_WINDOW: "168"
+  
+  # Auto-discovery
+  AUTO_DISCOVER_REPOS: "true"
+  REPO_PATTERN: "deepiri-.*"
+
