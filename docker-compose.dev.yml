@@ -451,30 +451,39 @@ services:
     networks:
       - deepiri-dev-network
 
-  # Ollama (Local LLM Service)
+  # ════════════════════════════════════════════════════════════════════════
+  # Ollama - Automatic GPU/CPU Detection
+  # ════════════════════════════════════════════════════════════════════════
+  # Usage: docker compose up -d ollama
+  #
+  # GPU is automatically used if NVIDIA Container Toolkit is installed.
+  # If GPU not available, automatically falls back to CPU - no errors!
+  #
+  # One-time host setup for automatic GPU (recommended):
+  #   sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
+  #   sudo systemctl restart docker
+  # After this, ALL containers automatically get GPU access!
+  # ════════════════════════════════════════════════════════════════════════
   ollama:
-    build:
-      context: ./ops/docker/ollama
-      dockerfile: Dockerfile
-    image: deepiri-dev-ollama:latest
-    pull_policy: never
+    image: ollama/ollama:latest
     container_name: deepiri-ollama-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "${OLLAMA_PORT:-11435}:11434"  # Use 11435 externally to avoid conflict with local Ollama
+      - "${OLLAMA_PORT:-11435}:11434"
     volumes:
       - ollama_dev_data:/root/.ollama
     networks:
       - deepiri-dev-network
-    # Optional: Uncomment for GPU support
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    # GPU support - automatically used if NVIDIA runtime available
+    # Gracefully ignored if GPU not available (runs in CPU mode)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   # Python Agent API (AI Service)
   cyrex:
