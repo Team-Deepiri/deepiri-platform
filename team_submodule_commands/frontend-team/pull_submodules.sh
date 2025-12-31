@@ -103,8 +103,17 @@ echo ""
 # deepiri-api-gateway
 echo "  📦 deepiri-api-gateway (API Gateway)..."
 git submodule update --init --recursive platform-services/backend/deepiri-api-gateway
-if [ ! -d "platform-services/backend/deepiri-api-gateway/.git" ]; then
-    echo "    ❌ ERROR: deepiri-api-gateway not cloned correctly!"
+# Check if submodule directory exists and has content
+# Note: For submodules, .git can be a file (pointing to parent .git/modules) or a directory
+# So we check for directory existence and content instead
+if [ ! -d "platform-services/backend/deepiri-api-gateway" ]; then
+    echo "    ❌ ERROR: deepiri-api-gateway directory not found!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/backend/deepiri-api-gateway"
+    exit 1
+fi
+# Check if directory has content (at least one file/directory)
+if [ -z "$(ls -A platform-services/backend/deepiri-api-gateway 2>/dev/null)" ]; then
+    echo "    ❌ ERROR: deepiri-api-gateway directory is empty!"
     echo "    💡 Try: git submodule update --init --recursive platform-services/backend/deepiri-api-gateway"
     exit 1
 fi

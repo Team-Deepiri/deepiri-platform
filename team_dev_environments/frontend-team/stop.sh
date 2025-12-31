@@ -9,13 +9,12 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
-# Frontend team services
+# Frontend team services - only what frontend engineers need
 SERVICES=(
-  postgres redis influxdb
-  api-gateway auth-service task-orchestrator
-  engagement-service platform-analytics-service
-  notification-service challenge-service
-  realtime-gateway frontend-dev
+  frontend-dev
+  api-gateway
+  auth-service
+  notification-service
 )
 
 echo "🛑 Stopping Frontend Team services..."
