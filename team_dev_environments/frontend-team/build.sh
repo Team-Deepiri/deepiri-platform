@@ -24,7 +24,7 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Build services using docker-compose.dev.yml with --no-deps to avoid building dependencies
-docker compose -f docker-compose.dev.yml build --no-deps "${SERVICES[@]}"
+docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
 
 echo "✅ Frontend Team services built successfully!"
 echo "   Built services: ${SERVICES[*]}"
