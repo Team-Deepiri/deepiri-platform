@@ -14,7 +14,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  frontend-dev synapse
+  frontend-dev synapse adminer
 )
 
 echo "🚀 Starting QA Team Environment..."

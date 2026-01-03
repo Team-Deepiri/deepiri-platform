@@ -56,6 +56,12 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - pgadmin_dev_data:/var/lib/pgadmin
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     depends_on:
       - postgres
     networks:
@@ -71,6 +77,12 @@ services:
       - "8080:8080"
     environment:
       ADMINER_DEFAULT_SERVER: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     depends_on:
       - postgres
     networks:
@@ -87,6 +99,12 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - deepiri-dev-network
 
@@ -107,6 +125,12 @@ services:
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-your-influxdb-token}
     volumes:
       - influxdb_dev_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - deepiri-dev-network
 
@@ -124,6 +148,12 @@ services:
     volumes:
       - etcd_dev_data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health", "--endpoints=http://127.0.0.1:2379"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - deepiri-dev-network
 
@@ -169,6 +199,12 @@ services:
       MINIO_ADDRESS: minio:9000
     volumes:
       - milvus_dev_data:/var/lib/milvus
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9091 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     depends_on:
       - etcd
       - minio
@@ -197,6 +233,12 @@ services:
       - ./platform-services/backend/deepiri-api-gateway/src:/app/src
       - ./platform-services/backend/deepiri-api-gateway/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
       - auth-service
       - task-orchestrator
@@ -231,6 +273,7 @@ services:
       PORT: 5001
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     volumes:
       - shared_utils_node_modules:/shared-utils/node_modules
       - /app/node_modules
@@ -380,10 +423,20 @@ services:
       PORT: 5006
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
     volumes:
       - ./platform-services/backend/deepiri-external-bridge-service/src:/app/src
       - ./platform-services/backend/deepiri-external-bridge-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
       - postgres
       - synapse
@@ -680,6 +733,16 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python - << 'EOF'\nimport urllib.request\ntry:\n    urllib.request.urlopen('http://localhost:8002/health', timeout=2)\n    exit(0)\nexcept Exception:\n    exit(1)\nEOF"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       - redis
     networks:
@@ -741,6 +804,16 @@ services:
     volumes:
       - ./deepiri-web-frontend:/app
       - /app/node_modules
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/usr/local/bin/node -e \"require('net').connect(5173,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     depends_on:
       - synapse
       # api-gateway dependency removed - frontend can work without it
