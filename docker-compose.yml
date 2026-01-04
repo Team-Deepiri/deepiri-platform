@@ -150,8 +150,8 @@ services:
   # Python Agent API (AI Service)
   cyrex:
     build:
-      context: ./diri-cyrex
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./diri-cyrex/Dockerfile
       args:
         BUILD_TYPE: from-scratch
         BASE_IMAGE: python:3.11-slim

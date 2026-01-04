@@ -1,6 +1,6 @@
 # Core-API Repurposing - Quick Summary
 
-## 🎯 The Big Idea
+## The Big Idea
 
 **Don't throw away core-api - it has valuable assets!**
 

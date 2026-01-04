@@ -10,13 +10,12 @@ cd "$(dirname "$0")/../.." || exit 1
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 
-# Frontend team services
+# Frontend team services - only what frontend engineers need
 SERVICES=(
-  postgres redis influxdb
-  api-gateway auth-service task-orchestrator
-  engagement-service platform-analytics-service
-  notification-service challenge-service
-  realtime-gateway frontend-dev
+  frontend-dev
+  api-gateway
+  auth-service
+  notification-service
 )
 
 echo "🔨 Building Frontend Team services..."
@@ -24,8 +23,8 @@ echo "   (Using docker-compose.dev.yml with service selection)"
 echo "   Services: ${SERVICES[*]}"
 echo ""
 
-# Build services using docker-compose.dev.yml
+# Build services using docker-compose.dev.yml with --no-deps to avoid building dependencies
 docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
 
 echo "✅ Frontend Team services built successfully!"
-echo "   Built services: ${VALID_SERVICES[*]}"
+echo "   Built services: ${SERVICES[*]}"

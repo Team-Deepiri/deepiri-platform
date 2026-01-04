@@ -6,8 +6,12 @@ from fastapi import FastAPI
 from typing import Dict, Any, List
 import redis.asyncio as redis
 import os
+import asyncio
+import logging
 from .streams.manager import StreamManager
 from .monitoring.metrics_collector import MetricsCollector
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Deepiri Synapse",
@@ -21,6 +25,44 @@ stream_manager: StreamManager = None
 metrics_collector: MetricsCollector = None
 
 
+async def wait_for_redis(
+    redis_client: redis.Redis,
+    max_retries: int = 30,
+    retry_delay: float = 1.0
+) -> bool:
+    """
+    Wait for Redis to be ready with exponential backoff.
+    
+    Args:
+        redis_client: Redis client instance
+        max_retries: Maximum number of retry attempts
+        retry_delay: Initial delay between retries in seconds
+    
+    Returns:
+        True if Redis is ready, False if max retries exceeded
+    """
+    for attempt in range(max_retries):
+        try:
+            await redis_client.ping()
+            logger.info(f"✓ Redis connection established (attempt {attempt + 1})")
+            return True
+        except (redis.ConnectionError, ConnectionRefusedError, OSError) as e:
+            if attempt < max_retries - 1:
+                delay = retry_delay * (2 ** min(attempt, 5))  # Exponential backoff, max 32s
+                logger.warning(
+                    f"Redis not ready (attempt {attempt + 1}/{max_retries}), "
+                    f"retrying in {delay:.1f}s... Error: {e}"
+                )
+                await asyncio.sleep(delay)
+            else:
+                logger.error(f"Failed to connect to Redis after {max_retries} attempts: {e}")
+                return False
+        except Exception as e:
+            logger.error(f"Unexpected error connecting to Redis: {e}")
+            return False
+    return False
+
+
 @app.on_event("startup")
 async def startup():
     """Initialize Redis connection and managers"""
@@ -29,20 +71,27 @@ async def startup():
     redis_port = int(os.getenv("REDIS_PORT", "6379"))
     redis_password = os.getenv("REDIS_PASSWORD", "redispassword")
     
+    logger.info(f"Connecting to Redis at {redis_host}:{redis_port}...")
+    
     redis_client = redis.Redis(
         host=redis_host,
         port=redis_port,
         password=redis_password,
         decode_responses=True
     )
-    await redis_client.ping()
+    
+    # Wait for Redis to be ready with retry logic
+    if not await wait_for_redis(redis_client):
+        raise RuntimeError("Failed to connect to Redis. Please ensure Redis is running and accessible.")
     
     # Initialize managers
+    logger.info("Initializing stream manager and metrics collector...")
     stream_manager = StreamManager(redis_client)
     metrics_collector = MetricsCollector(redis_client)
     
     # Ensure streams exist
     await stream_manager.ensure_streams_exist()
+    logger.info("✓ Synapse startup complete")
 
 
 @app.on_event("shutdown")
