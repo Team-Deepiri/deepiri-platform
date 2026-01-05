@@ -2,6 +2,14 @@ name: deepiri
 
 version: '3.8'
 
+# IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
+# This prevents 50GB+ of dangling images on every build
+
+x-build-args: &build-args
+  # Use BuildKit for better caching and no dangling images
+  DOCKER_BUILDKIT: 1
+  BUILDKIT_PROGRESS: plain
+
 # Minimal logging - logs are automatically cleared and not saved on restart
 # max-size: 1MB, max-file: 1 (no rotation), no compression
 x-logging: &minimal-logging
@@ -59,6 +67,86 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - deepiri-network
+
+  # Milvus Vector Database for RAG
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: deepiri-milvus-etcd
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: 1000
+      ETCD_QUOTA_BACKEND_BYTES: 4294967296
+      ETCD_SNAPSHOT_COUNT: 50000
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health", "--endpoints=http://127.0.0.1:2379"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - deepiri-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: deepiri-milvus-minio
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 40s
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    networks:
+      - deepiri-network
+
+  milvus:
+    image: milvusdb/milvus:v2.3.0
+    container_name: deepiri-milvus
+    restart: unless-stopped
+    logging: *minimal-logging
+    command: ["milvus", "run", "standalone"]
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus_data:/var/lib/milvus
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9091 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      - etcd
+      - minio
     networks:
       - deepiri-network
 
@@ -153,9 +241,9 @@ services:
       context: .
       dockerfile: ./diri-cyrex/Dockerfile
       args:
-        BUILD_TYPE: from-scratch
+        BUILD_TYPE: prebuilt
         BASE_IMAGE: python:3.11-slim
-        PYTORCH_VERSION: 2.0.0
+        PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
     container_name: deepiri-cyrex
     restart: unless-stopped
@@ -169,7 +257,14 @@ services:
       # AI Training Configuration
       MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
       WANDB_API_KEY: ${WANDB_API_KEY}
+      # Model Registry Configuration (for modelkit integration)
+      MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
       MODEL_REGISTRY_PATH: /app/model_registry
+      MODEL_CACHE_DIR: /app/models/cache
+      S3_ENDPOINT_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
       STAGING_MODEL_PATH: /app/models/staging
       PRODUCTION_MODEL_PATH: /app/models/production
       
@@ -185,24 +280,51 @@ services:
       INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
       INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
       
-      # Local LLM (Ollama) Configuration
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # Milvus Vector Database Configuration
+      MILVUS_HOST: milvus
+      MILVUS_PORT: 19530
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      
+      # Local LLM Configuration
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      LOCAL_LLM_BACKEND: ${LOCAL_LLM_BACKEND:-ollama}
+      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3:8b}
+      HF_HOME: /app/.cache/huggingface
+      SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
+      
+      # PostgreSQL Configuration
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
+      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deepiripassword}
     ports:
       - "8000:8000"
     volumes:
-      - ./diri-cyrex/train/models:/app/train/models
-      - ./diri-cyrex/train/data:/app/train/data
-      - ./diri-cyrex/inference/models:/app/inference/models
+      - ./diri-cyrex/app:/app/app
+      - ./diri-cyrex/train:/app/train
+      - ./diri-cyrex/inference:/app/inference
+      - ./diri-cyrex/tests:/app/tests
+      - cyrex_cache:/app/.cache
     depends_on:
       - backend
+      - ollama
+      - postgres
+      - milvus
+      - redis
+      - influxdb
     networks:
       - deepiri-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 40s
     # Uncomment for GPU support (requires nvidia-docker)
     # deploy:
     #   resources:
@@ -227,10 +349,9 @@ services:
     volumes:
       - ./diri-cyrex/cyrex-interface:/app
       - /app/node_modules
-    command: sh -c "npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
     depends_on:
-      cyrex:
-        condition: service_healthy
+      - cyrex
     networks:
       - deepiri-network
 
@@ -304,22 +425,48 @@ services:
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-your-influxdb-token}
     volumes:
       - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - deepiri-network
 
   # MLflow for AI Experiment Tracking (Optional)
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.8.1
+    build:
+      context: ./ops/docker/mlflow
+      dockerfile: Dockerfile
+    image: deepiri-mlflow:latest
     container_name: deepiri-mlflow
     restart: unless-stopped
     logging: *minimal-logging
     ports:
       - "5001:5000"
     environment:
-      BACKEND_STORE_URI: file:/mlflow
-      DEFAULT_ARTIFACT_ROOT: file:/mlflow/artifacts
-    volumes:
-      - mlflow_data:/mlflow
+      # Backend Store (PostgreSQL)
+      BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      # Artifact Store (MinIO/S3)
+      DEFAULT_ARTIFACT_ROOT: s3://mlflow-artifacts/
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      # MLflow Tracking URI (for modelkit integration)
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # ModelKit Integration
+      MODELKIT_ENABLED: "true"
+      MODELKIT_TRACKING_URI: http://mlflow:5000
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      --default-artifact-root s3://mlflow-artifacts/
+    depends_on:
+      - postgres
+      - minio
     networks:
       - deepiri-network
     profiles:
@@ -328,17 +475,17 @@ services:
   # Jupyter Notebook for AI Research (Optional)
   jupyter:
     build:
-      context: ./diri-cyrex
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./diri-cyrex/Dockerfile.jupyter
       args:
-        BUILD_TYPE: from-scratch
+        BUILD_TYPE: prebuilt
         BASE_IMAGE: python:3.11-slim
-        PYTORCH_VERSION: 2.0.0
+        PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
     container_name: deepiri-jupyter
     restart: unless-stopped
     logging: *minimal-logging
-    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
     ports:
       - "8889:8888"
     volumes:
@@ -346,6 +493,14 @@ services:
       - ./diri-cyrex/train/data:/app/data
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
+      # Model Registry Configuration (for modelkit integration)
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
+      S3_ENDPOINT_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
     networks:
       - deepiri-network
     profiles:
@@ -371,6 +526,71 @@ services:
     profiles:
       - production
 
+  # ════════════════════════════════════════════════════════════════════════
+  # Ollama - Automatic GPU/CPU Detection
+  # ════════════════════════════════════════════════════════════════════════
+  # Usage: docker compose up -d ollama
+  #
+  # GPU is automatically used if NVIDIA Container Toolkit is installed.
+  # If GPU not available, automatically falls back to CPU - no errors!
+  #
+  # One-time host setup for automatic GPU (recommended):
+  #   sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
+  #   sudo systemctl restart docker
+  # After this, ALL containers automatically get GPU access!
+  # ════════════════════════════════════════════════════════════════════════
+  ollama:
+    image: ollama/ollama:latest
+    container_name: deepiri-ollama
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+    networks:
+      - deepiri-network
+    # GPU support - automatically used if NVIDIA runtime available
+    # Gracefully ignored if GPU not available (runs in CPU mode)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # PostgreSQL Database for Agent System
+  postgres:
+    image: postgres:16-alpine
+    container_name: deepiri-postgres
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deepiripassword}
+      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - deepiri-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deepiri}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   mongodb_data:
     driver: local
@@ -379,6 +599,18 @@ volumes:
   mlflow_data:
     driver: local
   influxdb_data:
+    driver: local
+  etcd_data:
+    driver: local
+  minio_data:
+    driver: local
+  milvus_data:
+    driver: local
+  ollama_data:
+    driver: local
+  postgres_data:
+    driver: local
+  cyrex_cache:
     driver: local
 
 networks:
