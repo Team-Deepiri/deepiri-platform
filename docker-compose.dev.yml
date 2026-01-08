@@ -200,11 +200,11 @@ services:
     volumes:
       - milvus_dev_data:/var/lib/milvus
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9091 || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9091/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 20s
+      start_period: 60s
     depends_on:
       - etcd
       - minio
@@ -752,12 +752,13 @@ services:
   jupyter:
     build:
       context: .
-      dockerfile: ./diri-cyrex/Dockerfile.jupyter
+      dockerfile: ./deepiri-modelkit/Dockerfile.jupyter
       args:
         BUILD_TYPE: prebuilt
         BASE_IMAGE: python:3.11-slim
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
+        REQUIREMENTS_PATH: diri-cyrex/requirements.txt
     image: deepiri-dev-jupyter:latest
     pull_policy: never
     container_name: deepiri-jupyter-dev

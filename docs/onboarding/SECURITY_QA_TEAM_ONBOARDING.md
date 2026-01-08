@@ -239,7 +239,7 @@ npm install -g npm-audit-resolver
 ```
 
 **First Tasks:**
-1. Review `docs/MICROSERVICES_SETUP.md` - Microservices architecture
+1. Review `docs/architecture/MICROSERVICES_SETUP.md` - Microservices architecture
 2. Review security architecture for all microservices
 3. Review `platform-services/backend/deepiri-auth-service/server.js` - OAuth 2.0 service (port 5001)
 4. Review `platform-services/backend/deepiri-external-bridge-service/server.js` - Webhook service (port 5006)

@@ -16,7 +16,9 @@ RUN if [ -f /venv/bin/pip ]; then \
 
 USER pgadmin
 
-# Set PYTHONWARNINGS to suppress the deprecation warning from passlib
+# Set PYTHONWARNINGS to suppress warnings from dependencies
 # Format: action:message:category:module:line
-ENV PYTHONWARNINGS="ignore::UserWarning:passlib.pwd"
+# - passlib.pwd: UserWarning about pkg_resources deprecation
+# - sshtunnel: SyntaxWarning about 'return' in 'finally' block (Python 3.14 compatibility)
+ENV PYTHONWARNINGS="ignore::UserWarning:passlib.pwd,ignore::SyntaxWarning:sshtunnel"
 

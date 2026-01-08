@@ -461,7 +461,7 @@ skaffold dev --port-forward
 .\scripts\stop-skaffold.ps1       # Windows
 ```
 
-See [SKAFFOLD_QUICK_START.md](../SKAFFOLD_QUICK_START.md) or [docs/SKAFFOLD_SETUP.md](SKAFFOLD_SETUP.md) for detailed documentation.
+See [SKAFFOLD_QUICK_START.md](../archive/skaffold/SKAFFOLD_QUICK_START.md) or [docs/infrastructure/SKAFFOLD_SETUP.md](../infrastructure/SKAFFOLD_SETUP.md) for detailed documentation.
 
 ### 4. Manual Kubernetes Deployment
 
