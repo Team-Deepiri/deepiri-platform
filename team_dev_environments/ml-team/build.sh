@@ -13,7 +13,7 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 # ML team services
 SERVICES=(
   postgres redis influxdb
-  cyrex jupyter mlflow
+  jupyter mlflow
   platform-analytics-service synapse
 )
 
