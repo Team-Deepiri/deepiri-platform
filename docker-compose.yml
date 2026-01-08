@@ -476,12 +476,13 @@ services:
   jupyter:
     build:
       context: .
-      dockerfile: ./diri-cyrex/Dockerfile.jupyter
+      dockerfile: ./deepiri-modelkit/Dockerfile.jupyter
       args:
         BUILD_TYPE: prebuilt
         BASE_IMAGE: python:3.11-slim
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
+        REQUIREMENTS_PATH: diri-cyrex/requirements.txt
     container_name: deepiri-jupyter
     restart: unless-stopped
     logging: *minimal-logging

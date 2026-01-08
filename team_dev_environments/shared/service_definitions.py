@@ -292,8 +292,8 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
     services.append({
         "name": f"deepiri-jupyter-{team_suffix}",
         "build": {
-            "path": str(project_root / "diri-cyrex"),
-            "dockerfile": "Dockerfile.jupyter",
+            "path": str(project_root),
+            "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
         },
         "ports": {"8888/tcp": jupyter_host_port},
         "environment": {
@@ -375,8 +375,8 @@ def get_ml_team_services(project_root: Path, env: dict, network_name: str, team_
     services.append({
         "name": f"deepiri-jupyter-{team_suffix}",
         "build": {
-            "path": str(project_root / "diri-cyrex"),
-            "dockerfile": "Dockerfile.jupyter",
+            "path": str(project_root),
+            "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
         },
         "ports": {"8888/tcp": jupyter_host_port},
         "environment": {
