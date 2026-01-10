@@ -27,5 +27,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY platform-services/shared/deepiri-synapse/app /app/app
 
+# Copy K8s env loader scripts
+COPY --chown=root:root ops/k8s/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
+COPY --chown=root:root ops/k8s/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
 

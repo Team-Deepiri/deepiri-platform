@@ -223,13 +223,15 @@ services:
     logging: *minimal-logging
     ports:
       - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
-    # Variables loaded from ops/k8s/configmaps/api-gateway-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5000
       SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: api-gateway  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-api-gateway/src:/app/src
       - ./platform-services/backend/deepiri-api-gateway/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -266,15 +268,17 @@ services:
     user: root
     ports:
       - "5001:5001"
-    # Variables loaded from ops/k8s/configmaps/auth-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5001
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      K8S_SERVICE_NAME: auth-service  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - shared_utils_node_modules:/shared-utils/node_modules
       - /app/node_modules
     command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npx prisma generate && npm run dev"
@@ -297,15 +301,17 @@ services:
     logging: *minimal-logging
     ports:
       - "5002:5002"
-    # Variables loaded from ops/k8s/configmaps/task-orchestrator-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5002
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       PRISMA_CLI_BINARY_TARGETS: "debian-openssl-3.0.x"
       SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: task-orchestrator  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-task-orchestrator/src:/app/src
       - ./platform-services/backend/deepiri-task-orchestrator/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -327,14 +333,16 @@ services:
     logging: *minimal-logging
     ports:
       - "5003:5003"
-    # Variables loaded from ops/k8s/configmaps/engagement-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5003
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: engagement-service  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-engagement-service/src:/app/src
       - ./platform-services/backend/deepiri-engagement-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -357,14 +365,16 @@ services:
     logging: *minimal-logging
     ports:
       - "5004:5004"
-    # Variables loaded from ops/k8s/configmaps/platform-analytics-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5004
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: platform-analytics-service  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-platform-analytics-service/src:/app/src
       - ./platform-services/backend/deepiri-platform-analytics-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -387,14 +397,16 @@ services:
     logging: *minimal-logging
     ports:
       - "5005:5005"
-    # Variables loaded from ops/k8s/configmaps/notification-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5005
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: notification-service  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-notification-service/src:/app/src
       - ./platform-services/backend/deepiri-notification-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -416,8 +428,7 @@ services:
     logging: *minimal-logging
     ports:
       - "5006:5006"
-    # Variables loaded from ops/k8s/configmaps/external-bridge-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5006
@@ -427,7 +438,10 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      K8S_SERVICE_NAME: external-bridge-service  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-external-bridge-service/src:/app/src
       - ./platform-services/backend/deepiri-external-bridge-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -455,14 +469,16 @@ services:
     logging: *minimal-logging
     ports:
       - "5007:5007"
-    # Variables loaded from ops/k8s/configmaps/challenge-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5007
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: challenge-service  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-challenge-service/src:/app/src
       - ./platform-services/backend/deepiri-challenge-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -485,8 +501,7 @@ services:
     logging: *minimal-logging
     ports:
       - "5008:5008"
-    # Variables loaded from ops/k8s/configmaps/realtime-gateway-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5008
@@ -494,7 +509,10 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      K8S_SERVICE_NAME: realtime-gateway  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-realtime-gateway/src:/app/src
       - ./platform-services/backend/deepiri-realtime-gateway/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
@@ -550,9 +568,9 @@ services:
     container_name: deepiri-cyrex-dev
     restart: unless-stopped
     logging: *minimal-logging
-    # Variables loaded from ops/k8s/configmaps/cyrex-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
+      K8S_SERVICE_NAME: cyrex  # Filter to only load this service's configmap
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       CORS_ORIGIN: http://localhost:5173
@@ -595,6 +613,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./diri-cyrex/app:/app/app
       - ./diri-cyrex/train:/app/train
       - ./diri-cyrex/inference:/app/inference
@@ -726,10 +746,15 @@ services:
     logging: *minimal-logging
     ports:
       - "8002:8002"
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      K8S_SERVICE_NAME: synapse  # Filter to only load this service's configmap
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
     healthcheck:
       test:
         [
@@ -791,14 +816,16 @@ services:
     logging: *minimal-logging
     ports:
       - "5173:5173"
-    # Variables loaded from ops/k8s/configmaps/frontend-dev-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
       VITE_SYNAPSE_URL: http://localhost:8002
       VITE_MLFLOW_URL: http://localhost:5500
+      K8S_SERVICE_NAME: frontend-dev  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./deepiri-web-frontend:/app
       - /app/node_modules
     healthcheck:

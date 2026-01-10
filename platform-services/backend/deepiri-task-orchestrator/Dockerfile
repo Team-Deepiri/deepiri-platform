@@ -29,6 +29,7 @@ RUN apt-get update \
       ca-certificates \
       openssl \
       dumb-init \
+      bash \
       libc6 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
@@ -37,6 +38,11 @@ RUN apt-get update \
 RUN mkdir -p /lib64 \
  && ln -sf /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 \
            /lib64/ld-linux-x86-64.so.2
+
+# Copy K8s env loader scripts
+COPY --chown=root:root ops/k8s/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
+COPY --chown=root:root ops/k8s/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
 
 # Package files (LOCK FILE INCLUDED)
 COPY backend/deepiri-task-orchestrator/package.json ./
@@ -81,5 +87,5 @@ EXPOSE 5002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5002/health || exit 1
 
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/server.js"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["dumb-init", "--", "node", "dist/server.js"]
