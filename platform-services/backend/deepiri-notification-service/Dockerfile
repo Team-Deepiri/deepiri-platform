@@ -1,65 +1,63 @@
-# Build shared-utils first
+# ===============================
+# Build shared-utils
+# ===============================
 FROM node:18-alpine AS shared-utils-builder
 WORKDIR /shared-utils
-COPY shared/deepiri-shared-utils/package*.json ./
+
+COPY shared/deepiri-shared-utils/package.json ./
+COPY shared/deepiri-shared-utils/package-lock.json ./
 COPY shared/deepiri-shared-utils/tsconfig.json ./
 COPY shared/deepiri-shared-utils/src ./src
-# Add retry logic for network issues
-RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set fetch-timeout 300000 && \
-    npm install --legacy-peer-deps || \
-    (sleep 10 && npm install --legacy-peer-deps) || \
-    (sleep 20 && npm install --legacy-peer-deps) && \
-    npm run build
 
-# Build the service
+RUN npm config set fetch-retries 5 \
+ && npm config set fetch-retry-mintimeout 20000 \
+ && npm config set fetch-retry-maxtimeout 120000 \
+ && npm config set fetch-timeout 300000 \
+ && npm install --legacy-peer-deps \
+ && npm run build
+
+# ===============================
+# Build notification-service
+# ===============================
 FROM node:18-alpine
-
 WORKDIR /app
 
 RUN apk add --no-cache curl dumb-init
 
-# Copy package files
-COPY backend/deepiri-notification-service/package*.json ./
+# Copy service package files (LOCK FILE INCLUDED)
+COPY backend/deepiri-notification-service/package.json ./
+COPY backend/deepiri-notification-service/package-lock.json ./
 COPY backend/deepiri-notification-service/tsconfig.json ./
 
-# Copy built shared-utils to a temp location
-COPY --from=shared-utils-builder /shared-utils /tmp/shared-utils
+# Copy built shared-utils
+COPY --from=shared-utils-builder /shared-utils /shared-utils
 
-# Install shared-utils as a local file dependency first, then install other dependencies
-# Add retry logic for network issues
-RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set fetch-timeout 300000 && \
-    npm install --legacy-peer-deps file:/tmp/shared-utils || \
-    (sleep 10 && npm install --legacy-peer-deps file:/tmp/shared-utils) || \
-    (sleep 20 && npm install --legacy-peer-deps file:/tmp/shared-utils) && \
-    npm install --legacy-peer-deps || \
-    (sleep 10 && npm install --legacy-peer-deps) || \
-    (sleep 20 && npm install --legacy-peer-deps) && \
-    npm cache clean --force
+# SINGLE atomic install
+RUN npm config set fetch-retries 5 \
+ && npm config set fetch-retry-mintimeout 20000 \
+ && npm config set fetch-retry-maxtimeout 120000 \
+ && npm config set fetch-timeout 300000 \
+ && npm install --legacy-peer-deps file:/shared-utils \
+ && npm cache clean --force
 
-# Copy source files
+# Source
 COPY backend/deepiri-notification-service/src ./src
 
-# Build TypeScript
-RUN npm run build && \
-    rm -rf /tmp/* /var/tmp/*
+# Build
+RUN npm run build
 
-# Create non-root user and set up directories
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    mkdir -p logs && chown -R nodejs:nodejs /app
+# Runtime user
+RUN addgroup -g 1001 -S nodejs \
+ && adduser -S nodejs -u 1001 \
+ && mkdir -p logs \
+ && chown -R nodejs:nodejs /app
 
 USER nodejs
 
 EXPOSE 5005
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5005/health || exit 1
+  CMD curl -f http://localhost:5005/health || exit 1
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["node", "dist/server.js"]

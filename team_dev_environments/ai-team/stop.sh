@@ -1,37 +1,33 @@
 #!/bin/bash
 # AI Team - Stop script
-# Stops and removes all containers started by ai-team/run.py
+# Stops AI team services using docker-compose.dev.yml with service selection
 
 set -e
 
-echo "🛑 Stopping AI Team services..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# List of containers started by ai-team/run.py
-CONTAINERS=(
-    "deepiri-postgres-ai"
-    "deepiri-pgadmin-ai"
-    "deepiri-adminer-ai"
-    "deepiri-redis-ai"
-    "deepiri-influxdb-ai"
-    "deepiri-etcd-ai"
-    "deepiri-minio-ai"
-    "deepiri-milvus-ai"
-    "deepiri-cyrex-ai"
-    "deepiri-mlflow-ai"
-    "deepiri-jupyter-ai"
-    "deepiri-challenge-service-ai"
+cd "$PROJECT_ROOT"
+
+# AI team services
+SERVICES=(
+  redis influxdb etcd minio milvus
+  cyrex cyrex-interface jupyter mlflow
+  challenge-service external-bridge-service
+  ollama synapse
 )
 
-# Stop and remove containers
-for container in "${CONTAINERS[@]}"; do
-    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-        echo "Stopping ${container}..."
-        docker stop "${container}" 2>/dev/null || true
-        echo "Removing ${container}..."
-        docker rm "${container}" 2>/dev/null || true
-    else
-        echo "⚠️  Container ${container} not found, skipping..."
-    fi
-done
+echo "🛑 Stopping AI Team services..."
+echo "   (Using docker-compose.dev.yml with service selection)"
+echo "   Services: ${SERVICES[*]}"
+echo ""
 
-echo "✅ AI Team services stopped and removed!"
+# Stop selected services
+docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}"
+
+echo ""
+echo "✅ AI Team services stopped!"
+echo ""
+echo "Note: Containers are stopped but not removed."
+echo "To remove containers: docker compose -f docker-compose.dev.yml rm -f ${SERVICES[*]}"
+echo "To remove volumes as well: docker compose -f docker-compose.dev.yml down -v"

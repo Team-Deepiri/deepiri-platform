@@ -445,33 +445,32 @@ exit
 }
 
 # Step 14: Locate Ubuntu VHDX
-Write-ColorOutput Yellow "Locating Ubuntu WSL virtual disk..."
-$ubuntuPackagePath = Get-ChildItem "$env:LOCALAPPDATA\Packages" | Where-Object {$_.Name -like "CanonicalGroupLimited.Ubuntu*"} | Select-Object -First 1
+Write-ColorOutput Yellow "Locating Ubuntu WSL virtual disk (authoritative)..."
 
-If (-not $ubuntuPackagePath) {
-    Write-ColorOutput Yellow "[WARNING] Ubuntu WSL package not found. Trying alternative location..."
-    # Try alternative location for WSL2
-    $vhdxPath = "$env:USERPROFILE\AppData\Local\Packages\CanonicalGroupLimited.Ubuntu*\LocalState\ext4.vhdx"
-    $vhdxFiles = Get-ChildItem -Path "$env:USERPROFILE\AppData\Local\Packages" -Recurse -Filter "ext4.vhdx" -ErrorAction SilentlyContinue | Select-Object -First 1
-    
-    if ($vhdxFiles) {
-        $vhdxPath = $vhdxFiles.FullName
-        Write-ColorOutput Green "Found VHDX at: $vhdxPath"
-    } else {
-        Write-ColorOutput Red "[ERROR] Ubuntu VHDX file not found!"
-        Write-ColorOutput Yellow "Please ensure WSL2 with Ubuntu is installed."
-        Exit
+$lxssKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss"
+$ubuntuDistro = Get-ChildItem $lxssKey | ForEach-Object {
+    $props = Get-ItemProperty $_.PSPath
+    if ($props.DistributionName -match "^Ubuntu") {
+        [PSCustomObject]@{
+            Name = $props.DistributionName
+            BasePath = $props.BasePath
+        }
     }
-} else {
-    $vhdxPath = Join-Path $ubuntuPackagePath.FullName "LocalState\ext4.vhdx"
-    
-    If (-not (Test-Path $vhdxPath)) {
-        Write-ColorOutput Red "[ERROR] VHDX file not found at $vhdxPath"
-        Exit
-    }
-    
-    Write-ColorOutput Green "[OK] Found Ubuntu VHDX at: $vhdxPath"
+} | Select-Object -First 1
+
+if (-not $ubuntuDistro) {
+    Write-ColorOutput Red "[ERROR] No Ubuntu WSL distribution found."
+    Exit
 }
+
+$vhdxPath = Join-Path $ubuntuDistro.BasePath "ext4.vhdx"
+
+if (-not (Test-Path $vhdxPath)) {
+    Write-ColorOutput Red "[ERROR] VHDX file not found at $vhdxPath"
+    Exit
+}
+
+Write-ColorOutput Green "[OK] Found Ubuntu VHDX at: $vhdxPath"
 
 Write-Output ""
 
@@ -545,28 +544,21 @@ if ($ubuntuCompactionSuccess) {
 }
 Write-Output ""
 
-# Step 18: Restart Docker Desktop and WSL
-Write-ColorOutput Yellow "Restarting Docker Desktop and WSL..."
-$dockerDesktopPaths = @(
-    "C:\Program Files\Docker\Docker\Docker Desktop.exe",
-    "${env:ProgramFiles(x86)}\Docker\Docker\Docker Desktop.exe",
-    "$env:LOCALAPPDATA\Programs\Docker\Docker\Docker Desktop.exe"
-)
-$dockerDesktopFound = $false
-foreach ($dockerPath in $dockerDesktopPaths) {
-    if (Test-Path $dockerPath) {
-        Start-Process $dockerPath -ErrorAction SilentlyContinue
-        Write-ColorOutput Green "[OK] Docker Desktop restarting..."
-        $dockerDesktopFound = $true
-        break
-    }
-}
-if (-not $dockerDesktopFound) {
-    Write-ColorOutput Yellow "[INFO] Docker Desktop executable not found (may not be installed)"
-}
-wsl --distribution Ubuntu 2>$null | Out-Null
-Start-Sleep -Seconds 2
-Write-ColorOutput Green "[OK] WSL restarted"
+# Step 18: Note about restarting Docker Desktop and WSL (user must do manually)
+Write-ColorOutput Yellow "=========================================="
+Write-ColorOutput Yellow "Manual Restart Required"
+Write-ColorOutput Yellow "=========================================="
+Write-Output ""
+Write-ColorOutput Cyan "Docker Desktop and WSL have been shut down."
+Write-ColorOutput Cyan "Please restart them manually when ready:"
+Write-Output ""
+Write-ColorOutput Yellow "To restart Docker Desktop:"
+Write-Output "  - Open Docker Desktop from Start Menu, or"
+Write-Output "  - Run: Start-Process 'C:\Program Files\Docker\Docker\Docker Desktop.exe'"
+Write-Output ""
+Write-ColorOutput Yellow "To restart WSL:"
+Write-Output "  - Run: wsl --distribution Ubuntu"
+Write-Output "  - Or simply open a WSL terminal"
 Write-Output ""
 
 # Step 19: Summary

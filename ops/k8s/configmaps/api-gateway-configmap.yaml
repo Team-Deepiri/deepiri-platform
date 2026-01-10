@@ -20,4 +20,6 @@ data:
   CHALLENGE_SERVICE_URL: "http://challenge-service:5007"
   REALTIME_GATEWAY_URL: "http://realtime-gateway:5008"
   CYREX_URL: "http://cyrex:8000"
+  SYNAPSE_URL: "http://synapse:8002"
+  MLFLOW_URL: "http://mlflow:5000"
 

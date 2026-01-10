@@ -84,27 +84,62 @@ echo "📥 Pulling latest main repository..."
 git pull origin main || echo "⚠️  Could not pull main repo (may be on different branch)"
 echo ""
 
-# Infrastructure Team required submodules
+# Infrastructure Team required submodules (all except frontend)
 echo "🔧 Initializing Infrastructure Team submodules..."
 echo ""
 
 # Ensure platform-services/backend directory exists
 mkdir -p platform-services/backend
 
+# Helper function to check if submodule is valid
+check_submodule() {
+    local submodule_path="$1"
+    if [ ! -d "$submodule_path" ]; then
+        return 1
+    fi
+    if [ ! -d "$submodule_path/.git" ] && [ ! -f "$submodule_path/.git" ]; then
+        return 1
+    fi
+    if ! (cd "$submodule_path" && git rev-parse --git-dir > /dev/null 2>&1); then
+        return 1
+    fi
+    return 0
+}
+
+# deepiri-core-api
+echo "  📦 deepiri-core-api (Core API)..."
+git submodule update --init --recursive deepiri-core-api 2>&1 || true
+if ! check_submodule "deepiri-core-api"; then
+    echo "    ❌ ERROR: deepiri-core-api not cloned correctly!"
+    exit 1
+fi
+echo "    ✅ core-api initialized at: $(pwd)/deepiri-core-api"
+echo ""
+
 # deepiri-api-gateway
 echo "  📦 deepiri-api-gateway (API Gateway)..."
-git submodule update --init --recursive platform-services/backend/deepiri-api-gateway
-if [ ! -d "platform-services/backend/deepiri-api-gateway/.git" ]; then
+git submodule update --init --recursive platform-services/backend/deepiri-api-gateway 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-api-gateway"; then
     echo "    ❌ ERROR: deepiri-api-gateway not cloned correctly!"
     exit 1
 fi
 echo "    ✅ api-gateway initialized at: $(pwd)/platform-services/backend/deepiri-api-gateway"
 echo ""
 
+# deepiri-auth-service
+echo "  📦 deepiri-auth-service (Auth Service)..."
+git submodule update --init --recursive platform-services/backend/deepiri-auth-service 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-auth-service"; then
+    echo "    ❌ ERROR: deepiri-auth-service not cloned correctly!"
+    exit 1
+fi
+echo "    ✅ auth-service initialized at: $(pwd)/platform-services/backend/deepiri-auth-service"
+echo ""
+
 # deepiri-external-bridge-service
 echo "  📦 deepiri-external-bridge-service (External Bridge)..."
-git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service
-if [ ! -d "platform-services/backend/deepiri-external-bridge-service/.git" ]; then
+git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-external-bridge-service"; then
     echo "    ❌ ERROR: deepiri-external-bridge-service not cloned correctly!"
     exit 1
 fi
@@ -113,8 +148,14 @@ echo ""
 
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
+git submodule update --remote deepiri-core-api
+ensure_submodule_on_main "deepiri-core-api"
+git submodule update --remote diri-cyrex
+ensure_submodule_on_main "diri-cyrex"
 git submodule update --remote platform-services/backend/deepiri-api-gateway
 ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
+git submodule update --remote platform-services/backend/deepiri-auth-service
+ensure_submodule_on_main "platform-services/backend/deepiri-auth-service"
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service
 ensure_submodule_on_main "platform-services/backend/deepiri-external-bridge-service"
 echo "    ✅ All infrastructure submodules updated and on main branch"
@@ -123,7 +164,10 @@ echo ""
 # Show status
 echo "📊 Submodule Status:"
 echo ""
+git submodule status deepiri-core-api
+git submodule status diri-cyrex
 git submodule status platform-services/backend/deepiri-api-gateway
+git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
 echo ""
 
@@ -131,7 +175,22 @@ echo "✅ Infrastructure Team submodules ready!"
 echo ""
 echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status"
-echo "  - Update: git submodule update --remote platform-services/backend/deepiri-api-gateway"
+echo "  - Update all: git submodule update --remote"
+echo "  - Work in Core API: cd deepiri-core-api"
+echo "  - Work in Cyrex: cd diri-cyrex"
 echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
+echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-service"
+echo "  - Work in External Bridge: cd platform-services/backend/deepiri-external-bridge-service"
+echo ""
+
+# Automatically run setup-hooks.sh after pulling submodules
+echo "🔧 Setting up Git hooks for pulled submodules..."
+echo ""
+if [ -f "$SCRIPT_DIR/setup-hooks.sh" ]; then
+    bash "$SCRIPT_DIR/setup-hooks.sh"
+else
+    echo "⚠️  Warning: setup-hooks.sh not found at $SCRIPT_DIR/setup-hooks.sh"
+    echo "   Hooks will not be automatically configured."
+fi
 echo ""
 

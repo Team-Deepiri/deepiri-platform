@@ -50,7 +50,8 @@ def main():
         "postgres_ai_data", "pgadmin_ai_data", 
         "redis_ai_data", "influxdb_ai_data",
         "mlflow_ai_data", "cyrex_ai_cache",
-        "milvus_ai_data", "etcd_ai_data", "minio_ai_data"
+        "milvus_ai_data", "etcd_ai_data", "minio_ai_data",
+        "ollama_ai_data"
     ]
     for volume in volumes:
         create_volume_if_not_exists(volume)
@@ -128,6 +129,18 @@ def main():
         "depends_on": [("deepiri-etcd-ai", 5), ("deepiri-minio-ai", 5)],
     })
     
+    # Add Ollama service
+    ollama_host_port = get_port("ollama", "ai")
+    services.append({
+        "image": "ollama/ollama:latest",
+        "name": "deepiri-ollama-ai",
+        "ports": {"11434/tcp": ollama_host_port},
+        "volumes": {
+            "ollama_ai_data": "/root/.ollama"
+        },
+        "network": network_name,
+    })
+    
     # Get AI team services
     ai_services = get_ai_team_services(project_root, env, network_name, "ai")
     services.extend(ai_services)
@@ -145,12 +158,15 @@ def main():
     print()
     print(f"{YELLOW}Access your services:{RESET}")
     print(f"  - Cyrex API:       http://localhost:{get_port('cyrex', 'ai')}")
+    print(f"  - Ollama:          http://localhost:{get_port('ollama', 'ai')}")
     print(f"  - MLflow:          http://localhost:{get_port('mlflow', 'ai')}")
     print(f"  - Jupyter:         http://localhost:{get_port('jupyter', 'ai')}")
     print(f"  - Challenge Service: http://localhost:{get_port('challenge-service', 'ai')}")
     print(f"  - pgAdmin:         http://localhost:{get_port('pgadmin', 'ai')}")
     print(f"  - Adminer:         http://localhost:{get_port('adminer', 'ai')}")
     print(f"  - MinIO Console:   http://localhost:{get_port('minio-console', 'ai')}")
+    print()
+    print(f"{CYAN}💡 To pull models into Ollama: docker exec -it deepiri-ollama-ai ollama pull llama3:8b{RESET}")
     print()
 
 
