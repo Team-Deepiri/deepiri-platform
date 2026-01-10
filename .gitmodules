@@ -22,3 +22,6 @@
 [submodule "deepiri-modelkit"]
 	path = deepiri-modelkit
 	url = git@github.com:Team-Deepiri/deepiri-modelkit.git
+[submodule "deepiri-auth-service"]
+	path = deepiri-auth-service
+	url = git@github.com:Team-Deepiri/deepiri-auth-service.git
