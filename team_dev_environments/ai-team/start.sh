@@ -20,8 +20,8 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Use --no-build to prevent automatic building (images should already be built)
-# --no-deps prevents starting dependencies unless specified
-docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
+# --no-deps prevents starting dependencies unless specified (API gateway doesn't need auth-service or language-intelligence-service to start)
+docker compose -f docker-compose.dev.yml up -d --no-build --no-deps "${SERVICES[@]}"
 
 echo "✅ AI Team services started!"
 echo ""
