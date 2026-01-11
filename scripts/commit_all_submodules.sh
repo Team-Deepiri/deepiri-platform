@@ -440,53 +440,89 @@ echo "📝 Commit message: $commit_message"
             echo "ℹ️  Will NOT push main repository (commit only)"
         fi
     fi
+    echo ""
+    
+    # Prompt for branch strategy (same message mode - only 2 options)
+    echo "Branch strategy:"
+    echo "   1. Stay on current branch for each repository"
+    echo "   2. Create new branch for all selected repositories"
+    echo "Enter choice (1 or 2, default: 1):"
+    read -r branch_strategy
+
+    BRANCH_STRATEGY="current"
+    NEW_BRANCH_NAME=""
+    USE_INDIVIDUAL_BRANCHES=false
+
+    if [ "$branch_strategy" = "2" ]; then
+        BRANCH_STRATEGY="new"
+        echo "Enter name for new branch (will be created in all selected repositories):"
+        read -r NEW_BRANCH_NAME
+        
+        if [ -z "$NEW_BRANCH_NAME" ]; then
+            echo "⚠️  No branch name provided, staying on current branches"
+            BRANCH_STRATEGY="current"
+        else
+            echo "✅ Will create and switch to branch: $NEW_BRANCH_NAME"
+        fi
+    else
+        echo "✅ Staying on current branches"
+    fi
 else
     USE_SAME_MESSAGE=false
     SUBMODULE_AUTO_PUSH=false
     SUBMODULE_AUTO_UPSTREAM=false
     echo "✅ Using individual commit messages (manual control)"
-echo ""
+    echo ""
 
     # Prompt for push (applies to all repos/submodules in individual mode)
-echo "Push changes after committing? (y/n, default: n):"
-read -r push_choice
+    echo "Push changes after committing? (y/n, default: n):"
+    read -r push_choice
 
-PUSH_AFTER_COMMIT=false
+    PUSH_AFTER_COMMIT=false
     MAIN_REPO_PUSH=false
-if [ "$push_choice" = "y" ] || [ "$push_choice" = "Y" ] || [ "$push_choice" = "yes" ] || [ "$push_choice" = "YES" ]; then
-    PUSH_AFTER_COMMIT=true
+    if [ "$push_choice" = "y" ] || [ "$push_choice" = "Y" ] || [ "$push_choice" = "yes" ] || [ "$push_choice" = "YES" ]; then
+        PUSH_AFTER_COMMIT=true
         MAIN_REPO_PUSH=true
-    echo "✅ Will push after committing"
-else
-    echo "ℹ️  Will NOT push (commit only)"
-    fi
-fi
-
-echo ""
-# Prompt for branch strategy
-echo "Branch strategy:"
-echo "   1. Stay on current branch for each repository"
-echo "   2. Create new branch for all selected repositories"
-echo "Enter choice (1 or 2, default: 1):"
-read -r branch_strategy
-
-BRANCH_STRATEGY="current"
-NEW_BRANCH_NAME=""
-
-if [ "$branch_strategy" = "2" ]; then
-    BRANCH_STRATEGY="new"
-    echo "Enter name for new branch (will be created in all selected repositories):"
-    read -r NEW_BRANCH_NAME
-    
-    if [ -z "$NEW_BRANCH_NAME" ]; then
-        echo "⚠️  No branch name provided, staying on current branches"
-        BRANCH_STRATEGY="current"
+        echo "✅ Will push after committing"
     else
-        echo "✅ Will create and switch to branch: $NEW_BRANCH_NAME"
+        echo "ℹ️  Will NOT push (commit only)"
     fi
-else
-    echo "✅ Staying on current branches"
+    echo ""
+    
+    # Since individual commit messages are selected, ask about branch strategy
+    echo "Branch strategy (since you're using individual commit messages):"
+    echo "   1. Stay on current branch for each repository"
+    echo "   2. Create same new branch for all selected repositories"
+    echo "   3. Create different branch for each repository (will prompt for each)"
+    echo "Enter choice (1, 2, or 3, default: 1):"
+    read -r branch_strategy
+
+    BRANCH_STRATEGY="current"
+    NEW_BRANCH_NAME=""
+    USE_INDIVIDUAL_BRANCHES=false
+
+    if [ "$branch_strategy" = "2" ]; then
+        BRANCH_STRATEGY="new"
+        echo "Enter name for new branch (will be created in all selected repositories):"
+        read -r NEW_BRANCH_NAME
+        
+        if [ -z "$NEW_BRANCH_NAME" ]; then
+            echo "⚠️  No branch name provided, staying on current branches"
+            BRANCH_STRATEGY="current"
+        else
+            echo "✅ Will create and switch to branch: $NEW_BRANCH_NAME"
+        fi
+    elif [ "$branch_strategy" = "3" ]; then
+        USE_INDIVIDUAL_BRANCHES=true
+        BRANCH_STRATEGY="new"
+        echo "✅ Will prompt for branch name for each repository"
+    else
+        echo "✅ Staying on current branches"
+    fi
 fi
+
+# Initialize branch names array for individual branches
+declare -A REPO_BRANCH_NAMES
 
 echo ""
 echo "🚀 Starting commits..."
@@ -514,23 +550,42 @@ for submodule_path in "${SELECTED_SUBMODULES[@]}"; do
     }
     
     # Handle branch strategy (if user chose to create new branch)
-    if [ "$BRANCH_STRATEGY" = "new" ] && [ -n "$NEW_BRANCH_NAME" ]; then
-        echo "   🌿 Creating and switching to branch: $NEW_BRANCH_NAME"
-        
-        # Check if branch already exists locally
-        if git rev-parse --verify "$NEW_BRANCH_NAME" >/dev/null 2>&1; then
-            # Branch exists, just checkout
-            if git checkout "$NEW_BRANCH_NAME" 2>/dev/null; then
-                echo "   ✅ Switched to existing branch: $NEW_BRANCH_NAME"
+    branch_name_to_use=""
+    if [ "$BRANCH_STRATEGY" = "new" ]; then
+        if [ "$USE_INDIVIDUAL_BRANCHES" = true ]; then
+            # Prompt for individual branch name for this repository
+            echo "   Enter branch name for $submodule_path (or press Enter to skip branch creation):"
+            read -r branch_name_to_use
+            
+            if [ -z "$branch_name_to_use" ]; then
+                echo "   ℹ️  No branch name provided, staying on current branch"
+                branch_name_to_use=""
             else
-                echo "   ⚠️  Failed to switch to branch, staying on current branch"
+                REPO_BRANCH_NAMES["$submodule_path"]="$branch_name_to_use"
             fi
         else
-            # Branch doesn't exist, create it
-            if git checkout -b "$NEW_BRANCH_NAME" 2>/dev/null; then
-                echo "   ✅ Created and switched to new branch: $NEW_BRANCH_NAME"
+            # Use the same branch name for all repositories
+            branch_name_to_use="$NEW_BRANCH_NAME"
+        fi
+        
+        if [ -n "$branch_name_to_use" ]; then
+            echo "   🌿 Creating and switching to branch: $branch_name_to_use"
+            
+            # Check if branch already exists locally
+            if git rev-parse --verify "$branch_name_to_use" >/dev/null 2>&1; then
+                # Branch exists, just checkout
+                if git checkout "$branch_name_to_use" 2>/dev/null; then
+                    echo "   ✅ Switched to existing branch: $branch_name_to_use"
+                else
+                    echo "   ⚠️  Failed to switch to branch, staying on current branch"
+                fi
             else
-                echo "   ⚠️  Failed to create branch, staying on current branch"
+                # Branch doesn't exist, create it
+                if git checkout -b "$branch_name_to_use" 2>/dev/null; then
+                    echo "   ✅ Created and switched to new branch: $branch_name_to_use"
+                else
+                    echo "   ⚠️  Failed to create branch, staying on current branch"
+                fi
             fi
         fi
     fi
@@ -748,23 +803,42 @@ if [ "$INCLUDE_MAIN_REPO" = true ]; then
     }
     
     # Handle branch strategy (if user chose to create new branch)
-    if [ "$BRANCH_STRATEGY" = "new" ] && [ -n "$NEW_BRANCH_NAME" ]; then
-        echo "   🌿 Creating and switching to branch: $NEW_BRANCH_NAME"
-        
-        # Check if branch already exists locally
-        if git rev-parse --verify "$NEW_BRANCH_NAME" >/dev/null 2>&1; then
-            # Branch exists, just checkout
-            if git checkout "$NEW_BRANCH_NAME" 2>/dev/null; then
-                echo "   ✅ Switched to existing branch: $NEW_BRANCH_NAME"
+    main_branch_name_to_use=""
+    if [ "$BRANCH_STRATEGY" = "new" ]; then
+        if [ "$USE_INDIVIDUAL_BRANCHES" = true ]; then
+            # Prompt for individual branch name for main repository
+            echo "   Enter branch name for main repository (or press Enter to skip branch creation):"
+            read -r main_branch_name_to_use
+            
+            if [ -z "$main_branch_name_to_use" ]; then
+                echo "   ℹ️  No branch name provided, staying on current branch"
+                main_branch_name_to_use=""
             else
-                echo "   ⚠️  Failed to switch to branch, staying on current branch"
+                REPO_BRANCH_NAMES["[Main repository]"]="$main_branch_name_to_use"
             fi
         else
-            # Branch doesn't exist, create it
-            if git checkout -b "$NEW_BRANCH_NAME" 2>/dev/null; then
-                echo "   ✅ Created and switched to new branch: $NEW_BRANCH_NAME"
+            # Use the same branch name for all repositories
+            main_branch_name_to_use="$NEW_BRANCH_NAME"
+        fi
+        
+        if [ -n "$main_branch_name_to_use" ]; then
+            echo "   🌿 Creating and switching to branch: $main_branch_name_to_use"
+            
+            # Check if branch already exists locally
+            if git rev-parse --verify "$main_branch_name_to_use" >/dev/null 2>&1; then
+                # Branch exists, just checkout
+                if git checkout "$main_branch_name_to_use" 2>/dev/null; then
+                    echo "   ✅ Switched to existing branch: $main_branch_name_to_use"
+                else
+                    echo "   ⚠️  Failed to switch to branch, staying on current branch"
+                fi
             else
-                echo "   ⚠️  Failed to create branch, staying on current branch"
+                # Branch doesn't exist, create it
+                if git checkout -b "$main_branch_name_to_use" 2>/dev/null; then
+                    echo "   ✅ Created and switched to new branch: $main_branch_name_to_use"
+                else
+                    echo "   ⚠️  Failed to create branch, staying on current branch"
+                fi
             fi
         fi
     fi

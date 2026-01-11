@@ -47,7 +47,7 @@ Welcome to the Deepiri documentation! This directory contains comprehensive guid
 bash scripts/fix-dependencies.sh
 
 # 2. Start services
-docker-compose -f docker-compose.dev.yml up -d
+docker-compose -f docker-compose.dev.yml up -d 
 
 # 3. Verify services
 curl http://localhost:5000/health

@@ -172,6 +172,18 @@ fi
 echo "    ✅ external-bridge-service initialized at: $(pwd)/platform-services/backend/deepiri-external-bridge-service"
 echo ""
 
+# deepiri-language-intelligence-service
+echo "  📦 deepiri-language-intelligence-service (Language Intelligence - Team-Deepiri/deepiri-language-intelligence-service)..."
+cleanup_invalid_submodule "platform-services/backend/deepiri-language-intelligence-service"
+git submodule update --init --recursive platform-services/backend/deepiri-language-intelligence-service 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-language-intelligence-service"; then
+    echo "    ❌ ERROR: deepiri-language-intelligence-service not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/backend/deepiri-language-intelligence-service"
+    exit 1
+fi
+echo "    ✅ language-intelligence-service initialized at: $(pwd)/platform-services/backend/deepiri-language-intelligence-service"
+echo ""
+
 # deepiri-web-frontend
 echo "  📦 deepiri-web-frontend (Web Frontend - Team-Deepiri/deepiri-web-frontend)..."
 cleanup_invalid_submodule "deepiri-web-frontend"
@@ -194,6 +206,8 @@ git submodule update --remote platform-services/backend/deepiri-auth-service
 ensure_submodule_on_main "platform-services/backend/deepiri-auth-service"
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service
 ensure_submodule_on_main "platform-services/backend/deepiri-external-bridge-service"
+git submodule update --remote platform-services/backend/deepiri-language-intelligence-service
+ensure_submodule_on_main "platform-services/backend/deepiri-language-intelligence-service"
 git submodule update --remote deepiri-web-frontend
 ensure_submodule_on_main "deepiri-web-frontend"
 echo "    ✅ All backend submodules updated and on main branch"
@@ -206,6 +220,7 @@ git submodule status deepiri-core-api
 git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
+git submodule status platform-services/backend/deepiri-language-intelligence-service
 git submodule status deepiri-web-frontend
 echo ""
 
@@ -216,6 +231,7 @@ echo "  ✅ Team-Deepiri/deepiri-core-api"
 echo "  ✅ Team-Deepiri/deepiri-api-gateway"
 echo "  ✅ Team-Deepiri/deepiri-auth-service"
 echo "  ✅ Team-Deepiri/deepiri-external-bridge-service"
+echo "  ✅ Team-Deepiri/deepiri-language-intelligence-service"
 echo "  ✅ Team-Deepiri/deepiri-web-frontend"
 echo ""
 echo "📋 Quick Commands:"
@@ -225,6 +241,7 @@ echo "  - Work in Core API: cd deepiri-core-api"
 echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
 echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-service"
 echo "  - Work in External Bridge: cd platform-services/backend/deepiri-external-bridge-service"
+echo "  - Work in Language Intelligence: cd platform-services/backend/deepiri-language-intelligence-service"
 echo "  - Work in Frontend: cd deepiri-web-frontend"
 echo ""
 

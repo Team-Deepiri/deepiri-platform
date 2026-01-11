@@ -79,6 +79,7 @@ SUBMODULES=(
     "diri-cyrex"
     "deepiri-modelkit"
     "platform-services/backend/deepiri-external-bridge-service"
+    "platform-services/backend/deepiri-language-intelligence-service"
 )
 
 for submodule in "${SUBMODULES[@]}"; do

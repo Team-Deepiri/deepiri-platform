@@ -75,7 +75,8 @@ def get_microservice_config(
     
     # Add /shared-utils/node_modules volume for services that use shared-utils
     if name in ["challenge-service", "auth-service", "engagement-service", "external-bridge-service", 
-                "notification-service", "platform-analytics-service", "task-orchestrator", "realtime-gateway"]:
+                "notification-service", "platform-analytics-service", "task-orchestrator", "realtime-gateway",
+                "language-intelligence-service"]:
         config["volumes"]["/shared-utils/node_modules"] = {}
     
     # Add command if provided
@@ -224,6 +225,21 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5008,
         project_root,
         "platform-services/backend/deepiri-realtime-gateway",
+        database_url,
+        None,
+        None,
+        ["postgres"],
+        network_name,
+        team_suffix
+    ))
+    
+    # Language Intelligence Service
+    services.append(get_microservice_config(
+        "language-intelligence-service",
+        f"deepiri-language-intelligence-service-{team_suffix}",
+        5003,
+        project_root,
+        "platform-services/backend/deepiri-language-intelligence-service",
         database_url,
         None,
         None,
