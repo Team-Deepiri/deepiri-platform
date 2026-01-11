@@ -78,8 +78,7 @@ echo ""
 SUBMODULES=(
     "diri-cyrex"
     "deepiri-modelkit"
-    "platform-services/backend/deepiri-external-bridge-service"
-    "platform-services/backend/deepiri-language-intelligence-service"
+    "platform-services/backend/deepiri-api-gateway"
 )
 
 for submodule in "${SUBMODULES[@]}"; do

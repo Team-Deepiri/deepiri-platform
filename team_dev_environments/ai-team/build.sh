@@ -14,7 +14,7 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 SERVICES=(
   redis influxdb etcd minio milvus
   cyrex cyrex-interface jupyter mlflow
-  challenge-service external-bridge-service
+  challenge-service api-gateway
   ollama synapse
 )
 

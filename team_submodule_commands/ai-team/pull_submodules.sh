@@ -109,24 +109,14 @@ else
 fi
 echo ""
 
-# deepiri-external-bridge-service - External API integrations
-echo "  📦 deepiri-external-bridge-service (External Bridge Service)..."
-git submodule update --init --recursive platform-services/backend/deepiri-external-bridge-service
-if [ ! -f "platform-services/backend/deepiri-external-bridge-service/.git" ] && [ ! -d "platform-services/backend/deepiri-external-bridge-service/.git" ]; then
-    echo "    ❌ ERROR: deepiri-external-bridge-service not cloned correctly!"
+# deepiri-api-gateway - API Gateway (read-only access)
+echo "  📦 deepiri-api-gateway (API Gateway)..."
+git submodule update --init --recursive platform-services/backend/deepiri-api-gateway
+if [ ! -f "platform-services/backend/deepiri-api-gateway/.git" ] && [ ! -d "platform-services/backend/deepiri-api-gateway/.git" ]; then
+    echo "    ❌ ERROR: deepiri-api-gateway not cloned correctly!"
     exit 1
 fi
-echo "    ✅ external-bridge-service initialized at: $(pwd)/platform-services/backend/deepiri-external-bridge-service"
-echo ""
-
-# deepiri-language-intelligence-service - Language Intelligence
-echo "  📦 deepiri-language-intelligence-service (Language Intelligence Service)..."
-git submodule update --init --recursive platform-services/backend/deepiri-language-intelligence-service
-if [ ! -f "platform-services/backend/deepiri-language-intelligence-service/.git" ] && [ ! -d "platform-services/backend/deepiri-language-intelligence-service/.git" ]; then
-    echo "    ❌ ERROR: deepiri-language-intelligence-service not cloned correctly!"
-    exit 1
-fi
-echo "    ✅ language-intelligence-service initialized at: $(pwd)/platform-services/backend/deepiri-language-intelligence-service"
+echo "    ✅ api-gateway initialized at: $(pwd)/platform-services/backend/deepiri-api-gateway"
 echo ""
 
 # Update to latest and ensure on main branch
@@ -134,12 +124,9 @@ echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote diri-cyrex
 ensure_submodule_on_main "diri-cyrex"
 echo "    ✅ diri-cyrex updated and on main branch"
-git submodule update --remote platform-services/backend/deepiri-external-bridge-service
-ensure_submodule_on_main "platform-services/backend/deepiri-external-bridge-service"
-echo "    ✅ external-bridge-service updated and on main branch"
-git submodule update --remote platform-services/backend/deepiri-language-intelligence-service
-ensure_submodule_on_main "platform-services/backend/deepiri-language-intelligence-service"
-echo "    ✅ language-intelligence-service updated and on main branch"
+git submodule update --remote platform-services/backend/deepiri-api-gateway
+ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
+echo "    ✅ api-gateway updated and on main branch"
 git submodule update --remote deepiri-modelkit 2>/dev/null || true
 ensure_submodule_on_main "deepiri-modelkit"
 echo "    ✅ modelkit updated and on main branch"
@@ -149,8 +136,7 @@ echo ""
 echo "📊 Submodule Status:"
 echo ""
 git submodule status diri-cyrex
-git submodule status platform-services/backend/deepiri-external-bridge-service
-git submodule status platform-services/backend/deepiri-language-intelligence-service
+git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
 echo ""
 
@@ -158,16 +144,13 @@ echo "✅ AI Team submodules ready!"
 echo ""
 echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status diri-cyrex"
-echo "  - Check status: git submodule status platform-services/backend/deepiri-external-bridge-service"
-echo "  - Check status: git submodule status platform-services/backend/deepiri-language-intelligence-service"
+echo "  - Check status: git submodule status platform-services/backend/deepiri-api-gateway"
 echo "  - Check status: git submodule status deepiri-modelkit"
 echo "  - Update: git submodule update --remote diri-cyrex"
-echo "  - Update: git submodule update --remote platform-services/backend/deepiri-external-bridge-service"
-echo "  - Update: git submodule update --remote platform-services/backend/deepiri-language-intelligence-service"
+echo "  - Update: git submodule update --remote platform-services/backend/deepiri-api-gateway"
 echo "  - Update: git submodule update --remote deepiri-modelkit"
 echo "  - Work in cyrex: cd diri-cyrex"
-echo "  - Work in external bridge: cd platform-services/backend/deepiri-external-bridge-service"
-echo "  - Work in language intelligence: cd platform-services/backend/deepiri-language-intelligence-service"
+echo "  - Work in api gateway: cd platform-services/backend/deepiri-api-gateway"
 echo "  - Work in modelkit: cd deepiri-modelkit"
 echo ""
 

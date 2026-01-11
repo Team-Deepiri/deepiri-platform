@@ -510,6 +510,8 @@ services:
     container_name: deepiri-language-intelligence-service-dev
     restart: unless-stopped
     logging: *minimal-logging
+    # Port exposed for development only
+    # In production: Remove this port mapping - only access through API Gateway
     ports:
       - "5009:5003"
     environment:
@@ -526,7 +528,7 @@ services:
       STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       CYREX_BASE_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
-      AUTH_SERVICE_URL: http://auth-service:5001
+      # AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-}  # Optional - set to enable auth
       K8S_SERVICE_NAME: language-intelligence-service
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -723,7 +725,7 @@ services:
     logging: *minimal-logging
     working_dir: /app
     environment:
-      VITE_CYREX_BASE_URL: http://cyrex:8000
+      VITE_CYREX_BASE_URL: http://localhost:8000
       VITE_SYNAPSE_URL: http://localhost:8002
       VITE_PORT: 5175
     ports:

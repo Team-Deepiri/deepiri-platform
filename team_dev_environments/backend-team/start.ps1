@@ -16,7 +16,8 @@ $SERVICES = @(
   "api-gateway", "auth-service", "task-orchestrator",
   "engagement-service", "platform-analytics-service",
   "notification-service", "external-bridge-service",
-  "challenge-service", "realtime-gateway"
+  "challenge-service", "realtime-gateway",
+  "language-intelligence-service"
 )
 
 Write-Host "   (Using docker-compose.dev.yml with service selection)" -ForegroundColor Gray

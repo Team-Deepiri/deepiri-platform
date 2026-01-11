@@ -97,12 +97,8 @@ echo ""
 update_submodule "diri-cyrex" "diri-cyrex (AI/ML Service)"
 echo ""
 
-# Update deepiri-external-bridge-service
-update_submodule "platform-services/backend/deepiri-external-bridge-service" "deepiri-external-bridge-service (External Bridge Service)"
-echo ""
-
-# Update deepiri-language-intelligence-service
-update_submodule "platform-services/backend/deepiri-language-intelligence-service" "deepiri-language-intelligence-service (Language Intelligence)"
+# Update deepiri-api-gateway
+update_submodule "platform-services/backend/deepiri-api-gateway" "deepiri-api-gateway (API Gateway)"
 echo ""
 
 # Update deepiri-modelkit
@@ -112,8 +108,7 @@ echo ""
 # Also update via git submodule update --remote for consistency
 echo "🔄 Syncing submodule references..."
 git submodule update --remote diri-cyrex 2>/dev/null || true
-git submodule update --remote platform-services/backend/deepiri-external-bridge-service 2>/dev/null || true
-git submodule update --remote platform-services/backend/deepiri-language-intelligence-service 2>/dev/null || true
+git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/dev/null || true
 git submodule update --remote deepiri-modelkit 2>/dev/null || true
 echo ""
 
@@ -121,8 +116,7 @@ echo ""
 echo "📊 Submodule Status:"
 echo ""
 git submodule status diri-cyrex
-git submodule status platform-services/backend/deepiri-external-bridge-service
-git submodule status platform-services/backend/deepiri-language-intelligence-service
+git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
 echo ""
 
@@ -130,8 +124,7 @@ echo "✅ AI Team submodules updated!"
 echo ""
 echo "📋 Updated Submodules:"
 echo "  ✅ diri-cyrex"
-echo "  ✅ deepiri-external-bridge-service"
-echo "  ✅ deepiri-language-intelligence-service"
+echo "  ✅ deepiri-api-gateway"
 echo "  ✅ deepiri-modelkit"
 echo ""
 
