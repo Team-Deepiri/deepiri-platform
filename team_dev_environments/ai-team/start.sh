@@ -8,7 +8,7 @@ cd "$(dirname "$0")/../.." || exit 1
 
 # AI team services
 SERVICES=(
-  redis influxdb etcd minio milvus
+  postgres redis influxdb etcd minio milvus
   cyrex cyrex-interface jupyter mlflow
   challenge-service api-gateway
   ollama synapse
