@@ -204,11 +204,13 @@ services:
     volumes:
       - milvus_dev_data:/var/lib/milvus
     healthcheck:
+      # Check health endpoint - waits for all components (including rootcoord) to be ready
+      # Increased start_period to give rootcoord time to start before other components try to connect
       test: ["CMD-SHELL", "curl -f http://localhost:9091/healthz || exit 1"]
-      interval: 30s
+      interval: 15s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 90s  # Increased to give rootcoord time to start first
     depends_on:
       - etcd
       - minio
@@ -625,9 +627,10 @@ services:
       dockerfile: ./diri-cyrex/Dockerfile
       args:
         BUILD_TYPE: prebuilt
-        BASE_IMAGE: python:3.11-slim
+        BASE_IMAGE: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
+        # Using CUDA 12.8 base image for RTX 5080/5090 (sm_120) support
     image: deepiri-dev-cyrex:latest
     pull_policy: never
     container_name: deepiri-cyrex-dev
@@ -692,8 +695,33 @@ services:
       - ./diri-cyrex/train:/app/train
       - ./diri-cyrex/inference:/app/inference
       - ./diri-cyrex/tests:/app/tests
+      - ./diri-cyrex/cyrex_watcher.py:/app/cyrex_watcher.py:ro
       - cyrex_cache:/app/.cache
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+    command: python /app/cyrex_watcher.py --watch-dir /app/app --app-module app.main:app --host 0.0.0.0 --port 8000
+    # GPU support - automatically detects and uses available GPU
+    # Priority: CUDA (NVIDIA) → MPS (Apple Silicon) → CPU
+    # 
+    # NVIDIA CUDA: Configured via deploy.resources below
+    #   - Requires: NVIDIA Container Toolkit installed
+    #   - Works on: Linux, WSL2, Windows with NVIDIA GPU
+    #
+    # Apple Silicon MPS: Automatically detected by PyTorch
+    #   - Works natively on macOS (Docker Desktop on Mac)
+    #   - No docker-compose config needed - PyTorch detects automatically
+    #   - Note: Docker containers on Mac typically can't access GPU
+    #   - For best MPS performance, run natively on macOS (not in Docker)
+    #
+    # CPU: Falls back gracefully if no GPU available
+    deploy:
+      resources:
+        reservations:
+          devices:
+            # NVIDIA GPU support (Linux/WSL/Windows with NVIDIA GPU)
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+            # Note: MPS (Apple Silicon) doesn't use docker device drivers
+            # It's automatically detected by PyTorch when available on macOS
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
       interval: 30s
@@ -904,8 +932,8 @@ services:
   # Frontend with Vite HMR
   frontend-dev:
     build:
-      context: ./deepiri-web-frontend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: ./deepiri-web-frontend/Dockerfile.dev
     image: deepiri-dev-frontend:latest
     pull_policy: never
     container_name: deepiri-frontend-dev

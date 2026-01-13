@@ -1,6 +1,6 @@
  **Deepiri Proprietary Software License**
 
-Copyright (c) 2025 Joseph Ronald Black. All Rights Reserved.
+Copyright (c) 2026 Joseph Ronald Black. All Rights Reserved.
 
 1. License Grant
 You are granted a non-exclusive, non-transferable license to use the compiled version of Deepiri software for internal business purposes.
