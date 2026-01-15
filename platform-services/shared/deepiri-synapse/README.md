@@ -87,3 +87,134 @@ Synapse integrates with:
 
 Just like biological synapses connect neurons in the brain, **Synapse connects services** in the Deepiri platform, enabling rapid, reliable communication and coordination.
 
+---
+
+## Installation & Setup
+
+### Prerequisites
+
+- Python 3.11+
+- Redis 7.0+ (running locally or accessible)
+- pip
+
+### Install Dependencies
+
+```bash
+# Install required packages
+pip install -r requirements.txt
+
+# Or install individually
+pip install fastapi uvicorn redis pydantic pytest pytest-asyncio
+```
+
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install pytest pytest-asyncio
+
+# Run all tests
+pytest tests/
+
+# Run with verbose output
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_schema_registry.py
+
+# Run with coverage
+pytest tests/ --cov=app --cov-report=html
+```
+
+### Running the Service
+
+```bash
+# Set environment variables
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+export REDIS_PASSWORD=your_password
+
+# Run with uvicorn
+uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+```
+
+### Docker Setup
+
+```bash
+# Build Docker image
+docker build -t deepiri-synapse .
+
+# Run with docker-compose (from platform root)
+docker compose up synapse
+```
+
+### Environment Variables
+
+- `REDIS_HOST` - Redis host (default: `redis`)
+- `REDIS_PORT` - Redis port (default: `6379`)
+- `REDIS_PASSWORD` - Redis password (default: `redispassword`)
+
+---
+
+## Development
+
+### Project Structure
+
+```
+deepiri-synapse/
+├── app/
+│   ├── schemas/          # Schema registry and validators
+│   ├── middleware/       # Validation middleware
+│   ├── streams/          # Stream manager and DLQ
+│   ├── producers/        # Event publishers
+│   ├── consumers/        # Event consumers
+│   └── monitoring/       # Metrics collection
+├── tests/                # Test suite
+├── requirements.txt      # Python dependencies
+└── README.md            # This file
+```
+
+### Running Tests
+
+See [tests/README.md](tests/README.md) for detailed test instructions.
+
+**Quick Start:**
+```bash
+# Install dependencies first
+pip install -r requirements.txt pytest pytest-asyncio
+
+# Run tests
+pytest tests/ -v
+```
+
+### Code Quality
+
+```bash
+# Run linter (if configured)
+flake8 app/
+black app/ --check
+
+# Type checking (if configured)
+mypy app/
+```
+
+---
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `GET /streams` - List all streams
+- `GET /streams/{stream_name}/info` - Stream information
+- `GET /streams/{stream_name}/messages` - Recent messages
+- `GET /metrics` - Service metrics
+
+See [SCHEMA_REGISTRY_INTEGRATION.md](SCHEMA_REGISTRY_INTEGRATION.md) for additional endpoints.
+
+---
+
+## Documentation
+
+- [Schema Registry Integration](app/schemas/SCHEMA_REGISTRY_INTEGRATION.md)
+- [Test Explanation](tests/TEST_EXPLANATION.md)
+- [Architecture](ARCHITECTURE.md)
+
