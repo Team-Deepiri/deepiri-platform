@@ -14,6 +14,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
+  language-intelligence-service
   frontend-dev synapse adminer
 )
 

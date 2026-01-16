@@ -105,6 +105,10 @@ echo ""
 update_submodule "platform-services/backend/deepiri-api-gateway" "deepiri-api-gateway (API Gateway)"
 echo ""
 
+# Update deepiri-language-intelligence-service
+update_submodule "platform-services/backend/deepiri-language-intelligence-service" "deepiri-language-intelligence-service (Language Intelligence)"
+echo ""
+
 # Update deepiri-core-api
 update_submodule "deepiri-core-api" "deepiri-core-api (Core API)"
 echo ""
@@ -118,6 +122,7 @@ echo "🔄 Syncing submodule references..."
 git submodule update --remote platform-services/backend/deepiri-auth-service 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/dev/null || true
+git submodule update --remote platform-services/backend/deepiri-language-intelligence-service 2>/dev/null || true
 git submodule update --remote deepiri-core-api 2>/dev/null || true
 git submodule update --remote deepiri-web-frontend 2>/dev/null || true
 echo ""
@@ -128,6 +133,7 @@ echo ""
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
 git submodule status platform-services/backend/deepiri-api-gateway
+git submodule status platform-services/backend/deepiri-language-intelligence-service
 git submodule status deepiri-core-api
 git submodule status deepiri-web-frontend
 echo ""
@@ -138,6 +144,7 @@ echo "📋 Updated Submodules:"
 echo "  ✅ deepiri-auth-service"
 echo "  ✅ deepiri-external-bridge-service"
 echo "  ✅ deepiri-api-gateway"
+echo "  ✅ deepiri-language-intelligence-service"
 echo "  ✅ deepiri-core-api"
 echo "  ✅ deepiri-web-frontend"
 echo ""

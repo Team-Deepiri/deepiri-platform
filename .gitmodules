@@ -22,3 +22,6 @@
 [submodule "deepiri-modelkit"]
 	path = deepiri-modelkit
 	url = git@github.com:Team-Deepiri/deepiri-modelkit.git
+[submodule "platform-services/backend/deepiri-language-intelligence-service"]
+	path = platform-services/backend/deepiri-language-intelligence-service
+	url = git@github.com:Team-Deepiri/deepiri-language-intelligence-service.git

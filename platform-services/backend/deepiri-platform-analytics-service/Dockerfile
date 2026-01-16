@@ -22,7 +22,12 @@ RUN npm config set fetch-retries 5 \
 FROM node:18-alpine
 WORKDIR /app
 
-RUN apk add --no-cache curl dumb-init
+RUN apk add --no-cache curl dumb-init bash
+
+# Copy K8s env loader scripts
+COPY --chown=root:root shared/scripts/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
+COPY --chown=root:root shared/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
 
 # Copy service package files (LOCK FILE INCLUDED)
 COPY backend/deepiri-platform-analytics-service/package.json ./
@@ -59,5 +64,5 @@ EXPOSE 5004
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5004/health || exit 1
 
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["node", "dist/server.js"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["/usr/bin/dumb-init", "--", "node", "dist/server.js"]

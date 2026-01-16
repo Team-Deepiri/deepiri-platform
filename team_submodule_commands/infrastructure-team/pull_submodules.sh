@@ -146,6 +146,16 @@ fi
 echo "    ✅ external-bridge-service initialized at: $(pwd)/platform-services/backend/deepiri-external-bridge-service"
 echo ""
 
+# deepiri-language-intelligence-service
+echo "  📦 deepiri-language-intelligence-service (Language Intelligence)..."
+git submodule update --init --recursive platform-services/backend/deepiri-language-intelligence-service 2>&1 || true
+if ! check_submodule "platform-services/backend/deepiri-language-intelligence-service"; then
+    echo "    ❌ ERROR: deepiri-language-intelligence-service not cloned correctly!"
+    exit 1
+fi
+echo "    ✅ language-intelligence-service initialized at: $(pwd)/platform-services/backend/deepiri-language-intelligence-service"
+echo ""
+
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote deepiri-core-api
@@ -158,6 +168,8 @@ git submodule update --remote platform-services/backend/deepiri-auth-service
 ensure_submodule_on_main "platform-services/backend/deepiri-auth-service"
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service
 ensure_submodule_on_main "platform-services/backend/deepiri-external-bridge-service"
+git submodule update --remote platform-services/backend/deepiri-language-intelligence-service
+ensure_submodule_on_main "platform-services/backend/deepiri-language-intelligence-service"
 echo "    ✅ All infrastructure submodules updated and on main branch"
 echo ""
 
@@ -169,6 +181,7 @@ git submodule status diri-cyrex
 git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
+git submodule status platform-services/backend/deepiri-language-intelligence-service
 echo ""
 
 echo "✅ Infrastructure Team submodules ready!"
@@ -181,6 +194,7 @@ echo "  - Work in Cyrex: cd diri-cyrex"
 echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
 echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-service"
 echo "  - Work in External Bridge: cd platform-services/backend/deepiri-external-bridge-service"
+echo "  - Work in Language Intelligence: cd platform-services/backend/deepiri-language-intelligence-service"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules

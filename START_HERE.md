@@ -44,40 +44,40 @@ The hooks protect the `main` and `dev` branches from accidental pushes. You'll n
 After setting up Git hooks, follow your team-specific path:
 
 ### 🤖 AI Team
-1. **Onboarding:** [docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)
+1. **Onboarding:** [docs/onboarding/AI_TEAM_ONBOARDING.md](docs/onboarding/AI_TEAM_ONBOARDING.md)
 2. **Dev Environment:** [team_dev_environments/ai-team/README.md](team_dev_environments/ai-team/README.md)
 3. **Submodules:** [team_submodule_commands/ai-team/AI_TEAM.md](team_submodule_commands/ai-team/AI_TEAM.md)
 
 ### 🧠 ML Team
-1. **ML Guide:** [docs/ML_ENGINEER_COMPLETE_GUIDE.md](docs/ML_ENGINEER_COMPLETE_GUIDE.md)
-2. **MLOps:** [docs/MLOPS_TEAM_ONBOARDING.md](docs/MLOPS_TEAM_ONBOARDING.md)
+1. **ML Guide:** [docs/development/ML_ENGINEER_COMPLETE_GUIDE.md](docs/development/ML_ENGINEER_COMPLETE_GUIDE.md)
+2. **MLOps:** [docs/onboarding/MLOPS_TEAM_ONBOARDING.md](docs/onboarding/MLOPS_TEAM_ONBOARDING.md)
 3. **Dev Environment:** [team_dev_environments/ml-team/README.md](team_dev_environments/ml-team/README.md)
 4. **Submodules:** [team_submodule_commands/ml-team/ML_TEAM.md](team_submodule_commands/ml-team/ML_TEAM.md)
 
 ### ⚙️ Backend Team
-1. **Onboarding:** [docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)
-2. **Microservices:** [docs/MICROSERVICES_SETUP.md](docs/MICROSERVICES_SETUP.md)
+1. **Onboarding:** [docs/onboarding/BACKEND_TEAM_ONBOARDING.md](docs/onboarding/BACKEND_TEAM_ONBOARDING.md)
+2. **Microservices:** [docs/architecture/MICROSERVICES_SETUP.md](docs/architecture/MICROSERVICES_SETUP.md)
 3. **Dev Environment:** [team_dev_environments/backend-team/README.md](team_dev_environments/backend-team/README.md)
 4. **Submodules:** [team_submodule_commands/backend-team/BACKEND_TEAM.md](team_submodule_commands/backend-team/BACKEND_TEAM.md)
 
 ### 🎨 Frontend Team
-1. **Onboarding:** [docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)
+1. **Onboarding:** [docs/onboarding/FRONTEND_TEAM_ONBOARDING.md](docs/onboarding/FRONTEND_TEAM_ONBOARDING.md)
 2. **Dev Environment:** [team_dev_environments/frontend-team/README.md](team_dev_environments/frontend-team/README.md)
 3. **Submodules:** [team_submodule_commands/frontend-team/FRONTEND_TEAM.md](team_submodule_commands/frontend-team/FRONTEND_TEAM.md)
 
 ### 🏗️ Infrastructure Team
-1. **Onboarding:** [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md)
-2. **Skaffold:** [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md)
+1. **Onboarding:** [docs/onboarding/PLATFORM_TEAM_ONBOARDING.md](docs/onboarding/PLATFORM_TEAM_ONBOARDING.md)
+2. **Skaffold:** [docs/infrastructure/SKAFFOLD_SETUP.md](docs/infrastructure/SKAFFOLD_SETUP.md)
 3. **Dev Environment:** [team_dev_environments/infrastructure-team/README.md](team_dev_environments/infrastructure-team/README.md)
 4. **Submodules:** [team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md](team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md)
 
 ### 🔧 Platform Engineers
-1. **Onboarding:** [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md)
+1. **Onboarding:** [docs/onboarding/PLATFORM_TEAM_ONBOARDING.md](docs/onboarding/PLATFORM_TEAM_ONBOARDING.md)
 2. **Dev Environment:** [team_dev_environments/platform-engineers/README.md](team_dev_environments/platform-engineers/README.md)
 3. **Submodules:** [team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md](team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md)
 
 ### 🧪 QA Team
-1. **Onboarding:** [docs/SECURITY_QA_TEAM_ONBOARDING.md](docs/SECURITY_QA_TEAM_ONBOARDING.md)
+1. **Onboarding:** [docs/onboarding/SECURITY_QA_TEAM_ONBOARDING.md](docs/onboarding/SECURITY_QA_TEAM_ONBOARDING.md)
 2. **Dev Environment:** [team_dev_environments/qa-team/README.md](team_dev_environments/qa-team/README.md)
 3. **Submodules:** [team_submodule_commands/qa-team/QA_TEAM.md](team_submodule_commands/qa-team/QA_TEAM.md)
 
@@ -89,8 +89,8 @@ After setting up Git hooks, follow your team-specific path:
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines and workflow
 - **[BRANCH_PROTECTION.md](BRANCH_PROTECTION.md)** - Branch protection rules
-- **[SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)** - Service architecture
-- **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** - Complete documentation index
+- **[docs/architecture/SERVICE_COMMUNICATION_AND_TEAMS.md](docs/architecture/SERVICE_COMMUNICATION_AND_TEAMS.md)** - Service architecture
+- **[docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
 
 ### Build & Development
 
@@ -147,8 +147,8 @@ docker compose -f docker-compose.dev.yml logs -f
 
 1. **Check your team's onboarding guide** (see Step 3 above)
 2. **Review [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)** for role-specific info
-3. **See [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** for all documentation
-4. **Check [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** for common issues
+3. **See [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** for all documentation
+4. **Check [docs/troubleshooting/TROUBLESHOOTING.md](docs/troubleshooting/TROUBLESHOOTING.md)** for common issues
 
 ---
 

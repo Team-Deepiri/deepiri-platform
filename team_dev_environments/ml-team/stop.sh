@@ -12,7 +12,7 @@ cd "$PROJECT_ROOT"
 # ML team services
 SERVICES=(
   postgres redis influxdb
-  cyrex jupyter mlflow
+  jupyter mlflow
   platform-analytics-service synapse
 )
 

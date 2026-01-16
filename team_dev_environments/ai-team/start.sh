@@ -8,9 +8,9 @@ cd "$(dirname "$0")/../.." || exit 1
 
 # AI team services
 SERVICES=(
-  redis influxdb etcd minio milvus
+  postgres redis influxdb etcd minio milvus
   cyrex cyrex-interface jupyter mlflow
-  challenge-service external-bridge-service
+  challenge-service api-gateway
   ollama synapse
 )
 
@@ -20,8 +20,8 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Use --no-build to prevent automatic building (images should already be built)
-# --no-deps prevents starting dependencies unless specified
-docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
+# --no-deps prevents starting dependencies unless specified (API gateway doesn't need auth-service or language-intelligence-service to start)
+docker compose -f docker-compose.dev.yml up -d --no-build --no-deps "${SERVICES[@]}"
 
 echo "✅ AI Team services started!"
 echo ""
@@ -31,8 +31,6 @@ echo "🤖 Ollama: http://localhost:11434"
 echo "📡 Synapse: http://localhost:8002"
 API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
 echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
-echo "🎮 Engagement Service: http://localhost:5003"
 echo "🏆 Challenge Service: http://localhost:5007"
-echo "🌉 External Bridge: http://localhost:5006"
 echo ""
 echo "💡 To pull models into Ollama: docker exec -it deepiri-ollama-ai ollama pull llama3:8b"
