@@ -2,19 +2,20 @@
 # QA Team - Start Script
 # Starts all backend services using docker-compose.dev.yml with service selection
 
+set -e
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
-# QA team services
+# QA team services (language-intelligence-service is optional - only if image exists)
 SERVICES=(
   postgres redis influxdb
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  language-intelligence-service
   frontend-dev synapse adminer
 )
 
@@ -23,9 +24,55 @@ echo "   (Using docker-compose.dev.yml with service selection)"
 echo "   Services: ${SERVICES[*]}"
 echo ""
 
-# Use wrapper to auto-load k8s config, then start selected services
-#./docker-compose-k8s.sh -f docker-compose.dev.yml up -d "${SERVICES[@]}"
-docker compose -f docker-compose.dev.yml up -d --no-build --no-deps "${SERVICES[@]}"
+# Check if frontend image exists, build if missing
+if ! docker image inspect deepiri-dev-frontend:latest >/dev/null 2>&1; then
+  echo "⚠️  Frontend image not found. Building frontend-dev..."
+  docker compose -f docker-compose.dev.yml build frontend-dev
+  echo ""
+fi
+
+# Start infrastructure services first (without --no-deps to ensure proper startup order)
+echo "📦 Starting infrastructure services..."
+docker compose -f docker-compose.dev.yml up -d --no-build postgres redis influxdb synapse
+
+# Wait a moment for infrastructure to be ready
+echo "⏳ Waiting for infrastructure to be ready..."
+sleep 3
+
+# Start backend services (can use --no-deps since infrastructure is up)
+echo "🔧 Starting backend services..."
+docker compose -f docker-compose.dev.yml up -d --no-build --no-deps \
+  api-gateway auth-service task-orchestrator \
+  engagement-service platform-analytics-service \
+  notification-service external-bridge-service \
+  challenge-service realtime-gateway \
+  adminer
+
+# Try to start language-intelligence-service if image exists (optional service)
+if docker image inspect deepiri-dev-language-intelligence-service:latest >/dev/null 2>&1; then
+  echo "📝 Starting language-intelligence-service..."
+  docker compose -f docker-compose.dev.yml up -d --no-build --no-deps language-intelligence-service || echo "⚠️  language-intelligence-service failed to start (optional service)"
+else
+  echo "⚠️  Skipping language-intelligence-service (image not found - optional service)"
+fi
+
+# Start frontend last (it depends on synapse, so we don't use --no-deps for it)
+echo "🎨 Starting frontend..."
+docker compose -f docker-compose.dev.yml up -d --no-build frontend-dev
+
+# Check if frontend container is running
+echo ""
+echo "🔍 Checking frontend status..."
+sleep 2
+if docker ps --format '{{.Names}}' | grep -q '^deepiri-frontend-dev$'; then
+  echo "✅ Frontend container is running"
+  echo "📋 Frontend logs (last 20 lines):"
+  docker compose -f docker-compose.dev.yml logs --tail=20 frontend-dev
+else
+  echo "❌ Frontend container failed to start. Checking logs..."
+  docker compose -f docker-compose.dev.yml logs --tail=50 frontend-dev
+  exit 1
+fi
 
 echo ""
 echo "✅ QA Team Environment Started!"
