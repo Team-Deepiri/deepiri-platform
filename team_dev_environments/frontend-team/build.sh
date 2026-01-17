@@ -16,6 +16,7 @@ SERVICES=(
   api-gateway
   auth-service
   notification-service
+  postgres
 )
 
 echo "🔨 Building Frontend Team services..."

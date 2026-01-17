@@ -15,6 +15,7 @@ SERVICES=(
   api-gateway
   auth-service
   notification-service
+  postgres
 )
 
 echo "🛑 Stopping and removing Frontend Team services..."

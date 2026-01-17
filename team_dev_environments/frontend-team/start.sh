@@ -12,6 +12,7 @@ SERVICES=(
   api-gateway
   auth-service
   notification-service
+  postgres
 )
 
 echo "🚀 Starting Frontend Team services..."
