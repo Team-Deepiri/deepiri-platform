@@ -160,7 +160,7 @@ def main():
     print(f"  - Cyrex API:       http://localhost:{get_port('cyrex', 'ai')}")
     print(f"  - Ollama:          http://localhost:{get_port('ollama', 'ai')}")
     print(f"  - MLflow:          http://localhost:{get_port('mlflow', 'ai')}")
-    print(f"  - Jupyter:         http://localhost:{get_port('jupyter', 'ai')}")
+    # print(f"  - Jupyter:         http://localhost:{get_port('jupyter', 'ai')}")  # DISABLED: No services depend on Jupyter
     print(f"  - Challenge Service: http://localhost:{get_port('challenge-service', 'ai')}")
     print(f"  - pgAdmin:         http://localhost:{get_port('pgadmin', 'ai')}")
     print(f"  - Adminer:         http://localhost:{get_port('adminer', 'ai')}")

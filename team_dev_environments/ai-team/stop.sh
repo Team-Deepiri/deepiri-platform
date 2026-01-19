@@ -12,7 +12,8 @@ cd "$PROJECT_ROOT"
 # AI team services
 SERVICES=(
   postgres redis influxdb etcd minio milvus
-  cyrex cyrex-interface jupyter mlflow
+  cyrex cyrex-interface mlflow
+  # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
   challenge-service api-gateway
   ollama synapse
 )

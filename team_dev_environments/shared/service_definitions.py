@@ -304,23 +304,24 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
     })
     
     # Jupyter
-    jupyter_host_port = get_port("jupyter", team_suffix)
-    services.append({
-        "name": f"deepiri-jupyter-{team_suffix}",
-        "build": {
-            "path": str(project_root),
-            "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
-        },
-        "ports": {"8888/tcp": jupyter_host_port},
-        "environment": {
-            "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
-        },
-        "volumes": {
-            str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
-            str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
-        },
-        "network": network_name,
-    })
+    # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
+    # jupyter_host_port = get_port("jupyter", team_suffix)
+    # services.append({
+    #     "name": f"deepiri-jupyter-{team_suffix}",
+    #     "build": {
+    #         "path": str(project_root),
+    #         "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
+    #     },
+    #     "ports": {"8888/tcp": jupyter_host_port},
+    #     "environment": {
+    #         "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
+    #     },
+    #     "volumes": {
+    #         str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
+    #         str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
+    #     },
+    #     "network": network_name,
+    # })
     
     # Challenge Service
     database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
@@ -387,23 +388,24 @@ def get_ml_team_services(project_root: Path, env: dict, network_name: str, team_
     })
     
     # Jupyter
-    jupyter_host_port = get_port("jupyter", team_suffix)
-    services.append({
-        "name": f"deepiri-jupyter-{team_suffix}",
-        "build": {
-            "path": str(project_root),
-            "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
-        },
-        "ports": {"8888/tcp": jupyter_host_port},
-        "environment": {
-            "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
-        },
-        "volumes": {
-            str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
-            str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
-        },
-        "network": network_name,
-    })
+    # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
+    # jupyter_host_port = get_port("jupyter", team_suffix)
+    # services.append({
+    #     "name": f"deepiri-jupyter-{team_suffix}",
+    #     "build": {
+    #         "path": str(project_root),
+    #         "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
+    #     },
+    #     "ports": {"8888/tcp": jupyter_host_port},
+    #     "environment": {
+    #         "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
+    #     },
+    #     "volumes": {
+    #         str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
+    #         str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
+    #     },
+    #     "network": network_name,
+    # })
     
     # Platform Analytics Service
     database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
