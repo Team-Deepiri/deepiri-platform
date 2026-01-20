@@ -106,3 +106,4 @@ CMD ["node", "dist/server.js"]
 | **Could we remove it?** | Yes, but not recommended for production |
 | **Our approach** | Preserve it + add K8s loading (best of both worlds) |
 
+

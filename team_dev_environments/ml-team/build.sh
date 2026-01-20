@@ -13,7 +13,8 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 # ML team services
 SERVICES=(
   postgres redis influxdb
-  jupyter mlflow
+  mlflow
+  # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
   platform-analytics-service synapse
 )
 

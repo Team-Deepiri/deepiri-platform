@@ -96,7 +96,7 @@ def main():
     print(f"{YELLOW}Access your services:{RESET}")
     print(f"  - Cyrex API:       http://localhost:{get_port('cyrex', 'ml')}")
     print(f"  - MLflow:          http://localhost:{get_port('mlflow', 'ml')}")
-    print(f"  - Jupyter:         http://localhost:{get_port('jupyter', 'ml')}")
+    # print(f"  - Jupyter:         http://localhost:{get_port('jupyter', 'ml')}")  # DISABLED: No services depend on Jupyter
     print(f"  - Analytics Service: http://localhost:{get_port('platform-analytics-service', 'ml')}")
     print(f"  - pgAdmin:         http://localhost:{get_port('pgadmin', 'ml')}")
     print(f"  - Adminer:         http://localhost:{get_port('adminer', 'ml')}")

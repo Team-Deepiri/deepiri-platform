@@ -735,9 +735,9 @@ services:
         condition: service_started
       milvus:
         condition: service_started
-      redis:
-        condition: service_started
       ollama:
+        condition: service_started
+      redis:
         condition: service_started
       synapse:
         condition: service_started
@@ -896,38 +896,39 @@ services:
       - deepiri-dev-network
 
   # Jupyter Notebook for AI Research
-  jupyter:
-    build:
-      context: .
-      dockerfile: ./deepiri-modelkit/Dockerfile.jupyter
-      args:
-        BUILD_TYPE: prebuilt
-        BASE_IMAGE: python:3.11-slim
-        PYTORCH_VERSION: 2.9.1
-        PYTHON_VERSION: 3.11
-    image: deepiri-dev-jupyter:latest
-    pull_policy: never
-    container_name: deepiri-jupyter-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./diri-cyrex/train/notebooks:/app/notebooks
-      - ./diri-cyrex/train/data:/app/data
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
-      # Model Registry Configuration (for modelkit integration)
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
-      MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
-      S3_ENDPOINT_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
-    networks:
-      - deepiri-dev-network
+  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
+  # jupyter:
+  #   build:
+  #     context: .
+  #     dockerfile: ./deepiri-modelkit/Dockerfile.jupyter
+  #     args:
+  #       BUILD_TYPE: prebuilt
+  #       BASE_IMAGE: python:3.11-slim
+  #       PYTORCH_VERSION: 2.9.1
+  #       PYTHON_VERSION: 3.11
+  #   image: deepiri-dev-jupyter:latest
+  #   pull_policy: never
+  #   container_name: deepiri-jupyter-dev
+  #   restart: unless-stopped
+  #   logging: *minimal-logging
+  #   command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
+  #   ports:
+  #     - "8888:8888"
+  #   volumes:
+  #     - ./diri-cyrex/train/notebooks:/app/notebooks
+  #     - ./diri-cyrex/train/data:/app/data
+  #   environment:
+  #     OPENAI_API_KEY: ${OPENAI_API_KEY}
+  #     JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
+  #     # Model Registry Configuration (for modelkit integration)
+  #     MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+  #     MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
+  #     S3_ENDPOINT_URL: http://minio:9000
+  #     MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+  #     MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+  #     S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
+  #   networks:
+  #     - deepiri-dev-network
 
   # Frontend with Vite HMR
   frontend-dev:
