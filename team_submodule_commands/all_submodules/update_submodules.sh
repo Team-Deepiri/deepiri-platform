@@ -26,7 +26,7 @@ echo "📂 Repository root: $REPO_ROOT"
 echo "   ✅ Confirmed: Git repository detected"
 echo ""
 
-# Helper function to update a submodule and ensure it's on main branch
+# Helper function to update a submodule while preserving its current branch
 update_submodule() {
     local submodule_path="$1"
     local submodule_name="$2"
@@ -41,46 +41,74 @@ update_submodule() {
     
     cd "$submodule_path" || return 1
     
-    # Fetch latest changes
+    # Fetch latest changes from all remotes
+    echo "    📥 Fetching latest changes..."
     git fetch origin 2>/dev/null || true
+    git fetch --all 2>/dev/null || true
     
-    # Determine which branch to use (main or master)
-    local branch="main"
-    if ! git show-ref --verify --quiet refs/heads/main && git show-ref --verify --quiet refs/remotes/origin/master; then
-        branch="master"
-    elif ! git show-ref --verify --quiet refs/remotes/origin/main; then
-        if git show-ref --verify --quiet refs/remotes/origin/master; then
-            branch="master"
-        else
-            echo "    ⚠️  No main or master branch found, skipping branch checkout"
-            cd "$REPO_ROOT" || return 1
-            return 0
-        fi
-    fi
+    # Get current branch or commit
+    local current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+    local is_detached=false
     
-    # Check if we're in detached HEAD state
-    if ! git symbolic-ref -q HEAD > /dev/null; then
-        echo "    🔄 Detached HEAD detected, checking out $branch branch..."
-        git checkout -B "$branch" "origin/$branch" 2>/dev/null || git checkout "$branch" 2>/dev/null || true
+    if [ -z "$current_branch" ]; then
+        is_detached=true
+        current_branch=$(git rev-parse --short HEAD 2>/dev/null || echo "detached")
+        echo "    📍 Currently in detached HEAD state at: $current_branch"
     else
-        # Check current branch
-        local current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
-        if [ "$current_branch" != "$branch" ]; then
-            echo "    🔄 Currently on '$current_branch', switching to $branch branch..."
-            git checkout "$branch" 2>/dev/null || git checkout -b "$branch" "origin/$branch" 2>/dev/null || true
+        echo "    🌿 Current branch: $current_branch"
+    fi
+    
+    # If we're on a branch, try to update it
+    if [ "$is_detached" = false ] && [ -n "$current_branch" ]; then
+        # Check if remote tracking branch exists
+        local remote_branch="origin/$current_branch"
+        if git show-ref --verify --quiet "refs/remotes/$remote_branch" 2>/dev/null; then
+            echo "    🔄 Merging updates from $remote_branch..."
+            
+            # Check for uncommitted changes
+            if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+                echo "    ⚠️  Uncommitted changes detected. Stashing..."
+                git stash push -m "Auto-stash before merge $(date +%Y-%m-%d_%H:%M:%S)" 2>/dev/null || true
+            fi
+            
+            # Try to merge
+            if git merge "$remote_branch" --no-edit 2>/dev/null; then
+                echo "    ✅ Successfully merged updates"
+            else
+                # Check if merge conflict occurred
+                if [ -f ".git/MERGE_HEAD" ]; then
+                    echo "    ⚠️  Merge conflicts detected!"
+                    echo "    💡 Please resolve conflicts manually in: $submodule_path"
+                    echo "    💡 After resolving, run: git add . && git commit"
+                    echo "    💡 To check conflict files: git diff --name-only --diff-filter=U"
+                else
+                    echo "    ⚠️  Merge failed. Current state preserved."
+                fi
+            fi
+            
+            # Restore stashed changes if any
+            if git stash list | grep -q "Auto-stash"; then
+                echo "    🔄 Restoring stashed changes..."
+                git stash pop 2>/dev/null || true
+            fi
+        else
+            echo "    ℹ️  No remote tracking branch found for $current_branch"
+            echo "    💡 Branch exists locally but not on remote"
         fi
+        
+        # Set up tracking if not already set and remote branch exists
+        if git show-ref --verify --quiet "refs/remotes/$remote_branch" 2>/dev/null; then
+            if ! git config --get branch."$current_branch".remote > /dev/null 2>&1; then
+                git branch --set-upstream-to="$remote_branch" "$current_branch" 2>/dev/null || true
+            fi
+        fi
+    else
+        echo "    ℹ️  In detached HEAD state - preserving current commit"
+        echo "    💡 To work on a branch, checkout a branch first"
     fi
-    
-    # Set up tracking if not already set
-    if ! git config --get branch."$branch".remote > /dev/null 2>&1; then
-        git branch --set-upstream-to="origin/$branch" "$branch" 2>/dev/null || true
-    fi
-    
-    # Pull latest changes
-    git pull origin "$branch" 2>/dev/null || true
     
     cd "$REPO_ROOT" || return 1
-    echo "    ✅ $submodule_name updated"
+    echo "    ✅ $submodule_name updated (branch preserved)"
     return 0
 }
 
@@ -129,17 +157,9 @@ echo ""
 update_submodule "platform-services/backend/deepiri-language-intelligence-service" "deepiri-language-intelligence-service (Language Intelligence)"
 echo ""
 
-# Also update via git submodule update --remote for consistency
-echo "🔄 Syncing submodule references..."
-git submodule update --remote deepiri-core-api 2>/dev/null || true
-git submodule update --remote diri-cyrex 2>/dev/null || true
-git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/dev/null || true
-git submodule update --remote deepiri-web-frontend 2>/dev/null || true
-git submodule update --remote platform-services/backend/deepiri-external-bridge-service 2>/dev/null || true
-git submodule update --remote platform-services/backend/deepiri-auth-service 2>/dev/null || true
-git submodule update --remote diri-helox 2>/dev/null || true
-git submodule update --remote deepiri-modelkit 2>/dev/null || true
-git submodule update --remote platform-services/backend/deepiri-language-intelligence-service 2>/dev/null || true
+# Note: We don't use 'git submodule update --remote' here because it would
+# update to the remote branch's HEAD, potentially changing the branch.
+# Instead, we preserve each submodule's current branch and merge updates.
 echo ""
 
 # Show status

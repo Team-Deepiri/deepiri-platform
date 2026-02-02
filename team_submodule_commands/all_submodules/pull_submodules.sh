@@ -111,10 +111,11 @@ update_submodule_preserve_branch() {
                 echo "    ✅ Successfully merged updates"
             else
                 # Check if merge conflict occurred
-                if [ -f ".git/MERGE_HEAD" ] || git diff --check --quiet 2>/dev/null; then
+                if [ -f ".git/MERGE_HEAD" ]; then
                     echo "    ⚠️  Merge conflicts detected!"
                     echo "    💡 Please resolve conflicts manually in: $submodule_path"
                     echo "    💡 After resolving, run: git add . && git commit"
+                    echo "    💡 To check conflict files: git diff --name-only --diff-filter=U"
                 else
                     echo "    ⚠️  Merge failed. Current state preserved."
                 fi
