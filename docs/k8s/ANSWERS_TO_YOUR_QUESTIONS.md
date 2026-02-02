@@ -218,3 +218,4 @@ Once verified, update other services' Dockerfiles and docker-compose entries.
 **Bottom line:** Use the **entrypoint script solution** - it's the closest thing to "true auto-load" without custom compiled binaries or Docker plugins.
 
 
+
