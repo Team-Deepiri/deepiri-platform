@@ -408,6 +408,22 @@ services:
     depends_on:
       - prometheus
 
+  # PostgreSQL Exporter for Database Monitoring
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    container_name: deepiri-postgres-exporter
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}?sslmode=disable"
+    networks:
+      - deepiri-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   # InfluxDB for Time-Series Analytics
   influxdb:
     image: influxdb:2.7
