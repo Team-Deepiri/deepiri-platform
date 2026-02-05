@@ -16,7 +16,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  language-intelligence-service synapse
+  language-intelligence-service messaging-service synapse
 )
 
 echo "🛑 Stopping and removing Infrastructure Team services..."

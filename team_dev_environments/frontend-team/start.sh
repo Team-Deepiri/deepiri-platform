@@ -12,6 +12,8 @@ SERVICES=(
   api-gateway
   auth-service
   notification-service
+  messaging-service
+  realtime-gateway
   postgres
 )
 
@@ -32,4 +34,6 @@ echo "🎨 Frontend: http://localhost:5173"
 echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🔐 Auth Service: http://localhost:5001"
 echo "🔔 Notification Service: http://localhost:5005"
+echo "💬 Messaging Service: http://localhost:5009"
+echo "🔄 Realtime Gateway: http://localhost:5008"
 

@@ -15,6 +15,8 @@ SERVICES=(
   api-gateway
   auth-service
   notification-service
+  messaging-service
+  realtime-gateway
   postgres
 )
 

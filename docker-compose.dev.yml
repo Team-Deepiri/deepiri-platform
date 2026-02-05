@@ -256,6 +256,7 @@ services:
       - challenge-service
       - realtime-gateway
       - language-intelligence-service
+      - messaging-service
       - synapse
       # cyrex dependency removed - only needed by AI/ML team
       # external-bridge-service dependency removed - only needed by Backend Team
@@ -551,6 +552,52 @@ services:
       - redis
       - minio
       - cyrex
+      - auth-service
+      - synapse
+    networks:
+      - deepiri-dev-network
+
+  # Messaging Service
+  messaging-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-messaging-service/Dockerfile
+    image: deepiri-dev-messaging-service:latest
+    pull_policy: never
+    container_name: deepiri-messaging-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5010:5010"
+    environment:
+      PORT: 5010
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      CYREX_URL: http://cyrex:8000
+      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      REALTIME_GATEWAY_URL: http://realtime-gateway:5008
+      K8S_SERVICE_NAME: messaging-service
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-messaging-service/src:/app/src
+      - ./platform-services/backend/deepiri-messaging-service/tsconfig.json:/app/tsconfig.json
+      - shared_utils_node_modules:/shared-utils/node_modules
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && (if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - postgres
+      - redis
+      - cyrex
+      - realtime-gateway
       - auth-service
       - synapse
     networks:

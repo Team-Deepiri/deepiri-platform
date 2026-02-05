@@ -24,6 +24,7 @@ BASE_PORTS = {
     "external-bridge-service": 5006,
     "challenge-service": 5007,
     "realtime-gateway": 5008,
+    "messaging-service": 5009,
     "api-gateway": 5100,
     "frontend": 5173,
     "cyrex": 8000,

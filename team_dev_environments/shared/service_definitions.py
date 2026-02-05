@@ -76,7 +76,7 @@ def get_microservice_config(
     # Add /shared-utils/node_modules volume for services that use shared-utils
     if name in ["challenge-service", "auth-service", "engagement-service", "external-bridge-service", 
                 "notification-service", "platform-analytics-service", "task-orchestrator", "realtime-gateway",
-                "language-intelligence-service"]:
+                "language-intelligence-service", "messaging-service"]:
         config["volumes"]["/shared-utils/node_modules"] = {}
     
     # Add command if provided
@@ -244,6 +244,24 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         None,
         None,
         ["postgres"],
+        network_name,
+        team_suffix
+    ))
+    
+    # Messaging Service
+    services.append(get_microservice_config(
+        "messaging-service",
+        f"deepiri-messaging-service-{team_suffix}",
+        5009,
+        project_root,
+        "platform-services/backend/deepiri-messaging-service",
+        database_url,
+        redis_url,
+        {
+            "CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000",
+            "REALTIME_GATEWAY_URL": f"http://deepiri-realtime-gateway-{team_suffix}:5008",
+        },
+        ["postgres", "redis", f"deepiri-realtime-gateway-{team_suffix}"],
         network_name,
         team_suffix
     ))
@@ -492,6 +510,24 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         None,
         None,
         ["postgres"],
+        network_name,
+        team_suffix
+    ))
+    
+    # Messaging Service
+    services.append(get_microservice_config(
+        "messaging-service",
+        f"deepiri-messaging-service-{team_suffix}",
+        5009,
+        project_root,
+        "platform-services/backend/deepiri-messaging-service",
+        database_url,
+        None,
+        {
+            "CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000",
+            "REALTIME_GATEWAY_URL": f"http://deepiri-realtime-gateway-{team_suffix}:5008",
+        },
+        ["postgres", f"deepiri-realtime-gateway-{team_suffix}", f"deepiri-cyrex-{team_suffix}"],
         network_name,
         team_suffix
     ))
