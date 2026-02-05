@@ -13,7 +13,7 @@ ALL_SERVICES=(
   postgres pgadmin redis influxdb etcd minio
   api-gateway auth-service task-orchestrator engagement-service platform-analytics-service
   notification-service external-bridge-service challenge-service realtime-gateway
-  language-intelligence-service synapse
+  language-intelligence-service messaging-service synapse
 )
 
 SERVICES_TO_START=()

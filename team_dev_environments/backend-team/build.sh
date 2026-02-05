@@ -17,7 +17,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  language-intelligence-service
+  language-intelligence-service messaging-service
   synapse frontend-dev adminer
 )
 
@@ -27,7 +27,7 @@ echo "   Services: ${SERVICES[*]}"
 echo ""
 
 # Build services using docker-compose.dev.yml
-docker compose -f docker-compose.dev.yml build --no-cache "${SERVICES[@]}"
+docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
 
 echo ""
 echo "✅ Backend Team services built successfully!"
