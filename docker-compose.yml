@@ -567,6 +567,8 @@ services:
       - ollama_data:/root/.ollama
     environment:
       OLLAMA_HOST: 0.0.0.0
+      OLLAMA_KEEP_ALIVE: "30m"  # Keep models loaded for 30 minutes (prevents model unload/reload)
+      OLLAMA_NUM_PARALLEL: "2"   # Allow 2 parallel requests
     networks:
       - deepiri-network
     # GPU support - automatically used if NVIDIA runtime available
