@@ -457,6 +457,44 @@ REDIS_PASSWORD: "redispassword"
 
 ---
 
+## Security Best Practices
+
+### Password Generation
+
+**Production passwords must be strong.** Generate them with:
+
+```bash
+# OpenSSL (recommended)
+openssl rand -base64 32
+
+# Python
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# Cyrex validators module
+python -c "from app.utils.security_validators import generate_secure_password; print(generate_secure_password())"
+```
+
+### Environment-Specific Validation
+
+| Environment | Validation | Details |
+|-------------|-----------|---------|
+| development | None | Any password accepted |
+| staging | Basic | 12+ chars, no weak passwords |
+| production | Full | 12+ chars, complexity required, no weak passwords |
+
+### Known Weak Passwords (Rejected in Production)
+
+`password`, `admin`, `deepiripassword`, `redispassword`, `minioadmin`, `adminpassword`, `your_jwt_secret_key_here`, `your-influxdb-token`, `change-me`, `default`, `123456`
+
+### Production Setup
+
+1. Copy `.env.example` to `.env`
+2. Generate all passwords using the commands above
+3. Set `chmod 600 .env`
+4. See [Password Security Migration Guide](docs/security/PASSWORD_SECURITY_MIGRATION.md)
+
+---
+
 ## Troubleshooting
 
 ### Variable Not Found
