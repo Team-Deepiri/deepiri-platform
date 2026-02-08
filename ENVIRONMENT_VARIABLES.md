@@ -492,6 +492,25 @@ python -c "from app.utils.security_validators import generate_secure_password; p
 2. Generate all passwords using the commands above
 3. Set `chmod 600 .env`
 4. See [Password Security Migration Guide](docs/security/PASSWORD_SECURITY_MIGRATION.md)
+5. See [Secrets Validation Framework](docs/SECURITY_VALIDATION.md) for full validator reference
+
+### Validated Secrets
+
+Both Python (diri-cyrex) and TypeScript (@deepiri/shared-utils) validate secrets at startup:
+
+| Secret | Python | TypeScript | Validator Type |
+|--------|--------|-----------|---------------|
+| `POSTGRES_PASSWORD` | Yes | Yes | Password (12+ chars, complexity in prod) |
+| `REDIS_PASSWORD` | Yes | Yes | Password |
+| `JWT_SECRET` | Yes | Yes | Token (32+ chars) |
+| `MINIO_ROOT_USER` | Yes | - | Rejects "minioadmin" in prod |
+| `MINIO_ROOT_PASSWORD` | Yes | Yes | Password |
+| `S3_ENDPOINT_URL` | Yes | - | URL format |
+| `OPENAI_API_KEY` | Yes | Yes | API Key (20+ chars) |
+| `CYREX_API_KEY` | Yes | Yes | API Key (20+ chars) |
+| `LANGCHAIN_API_KEY` | Yes | - | API Key (20+ chars) |
+| `DATABASE_URL` | - | Yes | URL format |
+| `INFLUXDB_TOKEN` | - | Yes | Token (48+ chars) |
 
 ---
 
