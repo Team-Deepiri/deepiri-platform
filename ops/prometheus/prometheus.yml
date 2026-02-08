@@ -42,3 +42,16 @@ scrape_configs:
     static_configs:
       - targets: ['node-exporter:9100']
     scrape_interval: 30s
+
+  # API Gateway - database and HTTP metrics
+  - job_name: 'deepiri-api-gateway'
+    static_configs:
+      - targets: ['api-gateway:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # PostgreSQL Exporter - detailed database metrics
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s

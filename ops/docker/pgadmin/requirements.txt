@@ -1,0 +1,7 @@
+# pgAdmin dependency fixes
+# Pin setuptools to avoid pkg_resources deprecation warning
+setuptools<81
+
+# Upgrade sshtunnel to fix SyntaxWarning about 'return' in 'finally' block (Python 3.14 compatibility)
+sshtunnel>=0.4.0
+

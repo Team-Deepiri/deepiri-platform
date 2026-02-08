@@ -46,6 +46,13 @@ This builds all services.
 
 This starts everything.
 
+**Note:** The start script now automatically:
+- Builds the frontend image if it's missing
+- Starts services in the correct order (infrastructure first, then backend, then frontend)
+- Checks frontend status and shows logs if there are issues
+
+**If the frontend doesn't load on localhost:5173, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)**
+
 ### Stop Services
 
 ```bash

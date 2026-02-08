@@ -12,6 +12,8 @@ data:
   # API URLs (external URLs for browser access)
   VITE_API_URL: "http://localhost:5100/api"
   VITE_CYREX_URL: "http://localhost:8000"
+  VITE_SYNAPSE_URL: "http://localhost:8002"
+  VITE_MLFLOW_URL: "http://localhost:5500"
   
   # File Watching Configuration
   CHOKIDAR_USEPOLLING: "true"

@@ -23,7 +23,7 @@ from pathlib import Path
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'shared'))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'py_environment_startup_scripts'))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'old_py_environment_startup_scripts'))
 
 from k8s_env_loader import load_all_configmaps_and_secrets, GREEN, YELLOW, CYAN, GRAY, RESET
 from docker_manager import DockerServiceManager, load_env_file

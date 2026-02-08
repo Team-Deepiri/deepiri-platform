@@ -3,7 +3,6 @@
 **🎯 Start here to find your team and understand your role in the Deepiri platform.**
 
 ---
-
 ## 👥 Choose Your Team
 
 ### 🤖 AI Team

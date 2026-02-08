@@ -1,0 +1,34 @@
+#!/bin/bash
+# Frontend Team - Build script (No Cache)
+# Builds frontend team services using docker-compose.dev.yml with service selection (no cache)
+
+set -e
+
+cd "$(dirname "$0")/../.." || exit 1
+
+# Enable BuildKit for better builds
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
+
+# Frontend team services - only what frontend engineers need
+SERVICES=(
+  frontend-dev
+  api-gateway
+  auth-service
+  notification-service
+  messaging-service
+  realtime-gateway
+  postgres
+)
+
+echo "🔨 Building Frontend Team services (No Cache)..."
+echo "   (Using docker-compose.dev.yml with service selection)"
+echo "   Services: ${SERVICES[*]}"
+echo ""
+
+# Build services using docker-compose.dev.yml with --no-cache
+docker compose -f docker-compose.dev.yml build --no-cache "${SERVICES[@]}"
+
+echo "✅ Frontend Team services built successfully!"
+echo "   Built services: ${SERVICES[*]}"
+

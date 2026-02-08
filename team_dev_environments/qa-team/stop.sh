@@ -1,43 +1,37 @@
 #!/bin/bash
 # QA Team - Stop script
-# Stops and removes all containers started by qa-team/run.py
+# Stops backend team services using docker-compose.dev.yml with service selection
 
 set -e
 
-echo "🛑 Stopping QA Team services (Full Stack)..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# List of containers started by qa-team/run.py (ALL services)
-CONTAINERS=(
-    "deepiri-postgres-qa"
-    "deepiri-pgadmin-qa"
-    "deepiri-adminer-qa"
-    "deepiri-redis-qa"
-    "deepiri-influxdb-qa"
-    "deepiri-api-gateway-qa"
-    "deepiri-auth-service-qa"
-    "deepiri-task-orchestrator-qa"
-    "deepiri-engagement-service-qa"
-    "deepiri-platform-analytics-service-qa"
-    "deepiri-notification-service-qa"
-    "deepiri-external-bridge-service-qa"
-    "deepiri-challenge-service-qa"
-    "deepiri-realtime-gateway-qa"
-    "deepiri-frontend-qa"
-    "deepiri-cyrex-qa"
-    "deepiri-mlflow-qa"
-    "deepiri-jupyter-qa"
+cd "$PROJECT_ROOT"
+
+# QA team services
+SERVICES=(
+  postgres redis influxdb
+  api-gateway auth-service task-orchestrator
+  engagement-service platform-analytics-service
+  notification-service external-bridge-service
+  challenge-service realtime-gateway
+  language-intelligence-service messaging-service
+  synapse adminer
 )
 
-# Stop and remove containers
-for container in "${CONTAINERS[@]}"; do
-    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-        echo "Stopping ${container}..."
-        docker stop "${container}" 2>/dev/null || true
-        echo "Removing ${container}..."
-        docker rm "${container}" 2>/dev/null || true
-    else
-        echo "⚠️  Container ${container} not found, skipping..."
-    fi
-done
+echo "🛑 Stopping QA Team services..."
+echo "   (Using docker-compose.dev.yml with service selection)"
+echo "   Services: ${SERVICES[*]}"
+echo ""
 
-echo "✅ QA Team services stopped and removed!"
+# Stop selected services
+docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}"
+
+echo ""
+echo "✅ QA Team services stopped!"
+echo ""
+echo "Note: Containers are stopped but not removed."
+echo "To remove containers: docker compose -f docker-compose.dev.yml rm -f ${SERVICES[*]}"
+echo "To remove volumes as well: docker compose -f docker-compose.dev.yml down -v"
+echo ""

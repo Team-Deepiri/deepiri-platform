@@ -12,4 +12,12 @@ data:
   
   # Database URLs (using Docker service names)
   DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres:5432/deepiri"
+  
+  # Streaming Service Configuration (for publishing external API events)
+  SYNAPSE_URL: "http://synapse:8002"
+  
+  # OAuth Configuration
+  GOOGLE_CLIENT_ID: "your-google-client-id.apps.googleusercontent.com"
+  EXTERNAL_BRIDGE_BASE_URL: "http://external-bridge-service:5006"
+  AUTH_SERVICE_URL: "http://auth-service:5001"
 

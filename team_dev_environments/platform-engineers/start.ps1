@@ -10,8 +10,11 @@ Write-Host "🚀 Starting Platform Engineers Environment (Full Stack)..." -Foreg
 Write-Host "   (Using k8s configmaps and secrets from ops/k8s/)" -ForegroundColor Gray
 Write-Host ""
 
-# Use wrapper to auto-load k8s config
-& .\docker-compose-k8s.ps1 -f docker-compose.platform-engineers.yml up -d
+Write-Host "   (Using docker-compose.dev.yml - all services)" -ForegroundColor Gray
+Write-Host ""
+
+# Use wrapper to auto-load k8s config, then start all services
+& .\docker-compose-k8s.ps1 -f docker-compose.dev.yml up -d
 
 Write-Host ""
 Write-Host "✅ Platform Engineers Environment Started!" -ForegroundColor Green
@@ -27,6 +30,6 @@ Write-Host "  - pgAdmin: http://localhost:5050"
 Write-Host "  - MinIO Console:   http://localhost:9001"
 Write-Host ""
 Write-Host "View logs:" -ForegroundColor Gray
-Write-Host "  docker compose -f docker-compose.platform-engineers.yml logs -f"
+Write-Host "  docker compose -f docker-compose.dev.yml logs -f"
 Write-Host ""
 

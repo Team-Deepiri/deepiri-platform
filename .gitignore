@@ -130,6 +130,7 @@ Thumbs.db
 .husky
 .github
 .dockerignore
+.docker-dependency-cache.json
 *.cache
 .cache/
 .temp/
@@ -149,3 +150,4 @@ skaffold
 binary/
 # Kubernetes binary (should be installed globally)
 kubectl
+.csv

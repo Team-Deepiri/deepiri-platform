@@ -13,10 +13,16 @@ data:
   # MLflow Configuration
   MLFLOW_TRACKING_URI: "http://mlflow:5000"
   
-  # Model Registry Paths
+  # Model Registry Configuration
+  MODEL_REGISTRY_TYPE: "mlflow"  # mlflow | s3 | local
   MODEL_REGISTRY_PATH: "/app/model_registry"
   STAGING_MODEL_PATH: "/app/models/staging"
   PRODUCTION_MODEL_PATH: "/app/models/production"
+  MODEL_CACHE_DIR: "/app/models/cache"
+  
+  # MinIO/S3 Configuration (for model registry artifacts)
+  S3_ENDPOINT_URL: "http://minio:9000"
+  S3_BUCKET: "mlflow-artifacts"
   
   # Vector Store Configuration
   PINECONE_ENVIRONMENT: "us-east1-gcp"
@@ -31,8 +37,19 @@ data:
   MILVUS_HOST: "milvus"
   MILVUS_PORT: "19530"
   
+  # Redis Configuration (for streaming/event bus)
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  
+  # Streaming Service Configuration
+  SYNAPSE_URL: "http://synapse:8002"
+  
+  # Local LLM Configuration (Ollama)
+  OLLAMA_BASE_URL: "http://ollama:11434"
+  LOCAL_LLM_BACKEND: "ollama"
+  LOCAL_LLM_MODEL: "llama3:8b"
+  
   # Cache Configuration
-  TRANSFORMERS_CACHE: "/app/.cache/huggingface"
   HF_HOME: "/app/.cache/huggingface"
   SENTENCE_TRANSFORMERS_HOME: "/app/.cache/sentence_transformers"
 
