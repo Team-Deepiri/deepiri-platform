@@ -1,9 +1,6 @@
 [submodule "deepiri-core-api"]
 	path = deepiri-core-api
 	url = git@github.com:Team-Deepiri/deepiri-core-api.git
-[submodule "diri-cyrex"]
-	path = diri-cyrex
-	url = git@github.com:Team-Deepiri/diri-cyrex.git
 [submodule "platform-services/backend/deepiri-api-gateway"]
 	path = platform-services/backend/deepiri-api-gateway
 	url = git@github.com:Team-Deepiri/deepiri-api-gateway.git
@@ -16,12 +13,6 @@
 [submodule "platform-services/backend/deepiri-auth-service"]
 	path = platform-services/backend/deepiri-auth-service
 	url = git@github.com:Team-Deepiri/deepiri-auth-service.git
-[submodule "diri-helox"]
-	path = diri-helox
-	url = git@github.com:Team-Deepiri/diri-helox.git
-[submodule "deepiri-modelkit"]
-	path = deepiri-modelkit
-	url = git@github.com:Team-Deepiri/deepiri-modelkit.git
 [submodule "platform-services/backend/deepiri-language-intelligence-service"]
 	path = platform-services/backend/deepiri-language-intelligence-service
 	url = git@github.com:Team-Deepiri/deepiri-language-intelligence-service.git

@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@deepiri/shared-utils": "file:../shared-utils",
+    "@deepiri/shared-utils": "file:../../shared/deepiri-shared-utils",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
