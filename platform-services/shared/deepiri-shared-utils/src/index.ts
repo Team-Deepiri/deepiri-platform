@@ -10,3 +10,20 @@ export const logger: winston.Logger = createLogger('shared-utils'); // Default l
 export { StreamingClient, StreamTopics } from './streaming/StreamingClient';
 export type { StreamEvent } from './streaming/StreamingClient';
 
+// Config/validation exports
+export {
+  SecretValidator,
+  createSecretValidator,
+  PasswordValidator,
+  ApiKeyValidator,
+  TokenValidator,
+  UrlValidator,
+  EnvironmentType,
+  SecretType,
+} from './config';
+export type {
+  SecretConfig,
+  ValidationResult,
+  ValidationError,
+} from './config';
+
