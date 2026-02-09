@@ -2,9 +2,11 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import winston from 'winston';
 import { setupGamificationEvents, GamificationEventEmitter } from './gamificationEvents';
+import { validateBodyIfPresent } from './middleware/inputValidation';
 
 dotenv.config();
 
@@ -23,7 +25,9 @@ const logger = winston.createLogger({
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(helmet());
+app.use(express.json({ limit: '100kb' }));
+app.use(validateBodyIfPresent());
 
 // Setup gamification events
 const gamificationEmitter = setupGamificationEvents(io);

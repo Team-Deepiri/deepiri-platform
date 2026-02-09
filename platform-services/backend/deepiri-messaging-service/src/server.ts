@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { config } from './config/environment';
 import { logger } from './utils/logger';
 import routes from './routes';
+import { validateBodyIfPresent } from './middleware/inputValidation';
 
 export function createServer(): Express {
   const app = express();
@@ -18,6 +19,7 @@ export function createServer(): Express {
   // Body parsing
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(validateBodyIfPresent());
 
   // Health check
   app.get('/health', (req: Request, res: Response) => {

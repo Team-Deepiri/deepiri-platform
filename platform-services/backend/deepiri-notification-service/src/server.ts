@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import winston from 'winston';
 import { router, websocket } from './index';
+import { validateBodyIfPresent } from './middleware/inputValidation';
 
 dotenv.config();
 
@@ -26,7 +27,8 @@ const logger = winston.createLogger({
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+app.use(validateBodyIfPresent());
 
 // PostgreSQL connection via Prisma (if needed for notifications storage)
 // For now, notifications are primarily real-time via WebSocket
