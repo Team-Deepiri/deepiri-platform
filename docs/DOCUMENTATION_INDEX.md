@@ -101,8 +101,11 @@ Quick navigation to all documentation organized by category.
 
 | Document | Description |
 |----------|-------------|
+| [security/PASSWORD_SECURITY_MIGRATION.md](security/PASSWORD_SECURITY_MIGRATION.md) | Password security migration guide |
+| [security/PASSWORD_SECURITY_VALIDATION.md](security/PASSWORD_SECURITY_VALIDATION.md) | Password validation technical reference |
 | [security/CLOUD_SECURITY_INTERN.md](security/CLOUD_SECURITY_INTERN.md) | Cloud Security Intern 8-week roadmap |
 | [security/CLOUD_INFRA_INTERN.md](security/CLOUD_INFRA_INTERN.md) | Cloud Infrastructure Intern 8-week roadmap |
+| [SECURITY_VALIDATION.md](SECURITY_VALIDATION.md) | Secrets validation framework (Python + TypeScript) |
 
 ---
 
