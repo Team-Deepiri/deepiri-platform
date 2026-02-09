@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import winston from 'winston';
 import axios from 'axios';
+import { validate, generateBodyValidations } from './middleware/inputValidation';
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ const logger = winston.createLogger({
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
 // PostgreSQL connection via Prisma (if needed for challenge storage)
 // For now, challenges are generated via Cyrex API
@@ -30,7 +31,7 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'challenge-service', timestamp: new Date().toISOString() });
 });
 
-app.post('/generate', async (req: Request, res: Response) => {
+app.post('/generate', validate(generateBodyValidations()), async (req: Request, res: Response) => {
   try {
     const response = await axios.post(`${CYREX_URL}/agent/challenge/generate`, req.body);
     res.json(response.data);
