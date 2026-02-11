@@ -99,15 +99,24 @@ class CyrexAgentClient {
    * Send message to agent (non-streaming)
    * Calls: POST /api/agent/invoke
    */
-  async sendMessage(instanceId: string, message: string): Promise<any> {
+  async sendMessage(instanceId: string, message: string, chatRoomId?: string): Promise<any> {
     try {
-      logger.info('Sending message to agent', { instanceId, messageLength: message.length });
+      logger.info('Sending message to agent', { instanceId, messageLength: message.length, chatRoomId });
       
-      const response = await this.client.post('/api/agent/invoke', {
+      const payload: any = {
         instance_id: instanceId,
         input: message,
         stream: false,
-      });
+      };
+      
+      // Include chat_room_id in context so cyrex can send response back to messaging service
+      if (chatRoomId) {
+        payload.context = {
+          chat_room_id: chatRoomId,
+        };
+      }
+      
+      const response = await this.client.post('/api/agent/invoke', payload);
 
       return response.data;
     } catch (error: any) {
@@ -125,17 +134,26 @@ class CyrexAgentClient {
    * Returns ReadableStream for forwarding to WebSocket
    * Calls: POST /api/agent/invoke (with stream: true)
    */
-  async sendMessageStream(instanceId: string, message: string): Promise<NodeJS.ReadableStream | null> {
+  async sendMessageStream(instanceId: string, message: string, chatRoomId?: string): Promise<NodeJS.ReadableStream | null> {
     try {
-      logger.info('Sending streaming message to agent', { instanceId });
+      logger.info('Sending streaming message to agent', { instanceId, chatRoomId });
+      
+      const payload: any = {
+        instance_id: instanceId,
+        input: message,
+        stream: true,
+      };
+      
+      // Include chat_room_id in context so cyrex can send response back to messaging service
+      if (chatRoomId) {
+        payload.context = {
+          chat_room_id: chatRoomId,
+        };
+      }
       
       const response = await this.client.post(
         '/api/agent/invoke',
-        {
-          instance_id: instanceId,
-          input: message,
-          stream: true,
-        },
+        payload,
         {
           responseType: 'stream',
         }

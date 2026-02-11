@@ -74,8 +74,8 @@ export class MessageService {
         chatRoomId,
       });
 
-      // Call cyrex agent
-      const response = await cyrexAgentClient.sendMessage(agentInstanceId, userMessage);
+      // Call cyrex agent (pass chatRoomId so cyrex can send response back)
+      const response = await cyrexAgentClient.sendMessage(agentInstanceId, userMessage, chatRoomId);
 
       // Extract response content
       const agentResponse = response.data?.message || response.message || 'No response from agent';
@@ -130,8 +130,8 @@ export class MessageService {
         metadata: { streaming: true },
       });
 
-      // Get stream from cyrex
-      const stream = await cyrexAgentClient.sendMessageStream(agentInstanceId, userMessage);
+      // Get stream from cyrex (pass chatRoomId so cyrex can send response back)
+      const stream = await cyrexAgentClient.sendMessageStream(agentInstanceId, userMessage, chatRoomId);
       
       if (!stream) {
         throw new Error('No stream received from cyrex');
