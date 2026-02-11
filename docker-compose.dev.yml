@@ -653,19 +653,56 @@ services:
   #   sudo systemctl restart docker
   # ════════════════════════════════════════════════════════════════════════
   ollama:
+    # Use custom Dockerfile with optional pre-pulled models (baked into image)
+    # This eliminates 1.2-3.3s first-request penalty from model loading
+    # 
+    # To use check-ollama-models.sh script instead (flexible runtime installation):
+    #   Set PRE_PULL_MODELS=false in build args, or just use the public image
+    # 
+    # To pre-pull specific models (space-separated):
+    #   docker-compose build --build-arg MODELS="mistral:7b llama3:8b codellama:7b" ollama
+    # 
+    # Default models pre-pulled:
+    #   - mistral:7b (default model)
+    #   - llama3:8b (alternative general-purpose)
+    #   - codellama:7b (coding tasks)
+    build:
+      context: ./docker/ollama
+      dockerfile: Dockerfile
+      args:
+        PRE_PULL_MODELS: "true"  # Set to "false" to disable and use check-ollama-models.sh
+        MODELS: "mistral:7b llama3:8b codellama:7b"  # Pre-pull multiple models: default + alternatives + coding
+    # Fallback to public image if build context doesn't exist
     image: ollama/ollama:latest
     container_name: deepiri-ollama-dev
     restart: unless-stopped
     logging: *minimal-logging
+    runtime: nvidia  # Enable NVIDIA GPU runtime
     ports:
       - "${OLLAMA_PORT:-11435}:11434"
     volumes:
       - ollama_dev_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+      OLLAMA_KEEP_ALIVE: "24h"  # Increased from 30m to prevent model reloads
+      OLLAMA_NUM_PARALLEL: "4"
+      # GPU optimizations for RTX 5080 (sm_120, tensor cores)
+      CUDA_VISIBLE_DEVICES: "0"  # Use first GPU
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+      # Ollama GPU optimizations
+      OLLAMA_NUM_GPU: "1"
+      OLLAMA_GPU_OVERHEAD: "0"  # Minimize VRAM overhead
+      OLLAMA_MAX_LOADED_MODELS: "2"  # Keep 2 models in VRAM
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - deepiri-dev-network
-    # GPU support - See docker-compose.dev.gpu.yml for GPU configuration
-    # To use GPU: docker compose -f docker-compose.dev.yml -f docker-compose.dev.gpu.yml up -d ollama
-    # Without GPU override, Ollama runs in CPU mode (works on all systems)
 
   # Python Agent API (AI Service)
   cyrex:
