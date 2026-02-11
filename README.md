@@ -1,14 +1,14 @@
 # Deepiri 
 
-> **NEW TO THE PROJECT?** Start here: [START_HERE.md](START_HERE.md)  
-> **FIND YOUR TEAM:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)  
+> **NEW TO THE PROJECT?** Start here: [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md)  
+> **FIND YOUR TEAM:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md)  
 > **🌟 Quick Start (All Services):** `python run_dev.py` - Runs full stack with K8s config!
 
 
 ### For New Team Members
 
-1. **Find your roles:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md)
-2. **Follow your team's path:** [START_HERE.md](START_HERE.md)
+1. **Find your roles:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md)
+2. **Follow your team's path:** [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md)
 3. **Git hooks:** Automatically configured on clone (protects main and dev branches)
 
 ### Quick Build & Run
@@ -59,11 +59,11 @@ docker compose -f docker-compose.dev.yml down
 - **[RUN_DEV_GUIDE.md](RUN_DEV_GUIDE.md)** - 🌟 Run full stack with `python run_dev.py`
 - **[team_dev_environments/QUICK_START.md](team_dev_environments/QUICK_START.md)** - Team-specific environments
 - **[HOW_TO_BUILD.md](HOW_TO_BUILD.md)** - THE definitive build guide
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Complete setup walkthrough
+- **[docs/getting-started/GETTING_STARTED.md](docs/getting-started/GETTING_STARTED.md)** - Complete setup walkthrough
 - **[SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)** - Architecture overview
 
 ### Environment Setup
-- **[ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)** - All environment variables (includes k8s config integration)
+- **[docs/getting-started/ENVIRONMENT_VARIABLES.md](docs/getting-started/ENVIRONMENT_VARIABLES.md)** - All environment variables (includes k8s config integration)
 - **[docker-compose.dev.yml](docker-compose.dev.yml)** - Development configuration
 - **[ops/k8s/](ops/k8s/)** - Kubernetes configmaps and secrets (also used by Docker Compose)
 
@@ -72,8 +72,8 @@ docker compose -f docker-compose.dev.yml down
 - **[docs/LOG_INSPECTION_GUIDE.md](docs/LOG_INSPECTION_GUIDE.md)** - Debugging logs
 
 ### Team-Specific (Find Your Team First!)
-- **👉 Start here:** [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md) - Find your team and role
-- **👉 Complete setup:** [START_HERE.md](START_HERE.md) - Step-by-step getting started guide
+- **👉 Start here:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md) - Find your team and role
+- **👉 Complete setup:** [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md) - Step-by-step getting started guide
 - **[docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)** - AI/ML development
 - **[docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)** - Backend services
 - **[docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)** - Frontend development

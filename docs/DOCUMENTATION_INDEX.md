@@ -6,19 +6,19 @@ Quick navigation to all documentation organized by category.
 
 | Document | Description |
 |----------|-------------|
-| **[START_HERE.md](../START_HERE.md)** | **MAIN ENTRY POINT - Complete getting started guide** |
-| **[FIND_YOUR_TASKS.md](../FIND_YOUR_TASKS.md)** | **Find your team and understand your role** |
+| **[START_HERE.md](getting-started/START_HERE.md)** | **MAIN ENTRY POINT - Complete getting started guide** |
+| **[FIND_YOUR_TASKS.md](getting-started/FIND_YOUR_TASKS.md)** | **Find your team and understand your role** |
 | [README.md](../README.md) | Project overview & quick start |
-| [HOW_TO_BUILD.md](../HOW_TO_BUILD.md) | **THE** build guide |
-| [GETTING_STARTED.md](../GETTING_STARTED.md) | Complete setup walkthrough |
-| [QUICK_START.md](../QUICK_START.md) | Quick start guide |
+| [COMPLETE_SETUP.md](getting-started/COMPLETE_SETUP.md) | Complete setup guide |
+| [GETTING_STARTED.md](getting-started/GETTING_STARTED.md) | Complete setup walkthrough |
+| [ENVIRONMENT_VARIABLES.md](getting-started/ENVIRONMENT_VARIABLES.md) | Environment variables reference |
 | [BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) | Branch protection rules (main & dev) |
 
 ---
 
 ## Team Onboarding
 
-**First, find your team:** [FIND_YOUR_TASKS.md](../FIND_YOUR_TASKS.md)
+**First, find your team:** [FIND_YOUR_TASKS.md](getting-started/FIND_YOUR_TASKS.md)
 
 | Document | Description |
 |----------|-------------|
@@ -180,10 +180,10 @@ Old/deprecated docs moved to `archive/`:
 
 ## Quick Links
 
-- **NEW TO THE PROJECT?** → [../START_HERE.md](../START_HERE.md)
-- **FIND YOUR TEAM?** → [../FIND_YOUR_TASKS.md](../FIND_YOUR_TASKS.md)
+- **NEW TO THE PROJECT?** → [getting-started/START_HERE.md](getting-started/START_HERE.md)
+- **FIND YOUR TEAM?** → [getting-started/FIND_YOUR_TASKS.md](getting-started/FIND_YOUR_TASKS.md)
 - **Want to build?** → [../HOW_TO_BUILD.md](../HOW_TO_BUILD.md)
-- **First time setup?** → [../GETTING_STARTED.md](../GETTING_STARTED.md)
+- **First time setup?** → [getting-started/GETTING_STARTED.md](getting-started/GETTING_STARTED.md)
 - **Branch protection?** → [../BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md)
 - **Docker logs?** → [infrastructure/DOCKER_LOG_MANAGEMENT.md](infrastructure/DOCKER_LOG_MANAGEMENT.md)
 - **Need to see architecture?** → [architecture/SERVICE_COMMUNICATION_AND_TEAMS.md](architecture/SERVICE_COMMUNICATION_AND_TEAMS.md)
