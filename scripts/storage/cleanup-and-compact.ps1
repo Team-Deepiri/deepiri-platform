@@ -1,4 +1,5 @@
 # Deepiri Docker Cleanup and WSL2 Compaction Script
+# cleanup-and-compact.ps1
 # Purpose: Automatically clean up Docker resources and compact WSL2 virtual disk to reclaim maximum disk space
 # Run as Administrator
 #
