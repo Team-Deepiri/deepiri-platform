@@ -653,25 +653,21 @@ services:
   #   sudo systemctl restart docker
   # ════════════════════════════════════════════════════════════════════════
   ollama:
-    # Use custom Dockerfile with optional pre-pulled models (baked into image)
+    # Use custom Dockerfile with build-time model pre-pull
+    # Models are downloaded during Docker build and baked into the image
     # This eliminates 1.2-3.3s first-request penalty from model loading
     # 
-    # To use check-ollama-models.sh script instead (flexible runtime installation):
-    #   Set PRE_PULL_MODELS=false in build args, or just use the public image
+    # To disable pre-pull and use check-ollama-models.sh script instead:
+    #   docker-compose build --build-arg PRE_PULL_MODELS=false ollama
     # 
     # To pre-pull specific models (space-separated):
     #   docker-compose build --build-arg MODELS="mistral:7b llama3:8b codellama:7b" ollama
-    # 
-    # Default models pre-pulled:
-    #   - mistral:7b (default model)
-    #   - llama3:8b (alternative general-purpose)
-    #   - codellama:7b (coding tasks)
     build:
       context: ./docker/ollama
       dockerfile: Dockerfile
       args:
-        PRE_PULL_MODELS: "true"  # Set to "false" to disable and use check-ollama-models.sh
-        MODELS: "mistral:7b llama3:8b codellama:7b"  # Pre-pull multiple models: default + alternatives + coding
+        PRE_PULL_MODELS: "true"  # Set to "false" to disable build-time pre-pull
+        MODELS: "mistral:7b llama3:8b codellama:7b"  # Space-separated list of models to pre-pull
     # Fallback to public image if build context doesn't exist
     image: ollama/ollama:latest
     container_name: deepiri-ollama-dev
