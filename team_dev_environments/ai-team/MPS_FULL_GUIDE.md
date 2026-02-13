@@ -103,6 +103,9 @@ SYNAPSE_URL=http://localhost:8002
 S3_ENDPOINT_URL=http://localhost:9000
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
+
+#To see transformers logs
+LOG_LEVEL=DEBUG
 ```
 
 ## Starting Docker Services
