@@ -12,7 +12,7 @@ Briefly explain what this PR does and why.
 
 Include:
 - Related Issue number
-- Plaky Task name
+- Plaky feature name
 - Component, feature, or system affected
 - Purpose of change (feature, bug fix, improvement, refactor, security, etc.)
 
@@ -38,20 +38,14 @@ Be specific. Include:
 ## Related
 
 - Issue:
-- Plaky Task:
+- Plaky:
 - Related PRs (optional):
 
 ---
 
 ## Testing
 
-Explain how you verified your changes:
-
-- Project builds successfully
-- Application runs without errors
-- Feature behaves as expected
-- Edge cases tested
-- Unit tests added or updated (if applicable)
+Explain how you verified your changes and how to test your feature:
 
 Additional testing details:
 
@@ -69,9 +63,9 @@ Additional testing details:
 ## Workflow Checklist (Required)
 
 - [ ] Branch is up to date with dev
-- [ ] PR is from your branch → dev
+- [ ] PR is from your branch → dev (no longer directly into main)
 - [ ] PR title follows convention (feat:, fix:, refactor:, etc.)
-- [ ] Plaky Task name included above
+- [ ] Plaky feature/bug name included above
 - [ ] Tagged @Team-Deepiri/support-team
 - [ ] Plaky task moved to "Needs QA"
 
