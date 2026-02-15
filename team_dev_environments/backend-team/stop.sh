@@ -1,39 +1,37 @@
 #!/bin/bash
 # Backend Team - Stop script
-# Stops and removes all containers started by backend-team/run.py
+# Stops backend team services using docker-compose.dev.yml with service selection
 
 set -e
 
-echo "🛑 Stopping Backend Team services..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# List of containers started by backend-team/run.py
-CONTAINERS=(
-    "deepiri-postgres-backend"
-    "deepiri-pgadmin-backend"
-    "deepiri-adminer-backend"
-    "deepiri-redis-backend"
-    "deepiri-influxdb-backend"
-    "deepiri-api-gateway-backend"
-    "deepiri-auth-service-backend"
-    "deepiri-task-orchestrator-backend"
-    "deepiri-engagement-service-backend"
-    "deepiri-platform-analytics-service-backend"
-    "deepiri-notification-service-backend"
-    "deepiri-external-bridge-service-backend"
-    "deepiri-challenge-service-backend"
-    "deepiri-realtime-gateway-backend"
+cd "$PROJECT_ROOT"
+
+# Backend team services
+SERVICES=(
+  postgres redis influxdb
+  api-gateway auth-service task-orchestrator
+  engagement-service platform-analytics-service
+  notification-service external-bridge-service
+  challenge-service realtime-gateway
+  language-intelligence-service messaging-service
+  synapse frontend-dev adminer
 )
 
-# Stop and remove containers
-for container in "${CONTAINERS[@]}"; do
-    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-        echo "Stopping ${container}..."
-        docker stop "${container}" 2>/dev/null || true
-        echo "Removing ${container}..."
-        docker rm "${container}" 2>/dev/null || true
-    else
-        echo "⚠️  Container ${container} not found, skipping..."
-    fi
-done
+echo "🛑 Stopping Backend Team services..."
+echo "   (Using docker-compose.dev.yml with service selection)"
+echo "   Services: ${SERVICES[*]}"
+echo ""
 
-echo "✅ Backend Team services stopped and removed!"
+# Stop selected services
+docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}"
+
+echo ""
+echo "✅ Backend Team services stopped!"
+echo ""
+echo "Note: Containers are stopped but not removed."
+echo "To remove containers: docker compose -f docker-compose.dev.yml rm -f ${SERVICES[*]}"
+echo "To remove volumes as well: docker compose -f docker-compose.dev.yml down -v"
+echo ""

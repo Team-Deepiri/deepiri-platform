@@ -331,7 +331,7 @@ class StreakService {
       }
       
       const validTypes: StreakType[] = ['daily', 'weekly', 'project', 'pr', 'healthy'];
-      if (!validTypes.includes(streakType)) {
+      if (!validTypes.includes(streakType as StreakType)) {
         res.status(400).json({ error: `Invalid streakType. Must be one of: ${validTypes.join(', ')}` });
         return;
       }
@@ -347,7 +347,7 @@ class StreakService {
         healthy: { current: profile.healthyCurrent, canCashIn: profile.healthyCanCashIn }
       };
       
-      const streakData = streakFieldMap[streakType];
+      const streakData = streakFieldMap[streakType as StreakType];
       
       if (!streakData.canCashIn) {
         res.status(400).json({ error: 'This streak cannot be cashed in yet' });
@@ -441,7 +441,7 @@ class StreakService {
             canCashIn: profile.healthyCanCashIn,
             consecutiveDaysWithoutBurnout: profile.healthyConsecutiveDaysWithoutBurnout
           },
-          cashedInStreaks: profile.cashedInStreaks.map(cis => ({
+          cashedInStreaks: profile.cashedInStreaks.map((cis: typeof profile.cashedInStreaks[0]) => ({
             streakType: cis.streakType,
             cashedAt: cis.cashedAt,
             streakValue: cis.streakValue,

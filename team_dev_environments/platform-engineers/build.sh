@@ -1,7 +1,6 @@
 #!/bin/bash
 # Platform Engineers - Build script
-# Builds: ALL SERVICES (complete stack for platform development)
-# Based on SERVICE_TEAM_MAPPING.md: All services for platform tooling development
+# Builds ALL services using docker-compose.dev.yml
 
 set -e
 
@@ -12,8 +11,10 @@ export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 
 echo "🔨 Building Platform Engineers services (All Services)..."
+echo "   (Using docker-compose.dev.yml)"
+echo ""
 
-# Build all services using team-specific compose file
-docker compose -f docker-compose.platform-engineers.yml build
+# Build all services using docker-compose.dev.yml
+docker compose -f docker-compose.dev.yml build
 
 echo "✅ Platform Engineers services built successfully!"

@@ -19,6 +19,7 @@ API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
 echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
 echo "🎨 Frontend: http://localhost:5173"
 echo "🤖 Cyrex: http://localhost:8000"
+echo "📡 Synapse: http://localhost:8002"
 echo "📊 MLflow: http://localhost:5500"
 echo "📓 Jupyter: http://localhost:8888"
 echo "🗄️  pgAdmin: http://localhost:5050"

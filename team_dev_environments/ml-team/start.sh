@@ -1,6 +1,6 @@
 #!/bin/bash
 # ML Team - Start script
-# Requirements: Just cyrex + its dependencies
+# Requirements: Synapse + its dependencies
 # Dependencies will be started automatically by docker compose
 
 set -e
@@ -11,13 +11,13 @@ echo "🚀 Starting ML Team services..."
 
 # Start services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in cyrex; do
+for service in synapse; do
   case $service in
-    cyrex)
-      if [ -f "diri-cyrex/Dockerfile" ]; then
+    synapse)
+      if [ -f "platform-services/shared/deepiri-synapse/Dockerfile" ]; then
         SERVICES+=("$service")
       else
-        echo "⚠️  Skipping $service (submodule not initialized)"
+        echo "⚠️  Skipping $service (not found)"
       fi
       ;;
     *)
@@ -39,5 +39,5 @@ docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
 
 echo "✅ ML Team services started!"
 echo ""
-echo "🤖 Cyrex: http://localhost:8000"
+echo "📡 Synapse: http://localhost:8002"
 

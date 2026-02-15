@@ -119,7 +119,7 @@ def get_base_services(team_name: str, env: dict, network_name: str, project_root
             "name": f"deepiri-pgadmin-{team_suffix}",
             "ports": {"80/tcp": pgadmin_host_port},
             "environment": {
-                "PGADMIN_DEFAULT_EMAIL": env.get("PGADMIN_EMAIL", "admin@deepiri.local"),
+                "PGADMIN_DEFAULT_EMAIL": env.get("PGADMIN_EMAIL", "admin@deepiri.com"),
                 "PGADMIN_DEFAULT_PASSWORD": env.get("PGADMIN_PASSWORD", "admin"),
                 "PGADMIN_CONFIG_SERVER_MODE": "False",
             },

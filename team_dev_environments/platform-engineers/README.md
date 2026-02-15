@@ -140,5 +140,16 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 - **Cyrex**: http://localhost:8000
 - **MLflow**: http://localhost:5500
 - **Jupyter**: http://localhost:8888
-- **Mongo Express**: http://localhost:8081
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. The database includes:
+- `public` schema - Main application data
+- `analytics` schema - Analytics and metrics
+- `audit` schema - Audit logs and history
+
+For services using Prisma, migrations are handled automatically during service startup.
 

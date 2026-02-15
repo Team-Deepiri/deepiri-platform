@@ -15,4 +15,7 @@ data:
   
   # Service URLs
   CYREX_URL: "http://cyrex:8000"
+  
+  # Streaming Service Configuration (for publishing challenge events)
+  SYNAPSE_URL: "http://synapse:8002"
 

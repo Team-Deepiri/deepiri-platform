@@ -54,7 +54,7 @@ This starts all infrastructure, backend services, and frontend.
 ```bash
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
-  mongodb redis influxdb \
+  postgres redis influxdb \
   api-gateway auth-service task-orchestrator \
   engagement-service platform-analytics-service \
   notification-service external-bridge-service \
@@ -144,4 +144,11 @@ docker compose -f docker-compose.dev.yml logs -f auth-service
 - **Frontend**: http://localhost:5173
 - **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
 - **Realtime Gateway**: http://localhost:5008
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. While the frontend team typically doesn't need direct database access, it's available for debugging and development purposes.
 

@@ -1,7 +1,10 @@
 #!/bin/bash
 # Infrastructure Team - Build script
-# Builds: All infrastructure + API Gateway + All Microservices (no frontend)
-# Based on SERVICE_TEAM_MAPPING.md: All Infrastructure Services + API Gateway + All Microservices
+# Builds infrastructure team services using docker-compose.dev.yml with service selection
+#
+# Note: Currently matches backend team setup. Infrastructure team will work on cloud
+# infrastructure and data infrastructure services in the future (e.g., cloud storage,
+# data pipelines, monitoring infrastructure, etc.)
 
 set -e
 
@@ -11,61 +14,30 @@ cd "$(dirname "$0")/../.." || exit 1
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 
-echo "🔨 Building Infrastructure Team services..."
-
-# Build all services except frontend-dev
-ALL_SERVICES=(
-  api-gateway auth-service task-orchestrator engagement-service platform-analytics-service
-  notification-service external-bridge-service challenge-service realtime-gateway
-  cyrex jupyter mlflow
+# Infrastructure team services (currently same as backend team)
+# Future: Will include cloud infrastructure and data infrastructure services
+SERVICES=(
+  postgres redis influxdb
+  api-gateway auth-service task-orchestrator
+  engagement-service platform-analytics-service
+  notification-service external-bridge-service
+  challenge-service realtime-gateway
+  language-intelligence-service messaging-service
+  synapse frontend-dev adminer
 )
 
-SERVICES_TO_BUILD=()
-for service in "${ALL_SERVICES[@]}"; do
-  case $service in
-    api-gateway)
-      if [ -f "platform-services/api-gateway/Dockerfile" ] || [ -f "platform-services/backend/deepiri-api-gateway/Dockerfile" ]; then
-        SERVICES_TO_BUILD+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    auth-service)
-      if [ -f "platform-services/backend/deepiri-auth-service/Dockerfile" ]; then
-        SERVICES_TO_BUILD+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    external-bridge-service)
-      if [ -f "platform-services/backend/deepiri-external-bridge-service/Dockerfile" ]; then
-        SERVICES_TO_BUILD+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    cyrex|jupyter)
-      if [ -f "diri-cyrex/Dockerfile" ] || [ -f "diri-cyrex/Dockerfile.jupyter" ]; then
-        SERVICES_TO_BUILD+=("$service")
-      else
-        echo "⚠️  Skipping $service (submodule not initialized)"
-      fi
-      ;;
-    *)
-      # For non-submodule services or services without specific Dockerfiles
-      SERVICES_TO_BUILD+=("$service")
-      ;;
-  esac
-done
+echo "🔨 Building Infrastructure Team services..."
+echo "   (Using docker-compose.dev.yml with service selection)"
+echo "   Services: ${SERVICES[*]}"
+echo ""
 
-if [ ${#SERVICES_TO_BUILD[@]} -eq 0 ]; then
-  echo "❌ No services to build for Infrastructure Team!"
-  exit 1
-fi
+# Build services using docker-compose.dev.yml
+docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
 
-echo "Building: ${SERVICES_TO_BUILD[*]} (excluding frontend-dev)"
-
-# Build services using team-specific compose file
-docker compose -f docker-compose.infrastructure-team.yml build "${SERVICES_TO_BUILD[@]}"
-
+echo ""
 echo "✅ Infrastructure Team services built successfully!"
+echo ""
+echo "Services built:"
+for service in "${SERVICES[@]}"; do
+  echo "  ✓ $service"
+done

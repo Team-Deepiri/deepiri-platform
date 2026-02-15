@@ -202,12 +202,12 @@ class MomentumService {
             featuresShipped: profile.featuresShipped,
             designEdits: profile.designEdits
           },
-          levelHistory: profile.levelProgress.map(lp => ({
+          levelHistory: profile.levelProgress.map((lp: typeof profile.levelProgress[0]) => ({
             level: lp.level,
             reachedAt: lp.reachedAt,
             totalMomentum: lp.totalMomentumAtTime
           })),
-          achievements: profile.achievements.map(a => ({
+          achievements: profile.achievements.map((a: typeof profile.achievements[0]) => ({
             achievementId: a.achievementId,
             name: a.name,
             description: a.description,
@@ -305,7 +305,7 @@ class MomentumService {
       
       res.json({
         success: true,
-        data: profiles.map((profile, index) => ({
+        data: profiles.map((profile: typeof profiles[0], index: number) => ({
           rank: index + 1,
           userId: profile.userId,
           totalMomentum: profile.totalMomentum,

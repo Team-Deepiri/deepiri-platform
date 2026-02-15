@@ -104,7 +104,7 @@ class DependencyGraphService {
         orderBy: { createdAt: 'asc' }
       });
 
-      return dependencies.map(dep => ({
+      return dependencies.map((dep: typeof dependencies[0]) => ({
         task: dep.dependsOnTask,
         type: dep.dependencyType,
         createdAt: dep.createdAt
@@ -153,7 +153,7 @@ class DependencyGraphService {
           select: { dependsOnTaskId: true }
         });
         
-        deps.forEach(dep => {
+        deps.forEach((dep: { dependsOnTaskId: string }) => {
           stack.push(dep.dependsOnTaskId);
         });
       }

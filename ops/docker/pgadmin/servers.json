@@ -1,0 +1,16 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Deepiri PostgreSQL",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "deepiri",
+      "Username": "deepiri",
+      "Password": "deepiripassword",
+      "SSLMode": "prefer",
+      "Comment": "Deepiri Development PostgreSQL Database"
+    }
+  }
+}
+

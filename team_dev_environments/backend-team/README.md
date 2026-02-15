@@ -66,7 +66,7 @@ This starts all infrastructure and backend services.
 ```bash
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
-  mongodb redis influxdb \
+  postgres redis influxdb \
   api-gateway auth-service task-orchestrator \
   engagement-service platform-analytics-service \
   notification-service external-bridge-service \
@@ -162,4 +162,16 @@ docker compose -f docker-compose.dev.yml logs -f task-orchestrator
 - **External Bridge**: http://localhost:5006
 - **Challenge Service**: http://localhost:5007
 - **Realtime Gateway**: http://localhost:5008
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. The database includes:
+- `public` schema - Main application data (users, tasks, quests, rewards, etc.)
+- `analytics` schema - Analytics and metrics (momentum, streaks, boosts, etc.)
+- `audit` schema - Audit logs and history
+
+For services using Prisma (e.g., engagement-service), migrations are handled automatically during service startup. The Prisma client is generated during the Docker build process.
 

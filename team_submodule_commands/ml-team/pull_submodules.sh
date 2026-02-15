@@ -88,31 +88,60 @@ echo ""
 echo "🔧 Initializing ML Team submodules..."
 echo ""
 
-# diri-cyrex - AI/ML service (contains ML models, training scripts, MLOps)
-echo "  📦 diri-cyrex (ML Service)..."
-git submodule update --init --recursive diri-cyrex
-echo "    ✅ diri-cyrex initialized"
+# diri-helox - ML training pipelines and research
+echo "  📦 diri-helox (ML Training & Research)..."
+git submodule update --init --recursive diri-helox
+echo "    ✅ diri-helox initialized"
+echo ""
+
+# deepiri-modelkit - Shared contracts and utilities
+echo "  📦 deepiri-modelkit (Shared Contracts & Utilities)..."
+mkdir -p deepiri-modelkit
+git submodule update --init --recursive deepiri-modelkit 2>&1 || true
+if [ ! -d "deepiri-modelkit/.git" ] && [ ! -f "deepiri-modelkit/.git" ]; then
+    echo "    ⚠️  WARNING: deepiri-modelkit not cloned correctly!"
+else
+    echo "    ✅ modelkit initialized at: $(pwd)/deepiri-modelkit"
+fi
 echo ""
 
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
-git submodule update --remote diri-cyrex
-ensure_submodule_on_main "diri-cyrex"
-echo "    ✅ diri-cyrex updated and on main branch"
+git submodule update --remote diri-helox
+ensure_submodule_on_main "diri-helox"
+echo "    ✅ diri-helox updated and on main branch"
+git submodule update --remote deepiri-modelkit 2>/dev/null || true
+ensure_submodule_on_main "deepiri-modelkit"
+echo "    ✅ modelkit updated and on main branch"
 echo ""
 
 # Show status
 echo "📊 Submodule Status:"
 echo ""
-git submodule status diri-cyrex
+git submodule status diri-helox
+git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
 echo ""
 
 echo "✅ ML Team submodules ready!"
 echo ""
 echo "📋 Quick Commands:"
-echo "  - Check status: git submodule status diri-cyrex"
-echo "  - Update: git submodule update --remote diri-cyrex"
-echo "  - Work in submodule: cd diri-cyrex"
-echo "  - Training scripts: cd diri-cyrex/app/train"
+echo "  - Check status: git submodule status diri-helox"
+echo "  - Check status: git submodule status deepiri-modelkit"
+echo "  - Update: git submodule update --remote diri-helox"
+echo "  - Update: git submodule update --remote deepiri-modelkit"
+echo "  - Work in helox: cd diri-helox"
+echo "  - Work in modelkit: cd deepiri-modelkit"
+echo "  - Training pipelines: cd diri-helox/pipelines/training"
+echo ""
+
+# Automatically run setup-hooks.sh after pulling submodules
+echo "🔧 Setting up Git hooks for pulled submodules..."
+echo ""
+if [ -f "$SCRIPT_DIR/setup-hooks.sh" ]; then
+    bash "$SCRIPT_DIR/setup-hooks.sh"
+else
+    echo "⚠️  Warning: setup-hooks.sh not found at $SCRIPT_DIR/setup-hooks.sh"
+    echo "   Hooks will not be automatically configured."
+fi
 echo ""
 

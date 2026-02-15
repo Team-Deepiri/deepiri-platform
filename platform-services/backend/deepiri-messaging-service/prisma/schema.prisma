@@ -1,0 +1,147 @@
+// Prisma Schema for Messaging Service
+// PostgreSQL database schema
+
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native"]
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["messaging", "public"]
+}
+
+// ============================================
+// MESSAGING MODELS
+// ============================================
+
+model ChatRoom {
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String?  @db.VarChar(255)
+  type              ChatRoomType // 'agent', 'group', 'direct'
+  agentInstanceId   String?  @map("agent_instance_id") @db.VarChar(255)
+  createdBy         String?  @map("created_by") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamp
+  
+  // Metadata
+  metadata          Json?    @default("{}")
+  isArchived        Boolean  @default(false) @map("is_archived")
+  
+  // Relations
+  participants      ChatParticipant[]
+  messages          Message[]
+  
+  @@index([type])
+  @@index([createdBy])
+  @@index([agentInstanceId])
+  @@index([isArchived])
+  @@schema("messaging")
+  @@map("chat_rooms")
+}
+
+model ChatParticipant {
+  id                String   @id @default(uuid()) @db.Uuid
+  chatRoomId       String   @map("chat_room_id") @db.Uuid
+  userId           String?  @map("user_id") @db.Uuid
+  agentInstanceId  String?  @map("agent_instance_id") @db.VarChar(255)
+  role             String   @default("member") @db.VarChar(50) // 'admin', 'member', 'viewer'
+  joinedAt         DateTime @default(now()) @map("joined_at") @db.Timestamp
+  lastReadAt       DateTime? @map("last_read_at") @db.Timestamp
+  isActive         Boolean  @default(true) @map("is_active")
+  
+  chatRoom         ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  
+  @@unique([chatRoomId, userId, agentInstanceId])
+  @@index([chatRoomId])
+  @@index([userId])
+  @@index([agentInstanceId])
+  @@index([isActive])
+  @@schema("messaging")
+  @@map("chat_participants")
+}
+
+model Message {
+  id                String   @id @default(uuid()) @db.Uuid
+  chatRoomId       String   @map("chat_room_id") @db.Uuid
+  senderId         String?  @map("sender_id") @db.Uuid
+  senderType       SenderType @map("sender_type") // 'user', 'agent', 'system'
+  agentInstanceId  String?  @map("agent_instance_id") @db.VarChar(255)
+  content          String   @db.Text
+  messageType      MessageType @default(TEXT) @map("message_type")
+  metadata         Json?    @default("{}")
+  
+  // Threading
+  parentMessageId  String?  @map("parent_message_id") @db.Uuid
+  parentMessage    Message? @relation("MessageThread", fields: [parentMessageId], references: [id])
+  replies          Message[] @relation("MessageThread")
+  
+  // Status
+  isEdited         Boolean  @default(false) @map("is_edited")
+  isDeleted        Boolean  @default(false) @map("is_deleted")
+  editedAt         DateTime? @map("edited_at") @db.Timestamp
+  
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamp
+  
+  chatRoom         ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  readReceipts     MessageReadReceipt[]
+  
+  @@index([chatRoomId])
+  @@index([createdAt])
+  @@index([senderId])
+  @@index([parentMessageId])
+  @@index([isDeleted])
+  @@schema("messaging")
+  @@map("messages")
+}
+
+model MessageReadReceipt {
+  id                String   @id @default(uuid()) @db.Uuid
+  messageId         String   @map("message_id") @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  readAt            DateTime @default(now()) @map("read_at") @db.Timestamp
+  
+  message           Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@index([readAt])
+  @@schema("messaging")
+  @@map("message_read_receipts")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum ChatRoomType {
+  AGENT
+  GROUP
+  DIRECT
+
+  @@schema("messaging")
+}
+
+enum SenderType {
+  USER
+  AGENT
+  SYSTEM
+
+  @@schema("messaging")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+  TOOL_CALL
+  TOOL_RESULT
+
+  @@schema("messaging")
+}
+

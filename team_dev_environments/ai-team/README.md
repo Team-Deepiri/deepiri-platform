@@ -58,7 +58,7 @@ This starts all required infrastructure and services.
 ```bash
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
-  mongodb influxdb redis etcd minio milvus \
+  postgres influxdb redis etcd minio milvus \
   cyrex jupyter mlflow challenge-service
 ```
 
@@ -148,4 +148,11 @@ docker compose -f docker-compose.dev.yml logs -f challenge-service
 - **Jupyter**: http://localhost:8888
 - **Cyrex**: http://localhost:8000
 - **Challenge Service**: http://localhost:5007
+- **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. The database stores training data and model metadata.
 

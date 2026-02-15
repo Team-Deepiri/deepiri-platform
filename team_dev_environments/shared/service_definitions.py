@@ -19,7 +19,8 @@ def get_microservice_config(
     additional_env: Dict[str, str] = None,
     depends_on: List[str] = None,
     network_name: str = "deepiri-dev-network",
-    team_suffix: str = "dev"
+    team_suffix: str = "dev",
+    command: str = None
 ) -> Dict[str, Any]:
     """Get configuration for a microservice."""
     # Get unique host port for this team
@@ -55,7 +56,7 @@ def get_microservice_config(
             # Assume it's already a container name
             mapped_deps.append(dep)
     
-    return {
+    config = {
         "name": container_name,
         "build": {
             "path": str(project_root / service_path),
@@ -71,6 +72,18 @@ def get_microservice_config(
         "network": network_name,
         "depends_on": [(dep, 5) for dep in mapped_deps],
     }
+    
+    # Add /shared-utils/node_modules volume for services that use shared-utils
+    if name in ["challenge-service", "auth-service", "engagement-service", "external-bridge-service", 
+                "notification-service", "platform-analytics-service", "task-orchestrator", "realtime-gateway",
+                "language-intelligence-service", "messaging-service"]:
+        config["volumes"]["/shared-utils/node_modules"] = {}
+    
+    # Add command if provided
+    if command:
+        config["command"] = command
+    
+    return config
 
 
 def get_backend_team_services(project_root: Path, env: dict, network_name: str, team_suffix: str = "backend") -> List[Dict[str, Any]]:
@@ -201,7 +214,8 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         None,
         ["postgres"],
         network_name,
-        team_suffix
+        team_suffix,
+        command="sh -c \"cd /shared-utils && rm -rf node_modules/.caniuse-lite* 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps && npm run build && cd /app && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev\""
     ))
     
     # Realtime Gateway
@@ -215,6 +229,39 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         None,
         None,
         ["postgres"],
+        network_name,
+        team_suffix
+    ))
+    
+    # Language Intelligence Service
+    services.append(get_microservice_config(
+        "language-intelligence-service",
+        f"deepiri-language-intelligence-service-{team_suffix}",
+        5003,
+        project_root,
+        "platform-services/backend/deepiri-language-intelligence-service",
+        database_url,
+        None,
+        None,
+        ["postgres"],
+        network_name,
+        team_suffix
+    ))
+    
+    # Messaging Service
+    services.append(get_microservice_config(
+        "messaging-service",
+        f"deepiri-messaging-service-{team_suffix}",
+        5009,
+        project_root,
+        "platform-services/backend/deepiri-messaging-service",
+        database_url,
+        redis_url,
+        {
+            "CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000",
+            "REALTIME_GATEWAY_URL": f"http://deepiri-realtime-gateway-{team_suffix}:5008",
+        },
+        ["postgres", "redis", f"deepiri-realtime-gateway-{team_suffix}"],
         network_name,
         team_suffix
     ))
@@ -275,23 +322,24 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
     })
     
     # Jupyter
-    jupyter_host_port = get_port("jupyter", team_suffix)
-    services.append({
-        "name": f"deepiri-jupyter-{team_suffix}",
-        "build": {
-            "path": str(project_root / "diri-cyrex"),
-            "dockerfile": "Dockerfile.jupyter",
-        },
-        "ports": {"8888/tcp": jupyter_host_port},
-        "environment": {
-            "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
-        },
-        "volumes": {
-            str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
-            str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
-        },
-        "network": network_name,
-    })
+    # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
+    # jupyter_host_port = get_port("jupyter", team_suffix)
+    # services.append({
+    #     "name": f"deepiri-jupyter-{team_suffix}",
+    #     "build": {
+    #         "path": str(project_root),
+    #         "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
+    #     },
+    #     "ports": {"8888/tcp": jupyter_host_port},
+    #     "environment": {
+    #         "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
+    #     },
+    #     "volumes": {
+    #         str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
+    #         str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
+    #     },
+    #     "network": network_name,
+    # })
     
     # Challenge Service
     database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
@@ -306,7 +354,8 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
         {"CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000"},
         ["postgres", f"deepiri-cyrex-{team_suffix}"],
         network_name,
-        team_suffix
+        team_suffix,
+        command="sh -c \"cd /shared-utils && rm -rf node_modules/.caniuse-lite* 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps && npm run build && cd /app && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev\""
     ))
     
     return services
@@ -357,23 +406,24 @@ def get_ml_team_services(project_root: Path, env: dict, network_name: str, team_
     })
     
     # Jupyter
-    jupyter_host_port = get_port("jupyter", team_suffix)
-    services.append({
-        "name": f"deepiri-jupyter-{team_suffix}",
-        "build": {
-            "path": str(project_root / "diri-cyrex"),
-            "dockerfile": "Dockerfile.jupyter",
-        },
-        "ports": {"8888/tcp": jupyter_host_port},
-        "environment": {
-            "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
-        },
-        "volumes": {
-            str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
-            str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
-        },
-        "network": network_name,
-    })
+    # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
+    # jupyter_host_port = get_port("jupyter", team_suffix)
+    # services.append({
+    #     "name": f"deepiri-jupyter-{team_suffix}",
+    #     "build": {
+    #         "path": str(project_root),
+    #         "dockerfile": "deepiri-modelkit/Dockerfile.jupyter",
+    #     },
+    #     "ports": {"8888/tcp": jupyter_host_port},
+    #     "environment": {
+    #         "OPENAI_API_KEY": env.get("OPENAI_API_KEY", ""),
+    #     },
+    #     "volumes": {
+    #         str(project_root / "diri-cyrex" / "train" / "notebooks"): "/app/notebooks",
+    #         str(project_root / "diri-cyrex" / "train" / "data"): "/app/data",
+    #     },
+    #     "network": network_name,
+    # })
     
     # Platform Analytics Service
     database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
@@ -460,6 +510,24 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         None,
         None,
         ["postgres"],
+        network_name,
+        team_suffix
+    ))
+    
+    # Messaging Service
+    services.append(get_microservice_config(
+        "messaging-service",
+        f"deepiri-messaging-service-{team_suffix}",
+        5009,
+        project_root,
+        "platform-services/backend/deepiri-messaging-service",
+        database_url,
+        None,
+        {
+            "CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000",
+            "REALTIME_GATEWAY_URL": f"http://deepiri-realtime-gateway-{team_suffix}:5008",
+        },
+        ["postgres", f"deepiri-realtime-gateway-{team_suffix}", f"deepiri-cyrex-{team_suffix}"],
         network_name,
         team_suffix
     ))

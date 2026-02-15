@@ -39,21 +39,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   # pgAdmin - Database Admin UI (optional, can be commented out for production)
   pgadmin:
-    image: dpage/pgadmin4:latest
+    build:
+      context: ./ops/docker/pgadmin
+      dockerfile: Dockerfile
     container_name: deepiri-pgadmin-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@deepiri.local}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@deepiri.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - pgadmin_dev_data:/var/lib/pgadmin
+    healthcheck:
+      # Use python to check if pgAdmin is responding (more reliable than curl)
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:80').read()\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s  # pgAdmin can take 30-60s to initialize on first boot
     depends_on:
       - postgres
     networks:
@@ -69,6 +79,12 @@ services:
       - "8080:8080"
     environment:
       ADMINER_DEFAULT_SERVER: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     depends_on:
       - postgres
     networks:
@@ -82,9 +98,15 @@ services:
     logging: *minimal-logging
     ports:
       - "6380:6379"  # Using 6380 to avoid conflict with system Redis on 6379
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - deepiri-dev-network
 
@@ -105,6 +127,12 @@ services:
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-your-influxdb-token}
     volumes:
       - influxdb_dev_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - deepiri-dev-network
 
@@ -122,6 +150,12 @@ services:
     volumes:
       - etcd_dev_data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health", "--endpoints=http://127.0.0.1:2379"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - deepiri-dev-network
 
@@ -165,8 +199,18 @@ services:
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000
+      # Reduce log verbosity - set to WARN to suppress INFO level noise
+      COMMON_LOG_LEVEL: warn
     volumes:
       - milvus_dev_data:/var/lib/milvus
+    healthcheck:
+      # Check health endpoint - waits for all components (including rootcoord) to be ready
+      # Increased start_period to give rootcoord time to start before other components try to connect
+      test: ["CMD-SHELL", "curl -f http://localhost:9091/healthz || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 90s  # Increased to give rootcoord time to start first
     depends_on:
       - etcd
       - minio
@@ -185,16 +229,24 @@ services:
     logging: *minimal-logging
     ports:
       - "${API_GATEWAY_PORT:-5100}:5000"  # Using 5100 externally to avoid conflict with macOS AirPlay on port 5000
-    # Variables loaded from ops/k8s/configmaps/api-gateway-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5000
+      SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: api-gateway  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-api-gateway:/app
-      - /app/node_modules
-      - /app/dist
-    command: sh -c "cd /app && npm install --legacy-peer-deps && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-api-gateway/src:/app/src
+      - ./platform-services/backend/deepiri-api-gateway/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
       - auth-service
       - task-orchestrator
@@ -203,7 +255,10 @@ services:
       - notification-service
       - challenge-service
       - realtime-gateway
-      - cyrex
+      - language-intelligence-service
+      - messaging-service
+      - synapse
+      # cyrex dependency removed - only needed by AI/ML team
       # external-bridge-service dependency removed - only needed by Backend Team
     networks:
       - deepiri-dev-network
@@ -218,22 +273,33 @@ services:
     container_name: deepiri-auth-service-dev
     restart: unless-stopped
     logging: *minimal-logging
+    user: root
     ports:
       - "5001:5001"
-    # Variables loaded from ops/k8s/configmaps/auth-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5001
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      K8S_SERVICE_NAME: auth-service  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-auth-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - shared_utils_node_modules:/shared-utils/node_modules
       - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && (if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     depends_on:
       - postgres
       - influxdb
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -249,19 +315,23 @@ services:
     logging: *minimal-logging
     ports:
       - "5002:5002"
-    # Variables loaded from ops/k8s/configmaps/task-orchestrator-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5002
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      PRISMA_CLI_BINARY_TARGETS: "debian-openssl-3.0.x"
+      SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: task-orchestrator  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-task-orchestrator:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-task-orchestrator/src:/app/src
+      - ./platform-services/backend/deepiri-task-orchestrator/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -277,20 +347,23 @@ services:
     logging: *minimal-logging
     ports:
       - "5003:5003"
-    # Variables loaded from ops/k8s/configmaps/engagement-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5003
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: engagement-service  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-engagement-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-engagement-service/src:/app/src
+      - ./platform-services/backend/deepiri-engagement-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - redis
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -306,20 +379,23 @@ services:
     logging: *minimal-logging
     ports:
       - "5004:5004"
-    # Variables loaded from ops/k8s/configmaps/platform-analytics-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5004
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: platform-analytics-service  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-platform-analytics-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-platform-analytics-service/src:/app/src
+      - ./platform-services/backend/deepiri-platform-analytics-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
       - influxdb
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -335,19 +411,22 @@ services:
     logging: *minimal-logging
     ports:
       - "5005:5005"
-    # Variables loaded from ops/k8s/configmaps/notification-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5005
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: notification-service  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-notification-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-notification-service/src:/app/src
+      - ./platform-services/backend/deepiri-notification-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -363,19 +442,32 @@ services:
     logging: *minimal-logging
     ports:
       - "5006:5006"
-    # Variables loaded from ops/k8s/configmaps/external-bridge-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5006
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      K8S_SERVICE_NAME: external-bridge-service  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-external-bridge-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-external-bridge-service/src:/app/src
+      - ./platform-services/backend/deepiri-external-bridge-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
       - postgres
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -391,20 +483,123 @@ services:
     logging: *minimal-logging
     ports:
       - "5007:5007"
-    # Variables loaded from ops/k8s/configmaps/challenge-service-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5007
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
+      K8S_SERVICE_NAME: challenge-service  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-challenge-service:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-challenge-service/src:/app/src
+      - ./platform-services/backend/deepiri-challenge-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
     depends_on:
       - postgres
+      - synapse
+      # cyrex dependency removed - only needed by AI/ML team
+    networks:
+      - deepiri-dev-network
+
+  # Language Intelligence Service
+  language-intelligence-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-language-intelligence-service/Dockerfile
+    image: deepiri-dev-language-intelligence-service:latest
+    pull_policy: never
+    container_name: deepiri-language-intelligence-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    # Port exposed for development only
+    # In production: Remove this port mapping - only access through API Gateway
+    ports:
+      - "5009:5003"
+    environment:
+      PORT: 5003
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      STORAGE_PROVIDER: minio
+      STORAGE_BUCKET: language-intelligence-documents
+      STORAGE_REGION: us-east-1
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      CYREX_BASE_URL: http://cyrex:8000
+      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      # AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-}  # Optional - set to enable auth
+      K8S_SERVICE_NAME: language-intelligence-service
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-language-intelligence-service/src:/app/src
+      - ./platform-services/backend/deepiri-language-intelligence-service/tsconfig.json:/app/tsconfig.json
+      - shared_utils_node_modules:/shared-utils/node_modules
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && (if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - postgres
+      - redis
+      - minio
       - cyrex
+      - auth-service
+      - synapse
+    networks:
+      - deepiri-dev-network
+
+  # Messaging Service
+  messaging-service:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-messaging-service/Dockerfile
+    image: deepiri-dev-messaging-service:latest
+    pull_policy: never
+    container_name: deepiri-messaging-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5010:5010"
+    environment:
+      PORT: 5010
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      CYREX_URL: http://cyrex:8000
+      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      REALTIME_GATEWAY_URL: http://realtime-gateway:5008
+      K8S_SERVICE_NAME: messaging-service
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-messaging-service/src:/app/src
+      - ./platform-services/backend/deepiri-messaging-service/tsconfig.json:/app/tsconfig.json
+      - shared_utils_node_modules:/shared-utils/node_modules
+      - /app/node_modules
+    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && (if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - postgres
+      - redis
+      - cyrex
+      - realtime-gateway
+      - auth-service
+      - synapse
     networks:
       - deepiri-dev-network
 
@@ -420,44 +615,124 @@ services:
     logging: *minimal-logging
     ports:
       - "5008:5008"
-    # Variables loaded from ops/k8s/configmaps/realtime-gateway-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5008
+      SYNAPSE_URL: http://synapse:8002
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      K8S_SERVICE_NAME: realtime-gateway  # Filter to only load this service's configmap
     volumes:
-      - ./platform-services/backend/deepiri-realtime-gateway:/app
-      - ./platform-services/shared/deepiri-shared-utils:/shared-utils
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && npm install --legacy-peer-deps && npm run build && cd /app && npm install --legacy-peer-deps file:/shared-utils && npm run dev"
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-realtime-gateway/src:/app/src
+      - ./platform-services/backend/deepiri-realtime-gateway/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
+    depends_on:
+      - redis
+      - synapse
+    networks:
+      - deepiri-dev-network
+
+  # ════════════════════════════════════════════════════════════════════════
+  # Ollama - CPU Mode (Default)
+  # ════════════════════════════════════════════════════════════════════════
+  # Usage (CPU mode - works on all systems):
+  #   docker compose up -d ollama
+  #
+  # Usage (GPU mode - requires NVIDIA GPU):
+  #   docker compose -f docker-compose.dev.yml -f docker-compose.dev.gpu.yml up -d ollama
+  #
+  # The base configuration runs in CPU mode for maximum compatibility.
+  # For GPU support, use the docker-compose.dev.gpu.yml override file.
+  #
+  # GPU Setup (one-time, if you have NVIDIA GPU):
+  #   sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
+  #   sudo systemctl restart docker
+  # ════════════════════════════════════════════════════════════════════════
+  ollama:
+    # Use custom Dockerfile with build-time model pre-pull
+    # Models are downloaded during Docker build and baked into the image
+    # This eliminates 1.2-3.3s first-request penalty from model loading
+    # 
+    # To disable pre-pull and use check-ollama-models.sh script instead:
+    #   docker-compose build --build-arg PRE_PULL_MODELS=false ollama
+    # 
+    # To pre-pull specific models (space-separated):
+    #   docker-compose build --build-arg MODELS="mistral:7b llama3:8b codellama:7b" ollama
+    build:
+      context: ./docker/ollama
+      dockerfile: Dockerfile
+      args:
+        PRE_PULL_MODELS: "true"  # Set to "false" to disable build-time pre-pull
+        MODELS: "mistral:7b llama3:8b codellama:7b"  # Space-separated list of models to pre-pull
+    # Fallback to public image if build context doesn't exist
+    image: ollama/ollama:latest
+    container_name: deepiri-ollama-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    runtime: nvidia  # Enable NVIDIA GPU runtime
+    ports:
+      - "${OLLAMA_PORT:-11435}:11434"
+    volumes:
+      - ollama_dev_data:/root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+      OLLAMA_KEEP_ALIVE: "24h"  # Increased from 30m to prevent model reloads
+      OLLAMA_NUM_PARALLEL: "4"
+      # GPU optimizations for RTX 5080 (sm_120, tensor cores)
+      CUDA_VISIBLE_DEVICES: "0"  # Use first GPU
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+      # Ollama GPU optimizations
+      OLLAMA_NUM_GPU: "1"
+      OLLAMA_GPU_OVERHEAD: "0"  # Minimize VRAM overhead
+      OLLAMA_MAX_LOADED_MODELS: "2"  # Keep 2 models in VRAM
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - deepiri-dev-network
 
   # Python Agent API (AI Service)
   cyrex:
     build:
-      context: ./diri-cyrex
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./diri-cyrex/Dockerfile
       args:
         BUILD_TYPE: prebuilt
-        BASE_IMAGE: python:3.11-slim
+        BASE_IMAGE: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
+        # Using CUDA 12.8 base image for RTX 5080/5090 (sm_120) support
     image: deepiri-dev-cyrex:latest
     pull_policy: never
     container_name: deepiri-cyrex-dev
     restart: unless-stopped
     logging: *minimal-logging
-    # Variables loaded from ops/k8s/configmaps/cyrex-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
+      K8S_SERVICE_NAME: cyrex  # Filter to only load this service's configmap
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       CORS_ORIGIN: http://localhost:5173
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
       MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
       WANDB_API_KEY: ${WANDB_API_KEY}
+      # Model Registry Configuration (for modelkit integration)
+      MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
       MODEL_REGISTRY_PATH: /app/model_registry
+      MODEL_CACHE_DIR: /app/models/cache
+      S3_ENDPOINT_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
       STAGING_MODEL_PATH: /app/models/staging
       PRODUCTION_MODEL_PATH: /app/models/production
       PINECONE_API_KEY: ${PINECONE_API_KEY}
@@ -470,25 +745,84 @@ services:
       INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
       MILVUS_HOST: milvus
       MILVUS_PORT: 19530
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      # PostgreSQL Configuration
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
+      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deepiripassword}
+      # Node Backend (API Gateway) Configuration
+      NODE_BACKEND_URL: http://api-gateway:5000
       # Local LLM Configuration
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       LOCAL_LLM_BACKEND: ${LOCAL_LLM_BACKEND:-ollama}
       LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3:8b}
-      TRANSFORMERS_CACHE: /app/.cache/huggingface
       HF_HOME: /app/.cache/huggingface
       SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
+      # Streaming Service Configuration
+      SYNAPSE_URL: http://synapse:8002
       # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./diri-cyrex/app:/app/app
       - ./diri-cyrex/train:/app/train
       - ./diri-cyrex/inference:/app/inference
+      - ./diri-cyrex/tests:/app/tests
+      - ./diri-cyrex/cyrex_watcher.py:/app/cyrex_watcher.py:ro
       - cyrex_cache:/app/.cache
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+    command: python /app/cyrex_watcher.py --watch-dir /app/app --app-module app.main:app --host 0.0.0.0 --port 8000
+    # GPU support - automatically detects and uses available GPU
+    # Priority: CUDA (NVIDIA) → MPS (Apple Silicon) → CPU
+    # 
+    # NVIDIA CUDA: Configured via deploy.resources below
+    #   - Requires: NVIDIA Container Toolkit installed
+    #   - Works on: Linux, WSL2, Windows with NVIDIA GPU
+    #
+    # Apple Silicon MPS: Automatically detected by PyTorch
+    #   - Works natively on macOS (Docker Desktop on Mac)
+    #   - No docker-compose config needed - PyTorch detects automatically
+    #   - Note: Docker containers on Mac typically can't access GPU
+    #   - For best MPS performance, run natively on macOS (not in Docker)
+    #
+    # CPU: Falls back gracefully if no GPU available
+    deploy:
+      resources:
+        reservations:
+          devices:
+            # NVIDIA GPU support (Linux/WSL/Windows with NVIDIA GPU)
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+            # Note: MPS (Apple Silicon) doesn't use docker device drivers
+            # It's automatically detected by PyTorch when available on macOS
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
-      - influxdb
-      - milvus
+      postgres:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
+      milvus:
+        condition: service_started
+      ollama:
+        condition: service_started
+      redis:
+        condition: service_started
+      synapse:
+        condition: service_started
+      mlflow:
+        condition: service_started
     networks:
       - deepiri-dev-network
 
@@ -499,7 +833,8 @@ services:
     logging: *minimal-logging
     working_dir: /app
     environment:
-      VITE_CYREX_BASE_URL: http://cyrex:8000
+      VITE_CYREX_BASE_URL: http://localhost:8000
+      VITE_SYNAPSE_URL: http://localhost:8002
       VITE_PORT: 5175
     ports:
       - "5175:5175"
@@ -507,60 +842,179 @@ services:
       - ./diri-cyrex/cyrex-interface:/app
       - /app/node_modules
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/usr/local/bin/node -e \"require('net').connect(5175,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\""
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     depends_on:
       - cyrex
+      - synapse
     networks:
       - deepiri-dev-network
 
+  # Cyrex-AGI - Commented out for now
+  # cyrex-agi:
+  #   build:
+  #     context: ./diri-cyrex/cyrex-agi
+  #     dockerfile: Dockerfile
+  #   image: deepiri-dev-cyrex-agi:latest
+  #   pull_policy: never
+  #   container_name: deepiri-cyrex-agi-dev
+  #   restart: unless-stopped
+  #   logging: *minimal-logging
+  #   environment:
+  #     # Redis Configuration for streaming
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+  #     # Cyrex Runtime Bridge
+  #     CYREX_BASE_URL: http://cyrex:8000
+  #     # Platform Services
+  #     PLATFORM_API_URL: http://api-gateway:5100
+  #     # ModelKit for contracts
+  #     MODELKIT_PATH: /app/../deepiri-modelkit
+  #   ports:
+  #     - "8003:8003"
+  #   volumes:
+  #     - ./diri-cyrex/cyrex-agi/app:/app/app
+  #     - cyrex_agi_cache:/app/.cache
+  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8003 --reload --reload-dir /app/app
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health').read()"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #   depends_on:
+  #     - cyrex
+  #     - redis
+  #     - synapse
+  #   networks:
+  #     - deepiri-dev-network
+
   # MLflow for AI Experiment Tracking
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.8.1
+    build:
+      context: ./ops/docker/mlflow
+      dockerfile: Dockerfile
+    image: deepiri-dev-mlflow:latest
+    pull_policy: never
     container_name: deepiri-mlflow-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
       - "5500:5000"
     environment:
-      BACKEND_STORE_URI: file:/mlflow
-      DEFAULT_ARTIFACT_ROOT: file:/mlflow/artifacts
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:/mlflow --default-artifact-root file:/mlflow/artifacts
+      # Backend Store (PostgreSQL)
+      BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      # Artifact Store (MinIO/S3)
+      DEFAULT_ARTIFACT_ROOT: s3://mlflow-artifacts/
+      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      # MLflow Tracking URI (for modelkit integration)
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # ModelKit Integration
+      MODELKIT_ENABLED: "true"
+      MODELKIT_TRACKING_URI: http://mlflow:5000
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      --default-artifact-root s3://mlflow-artifacts/
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/', timeout=5).read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - deepiri-dev-network
+
+  # Deepiri Synapse - Central Streaming Service
+  synapse:
+    build:
+      context: .
+      dockerfile: ./platform-services/shared/deepiri-synapse/Dockerfile
+    container_name: deepiri-synapse-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "8002:8002"
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      K8S_SERVICE_NAME: synapse  # Filter to only load this service's configmap
     volumes:
-      - mlflow_dev_data:/mlflow
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python - << 'EOF'\nimport urllib.request\ntry:\n    urllib.request.urlopen('http://localhost:8002/health', timeout=2)\n    exit(0)\nexcept Exception:\n    exit(1)\nEOF"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - redis
     networks:
       - deepiri-dev-network
 
   # Jupyter Notebook for AI Research
-  jupyter:
-    build:
-      context: ./diri-cyrex
-      dockerfile: Dockerfile.jupyter
-      args:
-        BUILD_TYPE: prebuilt
-        BASE_IMAGE: python:3.11-slim
-        PYTORCH_VERSION: 2.9.1
-        PYTHON_VERSION: 3.11
-    image: deepiri-dev-jupyter:latest
-    pull_policy: never
-    container_name: deepiri-jupyter-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./diri-cyrex/train/notebooks:/app/notebooks
-      - ./diri-cyrex/train/data:/app/data
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
-    networks:
-      - deepiri-dev-network
+  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
+  # jupyter:
+  #   build:
+  #     context: .
+  #     dockerfile: ./deepiri-modelkit/Dockerfile.jupyter
+  #     args:
+  #       BUILD_TYPE: prebuilt
+  #       BASE_IMAGE: python:3.11-slim
+  #       PYTORCH_VERSION: 2.9.1
+  #       PYTHON_VERSION: 3.11
+  #   image: deepiri-dev-jupyter:latest
+  #   pull_policy: never
+  #   container_name: deepiri-jupyter-dev
+  #   restart: unless-stopped
+  #   logging: *minimal-logging
+  #   command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
+  #   ports:
+  #     - "8888:8888"
+  #   volumes:
+  #     - ./diri-cyrex/train/notebooks:/app/notebooks
+  #     - ./diri-cyrex/train/data:/app/data
+  #   environment:
+  #     OPENAI_API_KEY: ${OPENAI_API_KEY}
+  #     JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
+  #     # Model Registry Configuration (for modelkit integration)
+  #     MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+  #     MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
+  #     S3_ENDPOINT_URL: http://minio:9000
+  #     MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+  #     MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+  #     S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
+  #   networks:
+  #     - deepiri-dev-network
 
   # Frontend with Vite HMR
   frontend-dev:
     build:
-      context: ./deepiri-web-frontend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: ./deepiri-web-frontend/Dockerfile.dev
     image: deepiri-dev-frontend:latest
     pull_policy: never
     container_name: deepiri-frontend-dev
@@ -568,15 +1022,30 @@ services:
     logging: *minimal-logging
     ports:
       - "5173:5173"
-    # Variables loaded from ops/k8s/configmaps/frontend-dev-configmap.yaml
-    # Variables loaded from ops/k8s/secrets/secrets.yaml
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
     environment:
       # Override or add docker-specific variables here if needed
       VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
+      VITE_SYNAPSE_URL: http://localhost:8002
+      VITE_MLFLOW_URL: http://localhost:5500
+      K8S_SERVICE_NAME: frontend-dev  # Filter to only load this service's configmap
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./deepiri-web-frontend:/app
       - /app/node_modules
-    depends_on: []
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/usr/local/bin/node -e \"require('net').connect(5173,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      - synapse
       # api-gateway dependency removed - frontend can work without it
     networks:
       - deepiri-dev-network
@@ -588,17 +1057,23 @@ volumes:
     driver: local
   redis_dev_data:
     driver: local
+  shared_utils_node_modules:
+    driver: local
   mlflow_dev_data:
     driver: local
   influxdb_dev_data:
     driver: local
+  ollama_dev_data:
+    driver: local
+  cyrex_cache:
+    driver: local
+  #cyrex_agi_cache:
+  #  driver: local
   milvus_dev_data:
     driver: local
   etcd_dev_data:
     driver: local
   minio_dev_data:
-    driver: local
-  cyrex_cache:
     driver: local
 
 networks:

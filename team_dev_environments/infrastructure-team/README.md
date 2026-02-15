@@ -20,11 +20,12 @@ This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_
 
 **Primary Services:**
 - ✅ **All Infrastructure Services**
-  - PostgreSQL (Port 5432)
-  - Redis (Port 6379)
-  - InfluxDB (Port 8086)
-  - Mongo Express (Port 8081) - DB admin UI
-- ✅ **API Gateway** (Port 5000) - Routing and load balancing
+  - PostgreSQL (Port 5432) - Primary database
+  - pgAdmin (Port 5050) - PostgreSQL admin UI
+  - Adminer (Port 8080) - Lightweight DB admin UI
+  - Redis (Port 6379) - Caching and sessions
+  - InfluxDB (Port 8086) - Time-series data
+- ✅ **API Gateway** (Port 5100) - Routing and load balancing
 - ✅ **All Microservices** - For monitoring and scaling
 
 **Infrastructure Needed:**
@@ -123,7 +124,7 @@ docker compose -f docker-compose.dev.yml logs -f
 ### Logs (Individual services)
 ```bash
 docker compose -f docker-compose.dev.yml logs -f api-gateway
-docker compose -f docker-compose.dev.yml logs -f mongodb
+docker compose -f docker-compose.dev.yml logs -f postgres
 docker compose -f docker-compose.dev.yml logs -f redis
 # ... etc for all services
 ```
@@ -138,9 +139,18 @@ docker compose -f docker-compose.dev.yml logs -f redis
 ## Service URLs
 
 - **PostgreSQL**: localhost:5432
-- **pgAdmin**: localhost:5050
-- **Mongo Express**: http://localhost:8081
+- **pgAdmin**: http://localhost:5050 (email: admin@deepiri.com, password: admin)
+- **Adminer**: http://localhost:8080 (System: PostgreSQL, Server: postgres, Username: deepiri, Password: deepiripassword, Database: deepiri)
 - **Redis**: localhost:6380
 - **InfluxDB**: http://localhost:8086
 - **API Gateway**: http://localhost:5100 (or set `API_GATEWAY_PORT` environment variable to customize)
+
+## Database Setup
+
+PostgreSQL is automatically initialized with the schema from `scripts/postgres-init.sql` on first startup. The database includes:
+- `public` schema - Main application data
+- `analytics` schema - Analytics and metrics
+- `audit` schema - Audit logs and history
+
+For services using Prisma, migrations are handled automatically during service startup.
 
