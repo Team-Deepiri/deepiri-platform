@@ -5,6 +5,7 @@
 This guide walks through the complete setup process for running the Deepiri platform with Apple Metal Performance Shaders (MPS) acceleration on macOS.
 
 **Requirements:**
+
 - Python ≥ 3.11
 - Ollama
 
