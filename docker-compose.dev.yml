@@ -220,8 +220,8 @@ services:
   # API Gateway - Routes requests to all microservices
   api-gateway:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-api-gateway/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-api-gateway/Dockerfile
     image: deepiri-dev-api-gateway:latest
     pull_policy: never
     container_name: deepiri-api-gateway-dev
@@ -266,8 +266,8 @@ services:
   # Auth Service
   auth-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-auth-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-auth-service/Dockerfile
     image: deepiri-dev-auth-service:latest
     pull_policy: never
     container_name: deepiri-auth-service-dev
@@ -306,8 +306,8 @@ services:
   # Task Orchestrator Service
   task-orchestrator:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-task-orchestrator/Dockerfile
     image: deepiri-dev-task-orchestrator:latest
     pull_policy: never
     container_name: deepiri-task-orchestrator-dev
@@ -338,8 +338,8 @@ services:
   # Engagement Service
   engagement-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-engagement-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-engagement-service/Dockerfile
     image: deepiri-dev-engagement-service:latest
     pull_policy: never
     container_name: deepiri-engagement-service-dev
@@ -370,8 +370,8 @@ services:
   # Platform Analytics Service
   platform-analytics-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-platform-analytics-service/Dockerfile
     image: deepiri-dev-platform-analytics-service:latest
     pull_policy: never
     container_name: deepiri-platform-analytics-service-dev
@@ -402,8 +402,8 @@ services:
   # Notification Service
   notification-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-notification-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-notification-service/Dockerfile
     image: deepiri-dev-notification-service:latest
     pull_policy: never
     container_name: deepiri-notification-service-dev
@@ -433,8 +433,8 @@ services:
   # External Bridge Service
   external-bridge-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-external-bridge-service/Dockerfile
     image: deepiri-dev-external-bridge-service:latest
     pull_policy: never
     container_name: deepiri-external-bridge-service-dev
@@ -474,8 +474,8 @@ services:
   # Challenge Service
   challenge-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-challenge-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-challenge-service/Dockerfile
     image: deepiri-dev-challenge-service:latest
     pull_policy: never
     container_name: deepiri-challenge-service-dev
@@ -506,8 +506,8 @@ services:
   # Language Intelligence Service
   language-intelligence-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-language-intelligence-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-language-intelligence-service/Dockerfile
     image: deepiri-dev-language-intelligence-service:latest
     pull_policy: never
     container_name: deepiri-language-intelligence-service-dev
@@ -560,8 +560,8 @@ services:
   # Messaging Service
   messaging-service:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-messaging-service/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-messaging-service/Dockerfile
     image: deepiri-dev-messaging-service:latest
     pull_policy: never
     container_name: deepiri-messaging-service-dev
@@ -606,8 +606,8 @@ services:
   # Realtime Gateway Service
   realtime-gateway:
     build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+      context: .
+      dockerfile: platform-services/backend/deepiri-realtime-gateway/Dockerfile
     image: deepiri-dev-realtime-gateway:latest
     pull_policy: never
     container_name: deepiri-realtime-gateway-dev

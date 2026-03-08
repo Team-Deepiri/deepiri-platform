@@ -28,6 +28,3 @@
 [submodule "platform-services/backend/deepiri-realtime-gateway"]
 	path = platform-services/backend/deepiri-realtime-gateway
 	url = git@github.com:Team-Deepiri/deepiri-realtime-gateway.git
-[submodule "platform-services/shared/deepiri-shared-utils"]
-	path = platform-services/shared/deepiri-shared-utils
-	url = git@github.com:Team-Deepiri/deepiri-shared-utils.git
