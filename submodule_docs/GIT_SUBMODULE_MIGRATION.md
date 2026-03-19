@@ -1,8 +1,8 @@
 # Git Submodule Migration Guide - AI Code Separation
 
-This guide provides exact commands to separate the AI-related code (`diri-cyrex/`) into its own repository and add it back as a git submodule.
+This guide provides exact commands to separate the AI-related code (diri-cyrex/) into its own repository and add it back as a git submodule.
 
-## Prerequisites
+## Prerequisites 
 
 - Git installed and configured
 - Access to create a new repository (GitHub/GitLab/etc.)
