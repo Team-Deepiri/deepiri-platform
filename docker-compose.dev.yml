@@ -907,8 +907,8 @@ services:
       PORT: 8002
       DEBUG: "true"
       CORS_ORIGIN: "*"
-      # Database (uses existing cyrex postgres)
-      POSTGRES_HOST: postgres-cyrex
+      # Database (uses existing postgres)
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: cyrex_db
       POSTGRES_USER: deepiri_cyrex
@@ -939,7 +939,7 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      - postgres-cyrex
+      - postgres
       - redis
       - ollama
       - cyrex
