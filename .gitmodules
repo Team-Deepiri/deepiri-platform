@@ -31,3 +31,6 @@
 [submodule "platform-services/shared/deepiri-prismpipe"]
 	path = platform-services/shared/deepiri-prismpipe
 	url = git@github.com:Team-Deepiri/deepiri-prismpipe.git
+[submodule "platform-services/backend/deepiri-realtime-gateway"]
+	path = platform-services/backend/deepiri-realtime-gateway
+	url = git@github.com:Team-Deepiri/deepiri-realtime-gateway.git
