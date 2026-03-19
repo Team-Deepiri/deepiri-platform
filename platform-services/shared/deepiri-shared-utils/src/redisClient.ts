@@ -8,7 +8,13 @@ import Redis, { RedisOptions } from 'ioredis';
  * @returns A connected ioredis instance.
  */
 export function createRedisClient(overrides: Partial<RedisOptions> = {}): Redis {
-  const client = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+  const host = process.env.REDIS_HOST || 'localhost';
+  const port = process.env.REDIS_PORT || '6379';
+  const password = process.env.REDIS_PASSWORD || '';
+  const defaultUrl = password
+    ? `redis://:${password}@${host}:${port}`
+    : `redis://${host}:${port}`;
+  const client = new Redis(process.env.REDIS_URL ?? defaultUrl, {
     retryStrategy(times: number): number | null {
       if (times > 10) {
         console.error('[Redis] Max reconnection attempts reached. Giving up.');

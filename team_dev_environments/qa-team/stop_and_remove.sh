@@ -18,6 +18,7 @@ SERVICES=(
   challenge-service realtime-gateway
   language-intelligence-service messaging-service
   synapse adminer
+  # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
 echo "🛑 Stopping and removing QA Team services..."

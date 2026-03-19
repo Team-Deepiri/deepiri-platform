@@ -107,6 +107,9 @@ fi
 if [ ! -d "platform-services/backend/deepiri-external-bridge-service/.git" ]; then
     echo "    ⚠️  WARNING: deepiri-external-bridge-service not found at expected location"
 fi
+if [ ! -d "platform-services/shared/deepiri-prismpipe/.git" ]; then
+    echo "    ⚠️  WARNING: deepiri-prismpipe not found at expected location"
+fi
 echo "    ✅ Verification complete"
 echo ""
 
@@ -130,6 +133,7 @@ echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status"
 echo "  - Update all: git submodule update --remote --recursive"
 echo "  - Sync all: git submodule foreach 'git checkout main && git pull'"
+echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules

@@ -67,8 +67,8 @@ cleanup_invalid_submodule() {
     fi
 }
 
-# Helper function to update submodule while preserving its current branch
-update_submodule_preserve_branch() {
+# Helper function to ensure submodule is on main branch and tracking it
+ensure_submodule_on_main() {
     local submodule_path="$1"
     if [ ! -d "$submodule_path" ]; then
         return 1
@@ -76,71 +76,43 @@ update_submodule_preserve_branch() {
     
     cd "$submodule_path" || return 1
     
-    # Fetch latest changes from all remotes
-    echo "    📥 Fetching latest changes..."
+    # Fetch latest changes
     git fetch origin 2>/dev/null || true
-    git fetch --all 2>/dev/null || true
     
-    # Get current branch or commit
-    local current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
-    local is_detached=false
-    
-    if [ -z "$current_branch" ]; then
-        is_detached=true
-        current_branch=$(git rev-parse --short HEAD 2>/dev/null || echo "detached")
-        echo "    📍 Currently in detached HEAD state at: $current_branch"
-    else
-        echo "    🌿 Current branch: $current_branch"
-    fi
-    
-    # If we're on a branch, try to update it
-    if [ "$is_detached" = false ] && [ -n "$current_branch" ]; then
-        # Check if remote tracking branch exists
-        local remote_branch="origin/$current_branch"
-        if git show-ref --verify --quiet "refs/remotes/$remote_branch" 2>/dev/null; then
-            echo "    🔄 Merging updates from $remote_branch..."
-            
-            # Check for uncommitted changes
-            if ! git diff-index --quiet HEAD -- 2>/dev/null; then
-                echo "    ⚠️  Uncommitted changes detected. Stashing..."
-                git stash push -m "Auto-stash before merge $(date +%Y-%m-%d_%H:%M:%S)" 2>/dev/null || true
-            fi
-            
-            # Try to merge
-            if git merge "$remote_branch" --no-edit 2>/dev/null; then
-                echo "    ✅ Successfully merged updates"
-            else
-                # Check if merge conflict occurred
-                if [ -f ".git/MERGE_HEAD" ]; then
-                    echo "    ⚠️  Merge conflicts detected!"
-                    echo "    💡 Please resolve conflicts manually in: $submodule_path"
-                    echo "    💡 After resolving, run: git add . && git commit"
-                    echo "    💡 To check conflict files: git diff --name-only --diff-filter=U"
-                else
-                    echo "    ⚠️  Merge failed. Current state preserved."
-                fi
-            fi
-            
-            # Restore stashed changes if any
-            if git stash list | grep -q "Auto-stash"; then
-                echo "    🔄 Restoring stashed changes..."
-                git stash pop 2>/dev/null || true
-            fi
+    # Determine which branch to use (main or master)
+    local branch="main"
+    if ! git show-ref --verify --quiet refs/heads/main && git show-ref --verify --quiet refs/remotes/origin/master; then
+        branch="master"
+    elif ! git show-ref --verify --quiet refs/remotes/origin/main; then
+        if git show-ref --verify --quiet refs/remotes/origin/master; then
+            branch="master"
         else
-            echo "    ℹ️  No remote tracking branch found for $current_branch"
-            echo "    💡 Branch exists locally but not on remote"
+            echo "    ⚠️  No main or master branch found, skipping branch checkout"
+            cd "$REPO_ROOT" || return 1
+            return 0
         fi
-        
-        # Set up tracking if not already set and remote branch exists
-        if git show-ref --verify --quiet "refs/remotes/$remote_branch" 2>/dev/null; then
-            if ! git config --get branch."$current_branch".remote > /dev/null 2>&1; then
-                git branch --set-upstream-to="$remote_branch" "$current_branch" 2>/dev/null || true
-            fi
-        fi
-    else
-        echo "    ℹ️  In detached HEAD state - preserving current commit"
-        echo "    💡 To work on a branch, checkout a branch first"
     fi
+    
+    # Check if we're in detached HEAD state
+    if ! git symbolic-ref -q HEAD > /dev/null; then
+        echo "    🔄 Detached HEAD detected, checking out $branch branch..."
+        git checkout -B "$branch" "origin/$branch" 2>/dev/null || git checkout "$branch" 2>/dev/null || true
+    else
+        # Check current branch
+        local current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+        if [ "$current_branch" != "$branch" ]; then
+            echo "    🔄 Currently on '$current_branch', switching to $branch branch..."
+            git checkout "$branch" 2>/dev/null || git checkout -b "$branch" "origin/$branch" 2>/dev/null || true
+        fi
+    fi
+    
+    # Set up tracking if not already set
+    if ! git config --get branch."$branch".remote > /dev/null 2>&1; then
+        git branch --set-upstream-to="origin/$branch" "$branch" 2>/dev/null || true
+    fi
+    
+    # Pull latest changes
+    git pull origin "$branch" 2>/dev/null || true
     
     cd "$REPO_ROOT" || return 1
     return 0
@@ -254,18 +226,31 @@ fi
 echo "    ✅ language-intelligence-service initialized at: $(pwd)/platform-services/backend/deepiri-language-intelligence-service"
 echo ""
 
-# Update to latest while preserving current branches
-echo "🔄 Updating submodules while preserving their current branches..."
-update_submodule_preserve_branch "deepiri-core-api"
-update_submodule_preserve_branch "diri-cyrex"
-update_submodule_preserve_branch "platform-services/backend/deepiri-api-gateway"
-update_submodule_preserve_branch "deepiri-web-frontend"
-update_submodule_preserve_branch "platform-services/backend/deepiri-external-bridge-service"
-update_submodule_preserve_branch "platform-services/backend/deepiri-auth-service"
-update_submodule_preserve_branch "diri-helox"
-update_submodule_preserve_branch "deepiri-modelkit"
-update_submodule_preserve_branch "platform-services/backend/deepiri-language-intelligence-service"
-echo "    ✅ All submodules updated (branches preserved)"
+# deepiri-prismpipe
+echo "  📦 deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline - Team-Deepiri/deepiri-prismpipe)..."
+cleanup_invalid_submodule "platform-services/shared/deepiri-prismpipe"
+git submodule update --init --recursive platform-services/shared/deepiri-prismpipe 2>&1 || true
+if ! check_submodule "platform-services/shared/deepiri-prismpipe"; then
+    echo "    ❌ ERROR: deepiri-prismpipe not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/shared/deepiri-prismpipe"
+    exit 1
+fi
+echo "    ✅ prismpipe initialized at: $(pwd)/platform-services/shared/deepiri-prismpipe"
+echo ""
+
+# Update to latest on main branch
+echo "🔄 Updating submodules to main branch..."
+ensure_submodule_on_main "deepiri-core-api"
+ensure_submodule_on_main "diri-cyrex"
+ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
+ensure_submodule_on_main "deepiri-web-frontend"
+ensure_submodule_on_main "platform-services/backend/deepiri-external-bridge-service"
+ensure_submodule_on_main "platform-services/backend/deepiri-auth-service"
+ensure_submodule_on_main "diri-helox"
+ensure_submodule_on_main "deepiri-modelkit"
+ensure_submodule_on_main "platform-services/backend/deepiri-language-intelligence-service"
+ensure_submodule_on_main "platform-services/shared/deepiri-prismpipe"
+echo "    ✅ All submodules updated to main branch"
 echo ""
 
 # Show status
@@ -280,6 +265,7 @@ git submodule status platform-services/backend/deepiri-auth-service
 git submodule status diri-helox
 git submodule status deepiri-modelkit
 git submodule status platform-services/backend/deepiri-language-intelligence-service
+git submodule status platform-services/shared/deepiri-prismpipe
 echo ""
 
 echo "✅ All submodules ready!"
@@ -294,6 +280,7 @@ echo "  ✅ deepiri-auth-service"
 echo "  ✅ diri-helox"
 echo "  ✅ deepiri-modelkit"
 echo "  ✅ deepiri-language-intelligence-service"
+echo "  ✅ deepiri-prismpipe (PrismPipe)"
 echo ""
 echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status"
@@ -307,5 +294,6 @@ echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-servic
 echo "  - Work in Helox: cd diri-helox"
 echo "  - Work in Model Kit: cd deepiri-modelkit"
 echo "  - Work in Language Intelligence: cd platform-services/backend/deepiri-language-intelligence-service"
+echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo ""
 

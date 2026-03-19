@@ -1,33 +1,24 @@
-# Deepiri 
+# Deepiri Platform
 
 > **NEW TO THE PROJECT?** Start here: [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md)  
 > **FIND YOUR TEAM:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md)  
-> **🌟 Quick Start (All Services):** `python run_dev.py` - Runs full stack with K8s config!
+> **Quick Start (All Services):** Run `team_dev_environments/platform-engineers/start.sh` or use docker compose directly
 
-
-### For New Team Members
-
-1. **Find your roles:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md)
-2. **Follow your team's path:** [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md)
-3. **Git hooks:** Automatically configured on clone (protects main and dev branches)
-
-### Quick Build & Run
+## Quick Start
 
 ```bash
 # 1. Clone the repository
-git clone <deepiri-platform repo>
+git clone git@github.com:Team-Deepiri/deepiri-platform.git
 cd deepiri-platform
 
-# 2. One-time setup
-pip install pyyaml
-touch ops/k8s/secrets/secrets.yaml  # Create empty secrets file (see ops/k8s/secrets/README.md)
+# 2. Initialize submodules
+./team_submodule_commands/platform-engineers/pull_submodules.sh
 
-# 3. Build all services (auto-cleans dangling images)
-./build.sh              # Linux/Mac/WSL
-.\build.ps1             # Windows PowerShell
+# 3. Build all services
+./team_dev_environments/platform-engineers/build.sh
 
-# 4. Start the full stack (with K8s config!)
-python run_dev.py       # 🌟 Recommended - loads k8s configmaps & secrets
+# 4. Start the full stack
+./team_dev_environments/platform-engineers/start.sh
 
 # OR use docker compose directly
 docker compose -f docker-compose.dev.yml up -d
@@ -36,159 +27,126 @@ docker compose -f docker-compose.dev.yml up -d
 # - Frontend: http://localhost:5173
 # - API Gateway: http://localhost:5100
 # - Cyrex AI: http://localhost:8000
-# - Jupyter: http://localhost:8888
+# - Synapse: http://localhost:8002
 # - MLflow: http://localhost:5500
 ```
 
-### Prerequisites
+## Prerequisites
+
 - Docker & Docker Compose
-- WSL2 (Windows only)
+- Git
 - 8GB+ RAM recommended
 
-### Stop All Services
+## Team Development Environments
+
+Each team has its own development environment in `team_dev_environments/`:
+
+| Team | Path | Description |
+|------|------|-------------|
+| Backend | `team_dev_environments/backend-team/` | Backend microservices |
+| AI | `team_dev_environments/ai-team/` | AI/ML services (Cyrex, MLflow) |
+| Frontend | `team_dev_environments/frontend-team/` | Web frontend |
+| ML | `team_dev_environments/ml-team/` | Machine learning pipelines |
+| Infrastructure | `team_dev_environments/infrastructure-team/` | Infrastructure services |
+| Platform | `team_dev_environments/platform-engineers/` | All services |
+| QA | `team_dev_environments/qa-team/` | QA testing environment |
+
+### Team-Specific Setup
 
 ```bash
-docker compose -f docker-compose.dev.yml down
+# Backend Team
+cd team_dev_environments/backend-team
+./build.sh && ./start.sh
+
+# AI Team
+cd team_dev_environments/ai-team
+./build.sh && ./start.sh
+
+# Frontend Team
+cd team_dev_environments/frontend-team
+./build.sh && ./start.sh
 ```
 
-**Pro Tip:** Use `python run_dev.py` instead of `docker compose` - it auto-loads your k8s config!
+## Services
 
-## Documentation
+### Backend Microservices
 
-### Essential Guides
-- **[RUN_DEV_GUIDE.md](RUN_DEV_GUIDE.md)** - 🌟 Run full stack with `python run_dev.py`
-- **[team_dev_environments/QUICK_START.md](team_dev_environments/QUICK_START.md)** - Team-specific environments
-- **[HOW_TO_BUILD.md](HOW_TO_BUILD.md)** - THE definitive build guide
-- **[docs/getting-started/GETTING_STARTED.md](docs/getting-started/GETTING_STARTED.md)** - Complete setup walkthrough
-- **[SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)** - Architecture overview
-
-### Environment Setup
-- **[docs/getting-started/ENVIRONMENT_VARIABLES.md](docs/getting-started/ENVIRONMENT_VARIABLES.md)** - All environment variables (includes k8s config integration)
-- **[docker-compose.dev.yml](docker-compose.dev.yml)** - Development configuration
-- **[ops/k8s/](ops/k8s/)** - Kubernetes configmaps and secrets (also used by Docker Compose)
-
-### Troubleshooting
-- **[scripts/STORAGE-TROUBLESHOOTING.md](scripts/STORAGE-TROUBLESHOOTING.md)** - Disk space issues
-- **[docs/LOG_INSPECTION_GUIDE.md](docs/LOG_INSPECTION_GUIDE.md)** - Debugging logs
-
-### Team-Specific (Find Your Team First!)
-- **👉 Start here:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md) - Find your team and role
-- **👉 Complete setup:** [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md) - Step-by-step getting started guide
-- **[docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md)** - AI/ML development
-- **[docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md)** - Backend services
-- **[docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md)** - Frontend development
-
-## Architecture
-
-### Microservices
-- **API Gateway** (Port 5000) - Routes all requests
-- **Auth Service** (Port 5001) - Authentication & authorization
-- **Task Orchestrator** (Port 5002) - Task management
-- **Engagement Service** (Port 5003) - Gamification
-- **Platform Analytics** (Port 5004) - Analytics
-- **Notification Service** (Port 5005) - Notifications
-- **External Bridge** (Port 5006) - External integrations
-- **Challenge Service** (Port 5007) - Challenges
-- **Realtime Gateway** (Port 5008) - WebSockets
+| Service | Port | Description |
+|---------|------|-------------|
+| API Gateway | 5100 | Main entry point, routes requests to backend services |
+| Auth Service | 5001 | User authentication, JWT tokens, login/register |
+| Task Orchestrator | 5002 | Manages and tracks user tasks and workflows |
+| Engagement Service | 5003 | Gamification: quests, streaks, leaderboards, rewards |
+| Platform Analytics | 5004 | Tracks user events, metrics, and analytics data |
+| Notification Service | 5005 | Push notifications, email notifications |
+| External Bridge | 5006 | Integrates with external APIs and third-party services |
+| Challenge Service | 5007 | User challenges, competitions, achievements |
+| Realtime Gateway | 5008 | WebSocket server for real-time features |
+| Messaging Service | 5009 | In-app messaging, chat functionality |
+| Language Intelligence | 5010 | NLP, text processing, language capabilities |
+| PrismPipe | 5011 | Capability-routed API pipeline - transforms requests through nodes |
 
 ### AI/ML Services
-- **Cyrex** (Port 8000) - AI agent API
-- **Cyrex UI** (Port 5175) - UI for AI agent testing
-- **Jupyter** (Port 8888) - Research notebooks
-- **MLflow** (Port 5500) - Experiment tracking
+
+| Service | Port | Description |
+|---------|------|-------------|
+| Cyrex | 8000 | AI agent service - LLM orchestration, tool calling, agent workflows |
+| Cyrex Interface | 5175 | Web UI for testing and interacting with Cyrex agents |
+| Jupyter | 8888 | Jupyter notebooks for AI research and experimentation |
+| MLflow | 5500 | ML experiment tracking, model registry, metrics |
+| Ollama | 11434 | Local LLM inference runtime |
 
 ### Infrastructure
-- **PostgreSQL** (Port 5432) - Primary database for users, roles, tasks, quests, metadata
-- **Redis** (Port 6380) - Cache & sessions
-- **InfluxDB** (Port 8086) - Time-series analytics
 
-## Quick Reference
+| Service | Port | Description |
+|---------|------|-------------|
+| PostgreSQL | 5432 | Primary database - users, tasks, quests, metadata |
+| Redis | 6379 | In-memory cache, session storage, pub/sub |
+| InfluxDB | 8086 | Time-series database for analytics and metrics |
+| Minio | 9000 | S3-compatible object storage for files |
+| Milvus | 19530 | Vector database for embeddings and AI |
+| pgAdmin | 5050 | PostgreSQL admin web interface |
+| Adminer | 8080 | Database management web interface |
+| Synapse | 8002 | Matrix server for decentralized chat |
+| etcd | 2379 | Distributed key-value store for cluster state |
 
-### Setup Minikube (for Kubernetes/Skaffold builds)
+## Submodule Management
+
+The platform uses git submodules for service repositories. Use the team-specific scripts:
+
 ```bash
-# Check if Minikube is running
-minikube status
+# Pull submodules for a specific team
+./team_submodule_commands/backend-team/pull_submodules.sh
 
-# If not running, start Minikube
-minikube start --driver=docker --cpus=4 --memory=8192
-
-# Configure Docker to use Minikube's Docker daemon
-eval $(minikube docker-env)
+# Update all submodules
+./team_submodule_commands/all_submodules/pull_submodules.sh
 ```
 
-### Build
-```bash
-# Build all services
-docker compose -f docker-compose.dev.yml build
+### Available Submodules
 
-# Or use build script
-./build.sh              # Linux/Mac/WSL
-.\build.ps1             # Windows PowerShell
-```
-
-### When you DO need to build / rebuild
-Only build if:
-1. **Dockerfile changes**
-2. **package.json/requirements.txt changes** (dependencies)
-3. **First time setup**
-
-**Note:** With hot reload enabled, code changes don't require rebuilds - just restart the service!
-
-### Run all services
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-### Stop all services
-```bash
-docker compose -f docker-compose.dev.yml down
-```
-
-### Running only services you need for your team
-
-**🌟 Recommended:** Use Python scripts (professional K8s-like workflow):
-```bash
-cd team_dev_environments/backend-team
-python run.py         # Auto-loads k8s configmaps & secrets!
-```
-
-**Alternative:** Use shell scripts:
-```bash
-cd team_dev_environments/backend-team
-./start.sh            # Linux/Mac
-.\start.ps1           # Windows
-```
-
-**Or use docker compose directly:**
-```bash
-docker compose -f docker-compose.backend-team.yml up -d
-```
-
-**👉 Python scripts are recommended** - they mimic Kubernetes by loading config from `ops/k8s/` automatically. No `.env` files needed!
-
-### Stopping those services
-```bash
-docker compose -f docker-compose.<team_name>-team.yml down
-```
-
-### Logs (All services)
-```bash
-docker compose -f docker-compose.dev.yml logs -f
-```
-
-### Logs (Individual services)
-```bash
-docker compose -f docker-compose.dev.yml logs -f api-gateway
-docker compose -f docker-compose.dev.yml logs -f cyrex
-docker compose -f docker-compose.dev.yml logs -f auth-service
-# ... etc for all services
-```
+- `deepiri-core-api` - Core API
+- `diri-cyrex` - AI/ML service
+- `deepiri-api-gateway` - API Gateway
+- `deepiri-auth-service` - Authentication
+- `deepiri-external-bridge-service` - External integrations
+- `deepiri-web-frontend` - Web frontend
+- `diri-helox` - ML training pipelines
+- `deepiri-modelkit` - Shared contracts
+- `deepiri-language-intelligence-service` - Language processing
+- `platform-services/shared/deepiri-prismpipe` - PrismPipe pipeline
+- `platform-services/shared/deepiri-synapse` - Matrix server
 
 ## Common Commands
 
 ```bash
-# Build specific service
-./build.sh cyrex
+# Build all services
+docker compose -f docker-compose.dev.yml build
+
+# Start all services
+docker compose -f docker-compose.dev.yml up -d
+
+# Stop all services
+docker compose -f docker-compose.dev.yml down
 
 # View logs
 docker compose -f docker-compose.dev.yml logs -f
@@ -196,77 +154,61 @@ docker compose -f docker-compose.dev.yml logs -f
 # View specific service logs
 docker compose -f docker-compose.dev.yml logs -f cyrex
 
-# Check status
-docker compose -f docker-compose.dev.yml ps
-
 # Restart service
 docker compose -f docker-compose.dev.yml restart cyrex
 
-# Clean up disk space
-./scripts/remove-dangling-images.sh        # Linux/Mac/WSL
-.\scripts\remove-dangling-images.ps1       # Windows
+# Check status
+docker compose -f docker-compose.dev.yml ps
 ```
-
-## Development Workflow
-
-### With Hot Reload (Recommended)
-1. Make code changes → **Changes appear immediately** (no rebuild needed!)
-2. Only rebuild when dependencies change (`package.json`/`requirements.txt`)
-3. Check logs: `docker compose -f docker-compose.dev.yml logs -f <service>`
-
-### Without Hot Reload (if needed)
-1. Make code changes
-2. Run `./build.sh <service>` (or `.\build.ps1 <service>`)
-3. Run `docker compose -f docker-compose.dev.yml restart <service>`
-4. Check logs: `docker compose -f docker-compose.dev.yml logs -f <service>`
-
-The build scripts automatically clean up dangling Docker images, so you never get disk space bloat.
 
 ## Project Structure
 
 ```
-deepiri/
-├── deepiri-core-api/          # Legacy monolith (deprecated)
-├── platform-services/         # Microservices
-│   └── backend/
-│       ├── deepiri-api-gateway/
-│       ├── deepiri-auth-service/
-│       ├── deepiri-task-orchestrator/
-│       └── ... (other services)
-├── diri-cyrex/               # AI/ML service
-├── deepiri-web-frontend/     # React frontend
-├── ops/                      # Kubernetes configs
-├── scripts/                  # Utility scripts
-├── docs/                     # Documentation
-├── build.sh / build.ps1      # Build scripts
-└── docker-compose.dev.yml    # Development config
+deepiri-platform/
+├── platform-services/
+│   ├── backend/
+│   │   ├── deepiri-api-gateway/
+│   │   ├── deepiri-auth-service/
+│   │   ├── deepiri-task-orchestrator/
+│   │   ├── deepiri-engagement-service/
+│   │   ├── deepiri-platform-analytics-service/
+│   │   ├── deepiri-notification-service/
+│   │   ├── deepiri-external-bridge-service/
+│   │   ├── deepiri-challenge-service/
+│   │   ├── deepiri-realtime-gateway/
+│   │   ├── deepiri-messaging-service/
+│   │   └── deepiri-language-intelligence-service/
+│   └── shared/
+│       ├── deepiri-prismpipe/      # Capability-routed API pipeline
+│       ├── deepiri-synapse/       # Matrix server
+│       └── deepiri-shared-utils/  # Shared utilities
+├── diri-cyrex/                     # AI/ML service
+├── diri-helox/                     # ML training pipelines
+├── deepiri-web-frontend/          # React frontend
+├── deepiri-modelkit/              # Shared contracts
+├── team_dev_environments/         # Team-specific environments
+├── team_submodule_commands/       # Submodule management scripts
+├── docs/                         # Documentation
+└── docker-compose.dev.yml        # Development configuration
 ```
+
+## Documentation
+
+- [Getting Started](docs/getting-started/START_HERE.md)
+- [Find Your Tasks](docs/getting-started/FIND_YOUR_TASKS.md)
+- [Service Communication](SERVICE_COMMUNICATION_AND_TEAMS.md)
+- [Environment Variables](docs/getting-started/ENVIRONMENT_VARIABLES.md)
+- [Building Services](HOW_TO_BUILD.md)
 
 ## Contributing
 
-1. **Git hooks:** Automatically configured on clone (protects main and dev branches)
-2. Fork the repository
-3. Create a feature branch (NOT from main or dev)
+1. Clone the repository
+2. Initialize submodules for your team
+3. Create a feature branch
 4. Make your changes
-5. Run `./build.sh` to test
-6. Submit a pull request to `staging` (NOT main or dev)
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for complete workflow details.
+5. Build and test
+6. Submit a pull request
 
 ## License
 
 See [LICENSE.md](LICENSE.md)
-
-## Support
-
-- Documentation: See `docs/` directory
-- Issues: Use GitHub issues
-- Architecture: See [SERVICE_COMMUNICATION_AND_TEAMS.md](SERVICE_COMMUNICATION_AND_TEAMS.md)
-
----
-
-**Note:** Old Skaffold-based build docs are archived in `docs/archive/skaffold/` for reference only. Use the Docker Compose workflow documented in [HOW_TO_BUILD.md](HOW_TO_BUILD.md).
-
-
-
-

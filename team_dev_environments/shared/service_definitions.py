@@ -358,6 +358,22 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
         command="sh -c \"cd /shared-utils && rm -rf node_modules/.caniuse-lite* 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps && npm run build && cd /app && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev\""
     ))
     
+    # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
+    # Uncomment when ready to add to AI team services
+    # services.append(get_microservice_config(
+    #     "deepiri-prismpipe",
+    #     f"deepiri-prismpipe-{team_suffix}",
+    #     5011,
+    #     project_root,
+    #     "platform-services/shared/deepiri-prismpipe",
+    #     database_url,
+    #     None,
+    #     None,
+    #     [],
+    #     network_name,
+    #     team_suffix
+    # ))
+    
     return services
 
 
@@ -531,6 +547,22 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         network_name,
         team_suffix
     ))
+    
+    # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
+    # Uncomment when ready to add to backend team services
+    # services.append(get_microservice_config(
+    #     "deepiri-prismpipe",
+    #     f"deepiri-prismpipe-{team_suffix}",
+    #     5011,
+    #     project_root,
+    #     "platform-services/shared/deepiri-prismpipe",
+    #     database_url,
+    #     None,
+    #     None,
+    #     [],
+    #     network_name,
+    #     team_suffix
+    # ))
     
     return services
 

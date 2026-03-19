@@ -110,6 +110,29 @@ services:
     networks:
       - deepiri-dev-network
 
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: deepiri-kafka-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "Mvfv23irSXm93djf5t5WwA"
+    networks:
+      - deepiri-dev-network
+
   # InfluxDB for Time-Series Analytics
   influxdb:
     image: influxdb:2.7
@@ -283,6 +306,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       K8S_SERVICE_NAME: auth-service  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -452,6 +480,10 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      KAFKA_BROKERS: kafka:9092
       K8S_SERVICE_NAME: external-bridge-service  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -468,6 +500,7 @@ services:
     depends_on:
       - postgres
       - synapse
+      - kafka
     networks:
       - deepiri-dev-network
 
@@ -858,6 +891,78 @@ services:
     networks:
       - deepiri-dev-network
 
+  # Persola - Personalized Agentic Framework
+  persola:
+    build:
+      context: ./diri-persola
+      dockerfile: docker/Dockerfile
+    image: deepiri-dev-persola:latest
+    pull_policy: never
+    container_name: deepiri-persola-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      # Server
+      HOST: 0.0.0.0
+      PORT: 8002
+      DEBUG: "true"
+      CORS_ORIGIN: "*"
+      # Database (uses existing cyrex postgres)
+      POSTGRES_HOST: postgres-cyrex
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: cyrex_db
+      POSTGRES_USER: deepiri_cyrex
+      POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      # Model Providers
+      OLLAMA_BASE_URL: http://ollama:11434
+      DEFAULT_MODEL: llama3:8b
+      DEFAULT_PROVIDER: ollama
+      # External APIs
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # Cyrex Integration
+      CYREX_URL: http://cyrex:8000
+      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+    ports:
+      - "8010:8002"
+    volumes:
+      - ./diri-persola:/app
+    command: uvicorn persola.api.main:app --host 0.0.0.0 --port 8002 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - postgres-cyrex
+      - redis
+      - ollama
+      - cyrex
+    networks:
+      - deepiri-dev-network
+
+  # Persola UI - React Frontend
+  persola-ui:
+    build:
+      context: ./diri-persola/ui
+      dockerfile: Dockerfile
+    image: deepiri-dev-persola-ui:latest
+    pull_policy: never
+    container_name: deepiri-persola-ui-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "3000:3000"
+    depends_on:
+      - persola
+    networks:
+      - deepiri-dev-network
+
   # Cyrex-AGI - Commented out for now
   # cyrex-agi:
   #   build:
@@ -1047,6 +1152,23 @@ services:
     depends_on:
       - synapse
       # api-gateway dependency removed - frontend can work without it
+    networks:
+      - deepiri-dev-network
+
+  # PrismPipe - Capability-Routed API Pipeline
+  deepiri-prismpipe:
+    build:
+      context: ./platform-services/shared/deepiri-prismpipe
+      dockerfile: Dockerfile
+    image: deepiri-dev-prismpipe:latest
+    pull_policy: never
+    container_name: deepiri-prismpipe-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5011:5011"
+    environment:
+      PORT: 5011
     networks:
       - deepiri-dev-network
 

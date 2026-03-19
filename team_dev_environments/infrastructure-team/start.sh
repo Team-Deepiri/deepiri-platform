@@ -21,6 +21,7 @@ ALL_SERVICES=(
   challenge-service realtime-gateway
   language-intelligence-service messaging-service
   frontend-dev synapse adminer
+  # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
 SERVICES_TO_START=()
@@ -54,6 +55,13 @@ for service in "${ALL_SERVICES[@]}"; do
         echo "⚠️  Skipping $service (not found)"
       fi
       ;;
+    # deepiri-prismpipe)  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
+    #   if [ -f "platform-services/shared/deepiri-prismpipe/Dockerfile" ]; then
+    #     SERVICES_TO_START+=("$service")
+    #   else
+    #     echo "⚠️  Skipping $service (submodule not initialized)"
+    #   fi
+    #   ;;
     *)
       # For non-submodule services or services without specific Dockerfiles
       SERVICES_TO_START+=("$service")

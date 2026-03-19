@@ -25,6 +25,9 @@
 [submodule "platform-services/backend/deepiri-language-intelligence-service"]
 	path = platform-services/backend/deepiri-language-intelligence-service
 	url = git@github.com:Team-Deepiri/deepiri-language-intelligence-service.git
-[submodule "platform-services/backend/deepiri-realtime-gateway"]
-	path = platform-services/backend/deepiri-realtime-gateway
-	url = git@github.com:Team-Deepiri/deepiri-realtime-gateway.git
+[submodule "diri-persola"]
+	path = diri-persola
+	url = git@github.com:Team-Deepiri/diri-persola.git
+[submodule "platform-services/shared/deepiri-prismpipe"]
+	path = platform-services/shared/deepiri-prismpipe
+	url = git@github.com:Team-Deepiri/deepiri-prismpipe.git
