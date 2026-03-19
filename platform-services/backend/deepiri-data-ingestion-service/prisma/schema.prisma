@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IngestionSourceType {
+  DOCUMENT
+  JSON
+  CSV
+}
+
+enum IngestionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model IngestionRecord {
+  id         String              @id @default(uuid()) @db.Uuid
+  userId     String              @map("user_id") @db.Uuid
+  sourceType IngestionSourceType @map("source_type")
+  status     IngestionStatus     @default(PENDING)
+  metadata   Json?
+  error      String?
+  batchId    String?             @map("batch_id") @db.Uuid
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime            @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  documents      IngestionDocument[]
+  structuredData StructuredDataRecord[]
+  batch          IngestionBatch?        @relation(fields: [batchId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([batchId])
+  @@map("ingestion_records")
+}
+
+model IngestionDocument {
+  id                String          @id @default(uuid()) @db.Uuid
+  ingestionRecordId String          @map("ingestion_record_id") @db.Uuid
+  fileName          String          @map("file_name") @db.VarChar(500)
+  mimeType          String          @map("mime_type") @db.VarChar(200)
+  storagePath       String          @map("storage_path")
+  storageUrl        String?         @map("storage_url")
+  fileSize          Int             @map("file_size")
+  checksum          String?         @db.VarChar(128)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  ingestionRecord IngestionRecord @relation(fields: [ingestionRecordId], references: [id], onDelete: Cascade)
+
+  @@index([ingestionRecordId])
+  @@map("ingestion_documents")
+}
+
+model StructuredDataRecord {
+  id                String          @id @default(uuid()) @db.Uuid
+  ingestionRecordId String          @map("ingestion_record_id") @db.Uuid
+  schemaName        String?         @map("schema_name") @db.VarChar(200)
+  data              Json
+  rowCount          Int?            @map("row_count")
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  ingestionRecord IngestionRecord @relation(fields: [ingestionRecordId], references: [id], onDelete: Cascade)
+
+  @@index([ingestionRecordId])
+  @@index([schemaName])
+  @@map("structured_data_records")
+}
+
+model IngestionBatch {
+  id        String          @id @default(uuid()) @db.Uuid
+  userId    String          @map("user_id") @db.Uuid
+  batchSize Int             @map("batch_size")
+  completed Int             @default(0)
+  failed    Int             @default(0)
+  status    IngestionStatus @default(PENDING)
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime        @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  records IngestionRecord[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("ingestion_batches")
+}

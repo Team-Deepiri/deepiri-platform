@@ -266,6 +266,27 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
+    # Data Ingestion Service
+    services.append(get_microservice_config(
+        "data-ingestion-service",
+        f"deepiri-data-ingestion-service-{team_suffix}",
+        5012,
+        project_root,
+        "platform-services/backend/deepiri-data-ingestion-service",
+        database_url,
+        redis_url,
+        {
+            "SYNAPSE_URL": f"http://deepiri-synapse-{team_suffix}:8002",
+            "S3_ENDPOINT": f"http://deepiri-minio-{team_suffix}:9000",
+            "S3_ACCESS_KEY": env.get("MINIO_ROOT_USER", "minioadmin"),
+            "S3_SECRET_KEY": env.get("MINIO_ROOT_PASSWORD", "minioadmin"),
+            "S3_BUCKET": "ingestion-documents",
+        },
+        ["postgres", "redis"],
+        network_name,
+        team_suffix
+    ))
+    
     return services
 
 

@@ -229,5 +229,6 @@ export const StreamTopics = {
   PLATFORM_EVENTS: 'platform-events',
   AGI_DECISIONS: 'agi-decisions',
   TRAINING_EVENTS: 'training-events',
+  INGESTION_EVENTS: 'ingestion-events',
 } as const;
 

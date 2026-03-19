@@ -41,6 +41,7 @@ BASE_PORTS = {
     "milvus-metrics": 9091,
     "etcd": 2379,
     "deepiri-prismpipe": 5011,
+    "data-ingestion-service": 5012,
 }
 
 # Special ports that should NOT be offset (shared infrastructure)

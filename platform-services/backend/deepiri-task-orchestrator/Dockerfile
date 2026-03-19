@@ -31,7 +31,8 @@ RUN mkdir -p /lib64 \
 # Copy K8s env loader scripts
 COPY --chown=root:root platform-services/shared/scripts/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
 COPY --chown=root:root platform-services/shared/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
 
 # Package files (LOCK FILE INCLUDED)
 COPY platform-services/backend/deepiri-task-orchestrator/package.json ./

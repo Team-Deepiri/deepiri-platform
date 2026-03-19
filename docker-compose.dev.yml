@@ -38,8 +38,6 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deepiri}"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 30s
 
   # pgAdmin - Database Admin UI (optional, can be commented out for production)
   pgadmin:
@@ -257,6 +255,7 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5000
       SYNAPSE_URL: http://synapse:8002
+      DATA_INGESTION_SERVICE_URL: http://data-ingestion-service:5012
       K8S_SERVICE_NAME: api-gateway  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -636,6 +635,49 @@ services:
     networks:
       - deepiri-dev-network
 
+  # Data Ingestion Service - Document & Structured Data Pipeline
+  data-ingestion-service:
+    build:
+      context: .
+      dockerfile: platform-services/backend/deepiri-data-ingestion-service/Dockerfile
+    image: deepiri-dev-data-ingestion-service:latest
+    pull_policy: never
+    container_name: deepiri-data-ingestion-service-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5012:5012"
+    environment:
+      PORT: 5012
+      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SYNAPSE_URL: http://synapse:8002
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET: ingestion-documents
+      K8S_SERVICE_NAME: data-ingestion-service
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-data-ingestion-service/src:/app/src
+      - ./platform-services/backend/deepiri-data-ingestion-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/server.js
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      - postgres
+      - redis
+      - synapse
+    networks:
+      - deepiri-dev-network
+
   # Realtime Gateway Service
   realtime-gateway:
     build:
@@ -892,7 +934,9 @@ services:
       - deepiri-dev-network
 
   # Persola - Personalized Agentic Framework
+  # Profile: cyrex — only active when started with: docker compose --profile cyrex up
   persola:
+    profiles: [cyrex]
     build:
       context: ./diri-persola
       dockerfile: docker/Dockerfile
@@ -948,6 +992,7 @@ services:
 
   # Persola UI - React Frontend
   persola-ui:
+    profiles: [cyrex]
     build:
       context: ./diri-persola/ui
       dockerfile: Dockerfile

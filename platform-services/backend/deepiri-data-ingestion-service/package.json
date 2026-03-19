@@ -1,0 +1,38 @@
+{
+  "name": "deepiri-data-ingestion-service",
+  "version": "1.0.0",
+  "description": "Data Ingestion Service - Document & Structured Data Ingestion Pipeline",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "npx prisma generate && tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/lib-storage": "^3.600.0",
+    "@deepiri/shared-utils": "file:../../shared/deepiri-shared-utils",
+    "@prisma/client": "^5.7.0",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.3.2",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.10.6",
+    "@types/uuid": "^9.0.7",
+    "jest": "^29.7.0",
+    "prisma": "^5.7.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}

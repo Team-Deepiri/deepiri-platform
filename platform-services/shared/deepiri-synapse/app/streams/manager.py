@@ -18,7 +18,8 @@ class StreamManager:
             "inference-events",
             "platform-events",
             "agi-decisions",
-            "training-events"
+            "training-events",
+            "ingestion-events",
         ]
     
     async def ensure_streams_exist(self):
