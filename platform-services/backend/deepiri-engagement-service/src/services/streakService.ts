@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from '../db';
 
 const logger = createLogger('streak-service');
@@ -42,7 +43,7 @@ class StreakService {
       
       return profile;
     } catch (error: any) {
-      logger.error('Error getting streak profile:', error);
+      secureLog('error', 'Error getting streak profile:', error);
       throw error;
     }
   }
@@ -95,7 +96,7 @@ class StreakService {
       
       return updated;
     } catch (error: any) {
-      logger.error('Error updating daily streak:', error);
+      secureLog('error', 'Error updating daily streak:', error);
       throw error;
     }
   }
@@ -149,7 +150,7 @@ class StreakService {
       
       return updated;
     } catch (error: any) {
-      logger.error('Error updating weekly streak:', error);
+      secureLog('error', 'Error updating weekly streak:', error);
       throw error;
     }
   }
@@ -206,7 +207,7 @@ class StreakService {
       
       return updated;
     } catch (error: any) {
-      logger.error('Error updating project streak:', error);
+      secureLog('error', 'Error updating project streak:', error);
       throw error;
     }
   }
@@ -254,7 +255,7 @@ class StreakService {
       
       return updated;
     } catch (error: any) {
-      logger.error('Error updating PR streak:', error);
+      secureLog('error', 'Error updating PR streak:', error);
       throw error;
     }
   }
@@ -313,7 +314,7 @@ class StreakService {
       
       return updated;
     } catch (error: any) {
-      logger.error('Error updating healthy streak:', error);
+      secureLog('error', 'Error updating healthy streak:', error);
       throw error;
     }
   }
@@ -387,7 +388,7 @@ class StreakService {
         }
       });
     } catch (error: any) {
-      logger.error('Error cashing in streak:', error);
+      secureLog('error', 'Error cashing in streak:', error);
       res.status(500).json({ error: 'Failed to cash in streak' });
     }
   }
@@ -450,7 +451,7 @@ class StreakService {
         }
       });
     } catch (error: any) {
-      logger.error('Error getting streaks:', error);
+      secureLog('error', 'Error getting streaks:', error);
       res.status(500).json({ error: 'Failed to get streaks' });
     }
   }
@@ -503,7 +504,7 @@ class StreakService {
         }
       });
     } catch (error: any) {
-      logger.error('Error updating streak:', error);
+      secureLog('error', 'Error updating streak:', error);
       res.status(500).json({ error: 'Failed to update streak' });
     }
   }

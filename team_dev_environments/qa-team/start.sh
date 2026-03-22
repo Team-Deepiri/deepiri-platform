@@ -18,6 +18,7 @@ SERVICES=(
   challenge-service realtime-gateway
   language-intelligence-service messaging-service
   frontend-dev synapse adminer
+  # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
 echo "🚀 Starting QA Team Environment..."

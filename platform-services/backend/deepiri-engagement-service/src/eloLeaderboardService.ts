@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from './db';
 
 const logger = createLogger('elo-leaderboard-service');
@@ -36,7 +37,7 @@ class ELOLeaderboardService {
       );
       res.json(leaderboard);
     } catch (error: any) {
-      logger.error('Error getting leaderboard:', error);
+      secureLog('error', 'Error getting leaderboard:', error);
       res.status(500).json({ error: 'Failed to get leaderboard' });
     }
   }
@@ -58,7 +59,7 @@ class ELOLeaderboardService {
       );
       res.json(updateResult);
     } catch (error: any) {
-      logger.error('Error updating rating:', error);
+      secureLog('error', 'Error updating rating:', error);
       res.status(500).json({ error: 'Failed to update rating' });
     }
   }
@@ -66,7 +67,7 @@ class ELOLeaderboardService {
   private async getOrCreateRating(userId: string, category: Category = 'overall'): Promise<IELORating> {
     try {
       // TODO: Implement with Prisma when ELO Rating model is added
-      logger.warn('ELO rating system not yet migrated to Prisma');
+      secureLog('warn', 'ELO rating system not yet migrated to Prisma');
       return {
         userId,
         category,
@@ -81,7 +82,7 @@ class ELOLeaderboardService {
         lastUpdated: new Date()
       };
     } catch (error) {
-      logger.error('Error getting ELO rating:', error);
+      secureLog('error', 'Error getting ELO rating:', error);
       throw error;
     }
   }
@@ -147,9 +148,9 @@ class ELOLeaderboardService {
       rating2.lastUpdated = new Date();
 
       // TODO: Save with Prisma when ELO Rating model is added
-      logger.warn('ELO rating updates not yet persisted to database');
+      secureLog('warn', 'ELO rating updates not yet persisted to database');
 
-      logger.info('ELO ratings updated', {
+      secureLog('info', 'ELO ratings updated', {
         userId1,
         userId2,
         category,
@@ -170,7 +171,7 @@ class ELOLeaderboardService {
         }
       };
     } catch (error) {
-      logger.error('Error updating ELO ratings:', error);
+      secureLog('error', 'Error updating ELO ratings:', error);
       throw error;
     }
   }
@@ -178,10 +179,10 @@ class ELOLeaderboardService {
   private async getLeaderboardData(category: Category = 'overall', limit: number = 100, offset: number = 0) {
     try {
       // TODO: Implement with Prisma when ELO Rating model is added
-      logger.warn('ELO leaderboard not yet migrated to Prisma');
+      secureLog('warn', 'ELO leaderboard not yet migrated to Prisma');
       return [];
     } catch (error) {
-      logger.error('Error getting leaderboard:', error);
+      secureLog('error', 'Error getting leaderboard:', error);
       throw error;
     }
   }

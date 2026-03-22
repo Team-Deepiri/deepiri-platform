@@ -3,14 +3,8 @@
  * Subscribes to platform-events and inference-events streams
  */
 import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import winston from 'winston';
+import { secureLog } from '@deepiri/shared-utils';
 import { Server } from 'socket.io';
-
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [new winston.transports.Console({ format: winston.format.simple() })]
-});
 
 let streamingClient: StreamingClient | null = null;
 let isConsuming = false;
@@ -22,7 +16,7 @@ let io: Server | null = null;
 export async function startEventConsumption(socketIO: Server): Promise<void> {
   io = socketIO;
   if (isConsuming) {
-    logger.warn('Event consumption already started');
+    secureLog('warn', 'Event consumption already started');
     return;
   }
 
@@ -34,22 +28,22 @@ export async function startEventConsumption(socketIO: Server): Promise<void> {
     );
 
     await streamingClient.connect();
-    logger.info('[Notification] Connected to Redis Streams');
+    secureLog('info', '[Notification] Connected to Redis Streams');
 
     // Start consuming platform events
     consumePlatformEvents().catch((err) => {
-      logger.error('[Notification] Platform events consumption error:', err);
+      secureLog('error', '[Notification] Platform events consumption error:', err);
     });
 
     // Start consuming inference events (for error notifications)
     consumeInferenceEvents().catch((err) => {
-      logger.error('[Notification] Inference events consumption error:', err);
+      secureLog('error', '[Notification] Inference events consumption error:', err);
     });
 
     isConsuming = true;
-    logger.info('[Notification] Event consumption started');
+    secureLog('info', '[Notification] Event consumption started');
   } catch (error) {
-    logger.error('[Notification] Failed to start event consumption:', error);
+    secureLog('error', '[Notification] Failed to start event consumption:', error);
     throw error;
   }
 }
@@ -66,7 +60,7 @@ async function consumePlatformEvents(): Promise<void> {
     StreamTopics.PLATFORM_EVENTS,
     async (event: StreamEvent) => {
       try {
-        logger.info(`[Notification] Received platform event: ${event.event}`, {
+        secureLog('info', `[Notification] Received platform event: ${event.event}`, {
           service: event.service,
           user_id: event.user_id
         });
@@ -109,9 +103,9 @@ async function consumePlatformEvents(): Promise<void> {
           }
         }
 
-        logger.info('[Notification] Platform event processed');
+        secureLog('info', '[Notification] Platform event processed');
       } catch (error) {
-        logger.error('[Notification] Error processing platform event:', error);
+        secureLog('error', '[Notification] Error processing platform event:', error);
       }
     },
     {
@@ -136,7 +130,7 @@ async function consumeInferenceEvents(): Promise<void> {
       try {
         // Only notify on failures
         if (event.success === false && event.user_id && io) {
-          logger.info(`[Notification] Inference failed for user: ${event.user_id}`);
+          secureLog('info', `[Notification] Inference failed for user: ${event.user_id}`);
           
           io.to(`user_${event.user_id}`).emit('notification', {
             type: 'inference-failed',
@@ -149,7 +143,7 @@ async function consumeInferenceEvents(): Promise<void> {
           });
         }
       } catch (error) {
-        logger.error('[Notification] Error processing inference event:', error);
+        secureLog('error', '[Notification] Error processing inference event:', error);
       }
     },
     {
@@ -168,7 +162,7 @@ export async function stopEventConsumption(): Promise<void> {
     await streamingClient.disconnect();
     streamingClient = null;
     isConsuming = false;
-    logger.info('[Notification] Event consumption stopped');
+    secureLog('info', '[Notification] Event consumption stopped');
   }
 }
 

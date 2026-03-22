@@ -149,7 +149,7 @@ const authenticateJWT = async (req: Request, res: Response, next: NextFunction):
     next();
 
   } catch (error: any) {
-    logger.error('JWT authentication error:', {
+    secureLog('error', 'JWT authentication error:', {
       error: error.message,
       name: error.name,
       ip: req.ip,
@@ -250,7 +250,7 @@ async def validate_jwt_token(self, token: str) -> Optional[AuthToken]:
         logger.warning(f"Invalid JWT token: {e}")
         return None
     except Exception as e:
-        logger.error(f"JWT validation error: {e}")
+        secureLog('error', f"JWT validation error: {e}")
         return None
 ```
 
@@ -269,7 +269,7 @@ async def validate_jwt_token(self, token: str) -> Optional[AuthToken]:
 // Create token revocation service
 // File: src/services/tokenRevocationService.ts
 import Redis from 'ioredis';
-import logger from '../utils/logger';
+import { secureLog } from '../utils/secureLogger';
 
 class TokenRevocationService {
   private redis: Redis;
@@ -282,7 +282,7 @@ class TokenRevocationService {
   async revokeToken(tokenId: string, expiresIn: number): Promise<void> {
     const key = `${this.prefix}${tokenId}`;
     await this.redis.setex(key, expiresIn, '1');
-    logger.info(`Token revoked: ${tokenId}`);
+    secureLog('info', `Token revoked: ${tokenId}`);
   }
 
   async isTokenRevoked(tokenId: string): Promise<boolean> {
@@ -595,7 +595,7 @@ export function secureLog(level: 'info' | 'warn' | 'error', message: string, dat
 import { secureLog } from '../utils/secureLogger';
 
 // Instead of:
-// logger.error('Auth error', { token, secret, user });
+// secureLog('error', 'Auth error', { token, secret, user });
 
 // Use:
 secureLog('error', 'Auth error', { token, secret, user });
@@ -621,7 +621,7 @@ secureLog('error', 'Auth error', { token, secret, user });
 // File: src/middleware/inputValidation.ts
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
-import logger from '../utils/logger';
+import { secureLog } from '../utils/secureLogger';
 
 // Common validation rules
 export const commonValidations = {
@@ -678,7 +678,7 @@ export const validate = (validations: ValidationChain[]) => {
     if (!errors.isEmpty()) {
       const requestId = (req as any).requestId || 'unknown';
       
-      logger.warn('Validation failed', {
+      secureLog('warn', 'Validation failed', {
         requestId,
         path: req.path,
         method: req.method,
@@ -1115,7 +1115,7 @@ async def _db_query(
             metadata={"row_count": len(result)},
         )
     except Exception as e:
-        logger.error(f"Database query error: {e}")
+        secureLog('error', f"Database query error: {e}")
         return ToolResult(success=False, error="Database query failed")
 ```
 
@@ -1419,7 +1419,7 @@ if (process.env.NODE_ENV === 'development') {
 ```typescript
 // File: src/middleware/secureErrorHandler.ts
 import { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger';
+import { secureLog } from '../utils/secureLogger';
 
 interface AppError extends Error {
   statusCode?: number;
@@ -1457,7 +1457,7 @@ export const secureErrorHandler = (
   const isDevelopment = process.env.NODE_ENV === 'development';
   
   // Log full error details (server-side only)
-  logger.error('Request error', {
+  secureLog('error', 'Request error', {
     requestId,
     method: req.method,
     path: req.url,
@@ -1703,7 +1703,7 @@ export const rateLimiters = {
       return email ? `auth:${email}` : `auth:${req.ip}`;
     },
     handler: (req: Request, res: Response) => {
-      logger.warn('Rate limit exceeded - auth', {
+      secureLog('warn', 'Rate limit exceeded - auth', {
         ip: req.ip,
         email: req.body?.email,
         path: req.path,
@@ -2593,7 +2593,7 @@ try {
 ```typescript
 // File: src/middleware/authorization.ts
 import { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger';
+import { secureLog } from '../utils/secureLogger';
 
 /**
  * Verify user owns the resource they're accessing
@@ -2629,7 +2629,7 @@ export const verifyOwnership = (resourceModel: any, resourceIdParam: string = 'i
       // Check ownership
       const ownerId = resource.userId || resource.user || resource.owner;
       if (ownerId.toString() !== user.userId.toString()) {
-        logger.warn('Unauthorized resource access attempt', {
+        secureLog('warn', 'Unauthorized resource access attempt', {
           userId: user.userId,
           resourceId,
           resourceType: resourceModel.modelName,
@@ -2646,7 +2646,7 @@ export const verifyOwnership = (resourceModel: any, resourceIdParam: string = 'i
       (req as any).resource = resource;
       next();
     } catch (error: any) {
-      logger.error('Ownership verification error', { error: error.message });
+      secureLog('error', 'Ownership verification error', { error: error.message });
       res.status(500).json({
         success: false,
         message: 'Internal server error',
@@ -2673,7 +2673,7 @@ export const requireRole = (...roles: string[]) => {
     const hasRole = roles.some(role => userRoles.includes(role));
     
     if (!hasRole) {
-      logger.warn('Insufficient permissions', {
+      secureLog('warn', 'Insufficient permissions', {
         userId: user.userId,
         requiredRoles: roles,
         userRoles,

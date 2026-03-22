@@ -1513,7 +1513,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def log_request(prompt, response, latency):
-    logger.info({
+    secureLog('info', {
         "prompt": prompt,
         "response": response,
         "latency": latency

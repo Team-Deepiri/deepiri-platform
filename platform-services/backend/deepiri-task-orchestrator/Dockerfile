@@ -13,8 +13,9 @@ RUN npm config set fetch-retries 5 \
  && npm config set fetch-retry-mintimeout 20000 \
  && npm config set fetch-retry-maxtimeout 120000 \
  && npm config set fetch-timeout 300000 \
- && npm install --legacy-peer-deps \
- && npm run build
+ && npm ci \
+ && npm run build \
+ && npm pack
 
 # ===============================
 # Build task-orchestrator
@@ -50,14 +51,14 @@ COPY backend/deepiri-task-orchestrator/package-lock.json ./
 COPY backend/deepiri-task-orchestrator/tsconfig.json ./
 
 # Copy shared-utils
-COPY --from=shared-utils-builder /shared-utils /shared-utils
+COPY --from=shared-utils-builder /shared-utils/deepiri-shared-utils-1.0.0.tgz /shared-utils.tgz
 
 # SINGLE atomic dependency install
 RUN npm config set fetch-retries 5 \
  && npm config set fetch-retry-mintimeout 20000 \
  && npm config set fetch-retry-maxtimeout 120000 \
  && npm config set fetch-timeout 300000 \
- && npm install --legacy-peer-deps file:/shared-utils \
+ && npm install /shared-utils.tgz \
  && npm cache clean --force
 
 # Source + Prisma schema

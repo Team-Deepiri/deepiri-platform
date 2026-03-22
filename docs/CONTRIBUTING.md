@@ -324,7 +324,7 @@ async function createTask(userId, taskData) {
     });
     return await task.save();
   } catch (error) {
-    logger.error('Error creating task:', error);
+    secureLog('error', 'Error creating task:', error);
     throw error;
   }
 }

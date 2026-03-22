@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from '../db';
 import { ISeason } from '../models/Season';
 
@@ -76,7 +77,7 @@ class SeasonService {
       
       return this.seasonToInterface(season);
     } catch (error: any) {
-      logger.error('Error creating season:', error);
+      secureLog('error', 'Error creating season:', error);
       throw error;
     }
   }
@@ -106,7 +107,7 @@ class SeasonService {
 
       return this.seasonToInterface(season);
     } catch (error: any) {
-      logger.error('Error adding odyssey to season:', error);
+      secureLog('error', 'Error adding odyssey to season:', error);
       throw error;
     }
   }
@@ -146,7 +147,7 @@ class SeasonService {
 
       return this.seasonToInterface(season);
     } catch (error: any) {
-      logger.error('Error enabling season boost:', error);
+      secureLog('error', 'Error enabling season boost:', error);
       throw error;
     }
   }
@@ -235,7 +236,7 @@ class SeasonService {
 
       return seasonInterface;
     } catch (error: any) {
-      logger.error('Error generating highlights:', error);
+      secureLog('error', 'Error generating highlights:', error);
       throw error;
     }
   }
@@ -267,7 +268,7 @@ class SeasonService {
         data: season
       });
     } catch (error: any) {
-      logger.error('Error creating season:', error);
+      secureLog('error', 'Error creating season:', error);
       res.status(500).json({ error: 'Failed to create season' });
     }
   }
@@ -304,7 +305,7 @@ class SeasonService {
         data: seasonInterfaces
       });
     } catch (error: any) {
-      logger.error('Error getting seasons:', error);
+      secureLog('error', 'Error getting seasons:', error);
       res.status(500).json({ error: 'Failed to get seasons' });
     }
   }
@@ -334,7 +335,7 @@ class SeasonService {
         data: this.seasonToInterface(season)
       });
     } catch (error: any) {
-      logger.error('Error getting season:', error);
+      secureLog('error', 'Error getting season:', error);
       res.status(500).json({ error: 'Failed to get season' });
     }
   }
@@ -359,7 +360,7 @@ class SeasonService {
         data: season
       });
     } catch (error: any) {
-      logger.error('Error adding odyssey:', error);
+      secureLog('error', 'Error adding odyssey:', error);
       res.status(400).json({ error: error.message || 'Failed to add odyssey' });
     }
   }
@@ -384,7 +385,7 @@ class SeasonService {
         data: season
       });
     } catch (error: any) {
-      logger.error('Error enabling season boost:', error);
+      secureLog('error', 'Error enabling season boost:', error);
       res.status(400).json({ error: error.message || 'Failed to enable season boost' });
     }
   }
@@ -403,7 +404,7 @@ class SeasonService {
         data: season
       });
     } catch (error: any) {
-      logger.error('Error generating highlights:', error);
+      secureLog('error', 'Error generating highlights:', error);
       res.status(400).json({ error: error.message || 'Failed to generate highlights' });
     }
   }

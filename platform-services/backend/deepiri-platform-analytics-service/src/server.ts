@@ -3,23 +3,19 @@ import express, { Express, Request, Response, ErrorRequestHandler } from 'expres
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import winston from 'winston';
+import { secureLog } from '@deepiri/shared-utils';
 import routes from './index';
+import { validateBodyIfPresent } from './middleware/inputValidation';
 
 dotenv.config();
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '5004', 10);
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [new winston.transports.Console({ format: winston.format.simple() })]
-});
-
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+app.use(validateBodyIfPresent());
 
 // PostgreSQL connection via Prisma (if needed for analytics metadata)
 // Primary analytics data stored in InfluxDB
@@ -31,7 +27,7 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/', routes);
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  logger.error('Platform Analytics Service error:', err);
+  secureLog('error', 'Platform Analytics Service error:', err);
   res.status(500).json({ error: 'Internal server error' });
 };
 app.use(errorHandler);
@@ -40,11 +36,11 @@ app.use(errorHandler);
 import { startEventConsumption } from './streaming/eventConsumer';
 
 startEventConsumption().catch((err) => {
-  logger.error('Failed to start event consumption:', err);
+  secureLog('error', 'Failed to start event consumption:', err);
 });
 
 app.listen(PORT, () => {
-  logger.info(`Platform Analytics Service running on port ${PORT}`);
+  secureLog('info', `Platform Analytics Service running on port ${PORT}`);
 });
 
 export default app;

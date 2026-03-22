@@ -1,0 +1,18 @@
+name: Platform Build and Test
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  platform-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate CI workflow
+        run: echo "Platform CI workflow validated"

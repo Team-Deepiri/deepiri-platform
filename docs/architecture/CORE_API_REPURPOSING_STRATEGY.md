@@ -766,7 +766,7 @@ async compose(req: Request, composition: CompositionRequest): Promise<any> {
   const startTime = Date.now();
   const requestId = req.headers['x-request-id'] as string || 'unknown';
 
-  logger.info('Composition started', {
+  secureLog('info', 'Composition started', {
     requestId,
     services: composition.services,
     method: composition.method
@@ -775,7 +775,7 @@ async compose(req: Request, composition: CompositionRequest): Promise<any> {
   try {
     const result = await this.composeInternal(req, composition);
     
-    logger.info('Composition completed', {
+    secureLog('info', 'Composition completed', {
       requestId,
       duration: Date.now() - startTime,
       success: result.success,
@@ -784,7 +784,7 @@ async compose(req: Request, composition: CompositionRequest): Promise<any> {
 
     return result;
   } catch (error: any) {
-    logger.error('Composition failed', {
+    secureLog('error', 'Composition failed', {
       requestId,
       error: error.message,
       duration: Date.now() - startTime
@@ -1856,7 +1856,7 @@ export interface PolicyAuditLog {
 
 export class AuditLogger {
   logPolicyEvaluation(log: PolicyAuditLog): void {
-    logger.info('Policy evaluation', {
+    secureLog('info', 'Policy evaluation', {
       userId: log.userId,
       resourceType: log.resourceType,
       action: log.action,
@@ -1871,7 +1871,7 @@ export class AuditLogger {
   }
 
   logAccessGranted(userId: string, resourceType: string, action: string): void {
-    logger.info('Access granted', {
+    secureLog('info', 'Access granted', {
       userId,
       resourceType,
       action,
@@ -1880,7 +1880,7 @@ export class AuditLogger {
   }
 
   logAccessDenied(userId: string, resourceType: string, action: string, reason: string): void {
-    logger.warn('Access denied', {
+    secureLog('warn', 'Access denied', {
       userId,
       resourceType,
       action,

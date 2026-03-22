@@ -150,7 +150,7 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env.PORT || 5010;
 app.listen(PORT, () => {
-  logger.info(`Sovereignty Enforcement Service started on port ${PORT}`);
+  secureLog('info', `Sovereignty Enforcement Service started on port ${PORT}`);
 });
 ```
 

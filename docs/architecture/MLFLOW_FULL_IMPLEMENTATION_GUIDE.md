@@ -635,7 +635,7 @@ class MLflowRegistryClient:
         )
         mlflow.set_tracking_uri(self.tracking_uri)
         self.client = MlflowClient(tracking_uri=self.tracking_uri)
-        logger.info(f"Initialized MLflow client with URI: {self.tracking_uri}")
+        secureLog('info', f"Initialized MLflow client with URI: {self.tracking_uri}")
     
     def register_model(
         self,
@@ -671,7 +671,7 @@ class MLflowRegistryClient:
                         value=str(value)
                     )
             
-            logger.info(
+            secureLog('info', 
                 f"Registered model '{model_name}' version {model_version.version}"
             )
             
@@ -684,7 +684,7 @@ class MLflowRegistryClient:
             }
             
         except MlflowException as e:
-            logger.error(f"Failed to register model: {e}")
+            secureLog('error', f"Failed to register model: {e}")
             raise
     
     def get_model_version(
@@ -734,7 +734,7 @@ class MLflowRegistryClient:
             }
             
         except (MlflowException, IndexError) as e:
-            logger.error(f"Failed to get model version: {e}")
+            secureLog('error', f"Failed to get model version: {e}")
             raise
     
     def list_model_versions(
@@ -766,7 +766,7 @@ class MLflowRegistryClient:
             ]
             
         except MlflowException as e:
-            logger.error(f"Failed to list model versions: {e}")
+            secureLog('error', f"Failed to list model versions: {e}")
             raise
     
     def transition_model_stage(
@@ -809,14 +809,14 @@ class MLflowRegistryClient:
                 stage=stage
             )
             
-            logger.info(
+            secureLog('info', 
                 f"Transitioned {model_name} v{version} to {stage}"
             )
             
             return self.get_model_version(model_name, version=version)
             
         except MlflowException as e:
-            logger.error(f"Failed to transition model stage: {e}")
+            secureLog('error', f"Failed to transition model stage: {e}")
             raise
     
     def load_model(
@@ -869,7 +869,7 @@ class MLflowRegistryClient:
             return mlflow.pyfunc.load_model(model_uri)
             
         except MlflowException as e:
-            logger.error(f"Failed to load model: {e}")
+            secureLog('error', f"Failed to load model: {e}")
             raise
     
     def delete_model_version(
@@ -892,11 +892,11 @@ class MLflowRegistryClient:
                 name=model_name,
                 version=str(version)
             )
-            logger.info(f"Deleted {model_name} v{version}")
+            secureLog('info', f"Deleted {model_name} v{version}")
             return True
             
         except MlflowException as e:
-            logger.error(f"Failed to delete model version: {e}")
+            secureLog('error', f"Failed to delete model version: {e}")
             raise
 ```
 
@@ -968,7 +968,7 @@ class ModelService:
             tags=all_tags
         )
         
-        logger.info(
+        secureLog('info', 
             f"Registered model '{model_name}' v{result['version']} from run {run_id}"
         )
         
@@ -1369,7 +1369,7 @@ class ApprovalWorkflow:
         
         self.pending_approvals[request_id] = approval_request
         
-        logger.info(
+        secureLog('info', 
             f"Staging promotion requested: {model_name} v{version} by {requested_by}"
         )
         
@@ -1425,7 +1425,7 @@ class ApprovalWorkflow:
         
         self.pending_approvals[request_id] = approval_request
         
-        logger.info(
+        secureLog('info', 
             f"Production promotion requested: {model_name} v{version} by {requested_by}"
         )
         
@@ -1485,7 +1485,7 @@ class ApprovalWorkflow:
             request["approved_by"] = approved_by
             request["approved_at"] = datetime.utcnow().isoformat()
             
-            logger.info(
+            secureLog('info', 
                 f"Promotion approved and executed: {request_id} by {approved_by}"
             )
         
@@ -1517,7 +1517,7 @@ class ApprovalWorkflow:
         request["rejection_reason"] = reason
         request["rejected_at"] = datetime.utcnow().isoformat()
         
-        logger.info(f"Promotion rejected: {request_id} by {rejected_by}")
+        secureLog('info', f"Promotion rejected: {request_id} by {rejected_by}")
         
         return request
 ```
@@ -1576,7 +1576,7 @@ class TrainingIntegration:
         mlflow.set_experiment(experiment_name)
         self.run = mlflow.start_run(run_name=run_name, tags=tags)
         self.current_run_id = self.run.info.run_id
-        logger.info(f"Started training run: {self.current_run_id}")
+        secureLog('info', f"Started training run: {self.current_run_id}")
         return self.run
     
     def log_training_metrics(
@@ -1646,7 +1646,7 @@ class TrainingIntegration:
             )
             result["stage"] = "Staging"
         
-        logger.info(
+        secureLog('info', 
             f"Registered trained model: {model_name} v{result['version']}"
         )
         
@@ -1819,11 +1819,11 @@ class ModelLoader:
             if use_cache:
                 self.model_cache[cache_key] = model
             
-            logger.info(f"Loaded production model: {model_name}")
+            secureLog('info', f"Loaded production model: {model_name}")
             return model
             
         except Exception as e:
-            logger.error(f"Failed to load production model {model_name}: {e}")
+            secureLog('error', f"Failed to load production model {model_name}: {e}")
             raise
     
     def load_staging_model(
@@ -1844,11 +1844,11 @@ class ModelLoader:
                 model_name=model_name,
                 stage="Staging"
             )
-            logger.info(f"Loaded staging model: {model_name}")
+            secureLog('info', f"Loaded staging model: {model_name}")
             return model
             
         except Exception as e:
-            logger.error(f"Failed to load staging model {model_name}: {e}")
+            secureLog('error', f"Failed to load staging model {model_name}: {e}")
             raise
     
     def load_specific_version(
@@ -1871,11 +1871,11 @@ class ModelLoader:
                 model_name=model_name,
                 version=version
             )
-            logger.info(f"Loaded {model_name} v{version}")
+            secureLog('info', f"Loaded {model_name} v{version}")
             return model
             
         except Exception as e:
-            logger.error(f"Failed to load {model_name} v{version}: {e}")
+            secureLog('error', f"Failed to load {model_name} v{version}: {e}")
             raise
     
     def reload_production_model(
@@ -1900,7 +1900,7 @@ class ModelLoader:
     def clear_cache(self):
         """Clear the model cache."""
         self.model_cache.clear()
-        logger.info("Model cache cleared")
+        secureLog('info', "Model cache cleared")
 ```
 
 ### Step 7.2: Create Prediction Service
@@ -1985,7 +1985,7 @@ class PredictionService:
             return result
             
         except Exception as e:
-            logger.error(f"Prediction failed for {model_name}: {e}")
+            secureLog('error', f"Prediction failed for {model_name}: {e}")
             return {
                 "model_name": model_name,
                 "status": "error",
@@ -2024,7 +2024,7 @@ class PredictionService:
             }
             
         except Exception as e:
-            logger.error(f"Batch prediction failed for {model_name}: {e}")
+            secureLog('error', f"Batch prediction failed for {model_name}: {e}")
             return {
                 "model_name": model_name,
                 "status": "error",

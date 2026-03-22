@@ -69,7 +69,13 @@ async def startup():
     global redis_client, stream_manager, metrics_collector
     redis_host = os.getenv("REDIS_HOST", "redis")
     redis_port = int(os.getenv("REDIS_PORT", "6379"))
-    redis_password = os.getenv("REDIS_PASSWORD", "redispassword")
+    redis_password = os.getenv("REDIS_PASSWORD")
+
+    if not redis_password:
+        logger.warning(
+            "REDIS_PASSWORD not set - connecting without authentication. "
+            "This is acceptable for development but NOT for production."
+        )
     
     logger.info(f"Connecting to Redis at {redis_host}:{redis_port}...")
     

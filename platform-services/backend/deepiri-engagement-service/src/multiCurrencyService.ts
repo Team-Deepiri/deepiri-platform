@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from './db';
 
 const logger = createLogger('multi-currency-service');
@@ -63,7 +64,7 @@ class MultiCurrencyService {
       );
       res.json(result);
     } catch (error: any) {
-      logger.error('Error awarding points:', error);
+      secureLog('error', 'Error awarding points:', error);
       res.status(500).json({ error: error.message || 'Failed to award points' });
     }
   }
@@ -74,7 +75,7 @@ class MultiCurrencyService {
       const balance = await this.getBalanceForUser(userId);
       res.json(balance);
     } catch (error: any) {
-      logger.error('Error getting balance:', error);
+      secureLog('error', 'Error getting balance:', error);
       res.status(500).json({ error: 'Failed to get balance' });
     }
   }
@@ -82,7 +83,7 @@ class MultiCurrencyService {
   private async getOrCreateBalance(userId: string): Promise<ICurrencyBalance> {
     try {
       // TODO: Implement with Prisma when CurrencyBalance model is added
-      logger.warn('Currency balance system not yet migrated to Prisma');
+      secureLog('warn', 'Currency balance system not yet migrated to Prisma');
       return {
         userId,
         currencies: { xp: 0, coins: 0, gems: 0, energy: 100, tokens: 0, stars: 0 },
@@ -90,7 +91,7 @@ class MultiCurrencyService {
         lastUpdated: new Date()
       };
     } catch (error) {
-      logger.error('Error getting currency balance:', error);
+      secureLog('error', 'Error getting currency balance:', error);
       throw error;
     }
   }
@@ -105,14 +106,14 @@ class MultiCurrencyService {
   ) {
     try {
       // TODO: Implement with Prisma when CurrencyBalance/CurrencyTransaction models are added
-      logger.warn('Currency system not yet migrated to Prisma');
+      secureLog('warn', 'Currency system not yet migrated to Prisma');
       return {
         currencyType,
         newBalance: 0,
         totalEarned: 0
       };
     } catch (error) {
-      logger.error('Error awarding currency:', error);
+      secureLog('error', 'Error awarding currency:', error);
       throw error;
     }
   }
@@ -120,14 +121,14 @@ class MultiCurrencyService {
   private async spendCurrency(userId: string, currencyType: CurrencyType, amount: number, description: string | null = null) {
     try {
       // TODO: Implement with Prisma when CurrencyBalance/CurrencyTransaction models are added
-      logger.warn('Currency system not yet migrated to Prisma');
+      secureLog('warn', 'Currency system not yet migrated to Prisma');
       return {
         currencyType,
         newBalance: 0,
         spent: amount
       };
     } catch (error) {
-      logger.error('Error spending currency:', error);
+      secureLog('error', 'Error spending currency:', error);
       throw error;
     }
   }
@@ -137,7 +138,7 @@ class MultiCurrencyService {
       const balance = await this.getOrCreateBalance(userId);
       return balance.currencies;
     } catch (error) {
-      logger.error('Error getting balance:', error);
+      secureLog('error', 'Error getting balance:', error);
       throw error;
     }
   }

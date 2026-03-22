@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 
 const logger = createLogger('predictive-modeling');
 
@@ -26,7 +27,7 @@ class PredictiveModelingService {
 
       res.json(result);
     } catch (error: any) {
-      logger.error('Error in forecast:', error);
+      secureLog('error', 'Error in forecast:', error);
       res.status(500).json({ error: 'Forecast failed' });
     }
   }
@@ -37,7 +38,7 @@ class PredictiveModelingService {
       // Placeholder - would generate personalized recommendations
       res.json({ userId, recommendations: [] });
     } catch (error: any) {
-      logger.error('Error getting recommendations:', error);
+      secureLog('error', 'Error getting recommendations:', error);
       res.status(500).json({ error: 'Failed to get recommendations' });
     }
   }
@@ -62,7 +63,7 @@ class PredictiveModelingService {
         confidenceInterval: this._calculateConfidenceInterval(forecast)
       };
     } catch (error) {
-      logger.error('Error in Prophet forecast:', error);
+      secureLog('error', 'Error in Prophet forecast:', error);
       throw error;
     }
   }
@@ -85,7 +86,7 @@ class PredictiveModelingService {
         modelType: 'lstm_simplified'
       };
     } catch (error) {
-      logger.error('Error in LSTM prediction:', error);
+      secureLog('error', 'Error in LSTM prediction:', error);
       throw error;
     }
   }

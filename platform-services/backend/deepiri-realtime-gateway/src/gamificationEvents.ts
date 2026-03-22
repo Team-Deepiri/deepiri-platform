@@ -1,11 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import winston from 'winston';
-
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [new winston.transports.Console({ format: winston.format.simple() })]
-});
+import { secureLog } from '@deepiri/shared-utils';
 
 export interface GamificationEventData {
   userId: string;
@@ -145,7 +139,7 @@ export class GamificationEventEmitter {
   private emitToUser(userId: string, eventData: GamificationEventData): void {
     const room = `user:${userId}`;
     this.io.to(room).emit('gamification:event', eventData);
-    logger.info(`Gamification event emitted to ${userId}`, { type: eventData.type });
+    secureLog('info', `Gamification event emitted to ${userId}`, { type: eventData.type });
   }
 
   /**
@@ -154,7 +148,7 @@ export class GamificationEventEmitter {
   emitToOrganization(organizationId: string, eventData: GamificationEventData): void {
     const room = `org:${organizationId}`;
     this.io.to(room).emit('gamification:event', eventData);
-    logger.info(`Gamification event emitted to organization ${organizationId}`, { type: eventData.type });
+    secureLog('info', `Gamification event emitted to organization ${organizationId}`, { type: eventData.type });
   }
 }
 
@@ -168,7 +162,7 @@ export function setupGamificationEvents(io: Server): GamificationEventEmitter {
     if (userId) {
       // Join user's personal room
       socket.join(`user:${userId}`);
-      logger.info(`User ${userId} joined gamification room`);
+      secureLog('info', `User ${userId} joined gamification room`);
 
       // Join organization room if applicable
       const organizationId = (socket as any).organizationId;
@@ -179,7 +173,7 @@ export function setupGamificationEvents(io: Server): GamificationEventEmitter {
 
     socket.on('disconnect', () => {
       if (userId) {
-        logger.info(`User ${userId} left gamification room`);
+        secureLog('info', `User ${userId} left gamification room`);
       }
     });
   });

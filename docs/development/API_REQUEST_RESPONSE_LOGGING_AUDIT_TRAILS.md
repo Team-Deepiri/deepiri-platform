@@ -496,7 +496,7 @@ export default logger;
 #### Step 3: Use Logger in Middleware
 
 ```typescript
-import logger from './utils/logger';
+import { secureLog } from './utils/secureLogger';
 
 app.use((req, res, next) => {
   const requestId = uuidv4();
@@ -508,7 +508,7 @@ app.use((req, res, next) => {
   res.on('finish', () => {
     const duration = Date.now() - start;
     
-    logger.info('API Request', {
+    secureLog('info', 'API Request', {
       requestId,
       method: req.method,
       path: req.path,
@@ -549,7 +549,7 @@ app.use((req, res, next) => {
   const start = Date.now();
   
   // Log request (be careful with sensitive data)
-  logger.info('Request received', {
+  secureLog('info', 'Request received', {
     requestId,
     method: req.method,
     path: req.path,
@@ -691,7 +691,7 @@ const correlationId = `order-${Date.now()}-${Math.random().toString(36).substr(2
 (req as any).correlationId = correlationId;
 
 // Log with both request ID and correlation ID
-logger.info('Order created', {
+secureLog('info', 'Order created', {
   requestId: req.requestId,
   correlationId: req.correlationId,
   orderId: order.id
@@ -722,7 +722,7 @@ if (logger.level === 'debug') {
     query: req.query
   });
 } else {
-  logger.info('Request summary', {
+  secureLog('info', 'Request summary', {
     method: req.method,
     path: req.path
   });
@@ -775,7 +775,7 @@ export function redactSensitiveData(obj: any): any {
 }
 
 // Use in logging
-logger.info('Request received', {
+secureLog('info', 'Request received', {
   ...redactSensitiveData({
     body: req.body,
     headers: req.headers
@@ -797,7 +797,7 @@ app.use((req, res, next) => {
     const cpuUsage = process.cpuUsage(startCpu);
     
     // Log performance metrics
-    logger.info('Request performance', {
+    secureLog('info', 'Request performance', {
       requestId: req.requestId,
       method: req.method,
       path: req.path,
@@ -809,7 +809,7 @@ app.use((req, res, next) => {
     
     // Warn on slow requests
     if (duration > 1000) {
-      logger.warn('Slow request detected', {
+      secureLog('warn', 'Slow request detected', {
         requestId: req.requestId,
         path: req.path,
         duration: `${duration}ms`
@@ -831,7 +831,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   const requestId = (req as any).requestId || 'unknown';
   
   // Log full error context
-  logger.error('Request error', {
+  secureLog('error', 'Request error', {
     requestId,
     error: {
       message: err.message,
@@ -1400,7 +1400,7 @@ export class AuditVerificationService {
 // src/middleware/requestLogger.ts
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import logger from '../utils/logger';
+import { secureLog } from '../utils/secureLogger';
 import { redactSensitiveData } from '../utils/redaction';
 
 export interface RequestContext {
@@ -1445,7 +1445,7 @@ export function requestLoggerMiddleware() {
     };
     
     // Log incoming request
-    logger.info('Request received', {
+    secureLog('info', 'Request received', {
       requestId,
       correlationId,
       method: req.method,
@@ -1580,7 +1580,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         
         # Log incoming request
-        logger.info(
+        secureLog('info', 
             "Request received",
             request_id=request_id,
             correlation_id=correlation_id,
@@ -1597,7 +1597,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Log error
             duration = (time.time() - start_time) * 1000
-            logger.error(
+            secureLog('error', 
                 "Request error",
                 request_id=request_id,
                 correlation_id=correlation_id,
@@ -1745,7 +1745,7 @@ output {
 // tests/middleware/requestLogger.test.ts
 import { Request, Response, NextFunction } from 'express';
 import { requestLoggerMiddleware } from '../../src/middleware/requestLogger';
-import logger from '../../src/utils/logger';
+import { secureLog } from '../../src/utils/secureLogger';
 
 jest.mock('../../src/utils/logger');
 
@@ -2095,7 +2095,7 @@ function redactString(str: string): string {
 
 ```typescript
 // Include full context for debugging
-logger.error('Payment processing failed', {
+secureLog('error', 'Payment processing failed', {
   requestId: req.requestId,
   userId: req.user.id,
   orderId: order.id,
@@ -2112,7 +2112,7 @@ logger.error('Payment processing failed', {
 
 ```typescript
 // Track performance metrics
-logger.info('Database query performance', {
+secureLog('info', 'Database query performance', {
   requestId: req.requestId,
   query: 'getUserOrders',
   duration: `${queryDuration}ms`,
@@ -2125,7 +2125,7 @@ logger.info('Database query performance', {
 
 ```typescript
 // Log security events
-logger.warn('Suspicious activity detected', {
+secureLog('warn', 'Suspicious activity detected', {
   requestId: req.requestId,
   userId: req.user.id,
   ip: req.ip,
@@ -2139,7 +2139,7 @@ logger.warn('Suspicious activity detected', {
 
 ```typescript
 // Log business events
-logger.info('Order created', {
+secureLog('info', 'Order created', {
   requestId: req.requestId,
   userId: req.user.id,
   orderId: order.id,

@@ -26,9 +26,9 @@ const { createLogger } = require('@deepiri/shared-utils');
 const logger = createLogger('my-service');
 
 // Use the logger
-logger.info('Service started');
-logger.error('An error occurred', { error: err });
-logger.warn('Warning message');
+secureLog('info', 'Service started');
+secureLog('error', 'An error occurred', { error: err });
+secureLog('warn', 'Warning message');
 logger.debug('Debug information');
 ```
 
@@ -38,7 +38,7 @@ Each service also has its own logger in `services/{service-name}/utils/logger.js
 
 ```javascript
 const logger = require('../../utils/logger');
-logger.info('Service-specific log message');
+secureLog('info', 'Service-specific log message');
 ```
 
 ## Structure

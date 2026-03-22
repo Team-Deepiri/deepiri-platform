@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from '../db';
 import { IOdyssey, OdysseyScale } from '../models/Odyssey';
 
@@ -94,7 +95,7 @@ class OdysseyService {
       
       return this.questToOdyssey(quest);
     } catch (error: any) {
-      logger.error('Error creating odyssey:', error);
+      secureLog('error', 'Error creating odyssey:', error);
       throw error;
     }
   }
@@ -139,7 +140,7 @@ class OdysseyService {
       
       return this.questToOdyssey(updatedQuest);
     } catch (error: any) {
-      logger.error('Error adding objective to odyssey:', error);
+      secureLog('error', 'Error adding objective to odyssey:', error);
       throw error;
     }
   }
@@ -179,7 +180,7 @@ class OdysseyService {
 
       return this.questToOdyssey(quest);
     } catch (error: any) {
-      logger.error('Error adding milestone:', error);
+      secureLog('error', 'Error adding milestone:', error);
       throw error;
     }
   }
@@ -246,7 +247,7 @@ class OdysseyService {
               }
             });
           } catch (error: any) {
-            logger.error('Failed to emit milestone completed event:', error.message);
+            secureLog('error', 'Failed to emit milestone completed event:', error.message);
           }
         }
       }
@@ -265,7 +266,7 @@ class OdysseyService {
 
       return this.questToOdyssey(quest);
     } catch (error: any) {
-      logger.error('Error completing milestone:', error);
+      secureLog('error', 'Error completing milestone:', error);
       throw error;
     }
   }
@@ -297,7 +298,7 @@ class OdysseyService {
         data: odyssey
       });
     } catch (error: any) {
-      logger.error('Error creating odyssey:', error);
+      secureLog('error', 'Error creating odyssey:', error);
       res.status(500).json({ error: 'Failed to create odyssey' });
     }
   }
@@ -342,7 +343,7 @@ class OdysseyService {
         data: odysseys
       });
     } catch (error: any) {
-      logger.error('Error getting odysseys:', error);
+      secureLog('error', 'Error getting odysseys:', error);
       res.status(500).json({ error: 'Failed to get odysseys' });
     }
   }
@@ -372,7 +373,7 @@ class OdysseyService {
         data: this.questToOdyssey(quest)
       });
     } catch (error: any) {
-      logger.error('Error getting odyssey:', error);
+      secureLog('error', 'Error getting odyssey:', error);
       res.status(500).json({ error: 'Failed to get odyssey' });
     }
   }
@@ -397,7 +398,7 @@ class OdysseyService {
         data: odyssey
       });
     } catch (error: any) {
-      logger.error('Error adding objective:', error);
+      secureLog('error', 'Error adding objective:', error);
       res.status(400).json({ error: error.message || 'Failed to add objective' });
     }
   }
@@ -422,7 +423,7 @@ class OdysseyService {
         data: odyssey
       });
     } catch (error: any) {
-      logger.error('Error adding milestone:', error);
+      secureLog('error', 'Error adding milestone:', error);
       res.status(400).json({ error: error.message || 'Failed to add milestone' });
     }
   }
@@ -441,7 +442,7 @@ class OdysseyService {
         data: odyssey
       });
     } catch (error: any) {
-      logger.error('Error completing milestone:', error);
+      secureLog('error', 'Error completing milestone:', error);
       res.status(400).json({ error: error.message || 'Failed to complete milestone' });
     }
   }
@@ -477,7 +478,7 @@ class OdysseyService {
         data: this.questToOdyssey(quest)
       });
     } catch (error: any) {
-      logger.error('Error updating odyssey:', error);
+      secureLog('error', 'Error updating odyssey:', error);
       res.status(500).json({ error: 'Failed to update odyssey' });
     }
   }

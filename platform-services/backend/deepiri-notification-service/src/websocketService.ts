@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 
 const logger = createLogger('websocket-service');
 
@@ -15,7 +16,7 @@ class WebSocketService {
       this._handleConnection(socket);
     });
 
-    logger.info('WebSocket server initialized');
+    secureLog('info', 'WebSocket server initialized');
   }
 
   private _handleConnection(socket: Socket): void {
@@ -25,13 +26,13 @@ class WebSocketService {
         this._addUserConnection(userId, socket.id);
         socket.join(`user:${userId}`);
         socket.emit('authenticated', { success: true });
-        logger.info('User authenticated via WebSocket', { userId, socketId: socket.id });
+        secureLog('info', 'User authenticated via WebSocket', { userId, socketId: socket.id });
       }
     });
 
     socket.on('disconnect', () => {
       this._removeUserConnection(socket.id);
-      logger.info('User disconnected from WebSocket', { socketId: socket.id });
+      secureLog('info', 'User disconnected from WebSocket', { socketId: socket.id });
     });
 
     socket.on('subscribe', (room: string) => {
@@ -47,17 +48,17 @@ class WebSocketService {
 
   sendToUser(userId: string, notification: Record<string, any>): void {
     if (!this.io) {
-      logger.warn('WebSocket server not initialized');
+      secureLog('warn', 'WebSocket server not initialized');
       return;
     }
 
     this.io.to(`user:${userId}`).emit('notification', notification);
-    logger.info('Notification sent via WebSocket', { userId, type: notification.type });
+    secureLog('info', 'Notification sent via WebSocket', { userId, type: notification.type });
   }
 
   sendToUsers(userIds: string[], notification: Record<string, any>): void {
     if (!this.io) {
-      logger.warn('WebSocket server not initialized');
+      secureLog('warn', 'WebSocket server not initialized');
       return;
     }
 
@@ -65,17 +66,17 @@ class WebSocketService {
       this.io!.to(`user:${userId}`).emit('notification', notification);
     });
 
-    logger.info('Notification sent to multiple users', { count: userIds.length });
+    secureLog('info', 'Notification sent to multiple users', { count: userIds.length });
   }
 
   broadcastToRoom(room: string, notification: Record<string, any>): void {
     if (!this.io) {
-      logger.warn('WebSocket server not initialized');
+      secureLog('warn', 'WebSocket server not initialized');
       return;
     }
 
     this.io.to(room).emit('notification', notification);
-    logger.info('Notification broadcast to room', { room });
+    secureLog('info', 'Notification broadcast to room', { room });
   }
 
   sendChallengeUpdate(userId: string, challengeId: string, update: Record<string, any>): void {

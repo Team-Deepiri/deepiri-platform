@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import momentumService from './momentumService';
 import streakService from './streakService';
 import objectiveService from './objectiveService';
@@ -38,9 +39,9 @@ class GamificationIntegrationService {
       // If so, mark objective as complete
       // This would require querying objectives by taskId or title match
       
-      logger.info(`Task completion handled for user ${userId}, task ${taskData.taskId}`);
+      secureLog('info', `Task completion handled for user ${userId}, task ${taskData.taskId}`);
     } catch (error: any) {
-      logger.error('Error handling task completion:', error);
+      secureLog('error', 'Error handling task completion:', error);
       // Don't throw - gamification failures shouldn't break task completion
     }
   }
@@ -69,9 +70,9 @@ class GamificationIntegrationService {
       // Update PR streak
       await streakService.updatePRStreak(userId);
 
-      logger.info(`Commit handled for user ${userId}`);
+      secureLog('info', `Commit handled for user ${userId}`);
     } catch (error: any) {
-      logger.error('Error handling commit:', error);
+      secureLog('error', 'Error handling commit:', error);
     }
   }
 
@@ -93,9 +94,9 @@ class GamificationIntegrationService {
         action: docData.action
       });
 
-      logger.info(`Document activity handled for user ${userId}`);
+      secureLog('info', `Document activity handled for user ${userId}`);
     } catch (error: any) {
-      logger.error('Error handling document activity:', error);
+      secureLog('error', 'Error handling document activity:', error);
     }
   }
 
@@ -119,9 +120,9 @@ class GamificationIntegrationService {
         approved: reviewData.approved
       });
 
-      logger.info(`Code review handled for user ${userId}`);
+      secureLog('info', `Code review handled for user ${userId}`);
     } catch (error: any) {
-      logger.error('Error handling code review:', error);
+      secureLog('error', 'Error handling code review:', error);
     }
   }
 
@@ -146,9 +147,9 @@ class GamificationIntegrationService {
       // Check for milestone rewards
       await this.checkMilestoneRewards(userId);
 
-      logger.info(`Feature shipped handled for user ${userId}`);
+      secureLog('info', `Feature shipped handled for user ${userId}`);
     } catch (error: any) {
-      logger.error('Error handling feature shipped:', error);
+      secureLog('error', 'Error handling feature shipped:', error);
     }
   }
 
@@ -186,7 +187,7 @@ class GamificationIntegrationService {
         );
       }
     } catch (error: any) {
-      logger.error('Error checking milestone rewards:', error);
+      secureLog('error', 'Error checking milestone rewards:', error);
     }
   }
 

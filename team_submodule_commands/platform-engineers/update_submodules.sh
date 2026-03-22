@@ -125,6 +125,10 @@ echo ""
 update_submodule "deepiri-modelkit" "deepiri-modelkit (Shared Contracts & Utilities)"
 echo ""
 
+# Update deepiri-prismpipe
+update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
+echo ""
+
 # Also update via git submodule update --remote for consistency (recursive to get nested submodules)
 echo "🔄 Syncing all submodule references (recursive)..."
 git submodule update --remote --recursive 2>/dev/null || true
@@ -147,6 +151,7 @@ echo "  ✅ deepiri-external-bridge-service"
 echo "  ✅ deepiri-web-frontend"
 echo "  ✅ diri-helox"
 echo "  ✅ deepiri-modelkit"
+echo "  ✅ deepiri-prismpipe (PrismPipe)"
 echo "  ✅ All nested submodules (recursive)"
 echo ""
 

@@ -3,14 +3,8 @@
  * Subscribes to all event streams and forwards to WebSocket clients
  */
 import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import winston from 'winston';
+import { secureLog } from '@deepiri/shared-utils';
 import { Server } from 'socket.io';
-
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [new winston.transports.Console({ format: winston.format.simple() })]
-});
 
 let streamingClient: StreamingClient | null = null;
 let isConsuming = false;
@@ -21,7 +15,7 @@ let io: Server | null = null;
  */
 export async function startEventConsumption(socketIO: Server): Promise<void> {
   if (isConsuming) {
-    logger.warn('Event consumption already started');
+    secureLog('warn', 'Event consumption already started');
     return;
   }
 
@@ -35,29 +29,29 @@ export async function startEventConsumption(socketIO: Server): Promise<void> {
     );
 
     await streamingClient.connect();
-    logger.info('[Realtime Gateway] Connected to Redis Streams');
+    secureLog('info', '[Realtime Gateway] Connected to Redis Streams');
 
     // Start consuming all event streams
     consumeInferenceEvents().catch((err) => {
-      logger.error('[Realtime Gateway] Inference events consumption error:', err);
+      secureLog('error', '[Realtime Gateway] Inference events consumption error:', err);
     });
 
     consumePlatformEvents().catch((err) => {
-      logger.error('[Realtime Gateway] Platform events consumption error:', err);
+      secureLog('error', '[Realtime Gateway] Platform events consumption error:', err);
     });
 
     consumeModelEvents().catch((err) => {
-      logger.error('[Realtime Gateway] Model events consumption error:', err);
+      secureLog('error', '[Realtime Gateway] Model events consumption error:', err);
     });
 
     consumeTrainingEvents().catch((err) => {
-      logger.error('[Realtime Gateway] Training events consumption error:', err);
+      secureLog('error', '[Realtime Gateway] Training events consumption error:', err);
     });
 
     isConsuming = true;
-    logger.info('[Realtime Gateway] Event consumption started');
+    secureLog('info', '[Realtime Gateway] Event consumption started');
   } catch (error) {
-    logger.error('[Realtime Gateway] Failed to start event consumption:', error);
+    secureLog('error', '[Realtime Gateway] Failed to start event consumption:', error);
     throw error;
   }
 }
@@ -81,7 +75,7 @@ async function consumeInferenceEvents(): Promise<void> {
           io!.emit('inference-event', event);
         }
       } catch (error) {
-        logger.error('[Realtime Gateway] Error forwarding inference event:', error);
+        secureLog('error', '[Realtime Gateway] Error forwarding inference event:', error);
       }
     },
     {
@@ -111,7 +105,7 @@ async function consumePlatformEvents(): Promise<void> {
           io!.emit('platform-event', event);
         }
       } catch (error) {
-        logger.error('[Realtime Gateway] Error forwarding platform event:', error);
+        secureLog('error', '[Realtime Gateway] Error forwarding platform event:', error);
       }
     },
     {
@@ -137,7 +131,7 @@ async function consumeModelEvents(): Promise<void> {
         // Broadcast model events to all clients
         io!.emit('model-event', event);
       } catch (error) {
-        logger.error('[Realtime Gateway] Error forwarding model event:', error);
+        secureLog('error', '[Realtime Gateway] Error forwarding model event:', error);
       }
     },
     {
@@ -163,7 +157,7 @@ async function consumeTrainingEvents(): Promise<void> {
         // Broadcast training events to all clients
         io!.emit('training-event', event);
       } catch (error) {
-        logger.error('[Realtime Gateway] Error forwarding training event:', error);
+        secureLog('error', '[Realtime Gateway] Error forwarding training event:', error);
       }
     },
     {
@@ -182,7 +176,7 @@ export async function stopEventConsumption(): Promise<void> {
     await streamingClient.disconnect();
     streamingClient = null;
     isConsuming = false;
-    logger.info('[Realtime Gateway] Event consumption stopped');
+    secureLog('info', '[Realtime Gateway] Event consumption stopped');
   }
 }
 

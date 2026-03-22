@@ -267,7 +267,7 @@ export const mongoSanitizeMiddleware = mongoSanitize({
   onSanitize: ({ req, key }) => {
     // Log sanitization attempts
     const logger = require('./logger').default;
-    logger.warn('MongoDB injection attempt detected', {
+    secureLog('warn', 'MongoDB injection attempt detected', {
       requestId: (req as any).requestId,
       key,
       path: req.path,
@@ -283,7 +283,7 @@ Update `src/middleware/errorHandler.ts`:
 
 ```typescript
 import { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger';
+import { secureLog } from '../utils/secureLogger';
 import { Server as HttpServer } from 'http';
 import { ValidationError } from 'express-validator';
 
@@ -407,7 +407,7 @@ export const asyncHandler = (fn: Function) => {
 export const notFoundHandler = (req: Request, res: Response): void => {
   const requestId = (req as any).requestId || 'unknown';
   
-  logger.warn('Route not found', {
+  secureLog('warn', 'Route not found', {
     requestId,
     method: req.method,
     url: req.url,
@@ -426,20 +426,20 @@ export const notFoundHandler = (req: Request, res: Response): void => {
 
 export const gracefulShutdown = (server: HttpServer) => {
   return (signal: string) => {
-    logger.info(`Received ${signal}, shutting down gracefully`);
+    secureLog('info', `Received ${signal}, shutting down gracefully`);
     
     server.close((err?: Error) => {
       if (err) {
-        logger.error('Error during server shutdown:', err);
+        secureLog('error', 'Error during server shutdown:', err);
         process.exit(1);
       }
       
-      logger.info('Server closed successfully');
+      secureLog('info', 'Server closed successfully');
       process.exit(0);
     });
 
     setTimeout(() => {
-      logger.error('Forced shutdown after timeout');
+      secureLog('error', 'Forced shutdown after timeout');
       process.exit(1);
     }, 10000);
   };
@@ -453,7 +453,7 @@ Create `src/middleware/requestLogger.ts`:
 ```typescript
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import logger from '../utils/logger';
+import { secureLog } from '../utils/secureLogger';
 
 export interface RequestWithId extends Request {
   requestId?: string;
@@ -473,7 +473,7 @@ export const requestLogger = (
   res.setHeader('X-Request-ID', req.requestId);
 
   // Log incoming request
-  logger.info('Incoming request', {
+  secureLog('info', 'Incoming request', {
     requestId: req.requestId,
     method: req.method,
     url: req.originalUrl || req.url,
@@ -500,11 +500,11 @@ export const requestLogger = (
     };
 
     if (res.statusCode >= 500) {
-      logger.error('Request completed with server error', logData);
+      secureLog('error', 'Request completed with server error', logData);
     } else if (res.statusCode >= 400) {
-      logger.warn('Request completed with client error', logData);
+      secureLog('warn', 'Request completed with client error', logData);
     } else {
-      logger.info('Request completed', logData);
+      secureLog('info', 'Request completed', logData);
     }
   });
 
@@ -523,7 +523,7 @@ import cors from 'cors';
 import { requestLogger } from './middleware/requestLogger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { sanitizeBody, mongoSanitizeMiddleware } from './utils/sanitizers';
-import logger from './utils/logger';
+import { secureLog } from './utils/secureLogger';
 
 const app: Express = express();
 
@@ -888,7 +888,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     """Handle all other exceptions."""
     request_id = request.state.request_id if hasattr(request.state, 'request_id') else 'unknown'
     
-    logger.error('Unhandled exception', {
+    secureLog('error', 'Unhandled exception', {
         'request_id': request_id,
         'path': request.url.path,
         'method': request.method,
@@ -937,7 +937,7 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         
         # Log incoming request
-        logger.info('Incoming request', {
+        secureLog('info', 'Incoming request', {
             'request_id': request_id,
             'method': request.method,
             'url': str(request.url),
@@ -971,17 +971,17 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
             }
             
             if response.status_code >= 500:
-                logger.error('Request completed with server error', log_data)
+                secureLog('error', 'Request completed with server error', log_data)
             elif response.status_code >= 400:
                 logger.warning('Request completed with client error', log_data)
             else:
-                logger.info('Request completed', log_data)
+                secureLog('info', 'Request completed', log_data)
             
             return response
             
         except Exception as e:
             duration = time.time() - start_time
-            logger.error('Request failed with exception', {
+            secureLog('error', 'Request failed with exception', {
                 'request_id': request_id,
                 'method': request.method,
                 'path': request.url.path,

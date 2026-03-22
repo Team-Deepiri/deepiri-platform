@@ -1,5 +1,6 @@
 // Database connection using Prisma
 import { PrismaClient } from '@prisma/client';
+import { secureLog } from '@deepiri/shared-utils';
 import winston from 'winston';
 
 const logger = winston.createLogger({
@@ -30,9 +31,9 @@ if (process.env.NODE_ENV === 'development') {
 export async function connectDatabase() {
   try {
     await prisma.$connect();
-    logger.info('Engagement Service: Connected to PostgreSQL via Prisma');
+    secureLog('info', 'Engagement Service: Connected to PostgreSQL via Prisma');
   } catch (error) {
-    logger.error('Engagement Service: PostgreSQL connection error', error);
+    secureLog('error', 'Engagement Service: PostgreSQL connection error', error);
     throw error;
   }
 }
@@ -40,7 +41,7 @@ export async function connectDatabase() {
 // Disconnect from database
 export async function disconnectDatabase() {
   await prisma.$disconnect();
-  logger.info('Engagement Service: Disconnected from PostgreSQL');
+  secureLog('info', 'Engagement Service: Disconnected from PostgreSQL');
 }
 
 // Graceful shutdown

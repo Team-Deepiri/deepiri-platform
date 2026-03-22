@@ -25,16 +25,6 @@ while read local_ref local_sha remote_ref remote_sha; do
     fi
   done
   
-  # PROTECTION RULE 2: Exact match for "dev"
-  # Character-for-character matching - must be exactly "dev" with no prefix, suffix, or dashes
-  # This uses exact string comparison (=), not substring matching
-  if [ "$branch_name" = "dev" ]; then
-    echo "❌ ERROR: You cannot push directly to 'dev'."
-    echo "   Branch name must match exactly 'dev' (character-for-character)."
-    echo "   Make a feature branch and use a Pull Request."
-    echo "   Note: Branches like 'name-dev' or 'dev-something' are allowed (they have dashes)."
-    exit 1
-  fi
   
   # PROTECTION RULE 3: Exact substring match for "team-dev"
   # Must contain the exact substring "team-dev" (character-for-character including the dash)

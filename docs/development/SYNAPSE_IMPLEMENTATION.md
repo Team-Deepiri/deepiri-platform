@@ -305,7 +305,7 @@ You are responsible for:
                return
            
            self._running = True
-           logger.info("Starting model event subscriber")
+           secureLog('info', "Starting model event subscriber")
            
            self._task = asyncio.create_task(self._listen_loop())
        
@@ -314,7 +314,7 @@ You are responsible for:
            self._running = False
            if self._task:
                await self._task
-           logger.info("Model event subscriber stopped")
+           secureLog('info', "Model event subscriber stopped")
        
        async def _listen_loop(self):
            """Main listening loop"""
@@ -326,7 +326,7 @@ You are responsible for:
                        break
                    await self._handle_model_ready(event)
            except Exception as e:
-               logger.error(f"Error in model subscriber loop: {e}")
+               secureLog('error', f"Error in model subscriber loop: {e}")
                self._running = False
        
        async def _handle_event(self, event_data: dict):
@@ -337,7 +337,7 @@ You are responsible for:
        async def _handle_model_ready(self, event: ModelReadyEvent):
            """Handle model-ready event by loading the model"""
            try:
-               logger.info(
+               secureLog('info', 
                    f"Model ready event received: {event.model_name} v{event.version}",
                    model_name=event.model_name,
                    version=event.version
@@ -345,7 +345,7 @@ You are responsible for:
                
                # Check if model already loaded
                if self.model_manager.is_model_loaded(event.model_name, event.version):
-                   logger.info(
+                   secureLog('info', 
                        f"Model {event.model_name} v{event.version} already loaded, skipping"
                    )
                    return
@@ -357,14 +357,14 @@ You are responsible for:
                    registry_path=event.checkpoint_path
                )
                
-               logger.info(
+               secureLog('info', 
                    f"Model {event.model_name} v{event.version} loaded successfully",
                    model_name=event.model_name,
                    version=event.version
                )
                
            except Exception as e:
-               logger.error(
+               secureLog('error', 
                    f"Failed to load model {event.model_name}: {e}",
                    model_name=event.model_name,
                    error=str(e)
@@ -476,7 +476,7 @@ You are responsible for:
            event.model_dump()
        )
        
-       logger.info(
+       secureLog('info', 
            "inference_event_published",
            model=model_name,
            version=version,
@@ -609,7 +609,7 @@ You are responsible for:
                event
            )
            
-           logger.info(
+           secureLog('info', 
                "rag_retrieval_published",
                query_length=len(query),
                documents_retrieved=documents_retrieved,
@@ -669,7 +669,7 @@ You are responsible for:
                event
            )
            
-           logger.info(
+           secureLog('info', 
                "agent_decision_published",
                agent_name=agent_name,
                decision_type=decision_type
@@ -728,7 +728,7 @@ You are responsible for:
        }
        
        await self.redis_client.xadd("training-events", event)
-       logger.info(f"Published training-started: {model_name}")
+       secureLog('info', f"Published training-started: {model_name}")
    
    async def publish_training_progress(
        self,
@@ -779,7 +779,7 @@ You are responsible for:
        }
        
        await self.redis_client.xadd("training-events", event)
-       logger.info(f"Published training-completed: {model_name}")
+       secureLog('info', f"Published training-completed: {model_name}")
    ```
 
 3. **Integrate into Training Loop**:
@@ -873,7 +873,7 @@ You are responsible for:
                return
            
            self._streaming = True
-           logger.info(f"Starting metrics streaming for {model_name}")
+           secureLog('info', f"Starting metrics streaming for {model_name}")
            
            self._task = asyncio.create_task(
                self._stream_loop(model_name, interval_seconds)
@@ -884,7 +884,7 @@ You are responsible for:
            self._streaming = False
            if self._task:
                await self._task
-           logger.info("Metrics streaming stopped")
+           secureLog('info', "Metrics streaming stopped")
        
        async def _stream_loop(self, model_name: str, interval_seconds: int):
            """Main streaming loop"""
@@ -905,7 +905,7 @@ You are responsible for:
                    await asyncio.sleep(interval_seconds)
                    
                except Exception as e:
-                   logger.error(f"Error in metrics streaming: {e}")
+                   secureLog('error', f"Error in metrics streaming: {e}")
                    await asyncio.sleep(interval_seconds)
        
        def _collect_current_metrics(self) -> Dict[str, Any]:
@@ -978,7 +978,7 @@ You are responsible for:
        }
        
        await self.redis_client.xadd("training-events", event)
-       logger.info(f"Published checkpoint: {model_name} at step {step}")
+       secureLog('info', f"Published checkpoint: {model_name} at step {step}")
    ```
 
 2. **Evaluation Event Publishing**:
@@ -1008,7 +1008,7 @@ You are responsible for:
        }
        
        await self.redis_client.xadd("training-events", event)
-       logger.info(f"Published evaluation: {model_name} on {dataset_name}")
+       secureLog('info', f"Published evaluation: {model_name} on {dataset_name}")
    ```
 
 3. **Integrate into Training**:
@@ -1070,14 +1070,14 @@ You are responsible for:
                self._monitor_loop(model_name, check_interval_seconds)
            )
            self._monitoring[model_name] = task
-           logger.info(f"Started monitoring {model_name}")
+           secureLog('info', f"Started monitoring {model_name}")
        
        async def stop_monitoring(self, model_name: str):
            """Stop monitoring a model"""
            if model_name in self._monitoring:
                self._monitoring[model_name].cancel()
                del self._monitoring[model_name]
-               logger.info(f"Stopped monitoring {model_name}")
+               secureLog('info', f"Stopped monitoring {model_name}")
        
        async def _monitor_loop(self, model_name: str, interval: int):
            """Main monitoring loop"""
@@ -1093,7 +1093,7 @@ You are responsible for:
                except asyncio.CancelledError:
                    break
                except Exception as e:
-                   logger.error(f"Error monitoring {model_name}: {e}")
+                   secureLog('error', f"Error monitoring {model_name}: {e}")
                    await asyncio.sleep(interval)
        
        async def _check_model_health(self, model_name: str) -> Dict[str, Any]:
@@ -1193,7 +1193,7 @@ You are responsible for:
        try:
            await self.client.publish(stream, event)
        except Exception as e:
-           logger.error(f"Failed to publish event: {e}")
+           secureLog('error', f"Failed to publish event: {e}")
            raise
    ```
 
@@ -1343,9 +1343,9 @@ You are responsible for:
                config.redis.password
            );
            await streamingClient.connect();
-           logger.info('[Service Name] Connected to Redis Streams');
+           secureLog('info', '[Service Name] Connected to Redis Streams');
        } catch (error: any) {
-           logger.error('[Service Name] Failed to initialize event publisher:', error);
+           secureLog('error', '[Service Name] Failed to initialize event publisher:', error);
            throw error;
        }
    }
@@ -1367,7 +1367,7 @@ You are responsible for:
        };
        
        await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-       logger.info(`[Service Name] Published ${eventType}: ${action}`);
+       secureLog('info', `[Service Name] Published ${eventType}: ${action}`);
    }
    ```
 
@@ -1414,9 +1414,9 @@ You are responsible for:
                config.redis.password
            );
            await streamingClient.connect();
-           logger.info('[Task Orchestrator] Connected to Redis Streams');
+           secureLog('info', '[Task Orchestrator] Connected to Redis Streams');
        } catch (error: any) {
-           logger.error('[Task Orchestrator] Failed to initialize event publisher:', error);
+           secureLog('error', '[Task Orchestrator] Failed to initialize event publisher:', error);
            throw error;
        }
    }
@@ -1443,7 +1443,7 @@ You are responsible for:
        };
        
        await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-       logger.info(`[Task Orchestrator] Published task-created: ${taskId}`);
+       secureLog('info', `[Task Orchestrator] Published task-created: ${taskId}`);
    }
    
    export async function publishTaskUpdated(
@@ -1465,7 +1465,7 @@ You are responsible for:
        };
        
        await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-       logger.info(`[Task Orchestrator] Published task-updated: ${taskId}`);
+       secureLog('info', `[Task Orchestrator] Published task-updated: ${taskId}`);
    }
    
    export async function publishTaskCompleted(
@@ -1488,7 +1488,7 @@ You are responsible for:
        };
        
        await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-       logger.info(`[Task Orchestrator] Published task-completed: ${taskId}`);
+       secureLog('info', `[Task Orchestrator] Published task-completed: ${taskId}`);
    }
    
    export async function publishTaskFailed(
@@ -1511,7 +1511,7 @@ You are responsible for:
        };
        
        await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-       logger.error(`[Task Orchestrator] Published task-failed: ${taskId}`);
+       secureLog('error', `[Task Orchestrator] Published task-failed: ${taskId}`);
    }
    ```
 
@@ -1555,7 +1555,7 @@ You are responsible for:
    
    // On server startup
    await initializeEventPublisher().catch((err) => {
-       logger.error('Failed to initialize event publisher:', err);
+       secureLog('error', 'Failed to initialize event publisher:', err);
    });
    ```
 
@@ -1593,9 +1593,9 @@ You are responsible for:
                config.redis.password
            );
            await streamingClient.connect();
-           logger.info('[Analytics] Connected to Redis Streams');
+           secureLog('info', '[Analytics] Connected to Redis Streams');
        } catch (error: any) {
-           logger.error('[Analytics] Failed to initialize event consumer:', error);
+           secureLog('error', '[Analytics] Failed to initialize event consumer:', error);
            throw error;
        }
    }
@@ -1608,7 +1608,7 @@ You are responsible for:
            StreamTopics.INFERENCE_EVENTS,
            async (event) => {
                try {
-                   logger.info('[Analytics] Received inference event', {
+                   secureLog('info', '[Analytics] Received inference event', {
                        model: event.data?.model_name,
                        latency: event.data?.latency_ms
                    });
@@ -1626,14 +1626,14 @@ You are responsible for:
                    });
                    
                } catch (error: any) {
-                   logger.error('[Analytics] Error processing inference event:', error);
+                   secureLog('error', '[Analytics] Error processing inference event:', error);
                }
            },
            'analytics-service',
            'analytics-1'
        );
        
-       logger.info('[Analytics] Started inference event consumer');
+       secureLog('info', '[Analytics] Started inference event consumer');
    }
    
    export async function startTrainingEventConsumer(): Promise<void> {
@@ -1644,7 +1644,7 @@ You are responsible for:
            StreamTopics.TRAINING_EVENTS,
            async (event) => {
                try {
-                   logger.info('[Analytics] Received training event', {
+                   secureLog('info', '[Analytics] Received training event', {
                        event: event.event,
                        model: event.data?.model_name
                    });
@@ -1653,14 +1653,14 @@ You are responsible for:
                    await processTrainingMetrics(event);
                    
                } catch (error: any) {
-                   logger.error('[Analytics] Error processing training event:', error);
+                   secureLog('error', '[Analytics] Error processing training event:', error);
                }
            },
            'analytics-service',
            'analytics-1'
        );
        
-       logger.info('[Analytics] Started training event consumer');
+       secureLog('info', '[Analytics] Started training event consumer');
    }
    ```
 
@@ -1682,9 +1682,9 @@ You are responsible for:
                config.redis.password
            );
            await streamingClient.connect();
-           logger.info('[Notification] Connected to Redis Streams');
+           secureLog('info', '[Notification] Connected to Redis Streams');
        } catch (error: any) {
-           logger.error('[Notification] Failed to initialize event consumer:', error);
+           secureLog('error', '[Notification] Failed to initialize event consumer:', error);
            throw error;
        }
    }
@@ -1709,14 +1709,14 @@ You are responsible for:
                    }
                    
                } catch (error: any) {
-                   logger.error('[Notification] Error processing platform event:', error);
+                   secureLog('error', '[Notification] Error processing platform event:', error);
                }
            },
            'notification-service',
            'notification-1'
        );
        
-       logger.info('[Notification] Started platform event consumer');
+       secureLog('info', '[Notification] Started platform event consumer');
    }
    
    function shouldNotify(event: any): boolean {

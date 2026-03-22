@@ -9,10 +9,9 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-timeout 300000 && \
-    npm install --legacy-peer-deps || \
-    (sleep 10 && npm install --legacy-peer-deps) || \
-    (sleep 20 && npm install --legacy-peer-deps) && \
-    npm run build
+    npm install --legacy-peer-deps && \
+    npm run build && \
+    npm pack
 
 # Build the service
 FROM node:18-alpine
@@ -31,7 +30,7 @@ COPY backend/deepiri-challenge-service/package*.json ./
 COPY backend/deepiri-challenge-service/tsconfig.json ./
 
 # Copy built shared-utils to a temp location
-COPY --from=shared-utils-builder /shared-utils /tmp/shared-utils
+COPY --from=shared-utils-builder /shared-utils/deepiri-shared-utils-1.0.0.tgz /shared-utils.tgz
 
 # Install shared-utils as a local file dependency first, then install other dependencies
 # Add retry logic for network issues
@@ -39,9 +38,9 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-timeout 300000 && \
-    npm install --legacy-peer-deps file:/tmp/shared-utils || \
-    (sleep 10 && npm install --legacy-peer-deps file:/tmp/shared-utils) || \
-    (sleep 20 && npm install --legacy-peer-deps file:/tmp/shared-utils) && \
+    npm install --legacy-peer-deps /shared-utils.tgz && \
+    npm install --legacy-peer-deps && \
+    npm cache clean --force && \
     npm install --legacy-peer-deps || \
     (sleep 10 && npm install --legacy-peer-deps) || \
     (sleep 20 && npm install --legacy-peer-deps) && \

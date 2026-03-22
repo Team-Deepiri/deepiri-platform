@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from './db';
 
 const logger = createLogger('badge-system-service');
@@ -47,7 +48,7 @@ class BadgeSystemService {
       );
       res.json(badges);
     } catch (error: any) {
-      logger.error('Error getting badges:', error);
+      secureLog('error', 'Error getting badges:', error);
       res.status(500).json({ error: 'Failed to get badges' });
     }
   }
@@ -68,7 +69,7 @@ class BadgeSystemService {
       );
       res.json(result);
     } catch (error: any) {
-      logger.error('Error awarding badge:', error);
+      secureLog('error', 'Error awarding badge:', error);
       res.status(500).json({ error: 'Failed to award badge' });
     }
   }
@@ -76,10 +77,10 @@ class BadgeSystemService {
   private async getUserBadges(userId: string, category: string | null = null) {
     try {
       // TODO: Implement with Prisma when Badge/UserBadge models are added
-      logger.warn('Badge system not yet migrated to Prisma');
+      secureLog('warn', 'Badge system not yet migrated to Prisma');
       return [];
     } catch (error) {
-      logger.error('Error getting user badges:', error);
+      secureLog('error', 'Error getting user badges:', error);
       throw error;
     }
   }
@@ -87,10 +88,10 @@ class BadgeSystemService {
   private async checkAndAwardBadges(userId: string, eventType: string, eventData: Record<string, any>) {
     try {
       // TODO: Implement with Prisma when Badge/UserBadge models are added
-      logger.warn('Badge system not yet migrated to Prisma');
+      secureLog('warn', 'Badge system not yet migrated to Prisma');
       return [];
     } catch (error) {
-      logger.error('Error checking badges:', error);
+      secureLog('error', 'Error checking badges:', error);
       throw error;
     }
   }
@@ -121,7 +122,7 @@ class BadgeSystemService {
 
       return false;
     } catch (error) {
-      logger.error('Error checking conditions:', error);
+      secureLog('error', 'Error checking conditions:', error);
       return false;
     }
   }

@@ -241,7 +241,7 @@ async def request_logger_middleware(request: Request, call_next):
     path = request.url.path
     
     # Log that we received a request
-    logger.info(f"Request received: {method} {path}")
+    secureLog('info', f"Request received: {method} {path}")
     
     # Continue to the route handler
     response = await call_next(request)
@@ -254,7 +254,7 @@ async def request_logger_middleware(request: Request, call_next):
     status_code = response.status_code
     
     # Log the response
-    logger.info(
+    secureLog('info', 
         f"Request completed: {method} {path} - "
         f"Status: {status_code} - "
         f"Duration: {duration_ms:.2f}ms"
@@ -353,7 +353,7 @@ async def request_logger_middleware(request: Request, call_next):
             logger.warning(f"Could not read request body: {e}")
     
     # Log the request
-    logger.info(
+    secureLog('info', 
         f"Request: {method} {path}",
         extra={
             "method": method,
@@ -372,7 +372,7 @@ async def request_logger_middleware(request: Request, call_next):
     duration = (time.time() - start_time) * 1000
     status_code = response.status_code
     
-    logger.info(
+    secureLog('info', 
         f"Response: {method} {path} - {status_code} - {duration:.2f}ms",
         extra={
             "method": method,
@@ -445,7 +445,7 @@ async def request_logger_middleware(request: Request, call_next):
     path = request.url.path
     
     # Log request
-    logger.info(f"Request: {method} {path}")
+    secureLog('info', f"Request: {method} {path}")
     
     # Get the response
     response = await call_next(request)
@@ -475,7 +475,7 @@ async def request_logger_middleware(request: Request, call_next):
     status_code = response.status_code
     
     # Log everything
-    logger.info(
+    secureLog('info', 
         f"Response: {method} {path} - {status_code} - {duration:.2f}ms",
         extra={
             "method": method,
@@ -525,7 +525,7 @@ async def request_logger_middleware(request: Request, call_next):
             pass
     
     # Log request
-    logger.info(
+    secureLog('info', 
         "Request received",
         extra={
             "method": method,
@@ -561,7 +561,7 @@ async def request_logger_middleware(request: Request, call_next):
     status_code = response.status_code
     
     # Log response
-    logger.info(
+    secureLog('info', 
         "Request completed",
         extra={
             "method": method,
@@ -615,7 +615,7 @@ async def request_logger_middleware(request: Request, call_next):
         request.state.request_id = request_id
     
     # Log with request ID
-    logger.info(
+    secureLog('info', 
         "Request received",
         extra={
             "request_id": request_id,
@@ -630,7 +630,7 @@ async def request_logger_middleware(request: Request, call_next):
     response.headers["X-Request-ID"] = request_id
     
     # Log response with request ID
-    logger.info(
+    secureLog('info', 
         "Request completed",
         extra={
             "request_id": request_id,
@@ -658,7 +658,7 @@ async def create_order(request: Request, order_data: dict):
     request_id = request.state.request_id
     
     # Use it in your logs
-    logger.info(f"Creating order - Request ID: {request_id}")
+    secureLog('info', f"Creating order - Request ID: {request_id}")
     
     # Your business logic here
     # ...
@@ -710,7 +710,7 @@ async def request_logger_middleware(request: Request, call_next):
             pass
     
     # Log request
-    logger.info(
+    secureLog('info', 
         "HTTP Request",
         extra={
             "request_id": request_id,
@@ -746,7 +746,7 @@ async def request_logger_middleware(request: Request, call_next):
             pass
     
     # Log response
-    logger.info(
+    secureLog('info', 
         "HTTP Response",
         extra={
             "request_id": request_id,
@@ -911,7 +911,7 @@ class AuditService:
         
         For now, we'll just log it. In Step 8, we'll store it in a database.
         """
-        self.logger.info(
+        self.secureLog('info', 
             "Audit event",
             extra=audit_record
         )
@@ -1101,7 +1101,7 @@ class AuditService:
         except Exception as e:
             # Log error but don't fail the request
             # Audit logging should never break the application
-            logger.error(f"Failed to save audit log: {e}")
+            secureLog('error', f"Failed to save audit log: {e}")
             db.rollback()
 ```
 
@@ -1308,7 +1308,7 @@ async def request_logger_middleware(request: Request, call_next):
     response_data = redact_request_data(raw_response_data)
     
     # Now safe to log
-    logger.info("Request", extra={"request_data": request_data})
+    secureLog('info', "Request", extra={"request_data": request_data})
     
     # Create audit record with redacted data
     audit_record = audit_service.create_audit_record(
@@ -1483,7 +1483,7 @@ async def log_event(self, audit_record: Dict[str, Any], db: Session):
         # ... (save to database)
     except Exception as e:
         # Log the error but don't raise it
-        logger.error(f"Audit logging failed: {e}", exc_info=True)
+        secureLog('error', f"Audit logging failed: {e}", exc_info=True)
         # Optionally: fall back to file logging
         self.fallback_log(audit_record)
 ```

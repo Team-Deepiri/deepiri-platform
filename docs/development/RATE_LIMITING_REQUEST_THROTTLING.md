@@ -368,7 +368,7 @@ try {
   }
 } catch (error) {
   // Fail open: allow request if rate limiting fails
-  logger.error('Rate limit check failed', error);
+  secureLog('error', 'Rate limit check failed', error);
   // Continue with request
 }
 ```
@@ -2039,7 +2039,7 @@ const logger = winston.createLogger({
 
 // In rate limiter
 onLimitReached: (req: Request, res: Response) => {
-  logger.warn('Rate limit exceeded', {
+  secureLog('warn', 'Rate limit exceeded', {
     ip: req.ip,
     path: req.path,
     method: req.method,

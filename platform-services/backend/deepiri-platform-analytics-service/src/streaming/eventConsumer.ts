@@ -3,13 +3,7 @@
  * Subscribes to inference-events and training-events streams
  */
 import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import winston from 'winston';
-
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [new winston.transports.Console({ format: winston.format.simple() })]
-});
+import { secureLog } from '@deepiri/shared-utils';
 
 let streamingClient: StreamingClient | null = null;
 let isConsuming = false;
@@ -19,7 +13,7 @@ let isConsuming = false;
  */
 export async function startEventConsumption(): Promise<void> {
   if (isConsuming) {
-    logger.warn('Event consumption already started');
+    secureLog('warn', 'Event consumption already started');
     return;
   }
 
@@ -31,22 +25,22 @@ export async function startEventConsumption(): Promise<void> {
     );
 
     await streamingClient.connect();
-    logger.info('[Analytics] Connected to Redis Streams');
+    secureLog('info', '[Analytics] Connected to Redis Streams');
 
     // Start consuming inference events
     consumeInferenceEvents().catch((err) => {
-      logger.error('[Analytics] Inference events consumption error:', err);
+      secureLog('error', '[Analytics] Inference events consumption error:', err);
     });
 
     // Start consuming training events
     consumeTrainingEvents().catch((err) => {
-      logger.error('[Analytics] Training events consumption error:', err);
+      secureLog('error', '[Analytics] Training events consumption error:', err);
     });
 
     isConsuming = true;
-    logger.info('[Analytics] Event consumption started');
+    secureLog('info', '[Analytics] Event consumption started');
   } catch (error) {
-    logger.error('[Analytics] Failed to start event consumption:', error);
+    secureLog('error', '[Analytics] Failed to start event consumption:', error);
     throw error;
   }
 }
@@ -63,7 +57,7 @@ async function consumeInferenceEvents(): Promise<void> {
     StreamTopics.INFERENCE_EVENTS,
     async (event: StreamEvent) => {
       try {
-        logger.info(`[Analytics] Received inference event: ${event.event}`, {
+        secureLog('info', `[Analytics] Received inference event: ${event.event}`, {
           model_name: event.model_name,
           latency_ms: event.latency_ms,
           user_id: event.user_id
@@ -85,9 +79,9 @@ async function consumeInferenceEvents(): Promise<void> {
         //   timestamp: new Date(event.timestamp)
         // });
 
-        logger.info('[Analytics] Inference event processed');
+        secureLog('info', '[Analytics] Inference event processed');
       } catch (error) {
-        logger.error('[Analytics] Error processing inference event:', error);
+        secureLog('error', '[Analytics] Error processing inference event:', error);
       }
     },
     {
@@ -110,7 +104,7 @@ async function consumeTrainingEvents(): Promise<void> {
     StreamTopics.TRAINING_EVENTS,
     async (event: StreamEvent) => {
       try {
-        logger.info(`[Analytics] Received training event: ${event.event}`, {
+        secureLog('info', `[Analytics] Received training event: ${event.event}`, {
           experiment_id: event.experiment_id,
           model_name: event.model_name,
           status: event.status
@@ -131,9 +125,9 @@ async function consumeTrainingEvents(): Promise<void> {
         //   timestamp: new Date(event.timestamp)
         // });
 
-        logger.info('[Analytics] Training event processed');
+        secureLog('info', '[Analytics] Training event processed');
       } catch (error) {
-        logger.error('[Analytics] Error processing training event:', error);
+        secureLog('error', '[Analytics] Error processing training event:', error);
       }
     },
     {
@@ -152,7 +146,7 @@ export async function stopEventConsumption(): Promise<void> {
     await streamingClient.disconnect();
     streamingClient = null;
     isConsuming = false;
-    logger.info('[Analytics] Event consumption stopped');
+    secureLog('info', '[Analytics] Event consumption stopped');
   }
 }
 

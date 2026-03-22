@@ -3,13 +3,7 @@
  * Publishes platform-events for task lifecycle
  */
 import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import winston from 'winston';
-
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [new winston.transports.Console({ format: winston.format.simple() })]
-});
+import { secureLog } from '@deepiri/shared-utils';
 
 let streamingClient: StreamingClient | null = null;
 
@@ -25,9 +19,9 @@ export async function initializeEventPublisher(): Promise<void> {
     );
 
     await streamingClient.connect();
-    logger.info('[Task Orchestrator] Connected to Redis Streams');
+    secureLog('info', '[Task Orchestrator] Connected to Redis Streams');
   } catch (error) {
-    logger.error('[Task Orchestrator] Failed to initialize event publisher:', error);
+    secureLog('error', '[Task Orchestrator] Failed to initialize event publisher:', error);
     throw error;
   }
 }
@@ -59,9 +53,9 @@ export async function publishTaskCreated(
 
   try {
     await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    logger.info(`[Task Orchestrator] Published task-created event: ${taskId}`);
+    secureLog('info', `[Task Orchestrator] Published task-created event: ${taskId}`);
   } catch (error) {
-    logger.error('[Task Orchestrator] Failed to publish task-created event:', error);
+    secureLog('error', '[Task Orchestrator] Failed to publish task-created event:', error);
   }
 }
 
@@ -90,9 +84,9 @@ export async function publishTaskStarted(
 
   try {
     await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    logger.info(`[Task Orchestrator] Published task-started event: ${taskId}`);
+    secureLog('info', `[Task Orchestrator] Published task-started event: ${taskId}`);
   } catch (error) {
-    logger.error('[Task Orchestrator] Failed to publish task-started event:', error);
+    secureLog('error', '[Task Orchestrator] Failed to publish task-started event:', error);
   }
 }
 
@@ -123,9 +117,9 @@ export async function publishTaskCompleted(
 
   try {
     await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    logger.info(`[Task Orchestrator] Published task-completed event: ${taskId}`);
+    secureLog('info', `[Task Orchestrator] Published task-completed event: ${taskId}`);
   } catch (error) {
-    logger.error('[Task Orchestrator] Failed to publish task-completed event:', error);
+    secureLog('error', '[Task Orchestrator] Failed to publish task-completed event:', error);
   }
 }
 
@@ -156,9 +150,9 @@ export async function publishTaskFailed(
 
   try {
     await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    logger.info(`[Task Orchestrator] Published task-failed event: ${taskId}`);
+    secureLog('info', `[Task Orchestrator] Published task-failed event: ${taskId}`);
   } catch (error) {
-    logger.error('[Task Orchestrator] Failed to publish task-failed event:', error);
+    secureLog('error', '[Task Orchestrator] Failed to publish task-failed event:', error);
   }
 }
 

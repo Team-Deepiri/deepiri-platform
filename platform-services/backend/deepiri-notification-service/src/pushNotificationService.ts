@@ -1,5 +1,6 @@
 import * as webpush from 'web-push';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 
 const logger = createLogger('push-notification-service');
 
@@ -40,12 +41,12 @@ class PushNotificationService {
           vapidPrivateKey
         );
         this.webPushInitialized = true;
-        logger.info('Web Push API initialized');
+        secureLog('info', 'Web Push API initialized');
       } else {
-        logger.warn('Web Push not configured - VAPID keys not set. Generate with: npm install -g web-push && web-push generate-vapid-keys');
+        secureLog('warn', 'Web Push not configured - VAPID keys not set. Generate with: npm install -g web-push && web-push generate-vapid-keys');
       }
     } catch (error) {
-      logger.error('Web Push initialization failed:', error);
+      secureLog('error', 'Web Push initialization failed:', error);
     }
   }
 
@@ -58,7 +59,7 @@ class PushNotificationService {
   async sendPushNotification(userId: string, subscription: PushSubscription, notification: Notification) {
     try {
       if (!this.webPushInitialized) {
-        logger.warn('Web Push not initialized, skipping push notification');
+        secureLog('warn', 'Web Push not initialized, skipping push notification');
         return { success: false, reason: 'Web Push not initialized' };
       }
 
@@ -79,11 +80,11 @@ class PushNotificationService {
       };
 
       await webpush.sendNotification(subscription, payload, options);
-      logger.info('Push notification sent', { userId });
+      secureLog('info', 'Push notification sent', { userId });
       
       return { success: true };
     } catch (error: any) {
-      logger.error('Error sending push notification:', error);
+      secureLog('error', 'Error sending push notification:', error);
       
       // Handle specific error cases
       if (error.statusCode === 410) {
@@ -129,7 +130,7 @@ class PushNotificationService {
       const successCount = results.filter(r => r.status === 'fulfilled').length;
       const failureCount = results.filter(r => r.status === 'rejected').length;
 
-      logger.info('Multicast push notification sent', { 
+      secureLog('info', 'Multicast push notification sent', { 
         successCount,
         failureCount 
       });
@@ -140,7 +141,7 @@ class PushNotificationService {
         failureCount
       };
     } catch (error: any) {
-      logger.error('Error sending multicast push:', error);
+      secureLog('error', 'Error sending multicast push:', error);
       return { success: false, error: error.message };
     }
   }
@@ -156,7 +157,7 @@ class PushNotificationService {
       }
       return true;
     } catch (error) {
-      logger.error('Error validating subscription:', error);
+      secureLog('error', 'Error validating subscription:', error);
       return false;
     }
   }

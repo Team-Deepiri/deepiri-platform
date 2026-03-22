@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from '../db';
 import { IReward, RewardType } from '../models/Reward';
 import boostService from './boostService';
@@ -57,7 +58,7 @@ class RewardService {
       
       return this.rewardToInterface(reward);
     } catch (error: any) {
-      logger.error('Error creating reward:', error);
+      secureLog('error', 'Error creating reward:', error);
       throw error;
     }
   }
@@ -116,7 +117,7 @@ class RewardService {
       
       return this.rewardToInterface(updatedReward);
     } catch (error: any) {
-      logger.error('Error claiming reward:', error);
+      secureLog('error', 'Error claiming reward:', error);
       throw error;
     }
   }
@@ -141,7 +142,7 @@ class RewardService {
       
       return rewards.map(reward => this.rewardToInterface(reward));
     } catch (error: any) {
-      logger.error('Error getting rewards:', error);
+      secureLog('error', 'Error getting rewards:', error);
       throw error;
     }
   }
@@ -179,7 +180,7 @@ class RewardService {
         data: reward
       });
     } catch (error: any) {
-      logger.error('Error creating reward:', error);
+      secureLog('error', 'Error creating reward:', error);
       res.status(500).json({ error: 'Failed to create reward' });
     }
   }
@@ -207,7 +208,7 @@ class RewardService {
         data: rewards
       });
     } catch (error: any) {
-      logger.error('Error getting rewards:', error);
+      secureLog('error', 'Error getting rewards:', error);
       res.status(500).json({ error: 'Failed to get rewards' });
     }
   }
@@ -226,7 +227,7 @@ class RewardService {
         data: reward
       });
     } catch (error: any) {
-      logger.error('Error claiming reward:', error);
+      secureLog('error', 'Error claiming reward:', error);
       res.status(400).json({ error: error.message || 'Failed to claim reward' });
     }
   }
@@ -259,7 +260,7 @@ class RewardService {
         data: { count }
       });
     } catch (error: any) {
-      logger.error('Error getting pending count:', error);
+      secureLog('error', 'Error getting pending count:', error);
       res.status(500).json({ error: 'Failed to get pending count' });
     }
   }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 
 const logger = createLogger('behavioral-clustering');
 
@@ -31,7 +32,7 @@ class BehavioralClusteringService {
 
       res.json(result);
     } catch (error: any) {
-      logger.error('Error in clustering analysis:', error);
+      secureLog('error', 'Error in clustering analysis:', error);
       res.status(500).json({ error: 'Clustering analysis failed' });
     }
   }
@@ -42,7 +43,7 @@ class BehavioralClusteringService {
       // Placeholder - would determine user's cluster group
       res.json({ userId, group: 'default' });
     } catch (error: any) {
-      logger.error('Error getting user group:', error);
+      secureLog('error', 'Error getting user group:', error);
       res.status(500).json({ error: 'Failed to get user group' });
     }
   }
@@ -70,7 +71,7 @@ class BehavioralClusteringService {
         iterations
       };
     } catch (error) {
-      logger.error('Error in K-means clustering:', error);
+      secureLog('error', 'Error in K-means clustering:', error);
       throw error;
     }
   }
@@ -117,7 +118,7 @@ class BehavioralClusteringService {
         noisePoints: dataPoints.filter((_, i) => !visited.has(i))
       };
     } catch (error) {
-      logger.error('Error in DBSCAN clustering:', error);
+      secureLog('error', 'Error in DBSCAN clustering:', error);
       throw error;
     }
   }

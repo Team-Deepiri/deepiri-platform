@@ -234,15 +234,15 @@ async def transaction_with_error_handling():
             
     except asyncpg.UniqueViolationError:
         # Handle duplicate key error
-        logger.error("User already exists")
+        secureLog('error', "User already exists")
         raise
     except asyncpg.ForeignKeyViolationError:
         # Handle foreign key constraint error
-        logger.error("Invalid reference")
+        secureLog('error', "Invalid reference")
         raise
     except Exception as e:
         # Handle any other error
-        logger.error(f"Transaction failed: {e}")
+        secureLog('error', f"Transaction failed: {e}")
         raise
 ```
 
@@ -570,7 +570,7 @@ async def long_running_transaction():
                         # Commit this item's changes
                     except Exception as e:
                         # Rollback only this item
-                        logger.error(f"Failed to process item {item.id}: {e}")
+                        secureLog('error', f"Failed to process item {item.id}: {e}")
                         continue
 ```
 
@@ -733,7 +733,7 @@ async with postgres.transaction() as conn:
         await conn.execute("INSERT INTO users ...")
     except Exception as e:
         # Log error but let it propagate to rollback
-        logger.error(f"Error: {e}")
+        secureLog('error', f"Error: {e}")
         raise
 ```
 

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 import prisma from '../db';
 import { IObjective } from '../models/Objective';
 import momentumService from './momentumService';
@@ -74,7 +75,7 @@ class ObjectiveService {
       
       return this.taskToObjective(task);
     } catch (error: any) {
-      logger.error('Error creating objective:', error);
+      secureLog('error', 'Error creating objective:', error);
       throw error;
     }
   }
@@ -149,12 +150,12 @@ class ObjectiveService {
           }
         });
       } catch (error: any) {
-        logger.error('Failed to emit objective completed event:', error.message);
+        secureLog('error', 'Failed to emit objective completed event:', error.message);
       }
       
       return this.taskToObjective(updatedTask);
     } catch (error: any) {
-      logger.error('Error completing objective:', error);
+      secureLog('error', 'Error completing objective:', error);
       throw error;
     }
   }
@@ -186,7 +187,7 @@ class ObjectiveService {
         data: objective
       });
     } catch (error: any) {
-      logger.error('Error creating objective:', error);
+      secureLog('error', 'Error creating objective:', error);
       res.status(500).json({ error: 'Failed to create objective' });
     }
   }
@@ -230,7 +231,7 @@ class ObjectiveService {
         data: objectives
       });
     } catch (error: any) {
-      logger.error('Error getting objectives:', error);
+      secureLog('error', 'Error getting objectives:', error);
       res.status(500).json({ error: 'Failed to get objectives' });
     }
   }
@@ -259,7 +260,7 @@ class ObjectiveService {
         data: this.taskToObjective(task)
       });
     } catch (error: any) {
-      logger.error('Error getting objective:', error);
+      secureLog('error', 'Error getting objective:', error);
       res.status(500).json({ error: 'Failed to get objective' });
     }
   }
@@ -283,7 +284,7 @@ class ObjectiveService {
         data: objective
       });
     } catch (error: any) {
-      logger.error('Error completing objective:', error);
+      secureLog('error', 'Error completing objective:', error);
       res.status(400).json({ error: error.message || 'Failed to complete objective' });
     }
   }
@@ -318,7 +319,7 @@ class ObjectiveService {
         data: this.taskToObjective(task)
       });
     } catch (error: any) {
-      logger.error('Error updating objective:', error);
+      secureLog('error', 'Error updating objective:', error);
       res.status(500).json({ error: 'Failed to update objective' });
     }
   }
@@ -339,7 +340,7 @@ class ObjectiveService {
         message: 'Objective deleted'
       });
     } catch (error: any) {
-      logger.error('Error deleting objective:', error);
+      secureLog('error', 'Error deleting objective:', error);
       res.status(500).json({ error: 'Failed to delete objective' });
     }
   }

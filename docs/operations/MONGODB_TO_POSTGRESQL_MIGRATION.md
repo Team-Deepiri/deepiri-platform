@@ -92,8 +92,8 @@ import mongoose from 'mongoose';
 
 const MONGO_URI: string = process.env.MONGO_URI || 'mongodb://mongodb:27017/deepiri';
 mongoose.connect(MONGO_URI)
-  .then(() => logger.info('Auth Service: Connected to MongoDB'))
-  .catch((err: Error) => logger.error('Auth Service: MongoDB connection error', err));
+  .then(() => secureLog('info', 'Auth Service: Connected to MongoDB'))
+  .catch((err: Error) => secureLog('error', 'Auth Service: MongoDB connection error', err));
 ```
 
 With (using pg):
@@ -104,8 +104,8 @@ const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://deepiri:deepiripa
 export const pool = new Pool({ connectionString: DATABASE_URL });
 
 pool.connect()
-  .then(() => logger.info('Auth Service: Connected to PostgreSQL'))
-  .catch((err: Error) => logger.error('Auth Service: PostgreSQL connection error', err));
+  .then(() => secureLog('info', 'Auth Service: Connected to PostgreSQL'))
+  .catch((err: Error) => secureLog('error', 'Auth Service: PostgreSQL connection error', err));
 ```
 
 #### `src/authService.ts`

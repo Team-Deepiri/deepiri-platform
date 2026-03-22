@@ -86,4 +86,3 @@ export function createLogger(serviceName: string = 'service'): winston.Logger {
 
   return logger;
 }
-

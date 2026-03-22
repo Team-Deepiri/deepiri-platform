@@ -1,6 +1,7 @@
 import { InfluxDB, Point, WriteApi, QueryApi } from '@influxdata/influxdb-client';
 import { Request, Response } from 'express';
 import { createLogger } from '@deepiri/shared-utils';
+import { secureLog } from '@deepiri/shared-utils';
 
 const logger = createLogger('time-series-analytics');
 
@@ -28,9 +29,9 @@ class TimeSeriesAnalyticsService {
       this.bucket = bucket;
       this.org = org;
 
-      logger.info('InfluxDB initialized');
+      secureLog('info', 'InfluxDB initialized');
     } catch (error) {
-      logger.error('InfluxDB initialization failed:', error);
+      secureLog('error', 'InfluxDB initialization failed:', error);
     }
   }
 
@@ -46,7 +47,7 @@ class TimeSeriesAnalyticsService {
       await this.recordMetric(userId, metric, value, tags || {});
       res.json({ success: true });
     } catch (error: any) {
-      logger.error('Error recording data:', error);
+      secureLog('error', 'Error recording data:', error);
       res.status(500).json({ error: 'Failed to record data' });
     }
   }
@@ -69,7 +70,7 @@ class TimeSeriesAnalyticsService {
       );
       res.json(results);
     } catch (error: any) {
-      logger.error('Error getting analytics:', error);
+      secureLog('error', 'Error getting analytics:', error);
       res.status(500).json({ error: 'Failed to get analytics' });
     }
   }
@@ -93,7 +94,7 @@ class TimeSeriesAnalyticsService {
 
       logger.debug('Metric recorded', { userId, metric, value });
     } catch (error) {
-      logger.error('Error recording metric:', error);
+      secureLog('error', 'Error recording metric:', error);
       throw error;
     }
   }
@@ -123,7 +124,7 @@ class TimeSeriesAnalyticsService {
 
       return results;
     } catch (error) {
-      logger.error('Error querying metrics:', error);
+      secureLog('error', 'Error querying metrics:', error);
       throw error;
     }
   }
