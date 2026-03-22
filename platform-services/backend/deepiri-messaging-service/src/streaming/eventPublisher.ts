@@ -1,5 +1,17 @@
 import { logger } from '../utils/logger';
 import { config } from '../config/environment';
+import { StreamingClient, StreamTopics } from '@deepiri/shared-utils';
+
+let streamingClient: StreamingClient | null = null;
+
+export async function initializeEventPublisher(): Promise<void> {  
+  streamingClient = new StreamingClient(
+    config.redis.host,
+    config.redis.port,    
+    config.redis.password
+  );  
+  await streamingClient.connect();
+}
 
 // For now, use simple event publishing
 // In production, integrate with Redis Streams or message queue
@@ -9,6 +21,23 @@ class EventPublisher {
    */
   async publishMessageCreated(message: any): Promise<void> {
     try {
+      if (!streamingClient) await initializeEventPublisher();
+
+      await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, {
+        event: 'message:new',
+        timestamp: new Date().toISOString(),
+        source: 'messaging-service',    
+        data: {
+          id: message.id,
+          chatRoomId: message.chatRoomId,
+          senderId: message.senderId,
+          senderType: message.senderType,
+          content: message.content,
+          createdAt: message.createdAt,
+        },
+      });
+
+
       logger.info('Message created event', {
         messageId: message.id,
         chatRoomId: message.chatRoomId,
@@ -30,12 +59,23 @@ class EventPublisher {
    */
   async publishChatRoomCreated(chatRoomId: string, type: string): Promise<void> {
     try {
+      if (!streamingClient) await initializeEventPublisher();
+
+      await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, {
+        event: 'chatroom:new',
+        timestamp: new Date().toISOString(),
+        source: 'messaging-service',    
+        data: {
+          chatRoomId,
+          type
+        },
+      });
+
       logger.info('Chat room created event', {
         chatRoomId,
         type,
       });
 
-      // TODO: Integrate with Redis Streams
     } catch (error: any) {
       logger.error('Failed to publish chat room created event', {
         error: error.message,
