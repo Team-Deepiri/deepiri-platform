@@ -12,6 +12,63 @@ const logger = winston.createLogger({
 
 const MAX_BODY_KEYS = 50;
 const MAX_STRING_VALUE_LENGTH = 10000;
+const APP_HEADER_PREFIX = 'x-';
+
+const getAppHeaders = (headers: Record<string, unknown>): Record<string, unknown> => {
+  const appHeaders: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(headers)) {
+    const normalized = key.toLowerCase();
+    if (normalized === 'authorization' || normalized.startsWith(APP_HEADER_PREFIX)) {
+      appHeaders[normalized] = value;
+    }
+  }
+
+  return appHeaders;
+};
+
+const sanitizeValue = (value: unknown): unknown => {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item));
+  }
+
+  if (value && typeof value === 'object') {
+    const sanitizedRecord: Record<string, unknown> = {};
+    for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+      sanitizedRecord[key] = sanitizeValue(nestedValue);
+    }
+    return sanitizedRecord;
+  }
+
+  return value;
+};
+
+const respondValidationError = (
+  req: Request,
+  res: Response,
+  errors: Array<{ field: string; message: string; value?: unknown }>,
+): void => {
+  const requestId = (req.headers['x-request-id'] as string) || 'unknown';
+
+  logger.warn('Body validation failed', {
+    requestId,
+    path: req.path,
+    method: req.method,
+    errors,
+  });
+
+  res.status(400).json({
+    success: false,
+    message: 'Validation failed',
+    requestId,
+    timestamp: new Date().toISOString(),
+    errors,
+  });
+};
 
 export const validate = (validations: ValidationChain[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {

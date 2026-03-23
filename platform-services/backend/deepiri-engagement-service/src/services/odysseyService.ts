@@ -92,7 +92,7 @@ class OdysseyService {
           tasks: true
         }
       });
-      
+
       return this.questToOdyssey(quest);
     } catch (error: any) {
       secureLog('error', 'Error creating odyssey:', error);
@@ -128,8 +128,8 @@ class OdysseyService {
         where: { id: odysseyId },
         data: {
           totalObjectives: quest.tasks.length + 1,
-          progressPercentage: quest.totalObjectives > 0 
-            ? (quest.objectivesCompleted / (quest.totalObjectives + 1)) * 100 
+          progressPercentage: quest.totalObjectives > 0
+            ? (quest.objectivesCompleted / (quest.totalObjectives + 1)) * 100
             : 0
         },
         include: {
@@ -137,7 +137,7 @@ class OdysseyService {
           tasks: true
         }
       });
-      
+
       return this.questToOdyssey(updatedQuest);
     } catch (error: any) {
       secureLog('error', 'Error adding objective to odyssey:', error);
@@ -232,23 +232,6 @@ class OdysseyService {
             milestone.momentumReward,
             'tasks'
           );
-          
-          // Emit milestone completed event
-          try {
-            const axios = (await import('axios')).default;
-            const REALTIME_GATEWAY_URL = process.env.REALTIME_GATEWAY_URL || 'http://realtime-gateway:5008';
-            await axios.post(`${REALTIME_GATEWAY_URL}/emit/gamification`, {
-              userId: quest.userId,
-              type: 'milestone_completed',
-              data: {
-                odysseyId: quest.id,
-                milestoneTitle: milestone.title,
-                momentumEarned: milestone.momentumReward
-              }
-            });
-          } catch (error: any) {
-            secureLog('error', 'Failed to emit milestone completed event:', error.message);
-          }
         }
       }
 
@@ -277,12 +260,12 @@ class OdysseyService {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const { userId, title, description, scale, minimumHoursBeforeSelection, organizationId, seasonId } = req.body;
-      
+
       if (!userId || !title) {
         res.status(400).json({ error: 'userId and title are required' });
         return;
       }
-      
+
       const odyssey = await this.createOdyssey(
         userId,
         title,
@@ -292,7 +275,7 @@ class OdysseyService {
         organizationId,
         seasonId
       );
-      
+
       res.json({
         success: true,
         data: odyssey
@@ -310,21 +293,21 @@ class OdysseyService {
     try {
       const { userId } = req.params;
       const { status, organizationId, seasonId } = req.query;
-      
+
       if (!userId) {
         res.status(400).json({ error: 'userId is required' });
         return;
       }
-      
+
       const where: any = { userId };
-      
+
       if (status) {
         where.status = status;
       }
       if (seasonId) {
         where.seasonId = seasonId as string;
       }
-      
+
       const quests = await prisma.quest.findMany({
         where,
         include: {
@@ -335,9 +318,9 @@ class OdysseyService {
           createdAt: 'desc'
         }
       });
-      
+
       const odysseys = quests.map(quest => this.questToOdyssey(quest));
-      
+
       res.json({
         success: true,
         data: odysseys
@@ -354,7 +337,7 @@ class OdysseyService {
   async getOdyssey(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       const quest = await prisma.quest.findUnique({
         where: { id },
         include: {
@@ -362,12 +345,12 @@ class OdysseyService {
           tasks: true
         }
       });
-      
+
       if (!quest) {
         res.status(404).json({ error: 'Odyssey not found' });
         return;
       }
-      
+
       res.json({
         success: true,
         data: this.questToOdyssey(quest)
@@ -385,14 +368,14 @@ class OdysseyService {
     try {
       const { id } = req.params;
       const { objectiveId } = req.body;
-      
+
       if (!objectiveId) {
         res.status(400).json({ error: 'objectiveId is required' });
         return;
       }
-      
+
       const odyssey = await this.addObjective(id, objectiveId);
-      
+
       res.json({
         success: true,
         data: odyssey
@@ -410,14 +393,14 @@ class OdysseyService {
     try {
       const { id } = req.params;
       const { title, description, momentumReward } = req.body;
-      
+
       if (!title) {
         res.status(400).json({ error: 'title is required' });
         return;
       }
-      
+
       const odyssey = await this.addMilestone(id, title, description, momentumReward);
-      
+
       res.json({
         success: true,
         data: odyssey
@@ -434,9 +417,9 @@ class OdysseyService {
   async completeMilestoneEndpoint(req: Request, res: Response): Promise<void> {
     try {
       const { id, milestoneId } = req.params;
-      
+
       const odyssey = await this.completeMilestone(id, milestoneId);
-      
+
       res.json({
         success: true,
         data: odyssey
@@ -454,7 +437,7 @@ class OdysseyService {
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       // Map IOdyssey fields to Quest fields
       const questUpdates: any = {};
       if (updates.title) questUpdates.title = updates.title;
@@ -463,7 +446,7 @@ class OdysseyService {
       if (updates.scale) questUpdates.scale = updates.scale;
       if (updates.seasonId) questUpdates.seasonId = updates.seasonId;
       if (updates.endDate) questUpdates.endDate = new Date(updates.endDate);
-      
+
       const quest = await prisma.quest.update({
         where: { id },
         data: questUpdates,
@@ -472,7 +455,7 @@ class OdysseyService {
           tasks: true
         }
       });
-      
+
       res.json({
         success: true,
         data: this.questToOdyssey(quest)

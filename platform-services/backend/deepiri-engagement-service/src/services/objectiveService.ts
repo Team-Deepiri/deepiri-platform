@@ -72,7 +72,7 @@ class ObjectiveService {
           subtaskItems: true
         }
       });
-      
+
       return this.taskToObjective(task);
     } catch (error: any) {
       secureLog('error', 'Error creating objective:', error);
@@ -95,15 +95,15 @@ class ObjectiveService {
           subtaskItems: true
         }
       });
-      
+
       if (!task) {
         throw new Error('Objective not found');
       }
-      
+
       if (task.status === 'done') {
         return this.taskToObjective(task);
       }
-      
+
       // Update task status
       const updatedTask = await prisma.task.update({
         where: { id: objectiveId },
@@ -116,7 +116,7 @@ class ObjectiveService {
           subtaskItems: true
         }
       });
-      
+
       // Create completion record
       await prisma.taskCompletion.create({
         data: {
@@ -128,31 +128,14 @@ class ObjectiveService {
           completionMethod: autoDetected ? 'auto' : 'manual'
         }
       });
-      
+
       // Award momentum
       await momentumService.awardMomentum(
         task.userId,
         task.momentumReward,
         'tasks'
       );
-      
-      // Emit objective completed event
-      try {
-        const axios = (await import('axios')).default;
-        const REALTIME_GATEWAY_URL = process.env.REALTIME_GATEWAY_URL || 'http://realtime-gateway:5008';
-        await axios.post(`${REALTIME_GATEWAY_URL}/emit/gamification`, {
-          userId: task.userId,
-          type: 'objective_completed',
-          data: {
-            objectiveId: task.id,
-            title: task.title,
-            momentumEarned: task.momentumReward
-          }
-        });
-      } catch (error: any) {
-        secureLog('error', 'Failed to emit objective completed event:', error.message);
-      }
-      
+
       return this.taskToObjective(updatedTask);
     } catch (error: any) {
       secureLog('error', 'Error completing objective:', error);
@@ -166,12 +149,12 @@ class ObjectiveService {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const { userId, title, description, momentumReward, deadline, odysseyId, seasonId } = req.body;
-      
+
       if (!userId || !title) {
         res.status(400).json({ error: 'userId and title are required' });
         return;
       }
-      
+
       const objective = await this.createObjective(
         userId,
         title,
@@ -181,7 +164,7 @@ class ObjectiveService {
         odysseyId,
         seasonId
       );
-      
+
       res.json({
         success: true,
         data: objective
@@ -199,21 +182,21 @@ class ObjectiveService {
     try {
       const { userId } = req.params;
       const { status, odysseyId, seasonId } = req.query;
-      
+
       if (!userId) {
         res.status(400).json({ error: 'userId is required' });
         return;
       }
-      
+
       const where: any = { userId };
-      
+
       if (status) {
         where.status = status;
       }
       if (odysseyId) {
         where.questId = odysseyId;
       }
-      
+
       const tasks = await prisma.task.findMany({
         where,
         include: {
@@ -223,9 +206,9 @@ class ObjectiveService {
           createdAt: 'desc'
         }
       });
-      
+
       const objectives = tasks.map(task => this.taskToObjective(task));
-      
+
       res.json({
         success: true,
         data: objectives
@@ -242,19 +225,19 @@ class ObjectiveService {
   async getObjective(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       const task = await prisma.task.findUnique({
         where: { id },
         include: {
           subtaskItems: true
         }
       });
-      
+
       if (!task) {
         res.status(404).json({ error: 'Objective not found' });
         return;
       }
-      
+
       res.json({
         success: true,
         data: this.taskToObjective(task)
@@ -272,13 +255,13 @@ class ObjectiveService {
     try {
       const { id } = req.params;
       const { autoDetected, actualDuration } = req.body;
-      
+
       const objective = await this.completeObjective(
         id,
         autoDetected || false,
         actualDuration
       );
-      
+
       res.json({
         success: true,
         data: objective
@@ -296,7 +279,7 @@ class ObjectiveService {
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       // Map IObjective fields to Task fields
       const taskUpdates: any = {};
       if (updates.title) taskUpdates.title = updates.title;
@@ -305,7 +288,7 @@ class ObjectiveService {
       if (updates.momentumReward !== undefined) taskUpdates.momentumReward = updates.momentumReward;
       if (updates.deadline) taskUpdates.dueDate = new Date(updates.deadline);
       if (updates.odysseyId) taskUpdates.questId = updates.odysseyId;
-      
+
       const task = await prisma.task.update({
         where: { id },
         data: taskUpdates,
@@ -313,7 +296,7 @@ class ObjectiveService {
           subtaskItems: true
         }
       });
-      
+
       res.json({
         success: true,
         data: this.taskToObjective(task)
@@ -330,11 +313,11 @@ class ObjectiveService {
   async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       await prisma.task.delete({
         where: { id }
       });
-      
+
       res.json({
         success: true,
         message: 'Objective deleted'

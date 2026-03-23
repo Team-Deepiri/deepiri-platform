@@ -5,14 +5,14 @@ import prisma from '../db';
 
 const logger = createLogger('momentum-service');
 
-type MomentumSource = 
-  | 'commits' 
-  | 'docs' 
-  | 'tasks' 
-  | 'reviews' 
-  | 'comments' 
-  | 'attendance' 
-  | 'featuresShipped' 
+type MomentumSource =
+  | 'commits'
+  | 'docs'
+  | 'tasks'
+  | 'reviews'
+  | 'comments'
+  | 'attendance'
+  | 'featuresShipped'
   | 'designEdits';
 
 class MomentumService {
@@ -28,7 +28,7 @@ class MomentumService {
           achievements: { orderBy: { unlockedAt: 'desc' } }
         }
       });
-      
+
       if (!profile) {
         profile = await prisma.momentum.create({
           data: {
@@ -51,7 +51,7 @@ class MomentumService {
           }
         });
       }
-      
+
       return profile;
     } catch (error: any) {
       secureLog('error', 'Error getting momentum profile:', error);
@@ -72,14 +72,14 @@ class MomentumService {
    * Award momentum to a user
    */
   async awardMomentum(
-    userId: string, 
-    amount: number, 
+    userId: string,
+    amount: number,
     source: MomentumSource,
     metadata?: Record<string, any>
   ) {
     try {
       const profile = await this.getOrCreateProfile(userId);
-      
+
       // Map source to field name
       const sourceFieldMap: Record<MomentumSource, string> = {
         commits: 'commits',
@@ -96,7 +96,7 @@ class MomentumService {
       const previousLevel = profile.currentLevel;
       const newTotalMomentum = profile.totalMomentum + amount;
       const newMomentumToNextLevel = this.calculateMomentumToNextLevel(profile.currentLevel);
-      
+
       // Check for level up
       let newLevel = profile.currentLevel;
       if (newTotalMomentum >= newMomentumToNextLevel) {
@@ -130,42 +130,8 @@ class MomentumService {
         });
 
         secureLog('info', `User ${userId} leveled up to level ${newLevel}`);
-        
-        // Emit level up event via realtime gateway
-        try {
-          const axios = (await import('axios')).default;
-          const REALTIME_GATEWAY_URL = process.env.REALTIME_GATEWAY_URL || 'http://realtime-gateway:5008';
-          await axios.post(`${REALTIME_GATEWAY_URL}/emit/gamification`, {
-            userId,
-            type: 'level_up',
-            data: {
-              newLevel,
-              totalMomentum: newTotalMomentum
-            }
-          });
-        } catch (error: any) {
-          secureLog('error', 'Failed to emit level up event:', error.message);
-        }
       }
-      
-      // Emit momentum awarded event
-      try {
-        const axios = (await import('axios')).default;
-        const REALTIME_GATEWAY_URL = process.env.REALTIME_GATEWAY_URL || 'http://realtime-gateway:5008';
-        await axios.post(`${REALTIME_GATEWAY_URL}/emit/gamification`, {
-          userId,
-          type: 'momentum_awarded',
-          data: {
-            amount,
-            source,
-            newTotal: newTotalMomentum,
-            currentLevel: newLevel
-          }
-        });
-      } catch (error: any) {
-        secureLog('error', 'Failed to emit momentum event:', error.message);
-      }
-      
+
       return updated;
     } catch (error: any) {
       secureLog('error', 'Error awarding momentum:', error);
@@ -179,14 +145,14 @@ class MomentumService {
   async getProfile(req: Request, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
-      
+
       if (!userId) {
         res.status(400).json({ error: 'userId is required' });
         return;
       }
-      
+
       const profile = await this.getOrCreateProfile(userId);
-      
+
       res.json({
         success: true,
         data: {
@@ -233,24 +199,24 @@ class MomentumService {
   async award(req: Request, res: Response): Promise<void> {
     try {
       const { userId, amount, source, metadata } = req.body;
-      
+
       if (!userId || !amount || !source) {
         res.status(400).json({ error: 'userId, amount, and source are required' });
         return;
       }
-      
+
       const validSources: MomentumSource[] = [
-        'commits', 'docs', 'tasks', 'reviews', 
+        'commits', 'docs', 'tasks', 'reviews',
         'comments', 'attendance', 'featuresShipped', 'designEdits'
       ];
-      
+
       if (!validSources.includes(source)) {
         res.status(400).json({ error: `Invalid source. Must be one of: ${validSources.join(', ')}` });
         return;
       }
-      
+
       const profile = await this.awardMomentum(userId, amount, source, metadata);
-      
+
       res.json({
         success: true,
         data: {
@@ -281,11 +247,11 @@ class MomentumService {
   async getRanking(req: Request, res: Response): Promise<void> {
     try {
       const { limit = 100, sortBy = 'totalMomentum' } = req.query;
-      
-      const orderBy = sortBy === 'level' 
+
+      const orderBy = sortBy === 'level'
         ? { currentLevel: 'desc' as const }
         : { totalMomentum: 'desc' as const };
-      
+
       const profiles = await prisma.momentum.findMany({
         orderBy,
         take: parseInt(limit as string),
@@ -303,7 +269,7 @@ class MomentumService {
           designEdits: true
         }
       });
-      
+
       res.json({
         success: true,
         data: profiles.map((profile: typeof profiles[0], index: number) => ({
@@ -335,27 +301,27 @@ class MomentumService {
   async getUserRank(req: Request, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
-      
+
       if (!userId) {
         res.status(400).json({ error: 'userId is required' });
         return;
       }
-      
+
       const profile = await this.getOrCreateProfile(userId);
-      
+
       // Count users with higher momentum
       const rank = await prisma.momentum.count({
         where: {
           OR: [
             { totalMomentum: { gt: profile.totalMomentum } },
-            { 
+            {
               totalMomentum: profile.totalMomentum,
               userId: { lt: userId }
             }
           ]
         }
       }) + 1;
-      
+
       res.json({
         success: true,
         data: {
