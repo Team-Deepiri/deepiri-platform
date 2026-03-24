@@ -4,6 +4,14 @@
   "description": "Shared utilities for Deepiri microservices",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "publishConfig": {
+  "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+  "type": "git",
+  "url": "git+https://github.com/Team-Deepiri/deepiri-platform.git",
+  "directory": "platform-services/shared/deepiri-shared-utils"
+  },
   "files": [
     "dist",
     "package.json",
