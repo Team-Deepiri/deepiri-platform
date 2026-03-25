@@ -1,5 +1,5 @@
 {
-  "name": "@deepiri/shared-utils",
+  "name": "@team-deepiri/shared-utils",
   "version": "1.0.0",
   "description": "Shared utilities for Deepiri microservices",
   "main": "dist/index.js",
