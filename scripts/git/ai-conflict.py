@@ -50,8 +50,6 @@ class Colors:
 class Hints:
     HINT = Colors.GRAY
 
-
-class Hints:
     MERGE = """
 ┌─ HINT: What is a Merge? ─────────────────────────────────────────────┐
 │ A merge combines two branches by joining their histories.           │

@@ -32,7 +32,7 @@ if [ -z "$CURRENT_HOOKS_PATH" ] || [ "$CURRENT_HOOKS_PATH" != ".git-hooks" ]; th
     git config core.hooksPath .git-hooks
     if [ -f ".git-hooks/pre-push" ]; then
         echo "🔧 Git hooks automatically configured (hooksPath = .git-hooks)"
-        echo "✔ You are now protected from pushing to 'main', 'dev', 'master', or branches containing 'team-dev'."
+        echo "✔ You are now protected from pushing to 'main' and 'master' branches."
     fi
 fi
 

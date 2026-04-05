@@ -268,7 +268,7 @@ See [Team Development Environments](#team-development-environments) section for 
 
 ### ⚠️ **CRITICAL: Git Hooks Must Be Set Up First**
 
-Git hooks protect critical branches (`main`, `dev`, `master`, and team-dev branches) from accidental direct pushes. **This setup is required for all team members.**
+Git hooks protect critical branches (`main`, `master`, and branches containing `team-dev`) from accidental direct pushes. **This setup is required for all team members.**
 
 ### Automatic Setup (Recommended)
 
@@ -322,7 +322,7 @@ cd team_submodule_commands/<your-team>
 ### What the Hooks Do
 
 1. **pre-push**: Blocks direct pushes to protected branches
-   - Protected branches: `main`, `dev`, `master`, `*-team-dev`
+   - Protected branches: `main`, `master`, `*-team-dev`
    - Forces use of pull requests for code review
 
 2. **post-checkout**: Automatically configures hooks on checkout
@@ -338,7 +338,6 @@ cd team_submodule_commands/<your-team>
 
 **⚠️ You cannot push directly to these branches:**
 - `main` - Production branch
-- `dev` - Development branch
 - `master` - Legacy production branch
 - `*-team-dev` - Team development branches (e.g., `backend-team-dev`)
 
@@ -346,7 +345,7 @@ cd team_submodule_commands/<your-team>
 1. Create a feature branch: `git checkout -b firstname_lastname/feature/feature-name`
 2. Make your changes and commit
 3. Push your branch: `git push origin firstname_lastname/feature/feature-name`
-4. Create a Pull Request to merge into `main` or `dev`
+4. Create a Pull Request to merge into `dev` (or your team's integration branch)
 
 ### Troubleshooting Git Hooks
 

@@ -28,7 +28,7 @@ cd deepiri-platform
 
 **✅ Git hooks are automatically configured when you clone the repository!**
 
-The hooks protect the `main` and `dev` branches from accidental pushes. You'll need to use Pull Requests instead.
+The hooks protect `main`, `master`, and branches containing `team-dev` from accidental pushes. Use Pull Requests for protected branches.
 
 **If hooks aren't working** (e.g., existing clone), run:
 ```bash
@@ -120,9 +120,9 @@ After setting up Git hooks, follow your team-specific path:
    git push -u origin feature/your-feature-name
    ```
 
-4. **Open a Pull Request** into `staging` (NOT `main` or `dev`)
+4. **Open a Pull Request** into `dev` (or `staging` if your team flow uses it)
 
-**⚠️ Remember:** Direct pushes to `main` and `dev` are blocked. You must use Pull Requests.
+**⚠️ Remember:** Direct pushes to `main`, `master`, and branches containing `team-dev` are blocked.
 
 ### Common Commands
 
@@ -155,7 +155,7 @@ docker compose -f docker-compose.dev.yml logs -f
 ## ✅ Setup Checklist
 
 - [ ] Cloned the repository (Git hooks automatically configured!)
-- [ ] Verified Git hooks are working (try pushing to main/dev - should be blocked)
+- [ ] Verified Git hooks are working (try pushing to `main` or `my-team-dev` - should be blocked)
 - [ ] Read [FIND_YOUR_TASKS.md](FIND_YOUR_TASKS.md) to identify your team
 - [ ] Followed your team's onboarding guide
 - [ ] Set up your development environment

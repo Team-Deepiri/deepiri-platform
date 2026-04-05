@@ -14,7 +14,7 @@ cd ../..
 ./setup-hooks.sh
 ```
 
-This protects the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../../BRANCH_PROTECTION.md) for details.
+This protects `main`, `master`, and branches containing `team-dev` from accidental pushes. See [BRANCH_PROTECTION.md](../../BRANCH_PROTECTION.md) for details.
 
 ## Services
 

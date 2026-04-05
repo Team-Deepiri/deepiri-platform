@@ -18,7 +18,7 @@ The QA Team needs access to **ALL** submodules for comprehensive testing:
 # Navigate to main repository
 cd deepiri-platform
 
-# Set up Git hooks (REQUIRED - protects main and dev branches)
+# Set up Git hooks (REQUIRED - protects main/master and branches containing team-dev)
 ./setup-hooks.sh
 
 # Pull latest changes

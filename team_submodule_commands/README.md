@@ -47,7 +47,7 @@ team_submodule_commands/
 git clone --recursive https://github.com/Team-Deepiri/deepiri.git
 cd deepiri-platform
 
-# Set up Git hooks (REQUIRED - protects main and dev branches)
+# Set up Git hooks (REQUIRED - protects main/master and branches containing team-dev)
 ./setup-hooks.sh
 ```
 

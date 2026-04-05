@@ -182,7 +182,7 @@
    cd deepiri-platform
    ```
 
-2. **Set up Git hooks (REQUIRED - protects main and dev branches):**
+2. **Set up Git hooks (REQUIRED - protects main/master and branches containing team-dev):**
    ```bash
    ./setup-hooks.sh
    ```

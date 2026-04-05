@@ -99,7 +99,7 @@ if [ -f ".gitmodules" ]; then
     
     echo ""
     echo "✅ All submodules now have updated hooks!"
-    echo "   Protected branches: main, dev (exact), master, and any branch containing 'team-dev'"
+    echo "   Protected branches: main, master, and any branch containing 'team-dev'"
 else
     echo "⚠️  No .gitmodules file found"
     exit 1

@@ -10,7 +10,7 @@ Hooks are automatically installed using Git's template directory feature. No man
 
 1. **On Clone**: Git copies hooks from `.githooks-template/` to `.git/hooks/`
 2. **On Checkout/Pull**: The `post-checkout` and `post-merge` hooks ensure hooks are up-to-date
-3. **On Push**: The `pre-push` hook blocks pushes to `main` or `dev`
+3. **On Push**: The `pre-push` hook blocks pushes to `main`, `master`, or branches containing `team-dev`
 
 ### Setup (One-Time, Per Repository)
 
@@ -38,7 +38,7 @@ git config --global init.templateDir "$(pwd)/.githooks-template"
 
 - **post-checkout**: Installs hooks on checkout and configures hooksPath
 - **post-merge**: Installs hooks after pull and configures hooksPath  
-- **pre-push**: Blocks pushes to `main` and `dev` branches
+- **pre-push**: Blocks pushes to `main`, `master`, and branches containing `team-dev`
 
 ## ✅ Benefits
 

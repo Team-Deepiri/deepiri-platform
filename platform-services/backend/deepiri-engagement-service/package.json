@@ -13,7 +13,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "@deepiri/shared-utils": "file:../shared-utils",
+    "@deepiri/shared-utils": "file:../../shared/deepiri-shared-utils",
     "@prisma/client": "^5.7.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",

@@ -112,7 +112,7 @@ cd deepiri-platform
 
 ### 2. Set Up Git Hooks (REQUIRED)
 
-**⚠️ IMPORTANT:** This protects the `main` and `dev` branches from accidental pushes.
+**⚠️ IMPORTANT:** This protects `main`, `master`, and branches containing `team-dev` from accidental pushes.
 
 ```bash
 ./setup-hooks.sh

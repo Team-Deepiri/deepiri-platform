@@ -136,11 +136,26 @@ else
 fi
 echo ""
 
+# deepiri-shared-utils
+echo "  📦 deepiri-shared-utils (Shared Utilities - Team-Deepiri/deepiri-shared-utils)..."
+cleanup_invalid_submodule "platform-services/shared/deepiri-shared-utils"
+git submodule update --init --recursive platform-services/shared/deepiri-shared-utils 2>&1 || true
+if ! check_submodule "platform-services/shared/deepiri-shared-utils"; then
+    echo "    ❌ ERROR: deepiri-shared-utils not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/shared/deepiri-shared-utils"
+    exit 1
+fi
+echo "    ✅ shared-utils initialized at: $(pwd)/platform-services/shared/deepiri-shared-utils"
+echo ""
+
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote diri-cyrex
 ensure_submodule_on_main "diri-cyrex"
 echo "    ✅ diri-cyrex updated and on main branch"
+git submodule update --remote platform-services/shared/deepiri-shared-utils 2>/dev/null || true
+ensure_submodule_on_main "platform-services/shared/deepiri-shared-utils"
+echo "    ✅ shared-utils updated and on main branch"
 git submodule update --remote diri-persola
 ensure_submodule_on_main "diri-persola"
 echo "    ✅ diri-persola updated and on main branch"
@@ -163,6 +178,7 @@ git submodule status diri-persola
 git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
 git submodule status platform-services/shared/deepiri-prismpipe 2>/dev/null || echo "  ⚠️  deepiri-prismpipe (not initialized)"
+git submodule status platform-services/shared/deepiri-shared-utils 2>/dev/null || echo "  ⚠️  deepiri-shared-utils (not initialized)"
 echo ""
 
 echo "✅ AI Team submodules ready!"

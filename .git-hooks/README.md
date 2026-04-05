@@ -1,13 +1,11 @@
 # Git Hooks Directory
 
-This directory contains Git hooks that protect the `main`, `dev`, `master`, and branches containing `team-dev`.
+This directory contains Git hooks that protect the `main` and `master` branches.
 
 ## Protected Branches
 
 - **main** - Production branch (exact match)
-- **dev** - Development branch (exact match only - branches like `name-dev` or `dev-something` are allowed)
 - **master** - Legacy production branch (exact match, protected for compatibility)
-- **Any branch containing `team-dev`** - Blocks any branch name that contains the substring `team-dev` (including the dash)
 
 ## Automatic Setup
 
@@ -31,9 +29,8 @@ git config core.hooksPath .git-hooks
 ## Hooks
 
 - **pre-push**: Blocks direct pushes to protected branches:
-  - Exact matches: `main`, `dev`, `master`
-  - Any branch containing: `team-dev` (e.g., `my-team-dev`, `backend-team-dev`, etc.)
-  - Allowed: `name-dev`, `dev-something`, `my-dev-branch` (dev with dashes is fine, but not `team-dev`)
+  - Exact matches: `main`, `master`
+  - Allowed: `dev`, `name-dev`, `dev-something`, `my-dev-branch`
 - **post-checkout**: Automatically configures hooksPath on checkout (if not already set)
 - **post-merge**: Automatically syncs hooks to submodules on pull
 
@@ -45,13 +42,9 @@ git checkout main
 git push origin main
 # ❌ ERROR: You cannot push directly to 'main'.
 
-git checkout dev
-git push origin dev
-# ❌ ERROR: You cannot push directly to 'dev'.
-
-git checkout my-team-dev
-git push origin my-team-dev
-# ❌ ERROR: You cannot push to branches containing 'team-dev'.
+git checkout master
+git push origin master
+# ❌ ERROR: You cannot push directly to 'master'.
 ```
 
 These branches are allowed:
@@ -59,6 +52,14 @@ These branches are allowed:
 git checkout name-dev
 git push origin name-dev
 # ✅ Allowed (dev with dash prefix)
+
+git checkout dev
+git push origin dev
+# ✅ Allowed
+
+git checkout my-team-dev
+git push origin my-team-dev
+# ✅ Allowed
 
 git checkout dev-something
 git push origin dev-something

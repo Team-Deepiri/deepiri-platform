@@ -150,13 +150,13 @@ deepiri/
 
 ## Branch Protection Rules
 
-### 🚫 Protected Branches: `main` and `dev`
+### 🚫 Protected Branches: `main`, `master`, and `*-team-dev`
 
-**Direct pushes to `main` and `dev` are blocked** by multiple layers of protection:
+**Direct pushes to protected branches are blocked** by multiple layers of protection:
 
-1. **Server-side CI enforcement** - GitHub Actions automatically reject any direct push
+1. **Server-side branch protection** - Protected branches are enforced in GitHub settings
 2. **Local Git hooks** - Prevent accidental pushes before they reach GitHub
-3. **PR blocking** - Pull Requests targeting `main` or `dev` are automatically blocked
+3. **PR workflow** - Use Pull Requests for team review and safe integration
 
 You **must** create feature branches and open Pull Requests to merge your work.
 
@@ -172,7 +172,7 @@ You **must** create feature branches and open Pull Requests to merge your work.
    git push -u origin feature/your-feature-name
    ```
 
-3. **Open a Pull Request** into `staging` or another feature branch (NOT `main` or `dev`)
+3. **Open a Pull Request** into `dev` (or `staging` if your team flow uses it)
 
 4. **CI will merge** `staging` → `dev` → `main` only during official deployments
 
@@ -184,7 +184,7 @@ Run this once after cloning the repository:
 ./setup-hooks.sh
 ```
 
-This ensures you can never accidentally push to `main` or `dev` from your local machine.
+This ensures you can never accidentally push to protected branches from your local machine.
 
 ---
 
@@ -194,7 +194,7 @@ This ensures you can never accidentally push to `main` or `dev` from your local 
 
 **Git hooks are automatically configured when you clone the repository!**
 
-The hooks protect the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) for details.
+The hooks protect `main`, `master`, and branches containing `team-dev` from accidental pushes. See [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) for details.
 
 **If hooks aren't working** (e.g., existing clone), run:
 ```bash
@@ -238,7 +238,7 @@ git checkout -b fix/your-bug-fix
 git checkout -b docs/your-documentation-update
 ```
 
-**⚠️ Remember:** You cannot push directly to `main` or `dev`. All changes must go through Pull Requests.
+**⚠️ Remember:** You cannot push directly to `main`, `master`, or branches containing `team-dev`. Use Pull Requests for protected branches.
 
 ### Branch Naming Convention
 

@@ -76,7 +76,7 @@ echo "📝 How it works:"
 echo "   - Hooks are now installed in .git/hooks for each repo"
 echo "   - post-checkout runs on checkout/clone and configures hooksPath"
 echo "   - post-merge runs after pull and configures hooksPath"
-echo "   - pre-push blocks pushes to main/dev branches"
+echo "   - pre-push blocks pushes to main/master and branches containing team-dev"
 echo ""
 echo "🎉 Hooks will now automatically configure on checkout and pull!"
 

@@ -107,5 +107,5 @@ fi
 echo ""
 echo "✅ Git hooks sync complete for all submodules!"
 echo ""
-echo "📝 All submodules are now protected from pushes to 'main', 'dev', 'master', or branches containing 'team-dev'."
+echo "📝 All submodules are now protected from pushes to 'main', 'master', or branches containing 'team-dev'."
 

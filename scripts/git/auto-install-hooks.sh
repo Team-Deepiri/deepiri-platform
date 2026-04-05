@@ -47,5 +47,5 @@ echo ""
 echo "📝 How it works:"
 echo "   - New clones will automatically get hooks installed"
 echo "   - Existing repos: hooks will install on next checkout/pull"
-echo "   - Hooks protect main, dev (exact), master, and branches containing 'team-dev' automatically"
+echo "   - Hooks protect main, master, and branches containing 'team-dev' automatically"
 

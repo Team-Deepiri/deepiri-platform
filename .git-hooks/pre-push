@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Pre-push hook to protect main, dev, master, and team-dev branches
+# Pre-push hook to protect main and master branches
 # This hook receives ref information via stdin in the format:
 # <local_ref> <local_sha1> <remote_ref> <remote_sha1>
 
@@ -24,22 +24,6 @@ while read local_ref local_sha remote_ref remote_sha; do
       exit 1
     fi
   done
-  
-  
-  # PROTECTION RULE 3: Exact substring match for "team-dev"
-  # Must contain the exact substring "team-dev" (character-for-character including the dash)
-  # Can have prefix (e.g., "ai-team-dev", "frontend-team-dev", "backend-team-dev" - all blocked)
-  # Can have suffix (e.g., "team-dev-branch" - also blocked because it contains "team-dev")
-  # The exact string "team-dev" itself is also blocked
-  # Uses grep -qF for fixed string (non-regex) substring matching - matches anywhere in branch name
-  if echo "$branch_name" | grep -qF "team-dev"; then
-    echo "❌ ERROR: You cannot push to branches containing 'team-dev'."
-    echo "   Branch name: '$branch_name'"
-    echo "   The exact substring 'team-dev' (character-for-character) was detected."
-    echo "   Make a feature branch and use a Pull Request."
-    echo "   Note: Branches like 'name-dev' or 'dev-something' are allowed (they don't contain 'team-dev')."
-    exit 1
-  fi
 done
 
 exit 0

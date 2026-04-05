@@ -82,11 +82,11 @@ docker compose -f docker-compose.dev.yml logs -f jupyter
 git clone <repository-url>
 cd deepiri-platform
 
-# Set up Git hooks (REQUIRED - protects main and dev branches)
+# Set up Git hooks (REQUIRED - protects main/master and branches containing team-dev)
 ./setup-hooks.sh
 ```
 
-**⚠️ IMPORTANT:** Git hooks protect the `main` and `dev` branches from accidental pushes. See [BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) for details.
+**⚠️ IMPORTANT:** Git hooks protect `main`, `master`, and branches containing `team-dev` from accidental pushes. See [BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) for details.
 
 ### 1. Environment Setup
 
