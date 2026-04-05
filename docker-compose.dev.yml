@@ -97,7 +97,7 @@ services:
     restart: unless-stopped
     logging: *minimal-logging
     ports:
-      - "6380:6379"  # Using 6380 to avoid conflict with system Redis on 6379
+      - "46380:6379"  # Host port avoids Docker Desktop / WSL publish failures seen on 6380; containers still use hostname redis:6379
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_dev_data:/data
@@ -740,10 +740,13 @@ services:
       dockerfile: ./diri-cyrex/Dockerfile
       args:
         BUILD_TYPE: prebuilt
-        BASE_IMAGE: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+        # Override on the host to match `deepiri-gpu build-args --base-image-only`, e.g.:
+        #   export CYREX_BASE_IMAGE=$(deepiri-gpu build-args --base-image-only)
+        BASE_IMAGE: ${CYREX_BASE_IMAGE:-pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime}
+        DEVICE_TYPE: ${CYREX_DEVICE_TYPE:-gpu}
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
-        # Using CUDA 12.8 base image for RTX 5080/5090 (sm_120) support
+        # Default image: CUDA 12.8 for RTX 5080/5090 (sm_120) support
     image: deepiri-dev-cyrex:latest
     pull_policy: never
     container_name: deepiri-cyrex-dev
@@ -908,7 +911,7 @@ services:
       DEBUG: "true"
       CORS_ORIGIN: "*"
       # Database (uses existing cyrex postgres)
-      POSTGRES_HOST: postgres-cyrex
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: cyrex_db
       POSTGRES_USER: deepiri_cyrex
@@ -939,7 +942,7 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      - postgres-cyrex
+      - postgres
       - redis
       - ollama
       - cyrex
@@ -1052,6 +1055,8 @@ services:
       context: .
       dockerfile: ./platform-services/shared/deepiri-synapse/Dockerfile
     container_name: deepiri-synapse-dev
+    image: deepiri-dev-synapse:latest
+    pull_policy: never
     restart: unless-stopped
     logging: *minimal-logging
     ports:
