@@ -1,0 +1,124 @@
+name: deepiri-rtg-sidecar-local
+
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: deepiri-redis-rtg-local
+    restart: unless-stopped
+    command: redis-server --requirepass redispassword
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispassword", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_rtg_local_data:/data
+
+  synapse:
+    build:
+      context: .
+      dockerfile: ./platform-services/shared/deepiri-synapse/Dockerfile
+    container_name: deepiri-synapse-rtg-local
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+      K8S_SERVICE_NAME: synapse
+    ports:
+      - "8002:8002"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=2)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  realtime-gateway:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+    container_name: deepiri-realtime-gateway-rtg-local
+    restart: unless-stopped
+    environment:
+      PORT: 5008
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+      SYNAPSE_URL: http://synapse:8002
+      SYNAPSE_SIDECAR_URL: http://synapse-sidecar:8081
+      SYNAPSE_GRPC_ADDR: synapse-sidecar:50051
+      STREAM_CONSUMER_GROUP: realtime-gateway
+      K8S_SERVICE_NAME: realtime-gateway
+    ports:
+      - "5008:5008"
+    depends_on:
+      redis:
+        condition: service_healthy
+      synapse:
+        condition: service_healthy
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5008/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  synapse-sidecar:
+    build:
+      context: ./platform-services/backend/deepiri-realtime-gateway/synapse-sidecar
+      dockerfile: Dockerfile
+    container_name: deepiri-synapse-sidecar-rtg-local
+    restart: unless-stopped
+    environment:
+      SIDECAR_SERVICE_NAME: realtime-gateway
+      SIDECAR_REDIS_URL: redis://:redispassword@redis:6379/0
+      SIDECAR_LISTEN_ADDR: tcp://0.0.0.0:8081
+      SIDECAR_GRPC_ADDR: tcp://0.0.0.0:50051
+      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events
+      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events
+      SIDECAR_MAX_STREAM_LEN: "10000"
+      SIDECAR_WAL_DIR: /data/synapse-wal
+      SIDECAR_WAL_REPLAY_BATCH: "100"
+      SIDECAR_WAL_REPLAY_INTERVAL_MS: "2000"
+      SIDECAR_DLQ_MAX_RETRIES: "3"
+      SIDECAR_DLQ_MIN_IDLE_MS: "30000"
+      SIDECAR_DLQ_SCAN_INTERVAL_MS: "5000"
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+    volumes:
+      - synapse_sidecar_rtg_local_wal:/data/synapse-wal
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/app/sidecar", "healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  redis_rtg_local_data:
+  synapse_sidecar_rtg_local_wal:

@@ -653,6 +653,9 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5008
       SYNAPSE_URL: http://synapse:8002
+      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
+      STREAM_CONSUMER_GROUP: ${STREAM_CONSUMER_GROUP:-realtime-gateway}
+      STREAM_CONSUMER_NAME: ${STREAM_CONSUMER_NAME:-realtime-1}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
@@ -798,6 +801,14 @@ services:
       SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
       # Streaming Service Configuration
       SYNAPSE_URL: http://synapse:8002
+      # Synapse transport (redis|sidecar). Default to sidecar in dev.
+      SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
+      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
+      SYNAPSE_SIDECAR_TIMEOUT_SEC: ${SYNAPSE_SIDECAR_TIMEOUT_SEC:-5}
+      SYNAPSE_SIDECAR_SENDER: ${SYNAPSE_SIDECAR_SENDER:-cyrex}
+      SYNAPSE_CONSUMER_NAME: ${SYNAPSE_CONSUMER_NAME:-cyrex-1}
+      SYNAPSE_MODEL_EVENTS_GROUP: ${SYNAPSE_MODEL_EVENTS_GROUP:-cyrex-runtime}
+      SYNAPSE_SIDECAR_SUBSCRIBER_GROUP_SUFFIX: ${SYNAPSE_SIDECAR_SUBSCRIBER_GROUP_SUFFIX:-subscribers}
       # Override or add docker-specific variables here if needed
     ports:
       - "8000:8000"

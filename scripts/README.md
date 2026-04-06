@@ -55,6 +55,11 @@ scripts/
 - `setup.sh` - Initial project setup
 - `dev-utils.sh` - Development utilities
 - `dev-docker.sh` - Development Docker helper
+- `preflight.sh` - Startup preflight checks (Docker, ports, disk/memory, health endpoints)
+- `stack_watchdog.sh` - Health watchdog (checks services/endpoints and heals unhealthy containers)
+- `sidecar_smoke_test.sh` - One-shot sidecar publish/read/ack smoke test
+- `sidecar_grpc_smoke_test.sh` - One-shot sidecar gRPC Health/Publish/Subscribe/Ack smoke test
+- `sidecar_failure_test.sh` - Redis outage/WAL replay + DLQ failure-path test
 - `dev-start.js` - Development start script
 - `fix-dependencies.sh` - Fix npm/node dependencies
 

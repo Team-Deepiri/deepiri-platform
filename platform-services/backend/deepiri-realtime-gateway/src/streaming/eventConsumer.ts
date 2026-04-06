@@ -1,17 +1,195 @@
 /**
  * Event Consumer for Realtime Gateway
- * Subscribes to all event streams and forwards to WebSocket clients
+ * Uses Synapse sidecar transport only.
+ * Redis Streams access remains owned by the sidecar.
  */
-import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import { secureLog } from '@deepiri/shared-utils';
+import { request as httpRequest } from 'http';
+import { request as httpsRequest } from 'https';
 import { Server } from 'socket.io';
+import { StreamEvent, StreamTopics, secureLog } from '@deepiri/shared-utils';
 
-let streamingClient: StreamingClient | null = null;
+interface SubscriptionOptions {
+  consumerGroup: string;
+  consumerName: string;
+  blockMs: number;
+}
+
+interface EventTransport {
+  readonly name: string;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  subscribe(
+    streamName: string,
+    callback: (event: StreamEvent) => Promise<void> | void,
+    options: SubscriptionOptions
+  ): Promise<void>;
+}
+
+interface SidecarReadRequest {
+  stream: string;
+  consumer_group: string;
+  consumer_name: string;
+  count: number;
+  block_ms: number;
+}
+
+interface SidecarReadEvent {
+  stream: string;
+  entry_id: string;
+  fields: Record<string, unknown>;
+}
+
+interface SidecarReadResponse {
+  events: SidecarReadEvent[];
+}
+
+interface SidecarAckRequest {
+  stream: string;
+  consumer_group: string;
+  entry_ids: string[];
+}
+
+interface SidecarAckResponse {
+  acked: number;
+}
+
+interface StreamSpec {
+  stream: string;
+  socketEvent: string;
+}
+
+const STREAM_SPECS: StreamSpec[] = [
+  { stream: StreamTopics.INFERENCE_EVENTS, socketEvent: 'inference-event' },
+  { stream: StreamTopics.PLATFORM_EVENTS, socketEvent: 'platform-event' },
+  { stream: StreamTopics.MODEL_EVENTS, socketEvent: 'model-event' },
+  { stream: StreamTopics.TRAINING_EVENTS, socketEvent: 'training-event' },
+];
+
+const PRIMARY_CONSUMER_GROUP = (process.env.STREAM_CONSUMER_GROUP || 'realtime-gateway').trim();
+const PRIMARY_CONSUMER_NAME = (process.env.STREAM_CONSUMER_NAME || 'realtime-1').trim();
+const BLOCK_MS = parsePositiveInt(process.env.STREAM_BLOCK_MS, 1000);
+const SIDECAR_URL = process.env.SYNAPSE_SIDECAR_URL || 'http://synapse-sidecar:8081';
+
 let isConsuming = false;
 let io: Server | null = null;
+let transport: EventTransport | null = null;
+
+class SidecarEventTransport implements EventTransport {
+  public readonly name: string = 'sidecar';
+  private running: boolean = false;
+
+  constructor(private readonly baseUrl: string) {}
+
+  async connect(): Promise<void> {
+    await this.requestJson<undefined, { ready: boolean }>('GET', '/readyz');
+    this.running = true;
+  }
+
+  async disconnect(): Promise<void> {
+    this.running = false;
+  }
+
+  async subscribe(
+    streamName: string,
+    callback: (event: StreamEvent) => Promise<void> | void,
+    options: SubscriptionOptions
+  ): Promise<void> {
+    while (this.running) {
+      try {
+        const response = await this.requestJson<SidecarReadRequest, SidecarReadResponse>('POST', '/v1/read', {
+          stream: streamName,
+          consumer_group: options.consumerGroup,
+          consumer_name: options.consumerName,
+          count: 10,
+          block_ms: options.blockMs,
+        });
+
+        const events = Array.isArray(response.events) ? response.events : [];
+        for (const event of events) {
+          const normalizedEvent = normalizeEvent(event.fields);
+          await callback(normalizedEvent);
+
+          await this.requestJson<SidecarAckRequest, SidecarAckResponse>('POST', '/v1/ack', {
+            stream: event.stream || streamName,
+            consumer_group: options.consumerGroup,
+            entry_ids: [event.entry_id],
+          });
+        }
+      } catch (error) {
+        secureLog('error', `[SidecarTransport] subscription error for ${streamName}:`, error);
+        await sleep(1000);
+      }
+    }
+  }
+
+  private async requestJson<TReq, TRes>(
+    method: 'GET' | 'POST',
+    path: string,
+    payload?: TReq
+  ): Promise<TRes> {
+    const target = new URL(path, this.baseUrl);
+    const isHttps = target.protocol === 'https:';
+    const requester = isHttps ? httpsRequest : httpRequest;
+    const body = payload ? JSON.stringify(payload) : '';
+
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+    if (payload) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(body).toString();
+    }
+
+    return new Promise<TRes>((resolve, reject) => {
+      const req = requester(
+        {
+          method,
+          hostname: target.hostname,
+          port: target.port ? Number(target.port) : isHttps ? 443 : 80,
+          path: `${target.pathname}${target.search}`,
+          headers,
+          timeout: 5000,
+        },
+        (res) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => {
+            const raw = Buffer.concat(chunks).toString('utf8');
+            if ((res.statusCode || 500) >= 400) {
+              reject(new Error(`sidecar request failed (${res.statusCode}): ${raw}`));
+              return;
+            }
+
+            if (!raw) {
+              resolve({} as TRes);
+              return;
+            }
+
+            try {
+              resolve(JSON.parse(raw) as TRes);
+            } catch (error) {
+              reject(new Error(`failed to parse sidecar response: ${String(error)}`));
+            }
+          });
+        }
+      );
+
+      req.on('error', reject);
+      req.on('timeout', () => {
+        req.destroy(new Error('sidecar request timed out'));
+      });
+
+      if (payload) {
+        req.write(body);
+      }
+      req.end();
+    });
+  }
+}
 
 /**
- * Initialize and start consuming events
+ * Initialize and start consuming events.
+ * Transport is sidecar-only by design.
  */
 export async function startEventConsumption(socketIO: Server): Promise<void> {
   if (isConsuming) {
@@ -20,33 +198,25 @@ export async function startEventConsumption(socketIO: Server): Promise<void> {
   }
 
   io = socketIO;
+  const options: SubscriptionOptions = {
+    consumerGroup: PRIMARY_CONSUMER_GROUP,
+    consumerName: PRIMARY_CONSUMER_NAME,
+    blockMs: BLOCK_MS,
+  };
 
   try {
-    streamingClient = new StreamingClient(
-      process.env.REDIS_HOST || 'redis',
-      parseInt(process.env.REDIS_PORT || '6379'),
-      process.env.REDIS_PASSWORD || 'redispassword'
+    transport = createTransport();
+    await transport.connect();
+    secureLog(
+      'info',
+      `[Realtime Gateway] Streaming backend: ${transport.name} (group=${options.consumerGroup}, consumer=${options.consumerName})`
     );
 
-    await streamingClient.connect();
-    secureLog('info', '[Realtime Gateway] Connected to Redis Streams');
-
-    // Start consuming all event streams
-    consumeInferenceEvents().catch((err) => {
-      secureLog('error', '[Realtime Gateway] Inference events consumption error:', err);
-    });
-
-    consumePlatformEvents().catch((err) => {
-      secureLog('error', '[Realtime Gateway] Platform events consumption error:', err);
-    });
-
-    consumeModelEvents().catch((err) => {
-      secureLog('error', '[Realtime Gateway] Model events consumption error:', err);
-    });
-
-    consumeTrainingEvents().catch((err) => {
-      secureLog('error', '[Realtime Gateway] Training events consumption error:', err);
-    });
+    for (const spec of STREAM_SPECS) {
+      startStreamLoop(transport, spec, options).catch((error) => {
+        secureLog('error', `[Realtime Gateway] ${spec.stream} consumption error:`, error);
+      });
+    }
 
     isConsuming = true;
     secureLog('info', '[Realtime Gateway] Event consumption started');
@@ -57,126 +227,96 @@ export async function startEventConsumption(socketIO: Server): Promise<void> {
 }
 
 /**
- * Consume inference events
- */
-async function consumeInferenceEvents(): Promise<void> {
-  if (!streamingClient || !io) {
-    throw new Error('Streaming client or Socket.IO not initialized');
-  }
-
-  await streamingClient.subscribe(
-    StreamTopics.INFERENCE_EVENTS,
-    async (event: StreamEvent) => {
-      try {
-        // Broadcast to all clients or specific user room
-        if (event.user_id) {
-          io!.to(`user_${event.user_id}`).emit('inference-event', event);
-        } else {
-          io!.emit('inference-event', event);
-        }
-      } catch (error) {
-        secureLog('error', '[Realtime Gateway] Error forwarding inference event:', error);
-      }
-    },
-    {
-      consumerGroup: 'realtime-gateway',
-      consumerName: 'realtime-1',
-      blockMs: 1000
-    }
-  );
-}
-
-/**
- * Consume platform events
- */
-async function consumePlatformEvents(): Promise<void> {
-  if (!streamingClient || !io) {
-    throw new Error('Streaming client or Socket.IO not initialized');
-  }
-
-  await streamingClient.subscribe(
-    StreamTopics.PLATFORM_EVENTS,
-    async (event: StreamEvent) => {
-      try {
-        // Broadcast to all clients or specific user room
-        if (event.user_id) {
-          io!.to(`user_${event.user_id}`).emit('platform-event', event);
-        } else {
-          io!.emit('platform-event', event);
-        }
-      } catch (error) {
-        secureLog('error', '[Realtime Gateway] Error forwarding platform event:', error);
-      }
-    },
-    {
-      consumerGroup: 'realtime-gateway',
-      consumerName: 'realtime-1',
-      blockMs: 1000
-    }
-  );
-}
-
-/**
- * Consume model events
- */
-async function consumeModelEvents(): Promise<void> {
-  if (!streamingClient || !io) {
-    throw new Error('Streaming client or Socket.IO not initialized');
-  }
-
-  await streamingClient.subscribe(
-    StreamTopics.MODEL_EVENTS,
-    async (event: StreamEvent) => {
-      try {
-        // Broadcast model events to all clients
-        io!.emit('model-event', event);
-      } catch (error) {
-        secureLog('error', '[Realtime Gateway] Error forwarding model event:', error);
-      }
-    },
-    {
-      consumerGroup: 'realtime-gateway',
-      consumerName: 'realtime-1',
-      blockMs: 1000
-    }
-  );
-}
-
-/**
- * Consume training events
- */
-async function consumeTrainingEvents(): Promise<void> {
-  if (!streamingClient || !io) {
-    throw new Error('Streaming client or Socket.IO not initialized');
-  }
-
-  await streamingClient.subscribe(
-    StreamTopics.TRAINING_EVENTS,
-    async (event: StreamEvent) => {
-      try {
-        // Broadcast training events to all clients
-        io!.emit('training-event', event);
-      } catch (error) {
-        secureLog('error', '[Realtime Gateway] Error forwarding training event:', error);
-      }
-    },
-    {
-      consumerGroup: 'realtime-gateway',
-      consumerName: 'realtime-1',
-      blockMs: 1000
-    }
-  );
-}
-
-/**
- * Stop event consumption
+ * Stop event consumption.
  */
 export async function stopEventConsumption(): Promise<void> {
-  if (streamingClient) {
-    await streamingClient.disconnect();
-    streamingClient = null;
-    isConsuming = false;
-    secureLog('info', '[Realtime Gateway] Event consumption stopped');
+  isConsuming = false;
+
+  if (transport) {
+    await transport.disconnect();
+    transport = null;
   }
+
+  secureLog('info', '[Realtime Gateway] Event consumption stopped');
 }
 
+function createTransport(): EventTransport {
+  return new SidecarEventTransport(SIDECAR_URL);
+}
+
+async function startStreamLoop(
+  eventTransport: EventTransport,
+  spec: StreamSpec,
+  options: SubscriptionOptions
+): Promise<void> {
+  await eventTransport.subscribe(
+    spec.stream,
+    async (event: StreamEvent) => {
+      if (!io) {
+        return;
+      }
+
+      if (event.user_id) {
+        io.to(`user_${event.user_id}`).emit(spec.socketEvent, event);
+      } else {
+        io.emit(spec.socketEvent, event);
+      }
+    },
+    {
+      consumerGroup: options.consumerGroup,
+      consumerName: `${options.consumerName}-${eventTransport.name}`,
+      blockMs: options.blockMs,
+    }
+  );
+}
+
+function normalizeEvent(fields: Record<string, unknown>): StreamEvent {
+  const event: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value === 'string') {
+      event[key] = tryParseJson(value);
+    } else {
+      event[key] = value;
+    }
+  }
+
+  if (event.event === undefined && event.event_type !== undefined) {
+    event.event = String(event.event_type);
+  }
+  if (event.timestamp === undefined) {
+    event.timestamp = new Date().toISOString();
+  }
+  if (event.source === undefined) {
+    event.source = 'synapse-sidecar';
+  }
+
+  return event as StreamEvent;
+}
+
+function tryParseJson(value: string): unknown {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  ) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return Math.floor(parsed);
+}
