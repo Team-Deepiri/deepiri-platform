@@ -77,7 +77,7 @@ class BoostService {
       // Remove expired boosts
       const nowTime = now.getTime();
       const activeBoosts = profile.activeBoosts || [];
-      const expiredBoosts = activeBoosts.filter((boost) => 
+      const expiredBoosts = activeBoosts.filter((boost: any) => 
         new Date(boost.expiresAt).getTime() <= nowTime
       );
       
@@ -100,7 +100,7 @@ class BoostService {
         // Delete expired active boosts
         await prisma.activeBoost.deleteMany({
           where: {
-            id: { in: expiredBoosts.map((b) => b.id) }
+            id: { in: expiredBoosts.map((b: any) => b.id) }
           }
         });
         
@@ -197,7 +197,7 @@ class BoostService {
     try {
       const profile = await this.getOrCreateProfile(userId);
       const now = new Date();
-      return profile.activeBoosts.filter((boost) => new Date(boost.expiresAt) > now);
+      return profile.activeBoosts.filter((boost: any) => new Date(boost.expiresAt) > now);
     } catch (error: any) {
       secureLog('error', 'Error getting active boosts:', error);
       throw error;
@@ -251,7 +251,7 @@ class BoostService {
       res.json({
         success: true,
         data: {
-          activeBoosts: profile.activeBoosts.map((ab) => ({
+          activeBoosts: profile.activeBoosts.map((ab: any) => ({
             boostType: ab.boostType,
             activatedAt: ab.activatedAt,
             expiresAt: ab.expiresAt,
@@ -285,7 +285,7 @@ class BoostService {
       res.json({
         success: true,
         data: {
-          activeBoosts: profile.activeBoosts.map((ab) => ({
+          activeBoosts: profile.activeBoosts.map((ab: any) => ({
             boostType: ab.boostType,
             activatedAt: ab.activatedAt,
             expiresAt: ab.expiresAt,

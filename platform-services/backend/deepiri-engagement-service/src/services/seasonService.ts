@@ -298,7 +298,7 @@ class SeasonService {
         }
       });
       
-      const seasonInterfaces = seasons.map(season => this.seasonToInterface(season));
+      const seasonInterfaces = seasons.map((season: any) => this.seasonToInterface(season));
       
       res.json({
         success: true,

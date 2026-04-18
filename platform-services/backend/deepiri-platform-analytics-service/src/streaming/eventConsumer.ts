@@ -4,9 +4,11 @@
  */
 import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
 import { secureLog } from '@deepiri/shared-utils';
+import timeSeriesAnalytics from '../timeSeriesAnalytics';
 
 let streamingClient: StreamingClient | null = null;
 let isConsuming = false;
+const CONSUMER_NAME = process.env.REDIS_CONSUMER_NAME || `analytics-${process.pid}`;
 
 /**
  * Initialize and start consuming events
@@ -63,21 +65,14 @@ async function consumeInferenceEvents(): Promise<void> {
           user_id: event.user_id
         });
 
-        // TODO: Store in InfluxDB
-        // await influxDB.writePoint({
-        //   measurement: 'inference_metrics',
-        //   tags: {
-        //     model_name: event.model_name,
-        //     version: event.version,
-        //     user_id: event.user_id || 'anonymous'
-        //   },
-        //   fields: {
-        //     latency_ms: event.latency_ms,
-        //     tokens_used: event.tokens_used || 0,
-        //     confidence: event.confidence || 0
-        //   },
-        //   timestamp: new Date(event.timestamp)
-        // });
+        await timeSeriesAnalytics.recordInferenceMetrics({
+          model_name:  event.model_name,
+          version:     event.version,
+          user_id:     event.user_id,
+          latency_ms:  event.latency_ms,
+          tokens_used: event.tokens_used,
+          confidence:  event.confidence,
+        });
 
         secureLog('info', '[Analytics] Inference event processed');
       } catch (error) {
@@ -86,7 +81,7 @@ async function consumeInferenceEvents(): Promise<void> {
     },
     {
       consumerGroup: 'analytics-service',
-      consumerName: 'analytics-1',
+      consumerName: CONSUMER_NAME,
       blockMs: 1000
     }
   );
@@ -110,20 +105,13 @@ async function consumeTrainingEvents(): Promise<void> {
           status: event.status
         });
 
-        // TODO: Store in InfluxDB
-        // await influxDB.writePoint({
-        //   measurement: 'training_metrics',
-        //   tags: {
-        //     experiment_id: event.experiment_id,
-        //     model_name: event.model_name,
-        //     status: event.status
-        //   },
-        //   fields: {
-        //     progress: event.progress || 0,
-        //     ...event.metrics
-        //   },
-        //   timestamp: new Date(event.timestamp)
-        // });
+        await timeSeriesAnalytics.recordTrainingMetrics({
+          experiment_id: event.experiment_id,
+          model_name:    event.model_name,
+          status:        event.status,
+          progress:      event.progress,
+          metrics:       event.metrics,
+        });
 
         secureLog('info', '[Analytics] Training event processed');
       } catch (error) {
@@ -132,7 +120,7 @@ async function consumeTrainingEvents(): Promise<void> {
     },
     {
       consumerGroup: 'analytics-service',
-      consumerName: 'analytics-1',
+      consumerName: CONSUMER_NAME,
       blockMs: 1000
     }
   );

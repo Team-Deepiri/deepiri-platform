@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { secureLog } from '@deepiri/shared-utils';
 import axios from 'axios';
+import { initializeEventPublisher, publishChallengeGenerated } from './streaming/eventPublisher';
 
 dotenv.config();
 
@@ -20,6 +21,11 @@ app.use(express.json());
 
 const CYREX_URL: string = process.env.CYREX_URL || 'http://cyrex:8000';
 
+// Best-effort Redis event publisher init.
+initializeEventPublisher().catch((err: Error) => {
+  secureLog('error', 'Challenge Service: Failed to initialize event publisher', err);
+});
+
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'challenge-service', timestamp: new Date().toISOString() });
 });
@@ -27,6 +33,8 @@ app.get('/health', (req: Request, res: Response) => {
 app.post('/generate', async (req: Request, res: Response) => {
   try {
     const response = await axios.post(`${CYREX_URL}/agent/challenge/generate`, req.body);
+    // Fire-and-forget — never let streaming failure affect the HTTP response
+    publishChallengeGenerated(req.body?.userId, response.data).catch(() => {});
     res.json(response.data);
   } catch (error: any) {
     secureLog('error', 'Challenge generation error:', error);

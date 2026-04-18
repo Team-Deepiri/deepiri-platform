@@ -6,6 +6,7 @@ import { secureLog } from '@deepiri/shared-utils';
 import routes from './index';
 import { connectDatabase } from './db';
 import { validateBodyIfPresent } from './middleware/inputValidation';
+import { startEventConsumption } from './streaming/eventConsumer';
 
 dotenv.config();
 
@@ -23,6 +24,11 @@ connectDatabase()
     secureLog('error', 'Engagement Service: Failed to connect to PostgreSQL', err);
     process.exit(1);
   });
+
+// Redis Streams consumer — react to platform events (task completions, registrations, etc.)
+startEventConsumption().catch((err: Error) => {
+  secureLog('error', 'Engagement Service: Failed to start event consumption', err);
+});
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'engagement-service', timestamp: new Date().toISOString() });
