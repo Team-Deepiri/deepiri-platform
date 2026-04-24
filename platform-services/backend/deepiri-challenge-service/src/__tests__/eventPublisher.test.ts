@@ -6,7 +6,7 @@ const mockConnect    = jest.fn().mockResolvedValue(undefined);
 const mockPublish    = jest.fn().mockResolvedValue(undefined);
 const mockDisconnect = jest.fn();
 
-jest.mock('@deepiri/shared-utils', () => ({
+jest.mock('@team-deepiri/shared-utils', () => ({
   StreamingClient: jest.fn().mockImplementation(() => ({
     connect:    mockConnect,
     disconnect: mockDisconnect,

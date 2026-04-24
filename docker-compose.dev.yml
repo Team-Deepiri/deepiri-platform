@@ -17,25 +17,99 @@ x-logging: &minimal-logging
     compress: "false"   # No compression (faster cleanup)
 
 services:
-  # PostgreSQL Database - Primary database for users, roles, tasks, quests, metadata
-  postgres:
+  # PostgreSQL Database - Auth
+  postgres-auth:
     image: postgres:16-alpine
-    container_name: deepiri-postgres-dev
+    container_name: deepiri-postgres-auth-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deepiripassword}
-      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
+      POSTGRES_USER: ${POSTGRES_AUTH_USER:-deepiri_auth}
+      POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD:-deepiripassword}
+      POSTGRES_DB: ${POSTGRES_AUTH_DB:-auth_db}
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_auth_dev_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-auth.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - deepiri-dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deepiri}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-deepiri_auth}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # PostgreSQL Database - Core
+  postgres-core:
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-core-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_CORE_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_CORE_PASSWORD:-deepiripassword}
+      POSTGRES_DB: ${POSTGRES_CORE_DB:-deepiri}
+    volumes:
+      - postgres_core_dev_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-core.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - deepiri-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CORE_USER:-deepiri}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # PostgreSQL Database - Cyrex
+  postgres-cyrex:
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-cyrex-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
+      POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
+      POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
+    volumes:
+      - postgres_cyrex_dev_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-cyrex.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - deepiri-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CYREX_USER:-deepiri_cyrex}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # PostgreSQL Database - Intelligence (includes MLflow)
+  postgres-intelligence:
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-intelligence-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}
+      POSTGRES_PASSWORD: ${POSTGRES_INTELLIGENCE_PASSWORD:-deepiripassword}
+      POSTGRES_DB: ${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
+    volumes:
+      - postgres_intelligence_dev_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-intelligence.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - deepiri-dev-network
+    depends_on:
+      - postgres-auth
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,7 +139,7 @@ services:
       retries: 5
       start_period: 45s  # pgAdmin can take 30-60s to initialize on first boot
     depends_on:
-      - postgres
+      - postgres-core
     networks:
       - deepiri-dev-network
 
@@ -78,7 +152,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DEFAULT_SERVER: postgres-core
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
       interval: 30s
@@ -86,7 +160,7 @@ services:
       retries: 5
       start_period: 20s
     depends_on:
-      - postgres
+      - postgres-core
     networks:
       - deepiri-dev-network
 
@@ -245,6 +319,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-api-gateway/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-api-gateway:latest
     pull_policy: never
     container_name: deepiri-api-gateway-dev
@@ -291,6 +367,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-auth-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-auth-service:latest
     pull_policy: never
     container_name: deepiri-auth-service-dev
@@ -303,7 +381,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_AUTH_USER:-deepiri_auth}:${POSTGRES_AUTH_PASSWORD:-deepiripassword}@postgres-auth:5432/${POSTGRES_AUTH_DB:-auth_db}
       SYNAPSE_URL: http://synapse:8002
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       JWT_SECRET: ${JWT_SECRET}
@@ -315,9 +393,7 @@ services:
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && (if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
+    command: sh -c "(if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
@@ -325,7 +401,7 @@ services:
       retries: 3
       start_period: 60s
     depends_on:
-      - postgres
+      - postgres-auth
       - influxdb
       - synapse
     networks:
@@ -336,6 +412,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-task-orchestrator:latest
     pull_policy: never
     container_name: deepiri-task-orchestrator-dev
@@ -347,7 +425,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5002
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5433/${POSTGRES_CORE_DB:-deepiri}
       PRISMA_CLI_BINARY_TARGETS: "debian-openssl-3.0.x"
       SYNAPSE_URL: http://synapse:8002
       K8S_SERVICE_NAME: task-orchestrator  # Filter to only load this service's configmap
@@ -358,7 +436,7 @@ services:
       - ./platform-services/backend/deepiri-task-orchestrator/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
-      - postgres
+      - postgres-core
       - synapse
     networks:
       - deepiri-dev-network
@@ -368,6 +446,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-engagement-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-engagement-service:latest
     pull_policy: never
     container_name: deepiri-engagement-service-dev
@@ -379,7 +459,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5003
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5433/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
       K8S_SERVICE_NAME: engagement-service  # Filter to only load this service's configmap
     volumes:
@@ -389,7 +469,7 @@ services:
       - ./platform-services/backend/deepiri-engagement-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
-      - postgres
+      - postgres-core
       - redis
       - synapse
     networks:
@@ -400,6 +480,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-platform-analytics-service:latest
     pull_policy: never
     container_name: deepiri-platform-analytics-service-dev
@@ -411,7 +493,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5004
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5433/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
       K8S_SERVICE_NAME: platform-analytics-service  # Filter to only load this service's configmap
     volumes:
@@ -421,7 +503,7 @@ services:
       - ./platform-services/backend/deepiri-platform-analytics-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
-      - postgres
+      - postgres-core
       - influxdb
       - synapse
     networks:
@@ -432,6 +514,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-notification-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-notification-service:latest
     pull_policy: never
     container_name: deepiri-notification-service-dev
@@ -443,7 +527,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5005
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5433/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
       K8S_SERVICE_NAME: notification-service  # Filter to only load this service's configmap
     volumes:
@@ -453,7 +537,7 @@ services:
       - ./platform-services/backend/deepiri-notification-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
-      - postgres
+      - postgres-core
       - synapse
     networks:
       - deepiri-dev-network
@@ -463,6 +547,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-external-bridge-service:latest
     pull_policy: never
     container_name: deepiri-external-bridge-service-dev
@@ -474,7 +560,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5006
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5433/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
@@ -498,7 +584,7 @@ services:
       retries: 3
       start_period: 20s
     depends_on:
-      - postgres
+      - postgres-core
       - synapse
       - kafka
     networks:
@@ -509,6 +595,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-challenge-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-challenge-service:latest
     pull_policy: never
     container_name: deepiri-challenge-service-dev
@@ -520,7 +608,7 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       PORT: 5007
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5433/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
       K8S_SERVICE_NAME: challenge-service  # Filter to only load this service's configmap
     volumes:
@@ -530,7 +618,7 @@ services:
       - ./platform-services/backend/deepiri-challenge-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
-      - postgres
+      - postgres-core
       - synapse
       # cyrex dependency removed - only needed by AI/ML team
     networks:
@@ -541,6 +629,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-language-intelligence-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-language-intelligence-service:latest
     pull_policy: never
     container_name: deepiri-language-intelligence-service-dev
@@ -552,7 +642,7 @@ services:
       - "5009:5003"
     environment:
       PORT: 5003
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}:${POSTGRES_INTELLIGENCE_PASSWORD:-deepiripassword}@postgres-intelligence:5435/${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
@@ -571,9 +661,7 @@ services:
       - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-language-intelligence-service/src:/app/src
       - ./platform-services/backend/deepiri-language-intelligence-service/tsconfig.json:/app/tsconfig.json
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && (if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
+    command: sh -c "(if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
       interval: 30s
@@ -581,7 +669,7 @@ services:
       retries: 3
       start_period: 20s
     depends_on:
-      - postgres
+      - postgres-intelligence
       - redis
       - minio
       - cyrex
@@ -595,6 +683,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-messaging-service/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-messaging-service:latest
     pull_policy: never
     container_name: deepiri-messaging-service-dev
@@ -604,7 +694,7 @@ services:
       - "5010:5010"
     environment:
       PORT: 5010
-      DATABASE_URL: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5433/${POSTGRES_CORE_DB:-deepiri}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
@@ -617,9 +707,7 @@ services:
       - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-messaging-service/src:/app/src
       - ./platform-services/backend/deepiri-messaging-service/tsconfig.json:/app/tsconfig.json
-      - shared_utils_node_modules:/shared-utils/node_modules
-      - /app/node_modules
-    command: sh -c "cd /shared-utils && if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm install --legacy-peer-deps --unsafe-perm && npm run build && chown -R nodejs:nodejs node_modules 2>/dev/null || true; fi && cd /app && rm -rf node_modules 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && (if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
+    command: sh -c "(if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else echo '[Prisma Baseline] Script not found, skipping baseline (rebuild image to enable)'; npx prisma migrate deploy || true; fi) && npx prisma generate && npm run dev"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5010/health"]
       interval: 30s
@@ -627,7 +715,7 @@ services:
       retries: 3
       start_period: 20s
     depends_on:
-      - postgres
+      - postgres-core
       - redis
       - cyrex
       - realtime-gateway
@@ -641,6 +729,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+      secrets:
+        - github_token
     image: deepiri-dev-realtime-gateway:latest
     pull_policy: never
     container_name: deepiri-realtime-gateway-dev
@@ -783,11 +873,11 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
       # PostgreSQL Configuration
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
-      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deepiripassword}
+      POSTGRES_HOST: postgres-cyrex
+      POSTGRES_PORT: 5434
+      POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
+      POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
+      POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
       # Node Backend (API Gateway) Configuration
       NODE_BACKEND_URL: http://api-gateway:5000
       # Local LLM Configuration
@@ -842,7 +932,7 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      postgres:
+      postgres-cyrex:
         condition: service_healthy
       influxdb:
         condition: service_started
@@ -907,11 +997,11 @@ services:
       PORT: 8002
       DEBUG: "true"
       CORS_ORIGIN: "*"
-      # Database (uses existing postgres database)
-      POSTGRES_HOST: postgres
+      # Database (shares the cyrex postgres instance)
+      POSTGRES_HOST: postgres-cyrex
       POSTGRES_PORT: 5432
-      POSTGRES_DB: cyrex_db
-      POSTGRES_USER: deepiri_cyrex
+      POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
+      POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
       POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
       # Redis
       REDIS_HOST: redis
@@ -939,7 +1029,7 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      - postgres
+      - postgres-cyrex
       - redis
       - ollama
       - cyrex
@@ -1017,7 +1107,7 @@ services:
       - "5500:5000"
     environment:
       # Backend Store (PostgreSQL)
-      BACKEND_STORE_URI: postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      BACKEND_STORE_URI: postgresql://${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}:${POSTGRES_INTELLIGENCE_PASSWORD:-deepiripassword}@postgres-intelligence:5435/${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
       # Artifact Store (MinIO/S3)
       DEFAULT_ARTIFACT_ROOT: s3://mlflow-artifacts/
       AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minioadmin}
@@ -1032,7 +1122,7 @@ services:
       mlflow server
       --host 0.0.0.0
       --port 5000
-      --backend-store-uri postgresql://${POSTGRES_USER:-deepiri}:${POSTGRES_PASSWORD:-deepiripassword}@postgres:5432/${POSTGRES_DB:-deepiri}
+      --backend-store-uri postgresql://${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}:${POSTGRES_INTELLIGENCE_PASSWORD:-deepiripassword}@postgres-intelligence:5435/${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
       --default-artifact-root s3://mlflow-artifacts/
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/', timeout=5).read()"]
@@ -1041,7 +1131,7 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      - postgres
+      - postgres-intelligence
       - minio
     networks:
       - deepiri-dev-network
@@ -1173,13 +1263,17 @@ services:
       - deepiri-dev-network
 
 volumes:
-  postgres_dev_data:
+  postgres_auth_dev_data:
+    driver: local
+  postgres_core_dev_data:
+    driver: local
+  postgres_cyrex_dev_data:
+    driver: local
+  postgres_intelligence_dev_data:
     driver: local
   pgadmin_dev_data:
     driver: local
   redis_dev_data:
-    driver: local
-  shared_utils_node_modules:
     driver: local
   mlflow_dev_data:
     driver: local
@@ -1201,3 +1295,7 @@ volumes:
 networks:
   deepiri-dev-network:
     driver: bridge
+
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN

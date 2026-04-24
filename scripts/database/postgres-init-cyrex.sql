@@ -1,0 +1,111 @@
+-- ===========================
+-- DEEPIRI CYREX POSTGRESQL SETUP
+-- ===========================
+
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
+-- Cyrex schema
+CREATE SCHEMA IF NOT EXISTS cyrex;
+
+-- Set search path
+SET search_path TO cyrex;
+
+-- Agents
+CREATE TABLE IF NOT EXISTS cyrex.agents (
+    agent_id VARCHAR(255) PRIMARY KEY,
+    role VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    capabilities JSONB,
+    tools JSONB,
+    model_config JSONB,
+    temperature FLOAT DEFAULT 0.7,
+    max_tokens INTEGER DEFAULT 2000,
+    system_prompt TEXT,
+    guardrails JSONB,
+    metadata JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_agents_role ON cyrex.agents(role);
+CREATE INDEX IF NOT EXISTS idx_agents_name ON cyrex.agents(name);
+
+-- Workflows
+CREATE TABLE IF NOT EXISTS cyrex.workflows (
+    workflow_id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255),
+    description TEXT,
+    workflow_type VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'pending',
+    current_step VARCHAR(255),
+    total_steps INTEGER DEFAULT 0,
+    completed_steps INTEGER DEFAULT 0,
+    state_data JSONB DEFAULT '{}'::jsonb,
+    step_results JSONB DEFAULT '{}'::jsonb,
+    assigned_agents JSONB DEFAULT '[]'::jsonb,
+    checkpoints JSONB DEFAULT '[]'::jsonb,
+    error TEXT,
+    error_count INTEGER DEFAULT 0,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    tags JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    deadline TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_workflows_status ON cyrex.workflows(status);
+CREATE INDEX IF NOT EXISTS idx_workflows_type ON cyrex.workflows(workflow_type);
+CREATE INDEX IF NOT EXISTS idx_workflows_created ON cyrex.workflows(created_at);
+CREATE INDEX IF NOT EXISTS idx_workflows_updated ON cyrex.workflows(updated_at);
+
+-- Memories
+CREATE TABLE IF NOT EXISTS cyrex.memories (
+    memory_id VARCHAR(255) PRIMARY KEY,
+    session_id VARCHAR(255),
+    user_id VARCHAR(255),
+    memory_type VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    metadata JSONB,
+    importance FLOAT DEFAULT 0.5,
+    access_count INTEGER DEFAULT 0,
+    last_accessed TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_memories_session_id ON cyrex.memories(session_id);
+CREATE INDEX IF NOT EXISTS idx_memories_user_id ON cyrex.memories(user_id);
+CREATE INDEX IF NOT EXISTS idx_memories_type ON cyrex.memories(memory_type);
+CREATE INDEX IF NOT EXISTS idx_memories_expires_at ON cyrex.memories(expires_at);
+
+-- Events
+CREATE TABLE IF NOT EXISTS cyrex.events (
+    event_id VARCHAR(255) PRIMARY KEY,
+    event_type VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(100),
+    entity_id VARCHAR(255),
+    workflow_id VARCHAR(255),
+    agent_id VARCHAR(255),
+    session_id VARCHAR(255),
+    source VARCHAR(100) DEFAULT 'cyrex',
+    payload JSONB DEFAULT '{}'::jsonb,
+    severity VARCHAR(20) DEFAULT 'info',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_events_entity ON cyrex.events(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_events_type ON cyrex.events(event_type);
+CREATE INDEX IF NOT EXISTS idx_events_workflow ON cyrex.events(workflow_id);
+CREATE INDEX IF NOT EXISTS idx_events_agent ON cyrex.events(agent_id);
+CREATE INDEX IF NOT EXISTS idx_events_created ON cyrex.events(created_at);
+CREATE INDEX IF NOT EXISTS idx_events_severity ON cyrex.events(severity);
+
+-- Comments
+COMMENT ON SCHEMA cyrex IS 'AI/Agent System: workflows, agents, memories, events';
+
+-- Success message
+DO $$
+BEGIN
+    RAISE NOTICE 'Deepiri Cyrex database initialized successfully';
+END $$;

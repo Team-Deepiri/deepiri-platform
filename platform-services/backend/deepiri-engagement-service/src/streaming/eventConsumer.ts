@@ -11,7 +11,7 @@
  *   task-created     → +2 momentum (tasks) — rewards planning behaviour
  *   user-registered  → +5 momentum (attendance) — welcome bonus
  */
-import { StreamingClient, StreamTopics, StreamEvent, secureLog } from '@deepiri/shared-utils';
+import { StreamingClient, StreamTopics, StreamEvent, secureLog } from '@team-deepiri/shared-utils';
 import momentumService from '../services/momentumService';
 import streakService from '../services/streakService';
 

@@ -1,50 +1,23 @@
-# Build shared-utils first
-FROM node:18-alpine AS shared-utils-builder
-WORKDIR /shared-utils
-COPY shared/deepiri-shared-utils/package*.json ./
-COPY shared/deepiri-shared-utils/tsconfig.json ./
-COPY shared/deepiri-shared-utils/src ./src
-# Add retry logic for network issues
-RUN npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set fetch-timeout 300000 && \
-    npm install --legacy-peer-deps && \
-    npm run build && \
-    npm pack
-
 # Build the service
-FROM node:18-alpine
-
-WORKDIR /app
-
-RUN apk add --no-cache curl dumb-init bash
-
-# Copy K8s env loader scripts
-COPY --chown=root:root shared/scripts/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
-COPY --chown=root:root shared/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
+FROM ghcr.io/team-deepiri/deepiri-base:18-alpine
 
 # Copy package files
 COPY backend/deepiri-challenge-service/package*.json ./
 COPY backend/deepiri-challenge-service/tsconfig.json ./
 
-# Copy built shared-utils to a temp location
-COPY --from=shared-utils-builder /shared-utils/deepiri-shared-utils-1.0.0.tgz /shared-utils.tgz
-
-# Install shared-utils as a local file dependency first, then install other dependencies
+# Install dependencies, including shared-utils from GitHub Packages
 # Add retry logic for network issues
-RUN npm config set fetch-retries 5 && \
+RUN --mount=type=secret,id=github_token \
+    { echo "@team-deepiri:registry=https://npm.pkg.github.com"; \
+      echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/github_token)"; \
+    } > .npmrc && \
+    npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set fetch-timeout 300000 && \
-    npm install --legacy-peer-deps /shared-utils.tgz && \
     npm install --legacy-peer-deps && \
     npm cache clean --force && \
-    npm install --legacy-peer-deps || \
-    (sleep 10 && npm install --legacy-peer-deps) || \
-    (sleep 20 && npm install --legacy-peer-deps) && \
-    npm cache clean --force
+    echo "@team-deepiri:registry=https://npm.pkg.github.com" > .npmrc
 
 # Copy source files
 COPY backend/deepiri-challenge-service/src ./src
@@ -53,10 +26,7 @@ COPY backend/deepiri-challenge-service/src ./src
 RUN npm run build && \
     rm -rf /tmp/* /var/tmp/*
 
-# Create non-root user and set up directories
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    mkdir -p logs && chown -R nodejs:nodejs /app
+RUN mkdir -p logs && chown -R nodejs:nodejs /app
 
 USER nodejs
 

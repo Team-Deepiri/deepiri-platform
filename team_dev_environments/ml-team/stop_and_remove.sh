@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 
 # ML team services
 SERVICES=(
-  postgres redis influxdb
+  postgres-auth postgres-core postgres-intelligence redis influxdb
   mlflow
   # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
   platform-analytics-service synapse

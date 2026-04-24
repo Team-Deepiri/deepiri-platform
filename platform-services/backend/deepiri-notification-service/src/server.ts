@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import { secureLog } from '@deepiri/shared-utils';
+import { secureLog } from '@team-deepiri/shared-utils';
 import { router, websocket } from './index';
 import { validateBodyIfPresent } from './middleware/inputValidation';
 

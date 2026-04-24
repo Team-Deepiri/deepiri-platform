@@ -1,65 +1,26 @@
-# ===============================
-# Build shared-utils
-# ===============================
-FROM node:18-slim AS shared-utils-builder
-WORKDIR /shared-utils
+FROM ghcr.io/team-deepiri/deepiri-base:18-slim
 
-COPY shared/deepiri-shared-utils/package.json ./
-COPY shared/deepiri-shared-utils/package-lock.json ./
-COPY shared/deepiri-shared-utils/tsconfig.json ./
-COPY shared/deepiri-shared-utils/src ./src
-
-RUN npm config set fetch-retries 5 \
- && npm config set fetch-retry-mintimeout 20000 \
- && npm config set fetch-retry-maxtimeout 120000 \
- && npm config set fetch-timeout 300000 \
- && npm ci \
- && npm run build \
- && npm pack
-
-# ===============================
-# Build task-orchestrator
-# ===============================
-FROM node:18-slim
-WORKDIR /app
-
-# Prisma + healthcheck deps (Debian)
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      curl \
-      ca-certificates \
-      openssl \
-      dumb-init \
-      bash \
-      libc6 \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
-
-# Prisma binary compatibility
+# Prisma binary compatibility (service-specific)
 RUN mkdir -p /lib64 \
  && ln -sf /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 \
            /lib64/ld-linux-x86-64.so.2
 
-# Copy K8s env loader scripts
-COPY --chown=root:root shared/scripts/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
-COPY --chown=root:root shared/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
-
-# Package files (LOCK FILE INCLUDED)
-COPY backend/deepiri-task-orchestrator/package.json ./
-COPY backend/deepiri-task-orchestrator/package-lock.json ./
+# Package files
+COPY backend/deepiri-task-orchestrator/package*.json ./
 COPY backend/deepiri-task-orchestrator/tsconfig.json ./
 
-# Copy shared-utils
-COPY --from=shared-utils-builder /shared-utils/deepiri-shared-utils-1.0.0.tgz /shared-utils.tgz
-
 # SINGLE atomic dependency install
-RUN npm config set fetch-retries 5 \
+RUN --mount=type=secret,id=github_token \
+    { echo "@team-deepiri:registry=https://npm.pkg.github.com"; \
+      echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/github_token)"; \
+    } > .npmrc \
+ && npm config set fetch-retries 5 \
  && npm config set fetch-retry-mintimeout 20000 \
  && npm config set fetch-retry-maxtimeout 120000 \
  && npm config set fetch-timeout 300000 \
- && npm install /shared-utils.tgz \
- && npm cache clean --force
+ && npm install --legacy-peer-deps \
+ && npm cache clean --force \
+ && echo "@team-deepiri:registry=https://npm.pkg.github.com" > .npmrc
 
 # Source + Prisma schema
 COPY backend/deepiri-task-orchestrator/src ./src
@@ -75,10 +36,7 @@ RUN npx prisma generate \
     fi \
  && cd /app
 
-# Runtime user
-RUN groupadd -r -g 1001 nodejs \
- && useradd -r -u 1001 -g nodejs -m -d /home/nodejs nodejs \
- && mkdir -p logs /home/nodejs/.npm \
+RUN mkdir -p logs /home/nodejs/.npm \
  && chown -R nodejs:nodejs /app /home/nodejs
 
 USER nodejs

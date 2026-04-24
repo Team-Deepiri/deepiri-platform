@@ -2,8 +2,8 @@
  * Event Publisher for Task Orchestrator Service
  * Publishes platform-events for task lifecycle
  */
-import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import { secureLog } from '@deepiri/shared-utils';
+import { StreamingClient, StreamTopics, StreamEvent } from '@team-deepiri/shared-utils';
+import { secureLog } from '@team-deepiri/shared-utils';
 
 let streamingClient: StreamingClient | null = null;
 

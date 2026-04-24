@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { createLogger } from '@deepiri/shared-utils';
-import { secureLog } from '@deepiri/shared-utils';
+import { createLogger } from '@team-deepiri/shared-utils';
+import { secureLog } from '@team-deepiri/shared-utils';
 import momentumService from './momentumService';
 import streakService from './streakService';
 import objectiveService from './objectiveService';

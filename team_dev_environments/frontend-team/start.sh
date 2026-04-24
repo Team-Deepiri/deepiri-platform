@@ -14,7 +14,9 @@ SERVICES=(
   notification-service
   messaging-service
   realtime-gateway
-  postgres
+  postgres-auth
+  postgres-core
+  postgres-intelligence
 )
 
 echo "🚀 Starting Frontend Team services..."

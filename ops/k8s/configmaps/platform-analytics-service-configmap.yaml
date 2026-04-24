@@ -11,7 +11,7 @@ data:
   PORT: "5004"
   
   # Database URLs (using Docker service names)
-  DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres:5432/deepiri"
+  DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres-core-service:5433/deepiri"
   
   # InfluxDB Configuration
   INFLUXDB_URL: "http://influxdb:8086"

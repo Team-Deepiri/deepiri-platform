@@ -1,49 +1,21 @@
-# ===============================
-# Build shared-utils
-# ===============================
-FROM node:18-alpine AS shared-utils-builder
-WORKDIR /shared-utils
+FROM ghcr.io/team-deepiri/deepiri-base:18-alpine
 
-COPY shared/deepiri-shared-utils/package.json ./
-COPY shared/deepiri-shared-utils/package-lock.json ./
-COPY shared/deepiri-shared-utils/tsconfig.json ./
-COPY shared/deepiri-shared-utils/src ./src
+# Copy service package files
+COPY backend/deepiri-platform-analytics-service/package*.json ./
+COPY backend/deepiri-platform-analytics-service/tsconfig.json ./
 
-RUN npm config set fetch-retries 5 \
+# SINGLE atomic install
+RUN --mount=type=secret,id=github_token \
+    { echo "@team-deepiri:registry=https://npm.pkg.github.com"; \
+      echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/github_token)"; \
+    } > .npmrc \
+ && npm config set fetch-retries 5 \
  && npm config set fetch-retry-mintimeout 20000 \
  && npm config set fetch-retry-maxtimeout 120000 \
  && npm config set fetch-timeout 300000 \
  && npm install --legacy-peer-deps \
- && npm run build
-
-# ===============================
-# Build platform-analytics-service
-# ===============================
-FROM node:18-alpine
-WORKDIR /app
-
-RUN apk add --no-cache curl dumb-init bash
-
-# Copy K8s env loader scripts
-COPY --chown=root:root shared/scripts/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
-COPY --chown=root:root shared/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
-
-# Copy service package files (LOCK FILE INCLUDED)
-COPY backend/deepiri-platform-analytics-service/package.json ./
-COPY backend/deepiri-platform-analytics-service/package-lock.json ./
-COPY backend/deepiri-platform-analytics-service/tsconfig.json ./
-
-# Copy built shared-utils
-COPY --from=shared-utils-builder /shared-utils /shared-utils
-
-# SINGLE atomic install
-RUN npm config set fetch-retries 5 \
- && npm config set fetch-retry-mintimeout 20000 \
- && npm config set fetch-retry-maxtimeout 120000 \
- && npm config set fetch-timeout 300000 \
- && npm install --legacy-peer-deps file:/shared-utils \
- && npm cache clean --force
+ && npm cache clean --force \
+ && echo "@team-deepiri:registry=https://npm.pkg.github.com" > .npmrc
 
 # Source
 COPY backend/deepiri-platform-analytics-service/src ./src
@@ -51,10 +23,7 @@ COPY backend/deepiri-platform-analytics-service/src ./src
 # Build
 RUN npm run build
 
-# Runtime user
-RUN addgroup -g 1001 -S nodejs \
- && adduser -S nodejs -u 1001 \
- && mkdir -p logs \
+RUN mkdir -p logs \
  && chown -R nodejs:nodejs /app
 
 USER nodejs

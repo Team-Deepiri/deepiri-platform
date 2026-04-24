@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { createLogger } from '@deepiri/shared-utils';
-import { secureLog } from '@deepiri/shared-utils';
+import { createLogger } from '@team-deepiri/shared-utils';
+import { secureLog } from '@team-deepiri/shared-utils';
 import prisma from './db';
 import { publishTaskCreated, publishTaskCompleted, publishTaskFailed } from './streaming/eventPublisher';
 

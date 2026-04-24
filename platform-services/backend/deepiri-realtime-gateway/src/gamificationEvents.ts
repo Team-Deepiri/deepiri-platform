@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { secureLog } from '@deepiri/shared-utils';
+import { secureLog } from '@team-deepiri/shared-utils';
 
 export interface GamificationEventData {
   userId: string;

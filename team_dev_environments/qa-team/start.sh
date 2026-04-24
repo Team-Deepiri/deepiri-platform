@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 
 # QA team services (language-intelligence-service is optional - only if image exists)
 SERVICES=(
-  postgres redis influxdb
+  postgres-auth postgres-core postgres-intelligence redis influxdb
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
@@ -35,7 +35,7 @@ fi
 
 # Start infrastructure services first (without --no-deps to ensure proper startup order)
 echo "📦 Starting infrastructure services..."
-docker compose -f docker-compose.dev.yml up -d --no-build postgres redis influxdb synapse
+docker compose -f docker-compose.dev.yml up -d --no-build postgres-auth postgres-core postgres-intelligence redis influxdb synapse
 
 # Wait a moment for infrastructure to be ready
 echo "⏳ Waiting for infrastructure to be ready..."

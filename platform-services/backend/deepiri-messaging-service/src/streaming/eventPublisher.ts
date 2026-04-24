@@ -1,4 +1,4 @@
-import { StreamingClient, StreamTopics } from '@deepiri/shared-utils';
+import { StreamingClient, StreamTopics } from '@team-deepiri/shared-utils';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
 

@@ -12,7 +12,7 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 
 # Backend team services
 SERVICES=(
-  postgres redis influxdb
+  postgres-auth postgres-core postgres-intelligence redis influxdb
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service

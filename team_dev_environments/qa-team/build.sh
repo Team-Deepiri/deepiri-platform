@@ -6,12 +6,15 @@ set -e
 
 cd "$(dirname "$0")/../.." || exit 1
 
-# Enable BuildKit for better builds
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
+# Force legacy builder. Docker Desktop / WSL2 on this machine hits a
+# BuildKit snapshot-commit bug ("snapshot does not exist: not found")
+# that also masks real errors as generic "runc process is already dead".
+# The legacy builder is slower but reliable.
+export DOCKER_BUILDKIT=0
+export COMPOSE_DOCKER_CLI_BUILD=0
 
 SERVICES=(
-  postgres redis influxdb
+  postgres-auth postgres-core postgres-intelligence redis influxdb
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
@@ -26,8 +29,25 @@ echo "   (Using docker-compose.dev.yml with service selection)"
 echo "   Services: ${SERVICES[*]}"
 echo ""
 
-# Build services using docker-compose.dev.yml
-docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
+# Build services sequentially. Windows Docker Desktop / WSL2 runs out of
+# runc/BuildKit resources when 10+ npm installs run in parallel, causing
+# "runc run failed: container process is already dead" and snapshot errors.
+# Sequential builds are slower but reliable.
+failed=()
+for svc in "${SERVICES[@]}"; do
+  echo ""
+  echo "── Building $svc ──"
+  if ! docker compose -f docker-compose.dev.yml build "$svc"; then
+    echo "❌ $svc failed"
+    failed+=("$svc")
+  fi
+done
+
+if [ ${#failed[@]} -gt 0 ]; then
+  echo ""
+  echo "❌ Failed services: ${failed[*]}"
+  exit 1
+fi
 
 echo ""
 echo "✅ QA Team services built successfully!"

@@ -28,7 +28,7 @@ jest.mock('@influxdata/influxdb-client', () => {
   };
 }, { virtual: true });
 
-jest.mock('@deepiri/shared-utils', () => ({
+jest.mock('@team-deepiri/shared-utils', () => ({
   secureLog: jest.fn(),
   createLogger: () => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
 }));

@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 
 # Infrastructure team services
 SERVICES=(
-  postgres pgadmin adminer redis influxdb etcd minio
+  postgres-auth postgres-core postgres-intelligence pgadmin adminer redis influxdb etcd minio
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service

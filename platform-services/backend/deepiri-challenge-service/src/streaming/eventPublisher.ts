@@ -5,7 +5,7 @@
  * can react. userId is optional — callers that don't provide it still get the
  * event published with user_id: 'anonymous' for analytics purposes.
  */
-import { StreamingClient, StreamTopics, StreamEvent, secureLog } from '@deepiri/shared-utils';
+import { StreamingClient, StreamTopics, StreamEvent, secureLog } from '@team-deepiri/shared-utils';
 
 let streamingClient: StreamingClient | null = null;
 

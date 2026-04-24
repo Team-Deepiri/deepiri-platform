@@ -4,7 +4,7 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: {
-    '^@deepiri/shared-utils$': '<rootDir>/../../shared/deepiri-shared-utils/src/index.ts',
+    '^@team-deepiri/shared-utils$': '<rootDir>/../../shared/deepiri-shared-utils/src/index.ts',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', {

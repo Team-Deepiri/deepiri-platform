@@ -40,11 +40,15 @@ def get_microservice_config(
     # Map service names to container names
     service_to_container = {
         "postgres": f"deepiri-postgres-{team_suffix}",
+        "postgres-auth": f"deepiri-postgres-auth-{team_suffix}",
+        "postgres-core": f"deepiri-postgres-core-{team_suffix}",
+        "postgres-cyrex": f"deepiri-postgres-cyrex-{team_suffix}",
+        "postgres-intelligence": f"deepiri-postgres-intelligence-{team_suffix}",
         "redis": f"deepiri-redis-{team_suffix}",
         "influxdb": f"deepiri-influxdb-{team_suffix}",
     }
     
-    deps = depends_on or ["postgres"]
+    deps = depends_on or ["postgres-core"]
     # Convert service names to container names
     mapped_deps = []
     for dep in deps:
@@ -88,7 +92,21 @@ def get_microservice_config(
 
 def get_backend_team_services(project_root: Path, env: dict, network_name: str, team_suffix: str = "backend") -> List[Dict[str, Any]]:
     """Get all services for Backend Team."""
-    database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
+    database_url_auth = (
+        f"postgresql://{env.get('POSTGRES_AUTH_USER', 'deepiri_auth')}:"
+        f"{env.get('POSTGRES_AUTH_PASSWORD', 'deepiripassword')}@postgres-auth:5432/"
+        f"{env.get('POSTGRES_AUTH_DB', 'auth_db')}"
+    )
+    database_url_core = (
+        f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
+    )
+    database_url_intelligence = (
+        f"postgresql://{env.get('POSTGRES_INTELLIGENCE_USER', 'deepiri_intel')}:"
+        f"{env.get('POSTGRES_INTELLIGENCE_PASSWORD', 'deepiripassword')}@postgres-intelligence:5435/"
+        f"{env.get('POSTGRES_INTELLIGENCE_DB', 'intelligence_db')}"
+    )
     redis_url = f"redis://:{env.get('REDIS_PASSWORD', 'redispassword')}@redis:6379"
     
     services = []
@@ -100,14 +118,14 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5100,
         project_root,
         "platform-services/api-gateway",
-        database_url,
+        database_url_core,
         redis_url,
         {
             "AUTH_SERVICE_URL": f"http://deepiri-auth-service-{team_suffix}:5001",
             "TASK_ORCHESTRATOR_URL": f"http://deepiri-task-orchestrator-{team_suffix}:5002",
             "ENGAGEMENT_SERVICE_URL": f"http://deepiri-engagement-service-{team_suffix}:5003",
         },
-        ["postgres", "redis"],
+        ["postgres-core", "redis"],
         network_name,
         team_suffix
     ))
@@ -119,10 +137,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5001,
         project_root,
         "platform-services/backend/deepiri-auth-service",
-        database_url,
+        database_url_auth,
         None,
         None,
-        ["postgres"],
+        ["postgres-auth"],
         network_name,
         team_suffix
     ))
@@ -134,10 +152,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5002,
         project_root,
         "platform-services/backend/deepiri-task-orchestrator",
-        database_url,
+        database_url_core,
         None,
         None,
-        ["postgres"],
+        ["postgres-core"],
         network_name,
         team_suffix
     ))
@@ -149,10 +167,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5003,
         project_root,
         "platform-services/backend/deepiri-engagement-service",
-        database_url,
+        database_url_core,
         redis_url,
         None,
-        ["postgres", "redis"],
+        ["postgres-core", "redis"],
         network_name,
         team_suffix
     ))
@@ -164,10 +182,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5004,
         project_root,
         "platform-services/backend/deepiri-platform-analytics-service",
-        database_url,
+        database_url_core,
         None,
         None,
-        ["postgres", "influxdb"],
+        ["postgres-core", "influxdb"],
         network_name,
         team_suffix
     ))
@@ -179,10 +197,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5005,
         project_root,
         "platform-services/backend/deepiri-notification-service",
-        database_url,
+        database_url_core,
         redis_url,
         None,
-        ["postgres", "redis"],
+        ["postgres-core", "redis"],
         network_name,
         team_suffix
     ))
@@ -194,10 +212,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5006,
         project_root,
         "platform-services/backend/deepiri-external-bridge-service",
-        database_url,
+        database_url_core,
         None,
         None,
-        ["postgres"],
+        ["postgres-core"],
         network_name,
         team_suffix
     ))
@@ -209,10 +227,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5007,
         project_root,
         "platform-services/backend/deepiri-challenge-service",
-        database_url,
+        database_url_core,
         None,
         None,
-        ["postgres"],
+        ["postgres-core"],
         network_name,
         team_suffix,
         command="sh -c \"cd /shared-utils && rm -rf node_modules/.caniuse-lite* 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps && npm run build && cd /app && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev\""
@@ -225,10 +243,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5008,
         project_root,
         "platform-services/backend/deepiri-realtime-gateway",
-        database_url,
+        database_url_core,
         None,
         None,
-        ["postgres"],
+        ["postgres-core"],
         network_name,
         team_suffix
     ))
@@ -240,10 +258,10 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5003,
         project_root,
         "platform-services/backend/deepiri-language-intelligence-service",
-        database_url,
+        database_url_intelligence,
         None,
         None,
-        ["postgres"],
+        ["postgres-intelligence"],
         network_name,
         team_suffix
     ))
@@ -255,13 +273,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         5009,
         project_root,
         "platform-services/backend/deepiri-messaging-service",
-        database_url,
+        database_url_core,
         redis_url,
         {
             "CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000",
             "REALTIME_GATEWAY_URL": f"http://deepiri-realtime-gateway-{team_suffix}:5008",
         },
-        ["postgres", "redis", f"deepiri-realtime-gateway-{team_suffix}"],
+        ["postgres-core", "redis", f"deepiri-realtime-gateway-{team_suffix}"],
         network_name,
         team_suffix
     ))
@@ -342,17 +360,21 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
     # })
     
     # Challenge Service
-    database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
+    database_url_core = (
+        f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
+    )
     services.append(get_microservice_config(
         "challenge-service",
         f"deepiri-challenge-service-{team_suffix}",
         5007,
         project_root,
         "platform-services/backend/deepiri-challenge-service",
-        database_url,
+        database_url_core,
         None,
         {"CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000"},
-        ["postgres", f"deepiri-cyrex-{team_suffix}"],
+        ["postgres-core", f"deepiri-cyrex-{team_suffix}"],
         network_name,
         team_suffix,
         command="sh -c \"cd /shared-utils && rm -rf node_modules/.caniuse-lite* 2>/dev/null || true && npm cache clean --force && npm install --legacy-peer-deps && npm run build && cd /app && npm cache clean --force && npm install --legacy-peer-deps file:/shared-utils && npm run dev\""
@@ -442,17 +464,21 @@ def get_ml_team_services(project_root: Path, env: dict, network_name: str, team_
     # })
     
     # Platform Analytics Service
-    database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
+    database_url_core = (
+        f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
+    )
     services.append(get_microservice_config(
         "platform-analytics-service",
         f"deepiri-platform-analytics-service-{team_suffix}",
         5004,
         project_root,
         "platform-services/backend/deepiri-platform-analytics-service",
-        database_url,
+        database_url_core,
         None,
         None,
-        ["postgres", "influxdb"],
+        ["postgres-core", "influxdb"],
         network_name,
         team_suffix
     ))
@@ -481,8 +507,17 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         "command": "sh -c 'npm install --legacy-peer-deps && npm run dev -- --host 0.0.0.0 --port 5173'",
     })
     
-    # Database URL for microservices
-    database_url = f"postgresql://{env.get('POSTGRES_USER', 'deepiri')}:{env.get('POSTGRES_PASSWORD', 'deepiripassword')}@postgres:5432/{env.get('POSTGRES_DB', 'deepiri')}"
+    # Database URLs for microservices
+    database_url_auth = (
+        f"postgresql://{env.get('POSTGRES_AUTH_USER', 'deepiri_auth')}:"
+        f"{env.get('POSTGRES_AUTH_PASSWORD', 'deepiripassword')}@postgres-auth:5432/"
+        f"{env.get('POSTGRES_AUTH_DB', 'auth_db')}"
+    )
+    database_url_core = (
+        f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
+    )
     redis_url = f"redis://:{env.get('REDIS_PASSWORD', 'redispassword')}@redis:6379"
     
     # Auth Service (needed by API Gateway)
@@ -492,10 +527,10 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         5001,
         project_root,
         "platform-services/backend/deepiri-auth-service",
-        database_url,
+        database_url_auth,
         None,
         None,
-        ["postgres"],
+        ["postgres-auth"],
         network_name,
         team_suffix
     ))
@@ -507,10 +542,10 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         5100,
         project_root,
         "platform-services/backend/deepiri-api-gateway",
-        database_url,
+        database_url_core,
         redis_url,
         None,
-        ["postgres", "redis", f"deepiri-auth-service-{team_suffix}"],
+        ["postgres-core", "redis", f"deepiri-auth-service-{team_suffix}"],
         network_name,
         team_suffix
     ))
@@ -522,10 +557,10 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         5008,
         project_root,
         "platform-services/backend/deepiri-realtime-gateway",
-        database_url,
+        database_url_core,
         None,
         None,
-        ["postgres"],
+        ["postgres-core"],
         network_name,
         team_suffix
     ))
@@ -537,13 +572,13 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
         5009,
         project_root,
         "platform-services/backend/deepiri-messaging-service",
-        database_url,
+        database_url_core,
         None,
         {
             "CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000",
             "REALTIME_GATEWAY_URL": f"http://deepiri-realtime-gateway-{team_suffix}:5008",
         },
-        ["postgres", f"deepiri-realtime-gateway-{team_suffix}", f"deepiri-cyrex-{team_suffix}"],
+        ["postgres-core", f"deepiri-realtime-gateway-{team_suffix}", f"deepiri-cyrex-{team_suffix}"],
         network_name,
         team_suffix
     ))
@@ -565,4 +600,3 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
     # ))
     
     return services
-

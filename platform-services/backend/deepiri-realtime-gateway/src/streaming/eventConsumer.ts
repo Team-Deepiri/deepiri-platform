@@ -2,8 +2,8 @@
  * Event Consumer for Realtime Gateway
  * Subscribes to all event streams and forwards to WebSocket clients
  */
-import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import { secureLog } from '@deepiri/shared-utils';
+import { StreamingClient, StreamTopics, StreamEvent } from '@team-deepiri/shared-utils';
+import { secureLog } from '@team-deepiri/shared-utils';
 import { Server } from 'socket.io';
 
 let streamingClient: StreamingClient | null = null;

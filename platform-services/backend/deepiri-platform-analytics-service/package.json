@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@deepiri/shared-utils": "file:../../shared/deepiri-shared-utils",
+    "@team-deepiri/shared-utils": "^1.0.0",
     "@influxdata/influxdb-client": "^1.33.2",
     "@prisma/client": "^5.7.0",
     "axios": "^1.7.7",

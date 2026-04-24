@@ -2,8 +2,8 @@
  * Event Consumer for Platform Analytics Service
  * Subscribes to inference-events and training-events streams
  */
-import { StreamingClient, StreamTopics, StreamEvent } from '@deepiri/shared-utils';
-import { secureLog } from '@deepiri/shared-utils';
+import { StreamingClient, StreamTopics, StreamEvent } from '@team-deepiri/shared-utils';
+import { secureLog } from '@team-deepiri/shared-utils';
 import timeSeriesAnalytics from '../timeSeriesAnalytics';
 
 let streamingClient: StreamingClient | null = null;
