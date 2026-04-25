@@ -1,0 +1,20 @@
+version: 1
+patterns:
+  - name: email
+    regex: "([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})"
+    replacement: "***@***"
+  - name: bearer_token
+    regex: "(?i)(bearer\\s+)[A-Za-z0-9._\\-+/=]+"
+    replacement: "$1***"
+  - name: api_key_assignments
+    regex: "(?i)\\b(api[_-]?key|token|secret|password)\\b\\s*[:=]\\s*([\\\"']?)([^\\s,;\\\"']+)"
+    replacement: "$1=$2***"
+sensitive_keys:
+  - api_key
+  - apikey
+  - token
+  - secret
+  - password
+  - authorization
+  - access_token
+  - refresh_token
