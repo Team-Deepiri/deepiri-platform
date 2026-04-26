@@ -25,3 +25,6 @@
 [submodule "platform-services/shared/deepiri-shared-utils"]
 	path = platform-services/shared/deepiri-shared-utils
 	url = git@github.com:Team-Deepiri/deepiri-shared-utils.git
+[submodule "deepiri-logger"]
+	path = deepiri-logger
+	url = git@github.com:Team-Deepiri/deepiri-logger.git
