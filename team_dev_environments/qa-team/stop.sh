@@ -12,10 +12,10 @@ cd "$PROJECT_ROOT"
 # QA team services
 SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
-  api-gateway auth-service task-orchestrator
-  engagement-service platform-analytics-service
-  notification-service external-bridge-service
-  challenge-service realtime-gateway
+  api-gateway auth-service workflow-orchestrator
+  incentive-engine decision-intelligence
+  communications-hub external-bridge-service
+  adaptive-experience-engine realtime-gateway
   language-intelligence-service messaging-service
   synapse adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)

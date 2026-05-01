@@ -88,8 +88,8 @@ docker-compose -f docker-compose.dev.yml down
 
 ### **Scenario 5: Rebuild One Service**
 ```bash
-docker-compose -f docker-compose.dev.yml build --no-cache challenge-service
-docker-compose -f docker-compose.dev.yml up -d challenge-service
+docker-compose -f docker-compose.dev.yml build --no-cache adaptive-experience-engine
+docker-compose -f docker-compose.dev.yml up -d adaptive-experience-engine
 ```
 
 ---

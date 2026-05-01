@@ -1,7 +1,7 @@
 {
   "name": "deepiri-realtime-gateway",
   "version": "1.0.0",
-  "description": "Realtime Gateway - Real-time Communication & Updates",
+  "description": "Realtime Gateway - Socket.IO Events, Presence, Fanout",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",

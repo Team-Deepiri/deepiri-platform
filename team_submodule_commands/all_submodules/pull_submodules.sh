@@ -218,6 +218,7 @@ ensure_submodule_on_main "diri-helox"
 ensure_submodule_on_main "deepiri-modelkit"
 ensure_submodule_on_main "platform-services/backend/deepiri-language-intelligence-service"
 ensure_submodule_on_main "platform-services/shared/deepiri-prismpipe"
+ensure_submodule_on_main "platform-services/shared/deepiri-shared-utils"
 echo "    ✅ All submodules initialized at platform-pinned commits"
 echo ""
 

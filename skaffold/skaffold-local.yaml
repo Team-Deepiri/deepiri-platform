@@ -96,52 +96,52 @@ build:
           - src: 'backend/deepiri-auth-service/**/*.json'
             dest: /app/
     
-    # Microservices - Task Orchestrator
-    - image: deepiri-task-orchestrator
+    # Microservices - Workflow Orchestrator
+    - image: deepiri-workflow-orchestrator
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+        dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-task-orchestrator/**/*.ts'
+          - src: 'backend/deepiri-workflow-orchestrator/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-task-orchestrator/**/*.json'
+          - src: 'backend/deepiri-workflow-orchestrator/**/*.json'
             dest: /app/
     
-    # Microservices - Challenge Service
-    - image: deepiri-challenge-service
+    # Microservices - Adaptive Experience Engine
+    - image: deepiri-adaptive-experience-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-challenge-service/Dockerfile
+        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-challenge-service/**/*.ts'
+          - src: 'backend/deepiri-adaptive-experience-engine/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-challenge-service/**/*.json'
+          - src: 'backend/deepiri-adaptive-experience-engine/**/*.json'
             dest: /app/
     
-    # Microservices - Engagement Service (Gamification)
-    - image: deepiri-engagement-service
+    # Microservices - Incentive Engine (Gamification)
+    - image: deepiri-incentive-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-engagement-service/Dockerfile
+        dockerfile: backend/deepiri-incentive-engine/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-engagement-service/**/*.ts'
+          - src: 'backend/deepiri-incentive-engine/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-engagement-service/**/*.json'
+          - src: 'backend/deepiri-incentive-engine/**/*.json'
             dest: /app/
     
-    # Microservices - Platform Analytics Service
-    - image: deepiri-platform-analytics-service
+    # Microservices - Decision Intelligence
+    - image: deepiri-decision-intelligence
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-platform-analytics-service/**/*.ts'
+          - src: 'backend/deepiri-decision-intelligence/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-platform-analytics-service/**/*.json'
+          - src: 'backend/deepiri-decision-intelligence/**/*.json'
             dest: /app/
     
     # Microservices - External Bridge Service
@@ -156,16 +156,16 @@ build:
           - src: 'backend/deepiri-external-bridge-service/**/*.json'
             dest: /app/
     
-    # Microservices - Notification Service
-    - image: deepiri-notification-service
+    # Microservices - Communications Hub
+    - image: deepiri-communications-hub
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-notification-service/Dockerfile
+        dockerfile: backend/deepiri-communications-hub/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-notification-service/**/*.ts'
+          - src: 'backend/deepiri-communications-hub/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-notification-service/**/*.json'
+          - src: 'backend/deepiri-communications-hub/**/*.json'
             dest: /app/
     
     # Microservices - Realtime Gateway (WebSocket)
@@ -291,35 +291,35 @@ profiles:
           docker:
             dockerfile: backend/deepiri-auth-service/Dockerfile
         
-        - image: deepiri-dev-task-orchestrator
+        - image: deepiri-dev-workflow-orchestrator
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+            dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
         
-        - image: deepiri-dev-challenge-service
+        - image: deepiri-dev-adaptive-experience-engine
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-challenge-service/Dockerfile
+            dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
         
-        - image: deepiri-dev-engagement-service
+        - image: deepiri-dev-incentive-engine
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-engagement-service/Dockerfile
+            dockerfile: backend/deepiri-incentive-engine/Dockerfile
         
-        - image: deepiri-dev-platform-analytics-service
+        - image: deepiri-dev-decision-intelligence
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+            dockerfile: backend/deepiri-decision-intelligence/Dockerfile
         
         - image: deepiri-dev-external-bridge-service
           context: ./platform-services
           docker:
             dockerfile: backend/deepiri-external-bridge-service/Dockerfile
         
-        - image: deepiri-dev-notification-service
+        - image: deepiri-dev-communications-hub
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-notification-service/Dockerfile
+            dockerfile: backend/deepiri-communications-hub/Dockerfile
         
         - image: deepiri-dev-realtime-gateway
           context: ./platform-services

@@ -33,11 +33,11 @@ build:
           PYTORCH_VERSION: 2.9.1
           PYTHON_VERSION: 3.11
     
-    # Challenge Service (for AI integration testing)
-    - image: deepiri-dev-challenge-service
+    # Adaptive Experience Engine (for AI integration testing)
+    - image: deepiri-dev-adaptive-experience-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-challenge-service/Dockerfile
+        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
 
 deploy:
   kubectl:

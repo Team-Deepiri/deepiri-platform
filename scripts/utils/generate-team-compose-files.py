@@ -12,25 +12,25 @@ from pathlib import Path
 TEAM_SERVICES = {
     'ai-team': [
         'mongodb', 'influxdb', 'redis', 'etcd', 'minio', 'milvus',
-        'cyrex', 'jupyter', 'mlflow', 'challenge-service'
+        'cyrex', 'jupyter', 'mlflow', 'adaptive-experience-engine'
     ],
     'ml-team': [
         'mongodb', 'influxdb', 'redis',
-        'cyrex', 'jupyter', 'mlflow', 'platform-analytics-service'
+        'cyrex', 'jupyter', 'mlflow', 'decision-intelligence'
     ],
     'backend-team': [
         'mongodb', 'redis', 'influxdb',
-        'api-gateway', 'auth-service', 'task-orchestrator',
-        'engagement-service', 'platform-analytics-service',
-        'notification-service', 'external-bridge-service',
-        'challenge-service', 'realtime-gateway'
+        'api-gateway', 'auth-service', 'workflow-orchestrator',
+        'incentive-engine', 'decision-intelligence',
+        'communications-hub', 'external-bridge-service',
+        'adaptive-experience-engine', 'realtime-gateway'
     ],
     'frontend-team': [
         'mongodb', 'redis', 'influxdb',
-        'api-gateway', 'auth-service', 'task-orchestrator',
-        'engagement-service', 'platform-analytics-service',
-        'notification-service', 'external-bridge-service',
-        'challenge-service', 'realtime-gateway', 'frontend-dev'
+        'api-gateway', 'auth-service', 'workflow-orchestrator',
+        'incentive-engine', 'decision-intelligence',
+        'communications-hub', 'external-bridge-service',
+        'adaptive-experience-engine', 'realtime-gateway', 'frontend-dev'
     ],
     'infrastructure-team': None,  # All services
     'platform-engineers': None,  # All services

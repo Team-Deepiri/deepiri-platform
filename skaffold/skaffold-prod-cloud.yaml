@@ -61,40 +61,26 @@ build:
         dockerfile: backend/deepiri-auth-service/Dockerfile
     
     # Microservices - Task Orchestrator
-    - image: deepiri-task-orchestrator
+- image: deepiri-workflow-orchestrator
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
-    
-    # Microservices - Challenge Service
-    - image: deepiri-challenge-service
+        dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
+    - image: deepiri-adaptive-experience-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-challenge-service/Dockerfile
-    
-    # Microservices - Engagement Service (Gamification)
-    - image: deepiri-engagement-service
+        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
+    - image: deepiri-incentive-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-engagement-service/Dockerfile
-    
-    # Microservices - Platform Analytics Service
-    - image: deepiri-platform-analytics-service
+        dockerfile: backend/deepiri-incentive-engine/Dockerfile
+    - image: deepiri-decision-intelligence
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
-    
-    # Microservices - External Bridge Service
-    - image: deepiri-external-bridge-service
+        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
+    - image: deepiri-communications-hub
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-external-bridge-service/Dockerfile
-    
-    # Microservices - Notification Service
-    - image: deepiri-notification-service
-      context: ./platform-services
-      docker:
-        dockerfile: backend/deepiri-notification-service/Dockerfile
+        dockerfile: backend/deepiri-communications-hub/Dockerfile
     
     # Microservices - Realtime Gateway (WebSocket)
     - image: deepiri-realtime-gateway

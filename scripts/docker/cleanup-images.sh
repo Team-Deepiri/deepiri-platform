@@ -15,12 +15,12 @@ KEEP_IMAGES=(
     "deepiri-dev-frontend:latest"
     "deepiri-dev-api-gateway:latest"
     "deepiri-dev-auth-service:latest"
-    "deepiri-dev-task-orchestrator:latest"
-    "deepiri-dev-challenge-service:latest"
-    "deepiri-dev-engagement-service:latest"
-    "deepiri-dev-platform-analytics-service:latest"
+    "deepiri-dev-workflow-orchestrator:latest"
+    "deepiri-dev-adaptive-experience-engine:latest"
+    "deepiri-dev-incentive-engine:latest"
+    "deepiri-dev-decision-intelligence:latest"
     "deepiri-dev-external-bridge-service:latest"
-    "deepiri-dev-notification-service:latest"
+    "deepiri-dev-communications-hub:latest"
     "deepiri-dev-realtime-gateway:latest"
 )
 

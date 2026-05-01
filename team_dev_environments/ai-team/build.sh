@@ -18,7 +18,7 @@ SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb etcd minio milvus
   cyrex cyrex-interface mlflow
   # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
-  challenge-service api-gateway messaging-service realtime-gateway
+  adaptive-experience-engine api-gateway messaging-service realtime-gateway
   ollama synapse
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )

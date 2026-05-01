@@ -7,6 +7,13 @@ import dotenv from 'dotenv';
 import { secureLog } from '@team-deepiri/shared-utils';
 import { setupGamificationEvents, GamificationEventEmitter } from './gamificationEvents';
 import { validateBodyIfPresent } from './middleware/inputValidation';
+import {
+  handleEmitToChannel,
+  handleGetRooms,
+  handleGetPresence,
+  handleGetMetrics,
+  realtimeGateway
+} from './core/realtimeGateway';
 
 dotenv.config();
 
@@ -16,6 +23,9 @@ const io = new Server(httpServer, {
   cors: { origin: '*' }
 });
 
+// Attach io to app for core module access
+app.set('io', io);
+
 const PORT: number = parseInt(process.env.PORT || '5008', 10);
 
 app.use(cors());
@@ -23,16 +33,13 @@ app.use(helmet());
 app.use(express.json({ limit: '100kb' }));
 app.use(validateBodyIfPresent());
 
-// Setup gamification events
 const gamificationEmitter = setupGamificationEvents(io);
 
-// Start event consumption for streaming events
 import { startEventConsumption } from './streaming/eventConsumer';
 startEventConsumption(io).catch((err) => {
   secureLog('error', 'Failed to start event consumption:', err);
 });
 
-// HTTP endpoint to emit gamification events (called by engagement service)
 app.post('/emit/gamification', (req: Request, res: Response) => {
   const { userId, type, data } = req.body;
   
@@ -40,7 +47,6 @@ app.post('/emit/gamification', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'userId and type are required' });
   }
 
-  // Emit based on type
   switch (type) {
     case 'momentum_awarded':
       gamificationEmitter.emitMomentumAwarded(userId, data.amount, data.source, data.newTotal, data.currentLevel);
@@ -70,11 +76,11 @@ app.post('/emit/gamification', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// Export emitter for use by other services
 export { gamificationEmitter };
 
 io.on('connection', (socket) => {
   secureLog('info', `WebSocket client connected: ${socket.id}`);
+  realtimeGateway.handleConnection(socket);
   
   socket.emit('connection_confirmed', {
     socketId: socket.id,
@@ -82,8 +88,24 @@ io.on('connection', (socket) => {
   });
   
   socket.on('join_user_room', (userId: string) => {
+    realtimeGateway.joinRoom(socket, userId, 'user');
+  });
+  
+  socket.on('join_user_room_legacy', (userId: string) => {
     socket.join(`user_${userId}`);
-    secureLog('info', `User ${userId} joined room`);
+    secureLog('info', `User ${userId} joined room (legacy)`);
+  });
+  
+  socket.on('join_party_room', (partyId: string) => {
+    realtimeGateway.joinRoom(socket, partyId, 'party');
+  });
+  
+  socket.on('join_org_room', (orgId: string) => {
+    realtimeGateway.joinRoom(socket, orgId, 'org');
+  });
+  
+  socket.on('join_global_room', () => {
+    realtimeGateway.joinRoom(socket, 'global', 'global');
   });
   
   socket.on('join_adventure_room', (adventureId: string) => {
@@ -91,23 +113,72 @@ io.on('connection', (socket) => {
     secureLog('info', `User joined adventure room: ${adventureId}`);
   });
   
+  socket.on('set_presence', (data: { userId: string; status: 'online' | 'away' | 'offline' }) => {
+    realtimeGateway.broadcastPresence(socket, data.userId, data.status);
+  });
+  
   socket.on('disconnect', (reason: string) => {
     secureLog('info', `WebSocket client disconnected: ${socket.id}, reason: ${reason}`);
+    realtimeGateway.handleDisconnect(socket);
   });
 });
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'healthy', 
-    service: 'realtime-gateway',
+    service: 'deepiri-realtime-gateway',
+    capabilities: [
+      'socket.io',
+      'multi-channel-rooms',
+      'presence-tracking',
+      'event-fanout',
+      'idempotent-delivery',
+      'rate-limiting',
+      'durable-stream-replay',
+      'backpressure-monitoring',
+      'gateway-observability'
+    ],
     connections: io.sockets.sockets.size,
     timestamp: new Date().toISOString() 
+  });
+});
+
+// Realtime Gateway API
+app.post('/emit/channel', handleEmitToChannel);
+app.get('/rooms', handleGetRooms);
+app.get('/presence', handleGetPresence);
+app.get('/metrics', handleGetMetrics);
+
+app.get('/capabilities', (req: Request, res: Response) => {
+  res.json({
+    service: 'deepiri-realtime-gateway',
+    version: '2.0.0',
+    capabilities: {
+      websocket: {
+        description: 'Socket.IO real-time communication',
+        events: ['connection', 'join_user_room', 'join_party_room', 'join_org_room', 'join_global_room']
+      },
+      fanout: {
+        description: 'Multi-channel event distribution',
+        endpoints: ['POST /emit/channel', 'POST /emit/gamification']
+      },
+      presence: {
+        description: 'Online status tracking',
+        endpoints: ['GET /presence', 'socket.set_presence']
+      },
+      observability: {
+        description: 'Gateway metrics',
+        endpoints: ['GET /metrics']
+      }
+    }
   });
 });
 
 httpServer.listen(PORT, () => {
   secureLog('info', `Realtime Gateway running on port ${PORT}`);
   secureLog('info', `Gamification events enabled`);
+  secureLog('info', `Multi-channel rooms enabled`);
+  secureLog('info', `Presence tracking enabled`);
 });
 
 export { app, io };

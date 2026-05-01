@@ -16,10 +16,10 @@ docker images --format "{{.ID}} {{.Repository}}" | grep "deepiri" | awk '{print 
 
 # Also delete images with different names that Skaffold might find
 echo "  Deleting alternative named images..."
-for img in deepiri-api-gateway deepiri-auth-service deepiri-task-orchestrator \
-           deepiri-challenge-service deepiri-engagement-service \
-           deepiri-platform-analytics-service deepiri-external-bridge-service \
-           deepiri-notification-service deepiri-realtime-gateway \
+for img in deepiri-api-gateway deepiri-auth-service deepiri-workflow-orchestrator \
+           deepiri-adaptive-experience-engine deepiri-incentive-engine \
+           deepiri-decision-intelligence deepiri-external-bridge-service \
+           deepiri-communications-hub deepiri-realtime-gateway \
            deepiri-cyrex deepiri-frontend deepiri-jupyter \
            deepiri-core-api; do
     docker images "$img" --format "{{.ID}}" | xargs -r docker rmi -f 2>/dev/null || true
