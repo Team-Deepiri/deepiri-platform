@@ -8,7 +8,7 @@ COPY shared/deepiri-shared-utils/src /shared/deepiri-shared-utils/src
 COPY backend/deepiri-challenge-service/package*.json ./
 COPY backend/deepiri-challenge-service/tsconfig.json ./
 
-# Install dependencies, including shared-utils from GitHub Packages
+# Install dependencies, including shared-utils from the local submodule
 # Add retry logic for network issues
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \

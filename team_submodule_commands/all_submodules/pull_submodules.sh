@@ -207,7 +207,7 @@ echo "    ✅ shared-utils initialized at: $(pwd)/platform-services/shared/deepi
 echo ""
 
 # Verify submodules at platform-pinned commits
-echo "🔄 Updating submodules to main branch..."
+echo "🔄 Verifying submodules at platform-pinned commits..."
 ensure_submodule_on_main "deepiri-core-api"
 ensure_submodule_on_main "diri-cyrex"
 ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
@@ -218,7 +218,7 @@ ensure_submodule_on_main "diri-helox"
 ensure_submodule_on_main "deepiri-modelkit"
 ensure_submodule_on_main "platform-services/backend/deepiri-language-intelligence-service"
 ensure_submodule_on_main "platform-services/shared/deepiri-prismpipe"
-echo "    ✅ All submodules updated to main branch"
+echo "    ✅ All submodules initialized at platform-pinned commits"
 echo ""
 
 # Show status
@@ -234,7 +234,7 @@ git submodule status diri-helox
 git submodule status deepiri-modelkit
 git submodule status platform-services/backend/deepiri-language-intelligence-service
 git submodule status platform-services/shared/deepiri-prismpipe
-git submodule status deepiri-shared-utils
+git submodule status platform-services/shared/deepiri-shared-utils
 echo ""
 
 echo "✅ All submodules ready!"
@@ -266,4 +266,3 @@ echo "  - Work in Model Kit: cd deepiri-modelkit"
 echo "  - Work in Language Intelligence: cd platform-services/backend/deepiri-language-intelligence-service"
 echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo ""
-

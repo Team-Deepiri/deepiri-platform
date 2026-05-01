@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.DEEPIRI_SUBMODULES_DEPLOY_KEY }}
 
       - name: Validate CI workflow
         run: echo "Platform CI workflow validated"

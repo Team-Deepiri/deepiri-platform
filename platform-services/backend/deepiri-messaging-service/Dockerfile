@@ -8,7 +8,7 @@ COPY shared/deepiri-shared-utils/src /shared/deepiri-shared-utils/src
 COPY backend/deepiri-messaging-service/package*.json ./
 COPY backend/deepiri-messaging-service/tsconfig.json ./
 
-# Install dependencies, including shared-utils from GitHub Packages
+# Install dependencies, including shared-utils from the local submodule
 RUN cd /shared/deepiri-shared-utils \
  && npm install --legacy-peer-deps \
  && npm run build \
