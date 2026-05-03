@@ -42,3 +42,6 @@
 	path = platform-services/shared/deepiri-sugar-glider
 	url = git@github.com:Team-Deepiri/deepiri-sugar-glider.git
 	branch = dev
+[submodule "deepiri-suite"]
+	path = deepiri-suite
+	url = git@github.com:Team-Deepiri/deepiri-suite.git

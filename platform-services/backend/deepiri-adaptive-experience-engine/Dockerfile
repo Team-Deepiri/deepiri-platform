@@ -1,5 +1,5 @@
 # Build the service
-FROM ghcr.io/team-deepiri/deepiri-base:18-alpine
+FROM ghcr.io/team-deepiri/deepiri-suite:18-alpine
 
 COPY shared/deepiri-shared-utils/package*.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/tsconfig.json /shared/deepiri-shared-utils/

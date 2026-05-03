@@ -1,5 +1,5 @@
 # Build shared-utils first
-FROM node:18-alpine AS shared-utils-builder
+FROM ghcr.io/team-deepiri/deepiri-suite:18-alpine AS shared-utils-builder
 WORKDIR /shared-utils
 COPY shared/deepiri-shared-utils/package.json ./
 COPY shared/deepiri-shared-utils/package*.json ./
@@ -10,7 +10,7 @@ RUN npm install --legacy-peer-deps \
  && npm run build
 
 # Build the service
-FROM node:18-alpine
+FROM ghcr.io/team-deepiri/deepiri-suite:18-alpine
 
 WORKDIR /app
 

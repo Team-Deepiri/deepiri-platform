@@ -1,4 +1,4 @@
-FROM ghcr.io/team-deepiri/deepiri-base:18-slim
+FROM ghcr.io/team-deepiri/deepiri-suite:18-slim
 
 # Prisma binary compatibility (service-specific)
 RUN mkdir -p /lib64 \
