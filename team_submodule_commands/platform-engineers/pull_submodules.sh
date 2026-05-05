@@ -72,6 +72,9 @@ fi
 if [ ! -d "platform-services/shared/deepiri-sugar-glider/.git" ]; then
     echo "    ⚠️  WARNING: deepiri-sugar-glider not found at expected location"
 fi
+if [ ! -d "deepiri-suite/.git" ]; then
+    echo "    ⚠️  WARNING: deepiri-suite not found at expected location"
+fi
 echo "    ✅ Verification complete"
 echo ""
 
@@ -98,6 +101,7 @@ echo "  - Sync all: git submodule sync --recursive"
 echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo "  - Work in Synapse: cd platform-services/shared/deepiri-synapse"
 echo "  - Work in Sugar Glider: cd platform-services/shared/deepiri-sugar-glider"
+echo "  - Work in Suite: cd deepiri-suite"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules

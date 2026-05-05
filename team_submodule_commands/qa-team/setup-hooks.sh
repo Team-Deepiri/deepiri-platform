@@ -82,6 +82,7 @@ SUBMODULES=(
     "platform-services/backend/deepiri-language-intelligence-service"
     "deepiri-core-api"
     "deepiri-web-frontend"
+    "deepiri-suite"
 )
 
 for submodule in "${SUBMODULES[@]}"; do

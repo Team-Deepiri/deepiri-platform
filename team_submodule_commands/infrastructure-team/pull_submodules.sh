@@ -203,6 +203,18 @@ fi
 echo "    ✅ sugar-glider initialized at: $(pwd)/platform-services/shared/deepiri-sugar-glider"
 echo ""
 
+# deepiri-suite
+echo "  📦 deepiri-suite (Shared Docker base image suite - Team-Deepiri/deepiri-suite)..."
+cleanup_invalid_submodule "deepiri-suite"
+git submodule update --init --recursive deepiri-suite 2>&1 || true
+if ! check_submodule "deepiri-suite"; then
+    echo "    ❌ ERROR: deepiri-suite not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive deepiri-suite"
+    exit 1
+fi
+echo "    ✅ suite initialized at: $(pwd)/deepiri-suite"
+echo ""
+
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote deepiri-core-api
@@ -225,6 +237,8 @@ git submodule update --remote platform-services/shared/deepiri-synapse
 ensure_submodule_on_main "platform-services/shared/deepiri-synapse"
 git submodule update --remote platform-services/shared/deepiri-sugar-glider
 ensure_submodule_on_main "platform-services/shared/deepiri-sugar-glider"
+git submodule update --remote deepiri-suite
+ensure_submodule_on_main "deepiri-suite"
 echo "    ✅ All infrastructure submodules updated and on main branch"
 echo ""
 
@@ -240,6 +254,7 @@ git submodule status platform-services/backend/deepiri-language-intelligence-ser
 git submodule status platform-services/shared/deepiri-prismpipe 2>/dev/null || echo "  ⚠️  deepiri-prismpipe (not initialized)"
 git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
 git submodule status platform-services/shared/deepiri-sugar-glider 2>/dev/null || echo "  ⚠️  deepiri-sugar-glider (not initialized)"
+git submodule status deepiri-suite 2>/dev/null || echo "  ⚠️  deepiri-suite (not initialized)"
 echo ""
 
 echo "✅ Infrastructure Team submodules ready!"
@@ -256,6 +271,7 @@ echo "  - Work in Language Intelligence: cd platform-services/backend/deepiri-la
 echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo "  - Work in Synapse: cd platform-services/shared/deepiri-synapse"
 echo "  - Work in Sugar Glider: cd platform-services/shared/deepiri-sugar-glider"
+echo "  - Work in Suite: cd deepiri-suite"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules

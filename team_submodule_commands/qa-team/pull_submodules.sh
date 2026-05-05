@@ -26,6 +26,7 @@ declare -a SUBMODULES=(
   "platform-services/shared/deepiri-shared-utils"
   "platform-services/shared/deepiri-synapse"
   "platform-services/shared/deepiri-sugar-glider"
+  "deepiri-suite"
 )
 
 # Initialize and update only those submodules

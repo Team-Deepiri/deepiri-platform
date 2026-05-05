@@ -29,6 +29,7 @@ submodules=(
     "deepiri-web-frontend"
     "platform-services/backend/deepiri-external-bridge-service"
     "platform-services/backend/deepiri-auth-service"
+    "deepiri-suite"
 )
 
 # Initialize counters
@@ -82,4 +83,3 @@ echo "📈 Summary:"
 echo "  Total files (main + submodules): $total_files"
 echo "  Total lines (main + submodules): $total_lines"
 echo "---------------------------------"
-
