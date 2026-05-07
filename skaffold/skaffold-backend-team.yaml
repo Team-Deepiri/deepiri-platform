@@ -23,29 +23,29 @@ build:
       docker:
         dockerfile: backend/deepiri-auth-service/Dockerfile
     
-    # Task Orchestrator
-    - image: deepiri-dev-task-orchestrator
+    # Workflow Orchestrator
+    - image: deepiri-dev-workflow-orchestrator
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+        dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
     
-    # Engagement Service
-    - image: deepiri-dev-engagement-service
+    # Incentive Engine
+    - image: deepiri-dev-incentive-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-engagement-service/Dockerfile
+        dockerfile: backend/deepiri-incentive-engine/Dockerfile
     
-    # Platform Analytics Service
-    - image: deepiri-dev-platform-analytics-service
+    # Decision Intelligence
+    - image: deepiri-dev-decision-intelligence
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
     
-    # Notification Service
-    - image: deepiri-dev-notification-service
+    # Communications Hub
+    - image: deepiri-dev-communications-hub
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-notification-service/Dockerfile
+        dockerfile: backend/deepiri-communications-hub/Dockerfile
     
     # External Bridge Service
     - image: deepiri-dev-external-bridge-service
@@ -53,11 +53,11 @@ build:
       docker:
         dockerfile: backend/deepiri-external-bridge-service/Dockerfile
     
-    # Challenge Service
-    - image: deepiri-dev-challenge-service
+    # Adaptive Experience Engine
+    - image: deepiri-dev-adaptive-experience-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-challenge-service/Dockerfile
+        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
     
     # Realtime Gateway
     - image: deepiri-dev-realtime-gateway

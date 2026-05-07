@@ -105,11 +105,21 @@ echo ""
 update_submodule "platform-services/backend/deepiri-api-gateway" "deepiri-api-gateway (API Gateway)"
 echo ""
 
+# Update deepiri-synapse
+update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
+echo ""
+
+# Update deepiri-sugar-glider
+update_submodule "platform-services/shared/deepiri-sugar-glider" "deepiri-sugar-glider (Synapse stream bridge)"
+echo ""
+
 # Also update via git submodule update --remote for consistency
 echo "🔄 Syncing submodule references..."
 git submodule update --remote deepiri-web-frontend 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-auth-service 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-sugar-glider 2>/dev/null || true
 echo ""
 
 # Show status
@@ -118,6 +128,8 @@ echo ""
 git submodule status deepiri-web-frontend
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-api-gateway
+git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
+git submodule status platform-services/shared/deepiri-sugar-glider 2>/dev/null || echo "  ⚠️  deepiri-sugar-glider (not initialized)"
 echo ""
 
 echo "✅ Frontend Team submodules updated!"
@@ -126,5 +138,6 @@ echo "📋 Updated Submodules:"
 echo "  ✅ deepiri-web-frontend"
 echo "  ✅ deepiri-auth-service"
 echo "  ✅ deepiri-api-gateway"
+echo "  ✅ deepiri-synapse"
+echo "  ✅ deepiri-sugar-glider"
 echo ""
-

@@ -6,6 +6,28 @@
 
 ## Quick Start
 
+### Setup script (Recommended)
+
+Download `setup-deepiri-dev.sh` from this repo and save it to any directory on your system. Run the script from your terminal and follow the instruction
+
+```bash
+# From the same working directory as the script
+bash setup-deepiri-dev.sh
+```
+
+Alternatively, you can also clone the repository and run the setup script directly from the project root
+
+```bash
+# Clone the repository
+git clone git@github.com:Team-Deepiri/deepiri-platform.git
+cd deepiri-platform
+
+# Run the install script
+bash setup-deepiri-dev.sh
+```
+
+### Manual install
+
 ```bash
 # 1. Clone the repository
 git clone git@github.com:Team-Deepiri/deepiri-platform.git
@@ -26,20 +48,21 @@ docker compose -f docker-compose.dev.yml up -d <serivce>
 # All services
 
 docker compose -f docker-compose.dev.yml up -d 
-
-# 5. Access services
-# - Frontend: http://localhost:5173
-# - API Gateway: http://localhost:5100
-# - Cyrex AI: http://localhost:8000
-# - Synapse: http://localhost:8002
-# - MLflow: http://localhost:5500
 ```
+
+### Access services
+- Frontend: http://localhost:5173
+- API Gateway: http://localhost:5100
+- Cyrex AI: http://localhost:8000
+- Synapse: http://localhost:8002
+- MLflow: http://localhost:5500
 
 ## Prerequisites
 
 - Docker & Docker Compose
 - Git
 - 8GB+ RAM recommended
+- **For Windows user**: A WSL2 instance running a Debian-based distro
 
 ## Team Development Environments
 
@@ -139,6 +162,7 @@ The platform uses git submodules for service repositories. Use the team-specific
 - `deepiri-language-intelligence-service` - Language processing
 - `platform-services/shared/deepiri-prismpipe` - PrismPipe pipeline
 - `platform-services/shared/deepiri-synapse` - Matrix server
+- `platform-services/shared/deepiri-sugar-glider` - Synapse stream bridge runtime
 
 ## Common Commands
 
@@ -184,7 +208,8 @@ deepiri-platform/
 │   │   └── deepiri-language-intelligence-service/
 │   └── shared/
 │       ├── deepiri-prismpipe/      # Capability-routed API pipeline
-│       ├── deepiri-synapse/       # Matrix server
+│       ├── deepiri-synapse/        # Matrix server
+│       ├── deepiri-sugar-glider/   # Synapse stream bridge runtime
 │       └── deepiri-shared-utils/  # Shared utilities
 ├── diri-cyrex/                     # AI/ML service
 ├── diri-helox/                     # ML training pipelines

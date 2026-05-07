@@ -9,10 +9,7 @@ data:
   # Server Configuration
   NODE_ENV: "development"
   PORT: "5001"
-  
-  # Database URLs (using Docker service names)
-  DATABASE_URL: "postgresql://deepiri_auth:deepiripassword@postgres-auth-service:5432/auth_db"
-  
+
   # InfluxDB Configuration
   INFLUXDB_URL: "http://influxdb:8086"
   INFLUXDB_ORG: "deepiri"

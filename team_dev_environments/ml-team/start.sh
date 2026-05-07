@@ -11,10 +11,17 @@ echo "🚀 Starting ML Team services..."
 
 # Start services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in synapse; do
+for service in synapse synapse-sugar-glider; do
   case $service in
     synapse)
       if [ -f "platform-services/shared/deepiri-synapse/Dockerfile" ]; then
+        SERVICES+=("$service")
+      else
+        echo "⚠️  Skipping $service (not found)"
+      fi
+      ;;
+    synapse-sugar-glider)
+      if [ -f "platform-services/shared/deepiri-sugar-glider/Dockerfile" ]; then
         SERVICES+=("$service")
       else
         echo "⚠️  Skipping $service (not found)"
@@ -40,4 +47,4 @@ docker compose -f docker-compose.dev.yml up -d --no-build "${SERVICES[@]}"
 echo "✅ ML Team services started!"
 echo ""
 echo "📡 Synapse: http://localhost:8002"
-
+echo "🛰️ Sugar Glider: http://localhost:8081"

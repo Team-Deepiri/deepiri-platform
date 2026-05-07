@@ -1,6 +1,15 @@
 [submodule "deepiri-core-api"]
 	path = deepiri-core-api
 	url = git@github.com:Team-Deepiri/deepiri-core-api.git
+[submodule "diri-cyrex"]
+	path = diri-cyrex
+	url = git@github.com:Team-Deepiri/diri-cyrex.git
+[submodule "diri-helox"]
+	path = diri-helox
+	url = git@github.com:Team-Deepiri/diri-helox.git
+[submodule "deepiri-modelkit"]
+	path = deepiri-modelkit
+	url = git@github.com:Team-Deepiri/deepiri-modelkit.git
 [submodule "platform-services/backend/deepiri-api-gateway"]
 	path = platform-services/backend/deepiri-api-gateway
 	url = git@github.com:Team-Deepiri/deepiri-api-gateway.git
@@ -25,3 +34,11 @@
 [submodule "platform-services/shared/deepiri-shared-utils"]
 	path = platform-services/shared/deepiri-shared-utils
 	url = git@github.com:Team-Deepiri/deepiri-shared-utils.git
+[submodule "platform-services/shared/deepiri-synapse"]
+	path = platform-services/shared/deepiri-synapse
+	url = git@github.com:Team-Deepiri/deepiri-synapse.git
+	branch = dev
+[submodule "platform-services/shared/deepiri-sugar-glider"]
+	path = platform-services/shared/deepiri-sugar-glider
+	url = git@github.com:Team-Deepiri/deepiri-sugar-glider.git
+	branch = dev

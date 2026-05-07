@@ -118,12 +118,12 @@ $tagMappings = @(
     @{Source="deepiri-frontend:latest"; Target="deepiri-dev-frontend:latest"}
     @{Source="deepiri-api-gateway:latest"; Target="deepiri-dev-api-gateway:latest"}
     @{Source="deepiri-auth-service:latest"; Target="deepiri-dev-auth-service:latest"}
-    @{Source="deepiri-task-orchestrator:latest"; Target="deepiri-dev-task-orchestrator:latest"}
-    @{Source="deepiri-challenge-service:latest"; Target="deepiri-dev-challenge-service:latest"}
-    @{Source="deepiri-engagement-service:latest"; Target="deepiri-dev-engagement-service:latest"}
-    @{Source="deepiri-platform-analytics-service:latest"; Target="deepiri-dev-platform-analytics-service:latest"}
+    @{Source="deepiri-workflow-orchestrator:latest"; Target="deepiri-dev-workflow-orchestrator:latest"}
+    @{Source="deepiri-adaptive-experience-engine:latest"; Target="deepiri-dev-adaptive-experience-engine:latest"}
+    @{Source="deepiri-incentive-engine:latest"; Target="deepiri-dev-incentive-engine:latest"}
+    @{Source="deepiri-decision-intelligence:latest"; Target="deepiri-dev-decision-intelligence:latest"}
     @{Source="deepiri-external-bridge-service:latest"; Target="deepiri-dev-external-bridge-service:latest"}
-    @{Source="deepiri-notification-service:latest"; Target="deepiri-dev-notification-service:latest"}
+    @{Source="deepiri-communications-hub:latest"; Target="deepiri-dev-communications-hub:latest"}
     @{Source="deepiri-realtime-gateway:latest"; Target="deepiri-dev-realtime-gateway:latest"}
 )
 

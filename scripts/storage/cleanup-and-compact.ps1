@@ -1,35 +1,28 @@
 # Deepiri Docker Cleanup and WSL2 Compaction Script
 # cleanup-and-compact.ps1
-# Purpose: Automatically clean up Docker resources and compact WSL2 virtual disk to reclaim maximum disk space
-# Run as Administrator
+#
+# Docker cleanup touches ONLY resources whose names/repos contain "deepiri"
+# (containers, images by repository, volumes, networks). Build cache is optional
+# and documented as Docker-wide when selected.
+#
+# Run as Administrator (required for WSL compact and aggressive WSL shutdown).
 #
 # Usage:
-#   1. Open PowerShell as Administrator
-#   2. Navigate to the deepiri directory: cd deepiri
-#   3. Set execution policy (if needed): Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-#   4. Run the script: .\cleanup-and-compact.ps1
+#   .\cleanup-and-compact.ps1                         # Full Deepiri cleanup + WSL compact
+#   .\cleanup-and-compact.ps1 -Interactive          # Prompt for what to delete
+#   .\cleanup-and-compact.ps1 -Targets Images,Volumes
 #
-# What this script does:
-#   - Stops all Deepiri Docker containers
-#   - Prunes unused Docker images, volumes, build cache, and networks
-#   - Shuts down WSL2
-#   - Compacts the WSL2 Ubuntu virtual disk (VHDX)
-#   - Restarts WSL2
-#   - Shows space reclaimed
-#
-# Requirements:
-#   - Administrator privileges
-#   - Hyper-V module (usually pre-installed on Windows 10/11)
-#   - WSL2 with Ubuntu installed
-#   - Docker Desktop (optional - script will continue without it)
+param(
+    [switch]$Interactive,
+    [ValidateSet('Images', 'Volumes', 'Containers', 'Networks', 'BuildCache', 'WslCompact', 'All')]
+    [string[]]$Targets = @('All')
+)
 
-# Step 1: Confirm you are running as admin
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Error "You must run this script as Administrator!"
-    Exit
+    Exit 1
 }
 
-# Colors for output
 function Write-ColorOutput($ForegroundColor) {
     $fc = $host.UI.RawUI.ForegroundColor
     $host.UI.RawUI.ForegroundColor = $ForegroundColor
@@ -39,165 +32,261 @@ function Write-ColorOutput($ForegroundColor) {
     $host.UI.RawUI.ForegroundColor = $fc
 }
 
+$DeepiriPattern = 'deepiri'
+
+function Test-StringHasDeepiri([string]$s) {
+    return $s -and ($s.ToLowerInvariant().Contains($DeepiriPattern))
+}
+
+# --- Interactive target selection ---
+$DoImages = $false
+$DoVolumes = $false
+$DoContainers = $false
+$DoNetworks = $false
+$DoBuildCache = $false
+$DoWslCompact = $false
+
+if ($Interactive) {
+    Write-ColorOutput Cyan "=========================================="
+    Write-ColorOutput Cyan "Select what to clean (Deepiri-scoped)"
+    Write-ColorOutput Cyan "=========================================="
+    Write-Output ""
+    Write-Output "  [1] Deepiri Docker images (repository name contains '$DeepiriPattern')"
+    Write-Output "  [2] Deepiri Docker volumes (name contains '$DeepiriPattern')"
+    Write-Output "  [3] Deepiri containers (name contains '$DeepiriPattern')"
+    Write-Output "  [4] Deepiri Docker networks (name contains '$DeepiriPattern')"
+    Write-Output "  [5] Docker build cache — UNUSED CACHE ONLY but NOT filtered by project (Docker-wide)"
+    Write-Output "  [6] WSL shutdown + compact Ubuntu VHDX + Docker Desktop VHDX (if present)"
+    Write-Output "  [7] All of the above (1–4 + 6; build cache only if you add 5 explicitly)"
+    Write-Output ""
+    $choice = Read-Host "Enter numbers separated by commas (default: 7)"
+    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '7' }
+    $nums = $choice -split '[,\s]+' | Where-Object { $_ -match '^\d+$' }
+    foreach ($n in $nums) {
+        switch ($n) {
+            '1' { $DoImages = $true }
+            '2' { $DoVolumes = $true }
+            '3' { $DoContainers = $true }
+            '4' { $DoNetworks = $true }
+            '5' { $DoBuildCache = $true }
+            '6' { $DoWslCompact = $true }
+            '7' {
+                $DoImages = $true; $DoVolumes = $true; $DoContainers = $true; $DoNetworks = $true
+                $DoWslCompact = $true
+            }
+        }
+    }
+    Write-Output ""
+} else {
+    $t = $Targets
+    if ($t -contains 'All') {
+        $DoImages = $true; $DoVolumes = $true; $DoContainers = $true; $DoNetworks = $true
+        # Build cache is Docker-wide; omit from All — use -Targets BuildCache or -Interactive [5]
+        $DoBuildCache = $false
+        $DoWslCompact = $true
+    } else {
+        if ($t -contains 'Images') { $DoImages = $true }
+        if ($t -contains 'Volumes') { $DoVolumes = $true }
+        if ($t -contains 'Containers') { $DoContainers = $true }
+        if ($t -contains 'Networks') { $DoNetworks = $true }
+        if ($t -contains 'BuildCache') { $DoBuildCache = $true }
+        if ($t -contains 'WslCompact') { $DoWslCompact = $true }
+    }
+}
+
+$AnyDockerWork = $DoImages -or $DoVolumes -or $DoContainers -or $DoNetworks -or $DoBuildCache
+
 Write-ColorOutput Cyan "=========================================="
 Write-ColorOutput Cyan "Deepiri Docker Cleanup & WSL2 Compaction"
 Write-ColorOutput Cyan "=========================================="
 Write-Output ""
 
-# Step 2: Check Docker is available (try both native and WSL)
+# --- Docker availability ---
 Write-ColorOutput Yellow "Checking Docker availability..."
 $dockerAvailable = $false
-$dockerCommand = "docker"
+$dockerUseWsl = $false
 
-# Try native Docker first
 try {
     docker info 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-ColorOutput Green "[OK] Docker is running (native)"
-    $dockerAvailable = $true
-        $dockerCommand = "docker"
+        $dockerAvailable = $true
     }
 } catch {
-    # Try WSL Docker
+    # continue to WSL attempt
+}
+
+if (-not $dockerAvailable) {
     try {
         wsl docker info 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
             Write-ColorOutput Green "[OK] Docker is running (WSL)"
             $dockerAvailable = $true
-            $dockerCommand = "wsl docker"
+            $dockerUseWsl = $true
         }
-} catch {
-    Write-ColorOutput Yellow "[WARNING] Docker is not running or not accessible. Continuing with WSL compaction only..."
+    } catch {
+        Write-ColorOutput Yellow "[WARNING] Docker is not running or not accessible."
     }
 }
 
-Write-Output ""
+if (-not $dockerAvailable -and $AnyDockerWork) {
+    Write-ColorOutput Yellow "[WARNING] Skipping Docker cleanup steps (Docker unavailable)."
+    $AnyDockerWork = $false
+}
 
-# Step 3: Show current disk usage
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Current Docker disk usage:"
-    Invoke-Expression "$dockerCommand system df"
+function Invoke-DockerCmd {
+    param([Parameter(Mandatory)][string[]]$Arguments)
+    if ($dockerUseWsl) {
+        & wsl docker @Arguments
+    } else {
+        & docker @Arguments
+    }
+}
+
+if ($dockerAvailable -and $AnyDockerWork) {
+    Write-ColorOutput Yellow "Note: 'docker system df' below is Docker-wide (informational). Cleanup operations only affect names/repos matching '$DeepiriPattern'."
+    Invoke-DockerCmd @('system', 'df')
     Write-Output ""
 }
 
-# Step 4: Stop all Deepiri containers
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Stopping all Deepiri containers..."
-    
-    $containers = Invoke-Expression "$dockerCommand ps -a --filter 'name=deepiri' --format '{{.Names}}'" 2>$null
+# --- Stop Deepiri containers (when removing containers/images; needed before image rm) ---
+if ($dockerAvailable -and ($DoContainers -or $DoImages)) {
+    Write-ColorOutput Yellow "Stopping Deepiri containers (name filter)..."
+    $containers = Invoke-DockerCmd @('ps', '-a', '--filter', 'name=deepiri', '--format', '{{.Names}}')
     if ($containers) {
-        $containerList = $containers -split "`n" | Where-Object { $_ -and $_.Trim() }
+        $containerList = @($containers) | Where-Object { $_ -and $_.Trim() }
         foreach ($container in $containerList) {
-            if ($container) {
-                Write-Output "  Stopping: $container"
-                Invoke-Expression "$dockerCommand stop $container" 2>$null | Out-Null
-            }
+            Write-Output "  Stopping: $container"
+            Invoke-DockerCmd @('stop', $container) 2>$null | Out-Null
         }
-        
-        # Also stop docker-compose services
-        Write-ColorOutput Yellow "Stopping docker-compose services..."
         $originalLocation = Get-Location
-        $scriptDir = Split-Path -Parent $PSScriptRoot
-        if (Test-Path (Join-Path $scriptDir "docker-compose.yml")) {
-            Set-Location $scriptDir
+        $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+        if (Test-Path (Join-Path $repoRoot "docker-compose.yml")) {
+            Write-ColorOutput Yellow "Stopping docker-compose services (repo root)..."
+            Set-Location $repoRoot
             wsl bash -c "docker compose -f docker-compose.yml down 2>/dev/null" | Out-Null
             wsl bash -c "docker compose -f docker-compose.dev.yml down 2>/dev/null" | Out-Null
             wsl bash -c "docker compose -f docker-compose.microservices.yml down 2>/dev/null" | Out-Null
             wsl bash -c "docker compose -f docker-compose.enhanced.yml down 2>/dev/null" | Out-Null
         }
         Set-Location $originalLocation
-        
-        Write-ColorOutput Green "[OK] All containers stopped"
+        Write-ColorOutput Green "[OK] Deepiri containers stopped"
     } else {
-        Write-ColorOutput Green "No Deepiri containers found"
+        Write-ColorOutput Green "[OK] No Deepiri-named containers found"
     }
-    
     Write-Output ""
 }
 
-# Step 5: Docker Prune - Remove dangling images first
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Removing dangling (untagged) images..."
-    $danglingImages = Invoke-Expression "$dockerCommand images -f 'dangling=true' -q"
-    if ($danglingImages) {
-        $danglingImages -split "`n" | Where-Object { $_ -and $_.Trim() } | ForEach-Object {
-            Invoke-Expression "$dockerCommand rmi $($_.Trim()) -f" 2>$null | Out-Null
+# --- Remove stopped Deepiri containers ---
+if ($dockerAvailable -and $DoContainers) {
+    Write-ColorOutput Yellow "Removing stopped Deepiri containers..."
+    $ids = Invoke-DockerCmd @('ps', '-a', '-q', '--filter', 'name=deepiri')
+    if ($ids) {
+        @($ids) | Where-Object { $_ } | ForEach-Object {
+            Invoke-DockerCmd @('rm', '-f', $_.Trim()) 2>$null | Out-Null
         }
-        Write-ColorOutput Green "[OK] Dangling images removed"
+        Write-ColorOutput Green "[OK] Deepiri containers removed"
     } else {
-        Write-ColorOutput Green "[OK] No dangling images found"
+        Write-ColorOutput Green "[OK] No Deepiri containers to remove"
     }
     Write-Output ""
 }
 
-# Step 6: Docker Prune - Remove unused images
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Pruning unused Docker images..."
-    Invoke-Expression "$dockerCommand image prune -af" 2>$null | Out-Null
-    Write-ColorOutput Green "[OK] Unused images pruned"
+# --- Deepiri images only ---
+if ($dockerAvailable -and $DoImages) {
+    Write-ColorOutput Yellow "Removing Deepiri images (repository contains '$DeepiriPattern')..."
+    $lines = Invoke-DockerCmd @('images', '--format', '{{.Repository}}:{{.Tag}}')
+    $removed = 0
+    if ($lines) {
+        foreach ($line in @($lines)) {
+            if (-not $line) { continue }
+            $repo = ($line -split ':')[0]
+            if (Test-StringHasDeepiri $repo) {
+                Write-Output "  Removing image: $line"
+                Invoke-DockerCmd @('rmi', '-f', $line.Trim()) 2>$null | Out-Null
+                $removed++
+            }
+        }
+    }
+    Write-ColorOutput Green "[OK] Deepiri image removal finished ($removed matched)"
     Write-Output ""
 }
 
-# Step 7: Docker Prune - Remove unused containers
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Pruning stopped containers..."
-    Invoke-Expression "$dockerCommand container prune -f" 2>$null | Out-Null
-    Write-ColorOutput Green "[OK] Stopped containers pruned"
+# --- Deepiri volumes only ---
+if ($dockerAvailable -and $DoVolumes) {
+    Write-ColorOutput Yellow "Removing Deepiri volumes (name contains '$DeepiriPattern')..."
+    $vols = Invoke-DockerCmd @('volume', 'ls', '-q')
+    $removedV = 0
+    if ($vols) {
+        foreach ($v in @($vols)) {
+            if (-not $v) { continue }
+            if (Test-StringHasDeepiri $v) {
+                Write-Output "  Removing volume: $v"
+                Invoke-DockerCmd @('volume', 'rm', '-f', $v.Trim()) 2>$null | Out-Null
+                $removedV++
+            }
+        }
+    }
+    Write-ColorOutput Green "[OK] Deepiri volume removal finished ($removedV matched)"
     Write-Output ""
 }
 
-# Step 8: Docker Prune - Remove unused volumes
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Pruning unused Docker volumes..."
-    Invoke-Expression "$dockerCommand volume prune -af" 2>$null | Out-Null
-    Write-ColorOutput Green "[OK] Unused volumes pruned"
+# --- Deepiri networks only (never touch bridge/host/none) ---
+if ($dockerAvailable -and $DoNetworks) {
+    Write-ColorOutput Yellow "Removing Deepiri networks..."
+    $netLines = Invoke-DockerCmd @('network', 'ls', '--format', '{{.Name}}')
+    $skipped = @('bridge', 'host', 'none')
+    $removedN = 0
+    if ($netLines) {
+        foreach ($nn in @($netLines)) {
+            if (-not $nn) { continue }
+            if ($skipped -contains $nn) { continue }
+            if (Test-StringHasDeepiri $nn) {
+                Write-Output "  Removing network: $nn"
+                Invoke-DockerCmd @('network', 'rm', $nn.Trim()) 2>$null | Out-Null
+                $removedN++
+            }
+        }
+    }
+    Write-ColorOutput Green "[OK] Deepiri network removal finished ($removedN matched)"
     Write-Output ""
 }
 
-# Step 9: Docker Prune - Remove build cache
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Pruning Docker build cache..."
-    Invoke-Expression "$dockerCommand builder prune -af" 2>$null | Out-Null
+# --- Build cache (Docker-wide) ---
+if ($dockerAvailable -and $DoBuildCache) {
+    Write-ColorOutput Yellow "Pruning Docker build cache (Docker-wide unused layers)..."
+    Invoke-DockerCmd @('builder', 'prune', '-af') 2>$null | Out-Null
     Write-ColorOutput Green "[OK] Build cache pruned"
     Write-Output ""
 }
 
-# Step 10: Docker Prune - Remove unused networks
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Pruning unused Docker networks..."
-    Invoke-Expression "$dockerCommand network prune -f" 2>$null | Out-Null
-    Write-ColorOutput Green "[OK] Unused networks pruned"
+if ($dockerAvailable -and $AnyDockerWork) {
+    Write-ColorOutput Yellow "Docker disk usage after Deepiri-targeted cleanup:"
+    Invoke-DockerCmd @('system', 'df')
     Write-Output ""
 }
 
-# Step 11: Show Docker disk usage after cleanup
-if ($dockerAvailable) {
-    Write-ColorOutput Yellow "Docker disk usage after cleanup:"
-    Invoke-Expression "$dockerCommand system df"
-    Write-Output ""
-}
+# ========== WSL shutdown + compaction ==========
+$dockerSpaceReclaimed = 0
+$spaceReclaimed = 0
+$ubuntuCompactionSuccess = $false
+$allDockerVhdxFiles = @()
 
-# Step 12: Stop Docker Desktop and Shutdown WSL COMPLETELY
-Write-ColorOutput Yellow "Stopping Docker Desktop and WSL..."
-
-# Function to forcefully kill processes by name pattern
 function Stop-ProcessesForcefully {
     param([string[]]$ProcessNames)
-    
+
     foreach ($processName in $ProcessNames) {
         try {
-            # Get all processes matching the name (case-insensitive, partial match)
             $processes = Get-Process | Where-Object { $_.ProcessName -like "*$processName*" -or $_.Name -like "*$processName*" } -ErrorAction SilentlyContinue
-            
+
             if ($processes) {
                 foreach ($proc in $processes) {
                     try {
                         Write-ColorOutput Yellow "  Forcefully killing: $($proc.ProcessName) (PID: $($proc.Id))"
                         Stop-Process -Id $proc.Id -Force -ErrorAction Stop
                     } catch {
-                        # If Stop-Process fails, try taskkill as fallback
                         try {
-                            taskkill /PID $proc.Id /F 2>$null | Out-Null
+                            & taskkill.exe /PID $proc.Id /F 2>$null | Out-Null
                         } catch {
                             Write-ColorOutput Yellow "    [WARNING] Could not kill $($proc.ProcessName) (PID: $($proc.Id))"
                         }
@@ -205,385 +294,386 @@ function Stop-ProcessesForcefully {
                 }
             }
         } catch {
-            # Process not found, continue
+            # continue
         }
     }
 }
 
-# Kill Docker processes
-Write-ColorOutput Yellow "Forcefully killing Docker processes..."
-Stop-ProcessesForcefully @("com.docker.backend", "com.docker.desktop", "Docker Desktop", "dockerd", "docker")
-Start-Sleep -Seconds 2
-
-# Kill ALL WSL-related processes aggressively
-Write-ColorOutput Yellow "Forcefully killing ALL WSL processes..."
-$wslProcessNames = @("wsl", "wslhost", "wslservice", "wslservicehost", "vmmem", "vmcompute", "vmwp", "vmmemWSL")
-Stop-ProcessesForcefully $wslProcessNames
-Start-Sleep -Seconds 2
-
-# Also kill by executable name patterns
-$wslExeNames = @("wsl.exe", "wslhost.exe", "wslservice.exe", "vmmem.exe", "vmcompute.exe", "vmwp.exe")
-foreach ($exeName in $wslExeNames) {
+function Stop-WslViaServiceFallback {
+    Write-ColorOutput Yellow "[Fallback] Attempting to stop WSL via LxssManager service..."
+    $ok = $false
     try {
-        Get-Process | Where-Object { $_.Path -like "*$exeName*" } | ForEach-Object {
-            Write-ColorOutput Yellow "  Forcefully killing: $($_.ProcessName) (Path: $($_.Path))"
-            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+        $svc = Get-Service -Name LxssManager -ErrorAction Stop
+        if ($svc.Status -eq 'Running') {
+            Stop-Service -Name LxssManager -Force -ErrorAction Stop
+            $ok = $true
         }
     } catch {
-        # Continue if process not found
+        Write-ColorOutput Yellow "  Stop-Service LxssManager: $($_.Exception.Message)"
     }
-}
-
-# Kill any remaining processes with "wsl" in the name
-Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.Name -like "*wsl*" } | ForEach-Object {
-    try {
-        Write-ColorOutput Yellow "  Forcefully killing remaining WSL process: $($_.ProcessName) (PID: $($_.Id))"
-        Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-    } catch {
+    if (-not $ok) {
         try {
-            taskkill /PID $_.Id /F 2>$null | Out-Null
-        } catch {
-            # Ignore errors
-        }
+            & sc.exe stop LxssManager 2>&1 | Out-Null
+            Start-Sleep -Seconds 2
+            $ok = $true
+        } catch { }
+    }
+    if (-not $ok) {
+        try {
+            cmd.exe /c "echo y| net stop LxssManager" 2>&1 | Out-Null
+            Start-Sleep -Seconds 2
+            $ok = $true
+        } catch { }
+    }
+    Start-Sleep -Seconds 3
+    return $ok
+}
+
+function Invoke-TaskKillByImage {
+    param([string[]]$ImageNames)
+    foreach ($im in $ImageNames) {
+        try {
+            Write-ColorOutput Yellow "[Fallback] taskkill /IM $im /F /T ..."
+            & taskkill.exe /IM $im /F /T 2>&1 | Out-Null
+        } catch { }
     }
 }
 
-Start-Sleep -Seconds 3
+function Test-WslProcessesRemain {
+    $runningLines = @(wsl --list --running 2>$null | Where-Object { $_ -and $_.Trim() -ne '' })
+    if ($runningLines.Count -gt 0) { return $true }
 
-# Terminate all WSL distributions individually
-Write-ColorOutput Yellow "Terminating all WSL distributions..."
-try {
-    $distributions = wsl --list --quiet 2>$null | Where-Object { $_ -and $_.Trim() }
-    foreach ($distro in $distributions) {
-        if ($distro.Trim()) {
-            Write-ColorOutput Yellow "  Terminating distribution: $distro"
-            wsl --terminate $distro 2>$null | Out-Null
+    $interesting = @('wsl', 'wslhost', 'wslservice', 'vmmem', 'vmmemWSL', 'vmwp')
+    foreach ($p in Get-Process -ErrorAction SilentlyContinue) {
+        foreach ($n in $interesting) {
+            if ($p.ProcessName -like "*$n*") { return $true }
         }
     }
-} catch {
-    Write-ColorOutput Yellow "  Could not list distributions, continuing..."
+    return $false
 }
 
-Start-Sleep -Seconds 2
+function Show-RemainingWslProcesses {
+    Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessName -like "*wsl*" -or $_.Name -like "*wsl*" -or $_.ProcessName -like "*vmmem*" -or $_.ProcessName -like "*vmwp*"
+    } | ForEach-Object {
+        Write-ColorOutput Yellow "    - $($_.ProcessName) (PID: $($_.Id))"
+    }
+}
 
-# Now shutdown WSL with timeout
-Write-ColorOutput Yellow "Shutting down WSL completely..."
-$shutdownJob = Start-Job -ScriptBlock { wsl --shutdown }
-$shutdownComplete = Wait-Job $shutdownJob -Timeout 10
+function Invoke-WslShutdownSequence {
+    Write-ColorOutput Yellow "Stopping Docker Desktop and WSL..."
 
-if (-not $shutdownComplete) {
-    Write-ColorOutput Yellow "  WSL shutdown timed out, forcefully killing WSL processes again..."
-    Stop-Job $shutdownJob -ErrorAction SilentlyContinue
-    Remove-Job $shutdownJob -ErrorAction SilentlyContinue
-    
-    # Kill WSL processes again
+    Write-ColorOutput Yellow "Forcefully killing Docker processes..."
+    Stop-ProcessesForcefully @("com.docker.backend", "com.docker.desktop", "Docker Desktop", "dockerd", "docker")
+    Start-Sleep -Seconds 2
+
+    Write-ColorOutput Yellow "Forcefully killing WSL-related processes..."
+    $wslProcessNames = @("wsl", "wslhost", "wslservice", "wslservicehost", "vmmem", "vmcompute", "vmwp", "vmmemWSL")
     Stop-ProcessesForcefully $wslProcessNames
     Start-Sleep -Seconds 2
-    
-    # Try shutdown again
-    wsl --shutdown 2>$null | Out-Null
-}
 
-Start-Sleep -Seconds 5
+    $wslExeNames = @("wsl.exe", "wslhost.exe", "wslservice.exe", "vmmem.exe", "vmcompute.exe", "vmwp.exe")
+    foreach ($exeName in $wslExeNames) {
+        try {
+            Get-Process | Where-Object { $_.Path -like "*$exeName*" } | ForEach-Object {
+                Write-ColorOutput Yellow "  Forcefully killing: $($_.ProcessName) (Path: $($_.Path))"
+                Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+            }
+        } catch { }
+    }
 
-# Verify WSL is actually shut down - kill any remaining processes
-$retries = 0
-$maxRetries = 10
-while ($retries -lt $maxRetries) {
-    $wslStillRunning = wsl --list --running 2>$null
-    $wslProcesses = Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.Name -like "*wsl*" -or $_.ProcessName -like "*vmmem*" } -ErrorAction SilentlyContinue
-    
-    if ($wslStillRunning -or $wslProcesses) {
-        Write-ColorOutput Yellow "  WSL still running (attempt $($retries + 1)/$maxRetries), forcefully killing remaining processes...KEEP WAITING..."
-        
-        # Kill all WSL processes again
-        if ($wslProcesses) {
-            $wslProcesses | ForEach-Object {
-                try {
-                    Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-                } catch {
-                    taskkill /PID $_.Id /F 2>$null | Out-Null
-                }
+    Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.Name -like "*wsl*" } | ForEach-Object {
+        try {
+            Write-ColorOutput Yellow "  Forcefully killing remaining WSL process: $($_.ProcessName) (PID: $($_.Id))"
+            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+        } catch {
+            & taskkill.exe /PID $_.Id /F 2>$null | Out-Null
+        }
+    }
+
+    Start-Sleep -Seconds 3
+
+    Write-ColorOutput Yellow "Terminating all WSL distributions..."
+    try {
+        $distributions = wsl --list --quiet 2>$null | Where-Object { $_ -and $_.Trim() }
+        foreach ($distro in $distributions) {
+            if ($distro.Trim()) {
+                Write-ColorOutput Yellow "  Terminating distribution: $distro"
+                wsl --terminate $distro 2>$null | Out-Null
             }
         }
-        
-        # Terminate distributions again
+    } catch {
+        Write-ColorOutput Yellow "  Could not list distributions, continuing..."
+    }
+
+    Start-Sleep -Seconds 2
+
+    Write-ColorOutput Yellow "Shutting down WSL completely..."
+    $shutdownJob = Start-Job -ScriptBlock { wsl --shutdown }
+    $shutdownComplete = Wait-Job $shutdownJob -Timeout 15
+    if (-not $shutdownComplete) {
+        Write-ColorOutput Yellow "  WSL shutdown timed out; stopping job and retrying kills..."
+        Stop-Job $shutdownJob -ErrorAction SilentlyContinue
+        Remove-Job $shutdownJob -ErrorAction SilentlyContinue
+        Stop-ProcessesForcefully $wslProcessNames
+        Start-Sleep -Seconds 2
+        wsl --shutdown 2>$null | Out-Null
+    }
+
+    Start-Sleep -Seconds 5
+
+    $retries = 0
+    $maxRetries = 10
+    while ($retries -lt $maxRetries -and (Test-WslProcessesRemain)) {
+        Write-ColorOutput Yellow "  WSL still running (attempt $($retries + 1)/$maxRetries), retrying..."
+        Stop-ProcessesForcefully $wslProcessNames
+        Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.ProcessName -like "*vmmem*" } | ForEach-Object {
+            try { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } catch { & taskkill.exe /PID $_.Id /F 2>$null | Out-Null }
+        }
         try {
             $distributions = wsl --list --quiet 2>$null | Where-Object { $_ -and $_.Trim() }
             foreach ($distro in $distributions) {
-                if ($distro.Trim()) {
-                    wsl --terminate $distro 2>$null | Out-Null
-                }
+                if ($distro.Trim()) { wsl --terminate $distro 2>$null | Out-Null }
             }
-        } catch {
-            # Ignore
-        }
-        
+        } catch { }
         wsl --shutdown 2>$null | Out-Null
         Start-Sleep -Seconds 3
         $retries++
+    }
+
+    if (Test-WslProcessesRemain) {
+        Write-ColorOutput Yellow "[Fallback] Escalating: LxssManager + taskkill on stubborn images..."
+        Stop-WslViaServiceFallback | Out-Null
+        Invoke-TaskKillByImage @('wslservice.exe', 'wslhost.exe', 'wsl.exe', 'vmmemWSL.exe', 'vmwp.exe')
+        Start-Sleep -Seconds 4
+        wsl --shutdown 2>$null | Out-Null
+        Start-Sleep -Seconds 3
+    }
+
+    if (Test-WslProcessesRemain) {
+        Write-ColorOutput Yellow "[Fallback] Second pass: LxssManager + taskkill..."
+        Stop-WslViaServiceFallback | Out-Null
+        Invoke-TaskKillByImage @('wslservice.exe', 'wslhost.exe', 'vmmemWSL.exe')
+        Start-Sleep -Seconds 5
+        wsl --shutdown 2>$null | Out-Null
+    }
+
+    $finalWslProcesses = Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.Name -like "*wsl*" -or $_.ProcessName -like "*vmmem*" } -ErrorAction SilentlyContinue
+    if ($finalWslProcesses) {
+        Write-ColorOutput Yellow "  Final cleanup: Killing remaining WSL processes..."
+        $finalWslProcesses | ForEach-Object {
+            try { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } catch { & taskkill.exe /PID $_.Id /F 2>$null | Out-Null }
+        }
+        Start-Sleep -Seconds 2
+    }
+
+    $finalCheck = wsl --list --running 2>$null
+    if ($finalCheck -or (Test-WslProcessesRemain)) {
+        Write-ColorOutput Red "[WARNING] WSL may still be running. Compaction might fail."
+        Write-ColorOutput Yellow "  Remaining processes:"
+        Show-RemainingWslProcesses
+        Write-ColorOutput Yellow "  If compaction fails, reboot Windows or run: Start-Service LxssManager then wsl --shutdown, then re-run this script."
     } else {
-        break
+        Write-ColorOutput Green "[OK] WSL shutdown complete"
     }
-}
-
-# Final check and kill
-$finalWslProcesses = Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.Name -like "*wsl*" -or $_.ProcessName -like "*vmmem*" } -ErrorAction SilentlyContinue
-if ($finalWslProcesses) {
-    Write-ColorOutput Yellow "  Final cleanup: Killing remaining WSL processes..."
-    $finalWslProcesses | ForEach-Object {
-        try {
-            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-        } catch {
-            taskkill /PID $_.Id /F 2>$null | Out-Null
-        }
-    }
-    Start-Sleep -Seconds 2
-}
-
-$finalCheck = wsl --list --running 2>$null
-if ($finalCheck) {
-    Write-ColorOutput Red "[WARNING] WSL may still be running. Compaction might fail."
-    Write-ColorOutput Yellow "  Remaining processes:"
-    Get-Process | Where-Object { $_.ProcessName -like "*wsl*" -or $_.Name -like "*wsl*" -or $_.ProcessName -like "*vmmem*" } | ForEach-Object {
-        Write-ColorOutput Yellow "    - $($_.ProcessName) (PID: $($_.Id))"
-    }
-} else {
-    Write-ColorOutput Green "[OK] WSL shutdown complete"
-}
-Write-Output ""
-
-# Step 13: Find ALL Docker Desktop VHDX files
-Write-ColorOutput Yellow "Finding ALL Docker Desktop VHDX files..."
-$dockerVhdPaths = @(
-    "$env:LOCALAPPDATA\Docker\wsl",
-    "$env:USERPROFILE\AppData\Local\Docker\wsl",
-    "$env:ProgramData\Docker\wsl"
-)
-
-# Find ALL Docker VHDX files (data, distro, etc.)
-$allDockerVhdxFiles = @()
-foreach ($basePath in $dockerVhdPaths) {
-    if (Test-Path $basePath) {
-        $files = Get-ChildItem -Path $basePath -Recurse -Filter "*.vhdx" -ErrorAction SilentlyContinue
-        if ($files) {
-            $allDockerVhdxFiles += $files
-        }
-    }
-}
-
-# Also search in entire Docker directory
-if ($allDockerVhdxFiles.Count -eq 0) {
-    $allDockerVhdxFiles = Get-ChildItem -Path "$env:LOCALAPPDATA\Docker" -Recurse -Filter "*.vhdx" -ErrorAction SilentlyContinue
-}
-
-$dockerSpaceReclaimed = 0
-if ($allDockerVhdxFiles.Count -gt 0) {
-    Write-ColorOutput Green "Found $($allDockerVhdxFiles.Count) Docker VHDX file(s) to compact"
     Write-Output ""
-    
-    foreach ($dockerVhd in $allDockerVhdxFiles) {
-        $dockerVhdPath = $dockerVhd.FullName
-        Write-ColorOutput Yellow "Compacting: $dockerVhdPath"
-        
-        $dockerSizeBefore = $dockerVhd.Length / 1GB
-        $dockerSizeBeforeFormatted = "{0:N2}" -f $dockerSizeBefore
-        Write-ColorOutput Cyan "  Size before: $dockerSizeBeforeFormatted GB"
-        
-        # Try Optimize-VHD first (more reliable)
-        $compactionSuccess = $false
-        try {
-            Import-Module Hyper-V -ErrorAction Stop
-            Write-ColorOutput Yellow "  Using Optimize-VHD (this may take several minutes)..."
-            Optimize-VHD -Path $dockerVhdPath -Mode Full -ErrorAction Stop
-            $compactionSuccess = $true
-            Write-ColorOutput Green "  [OK] Optimize-VHD compaction complete"
-        } catch {
-            Write-ColorOutput Yellow "  Optimize-VHD failed, trying DiskPart..."
-            
-            # Fallback to DiskPart
-            $diskpartScript = @"
+}
+
+if ($DoWslCompact) {
+    Invoke-WslShutdownSequence
+
+    # Docker Desktop VHDX
+    Write-ColorOutput Yellow "Finding ALL Docker Desktop VHDX files..."
+    $dockerVhdPaths = @(
+        "$env:LOCALAPPDATA\Docker\wsl",
+        "$env:USERPROFILE\AppData\Local\Docker\wsl",
+        "$env:ProgramData\Docker\wsl"
+    )
+
+    foreach ($basePath in $dockerVhdPaths) {
+        if (Test-Path $basePath) {
+            $files = Get-ChildItem -Path $basePath -Recurse -Filter "*.vhdx" -ErrorAction SilentlyContinue
+            if ($files) { $allDockerVhdxFiles += $files }
+        }
+    }
+    if ($allDockerVhdxFiles.Count -eq 0) {
+        $extra = Get-ChildItem -Path "$env:LOCALAPPDATA\Docker" -Recurse -Filter "*.vhdx" -ErrorAction SilentlyContinue
+        if ($extra) { $allDockerVhdxFiles = @($extra) }
+    }
+
+    if ($allDockerVhdxFiles.Count -gt 0) {
+        Write-ColorOutput Green "Found $($allDockerVhdxFiles.Count) Docker VHDX file(s) to compact"
+        Write-Output ""
+
+        foreach ($dockerVhd in $allDockerVhdxFiles) {
+            $dockerVhdPath = $dockerVhd.FullName
+            Write-ColorOutput Yellow "Compacting: $dockerVhdPath"
+
+            $dockerSizeBefore = $dockerVhd.Length / 1GB
+            Write-ColorOutput Cyan "  Size before: $('{0:N2}' -f $dockerSizeBefore) GB"
+
+            $compactionSuccess = $false
+            try {
+                Import-Module Hyper-V -ErrorAction Stop
+                Write-ColorOutput Yellow "  Using Optimize-VHD..."
+                Optimize-VHD -Path $dockerVhdPath -Mode Full -ErrorAction Stop
+                $compactionSuccess = $true
+                Write-ColorOutput Green "  [OK] Optimize-VHD compaction complete"
+            } catch {
+                Write-ColorOutput Yellow "  Optimize-VHD failed, trying DiskPart..."
+                $diskpartScript = @"
 select vdisk file="$dockerVhdPath"
 attach vdisk readonly
 compact vdisk
 detach vdisk
 exit
 "@
-            
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            Set-Content -Path $tempFile -Value $diskpartScript -Encoding ASCII
-            
-            Write-ColorOutput Yellow "  Running DiskPart compaction..."
-            $diskpartResult = diskpart /s $tempFile 2>&1 | Out-String
-            Remove-Item $tempFile
-            
-            if ($LASTEXITCODE -eq 0 -or $diskpartResult -match "successfully compacted") {
-                $compactionSuccess = $true
-                Write-ColorOutput Green "  [OK] DiskPart compaction complete"
-            } else {
-                Write-ColorOutput Red "  [ERROR] Compaction failed"
-                Write-ColorOutput Yellow "  DiskPart output: $diskpartResult"
+                $tempFile = [System.IO.Path]::GetTempFileName()
+                Set-Content -Path $tempFile -Value $diskpartScript -Encoding ASCII
+                $diskpartResult = & diskpart.exe /s $tempFile 2>&1 | Out-String
+                Remove-Item $tempFile -ErrorAction SilentlyContinue
+
+                if ($LASTEXITCODE -eq 0 -or $diskpartResult -match "successfully compacted") {
+                    $compactionSuccess = $true
+                    Write-ColorOutput Green "  [OK] DiskPart compaction complete"
+                } else {
+                    Write-ColorOutput Red "  [ERROR] Compaction failed"
+                    Write-ColorOutput Yellow "  DiskPart output: $diskpartResult"
+                }
             }
+
+            if ($compactionSuccess) {
+                Start-Sleep -Seconds 2
+                $dockerVhdRefreshed = Get-Item $dockerVhdPath
+                $dockerSizeAfter = $dockerVhdRefreshed.Length / 1GB
+                $dockerSpaceReclaimedThis = [math]::Round($dockerSizeBefore - $dockerSizeAfter, 2)
+                Write-ColorOutput Cyan "  Size after: $('{0:N2}' -f $dockerSizeAfter) GB"
+                Write-ColorOutput Green "  Space reclaimed: $dockerSpaceReclaimedThis GB"
+                $dockerSpaceReclaimed += $dockerSpaceReclaimedThis
+            }
+            Write-Output ""
         }
-        
-        if ($compactionSuccess) {
-            # Refresh file info
-            Start-Sleep -Seconds 2
-            $dockerVhdRefreshed = Get-Item $dockerVhdPath
-            $dockerSizeAfter = $dockerVhdRefreshed.Length / 1GB
-            $dockerSpaceReclaimedThis = [math]::Round($dockerSizeBefore - $dockerSizeAfter, 2)
-            $dockerSizeAfterFormatted = "{0:N2}" -f $dockerSizeAfter
-            Write-ColorOutput Cyan "  Size after: $dockerSizeAfterFormatted GB"
-            Write-ColorOutput Green "  Space reclaimed: $dockerSpaceReclaimedThis GB"
-            $dockerSpaceReclaimed += $dockerSpaceReclaimedThis
-        }
+    } else {
+        Write-ColorOutput Yellow "[INFO] No Docker Desktop VHDX files found"
+        Write-ColorOutput Yellow "[INFO] This is normal if Docker Desktop is not installed or uses WSL2 integration differently"
         Write-Output ""
     }
-} else {
-    Write-ColorOutput Yellow "[INFO] No Docker Desktop VHDX files found"
-    Write-ColorOutput Yellow "[INFO] This is normal if Docker Desktop is not installed or uses WSL2 integration differently"
-    Write-Output ""
-}
 
-# Step 14: Locate Ubuntu VHDX
-Write-ColorOutput Yellow "Locating Ubuntu WSL virtual disk (authoritative)..."
+    # Ubuntu VHDX
+    Write-ColorOutput Yellow "Locating Ubuntu WSL virtual disk (authoritative)..."
 
-$lxssKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss"
-$ubuntuDistro = Get-ChildItem $lxssKey | ForEach-Object {
-    $props = Get-ItemProperty $_.PSPath
-    if ($props.DistributionName -match "^Ubuntu") {
-        [PSCustomObject]@{
-            Name = $props.DistributionName
-            BasePath = $props.BasePath
+    $lxssKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss"
+    $ubuntuDistro = Get-ChildItem $lxssKey -ErrorAction SilentlyContinue | ForEach-Object {
+        $props = Get-ItemProperty $_.PSPath
+        if ($props.DistributionName -match "^Ubuntu") {
+            [PSCustomObject]@{
+                Name     = $props.DistributionName
+                BasePath = $props.BasePath
+            }
         }
-    }
-} | Select-Object -First 1
+    } | Select-Object -First 1
 
-if (-not $ubuntuDistro) {
-    Write-ColorOutput Red "[ERROR] No Ubuntu WSL distribution found."
-    Exit
-}
+    if (-not $ubuntuDistro) {
+        Write-ColorOutput Red "[ERROR] No Ubuntu WSL distribution found."
+    } else {
+        $vhdxPath = Join-Path $ubuntuDistro.BasePath "ext4.vhdx"
 
-$vhdxPath = Join-Path $ubuntuDistro.BasePath "ext4.vhdx"
+        if (-not (Test-Path $vhdxPath)) {
+            Write-ColorOutput Red "[ERROR] VHDX file not found at $vhdxPath"
+        } else {
+            Write-ColorOutput Green "[OK] Found Ubuntu VHDX at: $vhdxPath"
+            Write-Output ""
 
-if (-not (Test-Path $vhdxPath)) {
-    Write-ColorOutput Red "[ERROR] VHDX file not found at $vhdxPath"
-    Exit
-}
+            $vhdxBefore = (Get-Item $vhdxPath).Length
+            $vhdxBeforeGB = [math]::Round($vhdxBefore / 1GB, 2)
+            Write-ColorOutput Cyan "VHDX size before compaction: $vhdxBeforeGB GB"
+            Write-Output ""
 
-Write-ColorOutput Green "[OK] Found Ubuntu VHDX at: $vhdxPath"
+            Write-ColorOutput Yellow "Compacting Ubuntu VHDX (this may take several minutes)..."
 
-Write-Output ""
+            try {
+                Import-Module Hyper-V -ErrorAction Stop
+                Write-ColorOutput Yellow "Using Optimize-VHD with Full mode..."
+                Optimize-VHD -Path $vhdxPath -Mode Full -ErrorAction Stop
 
-# Step 15: Get Ubuntu VHDX size before compaction
-$vhdxBefore = (Get-Item $vhdxPath).Length
-$vhdxBeforeGB = [math]::Round($vhdxBefore / 1GB, 2)
-Write-ColorOutput Cyan "VHDX size before compaction: $vhdxBeforeGB GB"
-Write-Output ""
-
-# Step 16: Compact the Ubuntu VHDX
-Write-ColorOutput Yellow "Compacting Ubuntu VHDX (this may take several minutes)..."
-$ubuntuCompactionSuccess = $false
-
-try {
-    Import-Module Hyper-V -ErrorAction Stop
-    
-    # Use Optimize-VHD with Full mode for maximum space reclamation
-    Write-ColorOutput Yellow "Using Optimize-VHD with Full mode..."
-    Optimize-VHD -Path $vhdxPath -Mode Full -ErrorAction Stop
-    
-    $ubuntuCompactionSuccess = $true
-    Write-ColorOutput Green "[OK] VHDX compaction complete!"
-} catch {
-    Write-ColorOutput Yellow "Optimize-VHD failed, trying DiskPart as fallback..."
-    
-    # Fallback to DiskPart
-    $diskpartScript = @"
+                $ubuntuCompactionSuccess = $true
+                Write-ColorOutput Green "[OK] VHDX compaction complete!"
+            } catch {
+                Write-ColorOutput Yellow "Optimize-VHD failed, trying DiskPart as fallback..."
+                $diskpartScript = @"
 select vdisk file="$vhdxPath"
 attach vdisk readonly
 compact vdisk
 detach vdisk
 exit
 "@
-    
-    $tempFile = [System.IO.Path]::GetTempFileName()
-    Set-Content -Path $tempFile -Value $diskpartScript -Encoding ASCII
-    
-    $diskpartResult = diskpart /s $tempFile 2>&1 | Out-String
-    Remove-Item $tempFile
-    
-    if ($LASTEXITCODE -eq 0 -or $diskpartResult -match "successfully compacted") {
-        $ubuntuCompactionSuccess = $true
-        Write-ColorOutput Green "[OK] DiskPart compaction complete!"
-    } else {
-        Write-ColorOutput Red "[ERROR] Both compaction methods failed!"
-        Write-ColorOutput Yellow "Optimize-VHD error: $_"
-        Write-ColorOutput Yellow "DiskPart output: $diskpartResult"
-        Write-ColorOutput Yellow "Make sure Hyper-V module is available and WSL is completely shut down."
+                $tempFile = [System.IO.Path]::GetTempFileName()
+                Set-Content -Path $tempFile -Value $diskpartScript -Encoding ASCII
+
+                $diskpartResult = & diskpart.exe /s $tempFile 2>&1 | Out-String
+                Remove-Item $tempFile -ErrorAction SilentlyContinue
+
+                if ($LASTEXITCODE -eq 0 -or $diskpartResult -match "successfully compacted") {
+                    $ubuntuCompactionSuccess = $true
+                    Write-ColorOutput Green "[OK] DiskPart compaction complete!"
+                } else {
+                    Write-ColorOutput Red "[ERROR] Both compaction methods failed!"
+                    Write-ColorOutput Yellow "Optimize-VHD error: $_"
+                    Write-ColorOutput Yellow "DiskPart output: $diskpartResult"
+                    Write-ColorOutput Yellow "Try rebooting Windows, or ensure WSL is fully stopped (LxssManager stopped)."
+                }
+            }
+
+            Write-Output ""
+
+            if ($ubuntuCompactionSuccess) {
+                Start-Sleep -Seconds 2
+                $vhdxAfter = (Get-Item $vhdxPath).Length
+                $vhdxAfterGB = [math]::Round($vhdxAfter / 1GB, 2)
+                $spaceReclaimed = [math]::Round(($vhdxBefore - $vhdxAfter) / 1GB, 2)
+
+                Write-ColorOutput Cyan "VHDX size after compaction: $vhdxAfterGB GB"
+                if ($spaceReclaimed -gt 0) {
+                    Write-ColorOutput Green "Space reclaimed: $spaceReclaimed GB"
+                } else {
+                    Write-ColorOutput Yellow "No space reclaimed (file may already be compacted or compaction failed)"
+                }
+            } else {
+                $spaceReclaimed = 0
+                Write-ColorOutput Red "Compaction failed - no space reclaimed"
+            }
+            Write-Output ""
+        }
     }
 }
 
-Write-Output ""
-
-# Step 17: Get Ubuntu VHDX size after compaction
-if ($ubuntuCompactionSuccess) {
-    # Refresh file info to get accurate size
-    Start-Sleep -Seconds 2
-    $vhdxAfter = (Get-Item $vhdxPath).Length
-    $vhdxAfterGB = [math]::Round($vhdxAfter / 1GB, 2)
-    $spaceReclaimed = [math]::Round(($vhdxBefore - $vhdxAfter) / 1GB, 2)
-    
-    Write-ColorOutput Cyan "VHDX size after compaction: $vhdxAfterGB GB"
-    if ($spaceReclaimed -gt 0) {
-        Write-ColorOutput Green "Space reclaimed: $spaceReclaimed GB"
-    } else {
-        Write-ColorOutput Yellow "No space reclaimed (file may already be compacted or compaction failed)"
-    }
-} else {
-    $spaceReclaimed = 0
-    Write-ColorOutput Red "Compaction failed - no space reclaimed"
-}
-Write-Output ""
-
-# Step 18: Note about restarting Docker Desktop and WSL (user must do manually)
 Write-ColorOutput Yellow "=========================================="
 Write-ColorOutput Yellow "Manual Restart Required"
 Write-ColorOutput Yellow "=========================================="
 Write-Output ""
-Write-ColorOutput Cyan "Docker Desktop and WSL have been shut down."
-Write-ColorOutput Cyan "Please restart them manually when ready:"
+Write-ColorOutput Cyan "When using WSL compact: Docker Desktop and WSL were shut down."
+Write-ColorOutput Cyan "Restart manually when ready:"
 Write-Output ""
-Write-ColorOutput Yellow "To restart Docker Desktop:"
-Write-Output "  - Open Docker Desktop from Start Menu, or"
-Write-Output "  - Run: Start-Process 'C:\Program Files\Docker\Docker\Docker Desktop.exe'"
+Write-ColorOutput Yellow "Docker Desktop:"
+Write-Output "  Start-Process 'C:\Program Files\Docker\Docker\Docker Desktop.exe'"
 Write-Output ""
-Write-ColorOutput Yellow "To restart WSL:"
-Write-Output "  - Run: wsl --distribution Ubuntu"
-Write-Output "  - Or simply open a WSL terminal"
+Write-ColorOutput Yellow "WSL / LxssManager (if LxssManager was stopped by fallback):"
+Write-Output "  Start-Service LxssManager   # elevated PowerShell"
+Write-Output "  wsl --distribution Ubuntu"
 Write-Output ""
 
-# Step 19: Summary
 Write-ColorOutput Green "=========================================="
-Write-ColorOutput Green "Cleanup and Compaction Complete!"
+Write-ColorOutput Green "Cleanup finished"
 Write-ColorOutput Green "=========================================="
 Write-Output ""
 Write-ColorOutput Cyan "Summary:"
-if ($dockerAvailable) {
-    Write-Output "  [OK] Docker images, volumes, build cache, and networks pruned"
+if ($dockerAvailable -and $AnyDockerWork) {
+    Write-Output "  [OK] Ran Deepiri-scoped Docker steps as selected"
 }
-if ($allDockerVhdxFiles.Count -gt 0) {
-    if ($dockerSpaceReclaimed -gt 0) {
-        Write-Output "  [OK] Docker Desktop VHDX files compacted ($($allDockerVhdxFiles.Count) files, reclaimed: $dockerSpaceReclaimed GB)"
-    } else {
-        Write-Output "  [WARNING] Docker Desktop VHDX files found but no space was reclaimed (may already be compacted)"
+if ($DoWslCompact) {
+    if ($allDockerVhdxFiles.Count -gt 0) {
+        Write-Output "  [INFO] Docker Desktop VHDX: reclaimed ~ $dockerSpaceReclaimed GB"
     }
-} else {
-    Write-Output "  [INFO] No Docker Desktop VHDX files found"
+    Write-Output "  [INFO] Ubuntu WSL2 VHDX: reclaimed ~ $spaceReclaimed GB"
 }
-Write-Output "  [OK] Ubuntu WSL2 virtual disk compacted (reclaimed: $spaceReclaimed GB)"
-$totalReclaimed = [math]::Round($spaceReclaimed + $dockerSpaceReclaimed, 2)
-Write-Output "  [OK] Total space reclaimed: $totalReclaimed GB"
 Write-Output ""
-Write-ColorOutput Green "Maximum disk space has been reclaimed!"
-Write-Output ""
-

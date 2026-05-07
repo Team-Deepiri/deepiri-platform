@@ -39,7 +39,7 @@ This protects `main`, `master`, and branches containing `team-dev` from accident
 
 This builds:
 - `frontend-dev`
-- All backend microservices (api-gateway, auth-service, task-orchestrator, engagement-service, platform-analytics-service, notification-service, external-bridge-service, challenge-service, realtime-gateway)
+- All backend microservices (api-gateway, auth-service, workflow-orchestrator, incentive-engine, decision-intelligence, communications-hub, external-bridge-service, adaptive-experience-engine, realtime-gateway)
 
 ### Start Services
 
@@ -55,10 +55,10 @@ This starts all infrastructure, backend services, and frontend.
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
   postgres redis influxdb \
-  api-gateway auth-service task-orchestrator \
-  engagement-service platform-analytics-service \
-  notification-service external-bridge-service \
-  challenge-service realtime-gateway frontend-dev
+  api-gateway auth-service workflow-orchestrator \
+  incentive-engine decision-intelligence \
+  communications-hub external-bridge-service \
+  adaptive-experience-engine realtime-gateway frontend-dev
 ```
 
 ### Rebuild After Code Changes

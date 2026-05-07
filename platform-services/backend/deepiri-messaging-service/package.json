@@ -22,7 +22,7 @@
   "author": "Deepiri",
   "license": "MIT",
   "dependencies": {
-    "@team-deepiri/shared-utils": "^1.0.0",
+    "@team-deepiri/shared-utils": "file:../../shared/deepiri-shared-utils",
     "@prisma/client": "^5.7.0",
     "axios": "^1.6.2",
     "cors": "^2.8.5",

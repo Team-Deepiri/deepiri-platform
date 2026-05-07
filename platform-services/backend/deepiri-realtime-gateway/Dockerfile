@@ -1,17 +1,36 @@
-# Build the service
-FROM ghcr.io/team-deepiri/deepiri-base:18-alpine
+# Build shared-utils first
+FROM node:18-alpine AS shared-utils-builder
+WORKDIR /shared-utils
+COPY shared/deepiri-shared-utils/package.json ./
+COPY shared/deepiri-shared-utils/package*.json ./
+COPY shared/deepiri-shared-utils/tsconfig.json ./
+COPY shared/deepiri-shared-utils/src ./src
 
-# Copy package file. This service has no usable lockfile in the current branch.
+RUN npm install --legacy-peer-deps \
+ && npm run build
+
+# Build the service
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache curl dumb-init bash python3 make g++
+
+# Copy K8s env loader scripts
+COPY --chown=root:root shared/scripts/load-k8s-env.sh /usr/local/bin/load-k8s-env.sh
+COPY --chown=root:root shared/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/load-k8s-env.sh /usr/local/bin/docker-entrypoint.sh
+
+# Copy package files
 COPY backend/deepiri-realtime-gateway/package.json ./
+COPY backend/deepiri-realtime-gateway/package*.json ./
+
+# Copy built shared-utils
+COPY --from=shared-utils-builder /shared-utils /shared-utils
 
 # SINGLE install step (this is the fix)
-RUN --mount=type=secret,id=github_token \
-    { echo "@team-deepiri:registry=https://npm.pkg.github.com"; \
-      echo "//npm.pkg.github.com/:_authToken=$(cat /run/secrets/github_token)"; \
-    } > .npmrc \
- && npm install --legacy-peer-deps \
- && npm cache clean --force \
- && echo "@team-deepiri:registry=https://npm.pkg.github.com" > .npmrc
+RUN npm install --legacy-peer-deps file:/shared-utils bufferutil utf-8-validate \
+ && npm cache clean --force
 
 # Copy source files
 COPY backend/deepiri-realtime-gateway/tsconfig.json ./
@@ -20,7 +39,10 @@ COPY backend/deepiri-realtime-gateway/src ./src
 # Build TypeScript
 RUN npm run build
 
-RUN mkdir -p logs && chown -R nodejs:nodejs /app
+# Create non-root user and set up directories
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    mkdir -p logs && chown -R nodejs:nodejs /app
 
 USER nodejs
 

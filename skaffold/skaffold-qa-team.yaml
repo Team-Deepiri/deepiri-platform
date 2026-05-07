@@ -27,35 +27,35 @@ build:
       docker:
         dockerfile: backend/deepiri-auth-service/Dockerfile
     
-    - image: deepiri-dev-task-orchestrator
+    - image: deepiri-dev-workflow-orchestrator
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-task-orchestrator/Dockerfile
+        dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
     
-    - image: deepiri-dev-engagement-service
+    - image: deepiri-dev-incentive-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-engagement-service/Dockerfile
+        dockerfile: backend/deepiri-incentive-engine/Dockerfile
     
-    - image: deepiri-dev-platform-analytics-service
+    - image: deepiri-dev-decision-intelligence
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
     
-    - image: deepiri-dev-notification-service
+    - image: deepiri-dev-communications-hub
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-notification-service/Dockerfile
+        dockerfile: backend/deepiri-communications-hub/Dockerfile
     
     - image: deepiri-dev-external-bridge-service
       context: ./platform-services
       docker:
         dockerfile: backend/deepiri-external-bridge-service/Dockerfile
     
-    - image: deepiri-dev-challenge-service
+    - image: deepiri-dev-adaptive-experience-engine
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-challenge-service/Dockerfile
+        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
     
     - image: deepiri-dev-realtime-gateway
       context: ./platform-services

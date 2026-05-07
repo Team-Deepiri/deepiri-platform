@@ -121,6 +121,14 @@ echo ""
 update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
 echo ""
 
+# Update deepiri-synapse
+update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
+echo ""
+
+# Update deepiri-sugar-glider
+update_submodule "platform-services/shared/deepiri-sugar-glider" "deepiri-sugar-glider (Synapse stream bridge)"
+echo ""
+
 # Update diri-persola
 update_submodule "diri-persola" "diri-persola (Persola - Personalized Agentic Framework)"
 echo ""
@@ -134,6 +142,8 @@ git submodule update --remote platform-services/backend/deepiri-external-bridge-
 git submodule update --remote platform-services/backend/deepiri-language-intelligence-service 2>/dev/null || true
 git submodule update --remote deepiri-web-frontend 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-prismpipe 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-sugar-glider 2>/dev/null || true
 git submodule update --remote diri-persola 2>/dev/null || true
 echo ""
 
@@ -147,6 +157,8 @@ git submodule status platform-services/backend/deepiri-external-bridge-service
 git submodule status platform-services/backend/deepiri-language-intelligence-service
 git submodule status deepiri-web-frontend
 git submodule status platform-services/shared/deepiri-prismpipe
+git submodule status platform-services/shared/deepiri-synapse
+git submodule status platform-services/shared/deepiri-sugar-glider
 git submodule status diri-persola
 echo ""
 
@@ -160,6 +172,7 @@ echo "  ✅ deepiri-external-bridge-service"
 echo "  ✅ deepiri-language-intelligence-service"
 echo "  ✅ deepiri-web-frontend"
 echo "  ✅ deepiri-prismpipe (PrismPipe)"
+echo "  ✅ deepiri-synapse"
+echo "  ✅ deepiri-sugar-glider"
 echo "  ✅ diri-persola (Persola)"
 echo ""
-

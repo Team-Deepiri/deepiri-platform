@@ -92,6 +92,56 @@ Quick navigation to all documentation organized by category.
 | [development/QUICK_SUBMODULE_INIT.md](development/QUICK_SUBMODULE_INIT.md) | Quick submodule initialization |
 | [development/START_EVERYTHING.md](development/START_EVERYTHING.md) | Start everything guide |
 | [development/STREAMING_IMPLEMENTATION_COMPLETE.md](development/STREAMING_IMPLEMENTATION_COMPLETE.md) | Streaming implementation guide |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK_TRACKER.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK_TRACKER.md) | Final push execution tracker (Task 01+) |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK03_BOTTLENECK_SCAN.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK03_BOTTLENECK_SCAN.md) | Final push task 03 bottleneck breakdown |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK04_PUBLISH_PIPELINE_DESIGN.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK04_PUBLISH_PIPELINE_DESIGN.md) | Final push task 04 publish pipeline design |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK05_IMPLEMENTATION.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK05_IMPLEMENTATION.md) | Final push task 05 publish pipeline implementation |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK06_FALLBACK_HARDENING.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK06_FALLBACK_HARDENING.md) | Final push task 06 fallback hardening |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK07_DISPATCHER_CLEANUP.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK07_DISPATCHER_CLEANUP.md) | Final push task 07 dispatcher cleanup |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK08_METRICS_CONFIG_SURFACING.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK08_METRICS_CONFIG_SURFACING.md) | Final push task 08 metrics/config surfacing |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK09_UNIT_TEST_EXPANSION.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK09_UNIT_TEST_EXPANSION.md) | Final push task 09 unit test expansion |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK10_BUILD_VALIDATION.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK10_BUILD_VALIDATION.md) | Final push task 10 build validation |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK11_SMOKE_VALIDATION.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK11_SMOKE_VALIDATION.md) | Final push task 11 smoke validation |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK12_BENCHMARK_RUN1.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK12_BENCHMARK_RUN1.md) | Final push task 12 full benchmark run 1 |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK13_BENCHMARK_RUN2.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK13_BENCHMARK_RUN2.md) | Final push task 13 full benchmark run 2 |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK14_COMPARISON_REPORT_PACKAGE.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK14_COMPARISON_REPORT_PACKAGE.md) | Final push task 14 comparison package |
+| [development/SUGAR_GLIDER_FINAL_PUSH_TASK15_DECISION_NOTE.md](development/SUGAR_GLIDER_FINAL_PUSH_TASK15_DECISION_NOTE.md) | Final push task 15 final decision |
+| [development/SUGAR_GLIDER_MARK_V3_IMPROVEMENT_TRACKER.md](development/SUGAR_GLIDER_MARK_V3_IMPROVEMENT_TRACKER.md) | Post-Mark-v3 Sugar Glider improvement tracker |
+| [development/SUGAR_GLIDER_MARK_V3_TASK02_CONTROL_PROBE.md](development/SUGAR_GLIDER_MARK_V3_TASK02_CONTROL_PROBE.md) | Post-Mark-v3 task 02 control probe |
+| [development/SUGAR_GLIDER_MARK_V3_TASK03_PIPELINE_PROBE.md](development/SUGAR_GLIDER_MARK_V3_TASK03_PIPELINE_PROBE.md) | Post-Mark-v3 task 03 pipeline candidate probe |
+| [development/SUGAR_GLIDER_MARK_V3_TASK04_ADAPTIVE_PUBLISH.md](development/SUGAR_GLIDER_MARK_V3_TASK04_ADAPTIVE_PUBLISH.md) | Post-Mark-v3 task 04 adaptive publish candidate |
+| [development/SUGAR_GLIDER_MARK_V3_TASK05_ADAPTIVE_PROBE.md](development/SUGAR_GLIDER_MARK_V3_TASK05_ADAPTIVE_PROBE.md) | Post-Mark-v3 task 05 adaptive candidate probe |
+| [development/SUGAR_GLIDER_MARK_V3_PRODUCTION_FREEZE.md](development/SUGAR_GLIDER_MARK_V3_PRODUCTION_FREEZE.md) | Mark v3 fallback freeze profile and rollback commands |
+| [development/SUGAR_GLIDER_MARK_V3_FREEZE_AND_OPTIMIZATION_SUMMARY.md](development/SUGAR_GLIDER_MARK_V3_FREEZE_AND_OPTIMIZATION_SUMMARY.md) | Mark v3 freeze + optimization finalization summary |
+| [development/SUGAR_GLIDER_MARK_V4_AUTOPILOT_TASK_TRACKER.md](development/SUGAR_GLIDER_MARK_V4_AUTOPILOT_TASK_TRACKER.md) | Mark v4 autoplay task tracker (Task 01-33) |
+| [development/SUGAR_GLIDER_MARK_V4_TASK08_FULL_WEBSOCKET_RUN1.md](development/SUGAR_GLIDER_MARK_V4_TASK08_FULL_WEBSOCKET_RUN1.md) | Mark v4 task 08 full websocket run 1 |
+| [development/SUGAR_GLIDER_MARK_V4_TASK09_FULL_WEBSOCKET_RUN2.md](development/SUGAR_GLIDER_MARK_V4_TASK09_FULL_WEBSOCKET_RUN2.md) | Mark v4 task 09 full websocket run 2 |
+| [development/SUGAR_GLIDER_MARK_V4_TASK10_COMPARISON_PACKAGE.md](development/SUGAR_GLIDER_MARK_V4_TASK10_COMPARISON_PACKAGE.md) | Mark v4 task 10 comparison package |
+| [development/SUGAR_GLIDER_MARK_V4_TASK11_DECISION_NOTE.md](development/SUGAR_GLIDER_MARK_V4_TASK11_DECISION_NOTE.md) | Mark v4 task 11 decision note |
+| [development/SUGAR_GLIDER_MARK_V4_TASK12_FASTPATH_RUN1.md](development/SUGAR_GLIDER_MARK_V4_TASK12_FASTPATH_RUN1.md) | Mark v4 task 12 restored fast-path run 1 |
+| [development/SUGAR_GLIDER_MARK_V4_TASK13_FASTPATH_RUN2.md](development/SUGAR_GLIDER_MARK_V4_TASK13_FASTPATH_RUN2.md) | Mark v4 task 13 restored fast-path run 2 |
+| [development/SUGAR_GLIDER_MARK_V4_TASK14_FASTPATH_COMPARISON_PACKAGE.md](development/SUGAR_GLIDER_MARK_V4_TASK14_FASTPATH_COMPARISON_PACKAGE.md) | Mark v4 task 14 restored fast-path comparison package |
+| [development/SUGAR_GLIDER_MARK_V4_TASK15_FASTPATH_DECISION_NOTE.md](development/SUGAR_GLIDER_MARK_V4_TASK15_FASTPATH_DECISION_NOTE.md) | Mark v4 task 15 restored fast-path decision note |
+| [development/SUGAR_GLIDER_MARK_V4_TASK16_HEAVYPATH_PROFILE.md](development/SUGAR_GLIDER_MARK_V4_TASK16_HEAVYPATH_PROFILE.md) | Mark v4 task 16 heavy-path CPU/RAM profile |
+| [development/SUGAR_GLIDER_MARK_V4_TASK17_OPTIMIZATION_BACKLOG.md](development/SUGAR_GLIDER_MARK_V4_TASK17_OPTIMIZATION_BACKLOG.md) | Mark v4 task 17 prioritized optimization backlog |
+| [development/SUGAR_GLIDER_MARK_V4_TASK18_RUNTIME_PINNING.md](development/SUGAR_GLIDER_MARK_V4_TASK18_RUNTIME_PINNING.md) | Mark v4 task 18 benchmark runtime pinning and reproducibility controls |
+| [development/SUGAR_GLIDER_MARK_V4_TASK19_V3_SPEED_SIGNATURE.md](development/SUGAR_GLIDER_MARK_V4_TASK19_V3_SPEED_SIGNATURE.md) | Mark v4 task 19 executable Mark v3 vs Mark v4 speed-signature analysis |
+| [development/SUGAR_GLIDER_MARK_V4_TASK20_RTG_SOCKET_HOTPATH_INSTRUMENTATION.md](development/SUGAR_GLIDER_MARK_V4_TASK20_RTG_SOCKET_HOTPATH_INSTRUMENTATION.md) | Mark v4 task 20 RTG socket hot-path parse/dispatch/emit instrumentation |
+| [development/SUGAR_GLIDER_MARK_V4_TASK21_RTG_HOTPATH_PROFILE_CAPTURE.md](development/SUGAR_GLIDER_MARK_V4_TASK21_RTG_HOTPATH_PROFILE_CAPTURE.md) | Mark v4 task 21 heavy-path probe capture with RTG hot-path timings |
+| [development/SUGAR_GLIDER_MARK_V4_TASK22_SIDECAR_MICROTIMING_CAPTURE.md](development/SUGAR_GLIDER_MARK_V4_TASK22_SIDECAR_MICROTIMING_CAPTURE.md) | Mark v4 task 22 sidecar dispatcher and ack micro-timing capture on heavy websocket probe |
+| [development/SUGAR_GLIDER_MARK_V4_TASK23_PUBLISH_DELIVERY_OVERLAP.md](development/SUGAR_GLIDER_MARK_V4_TASK23_PUBLISH_DELIVERY_OVERLAP.md) | Mark v4 task 23 publish-to-delivery overlap extraction for heavy websocket probes |
+| [development/SUGAR_GLIDER_MARK_V4_TASK24_QUEUE_BACKPRESSURE_SNAPSHOTS.md](development/SUGAR_GLIDER_MARK_V4_TASK24_QUEUE_BACKPRESSURE_SNAPSHOTS.md) | Mark v4 task 24 queue-depth and backpressure snapshot telemetry |
+| [development/SUGAR_GLIDER_MARK_V4_TASK25_RTG_EMITPATH_AB.md](development/SUGAR_GLIDER_MARK_V4_TASK25_RTG_EMITPATH_AB.md) | Mark v4 task 25 RTG emit-path micro A/B on heavy websocket lanes |
+| [development/SUGAR_GLIDER_MARK_V4_TASK26_SIDECAR_ACK_AB.md](development/SUGAR_GLIDER_MARK_V4_TASK26_SIDECAR_ACK_AB.md) | Mark v4 task 26 sidecar ACK tuning micro A/B on heavy websocket lanes |
+| [development/SUGAR_GLIDER_MARK_V4_TASK27_PROMOTION_GATE_CHECK.md](development/SUGAR_GLIDER_MARK_V4_TASK27_PROMOTION_GATE_CHECK.md) | Mark v4 task 27 promotion gate check using heavy-gain and guardrail criteria |
+| [development/SUGAR_GLIDER_MARK_V4_TASK28_BATTLEFIELD_LOCK.md](development/SUGAR_GLIDER_MARK_V4_TASK28_BATTLEFIELD_LOCK.md) | Mark v4 task 28 direct Mark v3 battlefield lock and gate decision |
+| [development/SUGAR_GLIDER_MARK_V4_TASK29_GUARDRAIL_RECOVERY.md](development/SUGAR_GLIDER_MARK_V4_TASK29_GUARDRAIL_RECOVERY.md) | Mark v4 task 29 guardrail recovery sweep and selected profile |
+| [development/SUGAR_GLIDER_MARK_V4_TASK30_HEAVY_PRESERVATION.md](development/SUGAR_GLIDER_MARK_V4_TASK30_HEAVY_PRESERVATION.md) | Mark v4 task 30 heavy-preservation check and locked profile |
+| [development/SUGAR_GLIDER_MARK_V4_TASK31_FULL_MATRIX_PROMOTION.md](development/SUGAR_GLIDER_MARK_V4_TASK31_FULL_MATRIX_PROMOTION.md) | Mark v4 task 31 full-matrix promotion gate and GO decision |
+| [development/SUGAR_GLIDER_MARK_V4_TASK32_BREAKTHROUGH_TRACKS.md](development/SUGAR_GLIDER_MARK_V4_TASK32_BREAKTHROUGH_TRACKS.md) | Mark v4 task 32 breakthrough tracks and safety classification |
+| [development/SUGAR_GLIDER_MARK_V4_TASK33_RELEASE_READINESS.md](development/SUGAR_GLIDER_MARK_V4_TASK33_RELEASE_READINESS.md) | Mark v4 task 33 release readiness package and stable gate validation |
+| [development/SUGAR_GLIDER_IMPLEMENTATION_REPRODUCIBLE_PROCESS.md](development/SUGAR_GLIDER_IMPLEMENTATION_REPRODUCIBLE_PROCESS.md) | Reproducible Sugar Glider implementation process |
+| [development/SUGAR_GLIDER_BENCHMARKING_REPRODUCIBLE_PROCESS.md](development/SUGAR_GLIDER_BENCHMARKING_REPRODUCIBLE_PROCESS.md) | Reproducible Sugar Glider benchmarking process |
 | [development/SUBMODULE_UPDATES_SUMMARY.md](development/SUBMODULE_UPDATES_SUMMARY.md) | Submodule updates summary |
 | [development/SYNAPSE_INTEGRATION_GUIDE.md](development/SYNAPSE_INTEGRATION_GUIDE.md) | Synapse integration guide |
 
@@ -196,5 +246,5 @@ Old/deprecated docs moved to `archive/`:
 
 ---
 
-**Last Updated**: 2024  
+**Last Updated**: 2026-04-27 (UTC)  
 **Maintained by**: Documentation Team

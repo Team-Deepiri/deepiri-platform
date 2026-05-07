@@ -15,12 +15,12 @@ echo "🚀 Starting Infrastructure Team Environment..."
 # Future: Will include cloud infrastructure and data infrastructure services
 ALL_SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
-  api-gateway auth-service task-orchestrator
-  engagement-service platform-analytics-service
-  notification-service external-bridge-service
-  challenge-service realtime-gateway
+  api-gateway auth-service workflow-orchestrator
+  incentive-engine decision-intelligence
+  communications-hub external-bridge-service
+  adaptive-experience-engine realtime-gateway
   language-intelligence-service messaging-service
-  frontend-dev synapse adminer
+  frontend-dev synapse synapse-sugar-glider adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
@@ -50,6 +50,13 @@ for service in "${ALL_SERVICES[@]}"; do
       ;;
     synapse)
       if [ -f "platform-services/shared/deepiri-synapse/Dockerfile" ]; then
+        SERVICES_TO_START+=("$service")
+      else
+        echo "⚠️  Skipping $service (not found)"
+      fi
+      ;;
+    synapse-sugar-glider)
+      if [ -f "platform-services/shared/deepiri-sugar-glider/Dockerfile" ]; then
         SERVICES_TO_START+=("$service")
       else
         echo "⚠️  Skipping $service (not found)"
@@ -102,6 +109,7 @@ echo "  - Challenge Service:       http://localhost:5007"
 echo "  - Realtime Gateway:        http://localhost:5008"
 echo "  - Messaging Service:       http://localhost:5009"
 echo "  - Synapse:                 http://localhost:8002"
+echo "  - Sugar Glider:            http://localhost:8081"
 echo ""
 echo "  Infrastructure:"
 echo "  - PostgreSQL:             localhost:5432"
@@ -115,4 +123,3 @@ echo "  View specific service:    docker compose -f docker-compose.dev.yml logs 
 echo "  Stop services:            docker compose -f docker-compose.dev.yml stop ${SERVICES_TO_START[*]}"
 echo "  Restart service:          docker compose -f docker-compose.dev.yml restart <service-name>"
 echo ""
-

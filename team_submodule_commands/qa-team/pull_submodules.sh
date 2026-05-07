@@ -24,48 +24,15 @@ declare -a SUBMODULES=(
   "deepiri-web-frontend"
   "platform-services/shared/deepiri-prismpipe"
   "platform-services/shared/deepiri-shared-utils"
+  "platform-services/shared/deepiri-synapse"
+  "platform-services/shared/deepiri-sugar-glider"
 )
 
 # Initialize and update only those submodules
 for sm_path in "${SUBMODULES[@]}"; do
   echo "🔄 Initializing and updating submodule: $sm_path"
   git submodule update --init "$sm_path"
-
-  # Switch to main or master branch if needed
-  (
-    cd "$sm_path"
-    git fetch origin || true
-    branch="main"
-    if ! git show-ref --verify --quiet refs/remotes/origin/main && git show-ref --verify --quiet refs/remotes/origin/master; then
-      branch="master"
-    elif ! git show-ref --verify --quiet refs/remotes/origin/main; then
-      if git show-ref --verify --quiet refs/remotes/origin/master; then
-        branch="master"
-      else
-        echo "   ⚠️  No main or master branch found, skipping"
-        return 0
-      fi
-    fi
-
-    # Check if we're in detached HEAD state
-    if ! git symbolic-ref -q HEAD > /dev/null; then
-      echo "   🔄 Detached HEAD detected, checking out $branch branch..."
-      git checkout -B "$branch" "origin/$branch" 2>/dev/null || git checkout "$branch" 2>/dev/null || true
-    else
-      current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
-      if [ "$current_branch" != "$branch" ]; then
-        echo "   🔄 Currently on '$current_branch', switching to $branch branch..."
-        git checkout "$branch" 2>/dev/null || git checkout -b "$branch" "origin/$branch" 2>/dev/null || true
-      fi
-    fi
-
-    # Set up tracking if not already set
-    if ! git config --get branch."$branch".remote > /dev/null 2>&1; then
-      git branch --set-upstream-to="origin/$branch" "$branch" 2>/dev/null || true
-    fi
-
-    git pull origin "$branch" || true
-  )
+  echo "   📌 Left at platform-pinned commit"
 done
 
 echo ""

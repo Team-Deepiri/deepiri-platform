@@ -165,6 +165,18 @@ echo ""
 update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
 echo ""
 
+# Update deepiri-shared-utils
+update_submodule "platform-services/shared/deepiri-shared-utils" "deepiri-shared-utils (Shared Utilities)"
+echo ""
+
+# Update deepiri-synapse
+update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
+echo ""
+
+# Update deepiri-sugar-glider
+update_submodule "platform-services/shared/deepiri-sugar-glider" "deepiri-sugar-glider (Synapse stream bridge)"
+echo ""
+
 # Note: We don't use 'git submodule update --remote' here because it would
 # update to the remote branch's HEAD, potentially changing the branch.
 # Instead, we preserve each submodule's current branch and merge updates.
@@ -184,6 +196,9 @@ git submodule status diri-helox
 git submodule status deepiri-modelkit
 git submodule status platform-services/backend/deepiri-language-intelligence-service
 git submodule status platform-services/shared/deepiri-prismpipe
+git submodule status platform-services/shared/deepiri-shared-utils
+git submodule status platform-services/shared/deepiri-synapse
+git submodule status platform-services/shared/deepiri-sugar-glider
 echo ""
 
 echo "✅ All submodules updated!"
@@ -200,5 +215,7 @@ echo "  ✅ diri-helox"
 echo "  ✅ deepiri-modelkit"
 echo "  ✅ deepiri-language-intelligence-service"
 echo "  ✅ deepiri-prismpipe (PrismPipe)"
+echo "  ✅ deepiri-shared-utils"
+echo "  ✅ deepiri-synapse"
+echo "  ✅ deepiri-sugar-glider"
 echo ""
-

@@ -1,0 +1,175 @@
+name: deepiri-rtg-sugar-glider-local
+
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: deepiri-redis-rtg-local
+    restart: unless-stopped
+    command: redis-server --requirepass redispassword
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispassword", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_rtg_local_data:/data
+
+  synapse:
+    build:
+      context: ./platform-services/shared/deepiri-synapse
+      dockerfile: Dockerfile
+    container_name: deepiri-synapse-rtg-local
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+      K8S_SERVICE_NAME: synapse
+    ports:
+      - "8002:8002"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=2)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  realtime-gateway:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+    container_name: deepiri-realtime-gateway-rtg-local
+    restart: unless-stopped
+    environment:
+      PORT: 5008
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redispassword
+      SYNAPSE_URL: http://synapse:8002
+      SYNAPSE_SUGAR_GLIDER_URL: http://synapse-sugar-glider:8081
+      SYNAPSE_SIDECAR_URL: http://synapse-sugar-glider:8081
+      SYNAPSE_GRPC_ADDR: synapse-sugar-glider:50051
+      STREAM_TRANSPORT: ${STREAM_TRANSPORT:-sugar-glider-grpc}
+      STREAM_GRPC_KEEPALIVE_MS: ${STREAM_GRPC_KEEPALIVE_MS:-300000}
+      STREAM_GRPC_KEEPALIVE_TIMEOUT_MS: ${STREAM_GRPC_KEEPALIVE_TIMEOUT_MS:-20000}
+      STREAM_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS: ${STREAM_GRPC_KEEPALIVE_PERMIT_WITHOUT_CALLS:-false}
+      STREAM_SHADOW_MODE: ${STREAM_SHADOW_MODE:-false}
+      STREAM_CONSUMER_GROUP: ${STREAM_CONSUMER_GROUP:-realtime-gateway}
+      STREAM_SUBSCRIBE_BATCH_SIZE: ${STREAM_SUBSCRIBE_BATCH_SIZE:-128}
+      STREAM_EVENT_MAX_IN_FLIGHT: ${STREAM_EVENT_MAX_IN_FLIGHT:-1024}
+      STREAM_EVENT_RESUME_IN_FLIGHT: ${STREAM_EVENT_RESUME_IN_FLIGHT:-768}
+      STREAM_ACK_BATCH_SIZE: ${STREAM_ACK_BATCH_SIZE:-256}
+      STREAM_ACK_FLUSH_MS: ${STREAM_ACK_FLUSH_MS:-6}
+      STREAM_ACK_FLUSH_CONCURRENCY: ${STREAM_ACK_FLUSH_CONCURRENCY:-8}
+      STREAM_ACK_RETRY_MAX_ATTEMPTS: ${STREAM_ACK_RETRY_MAX_ATTEMPTS:-3}
+      STREAM_ACK_RETRY_BASE_MS: ${STREAM_ACK_RETRY_BASE_MS:-25}
+      STREAM_ACK_LOW_TRAFFIC_FLUSH_MS: ${STREAM_ACK_LOW_TRAFFIC_FLUSH_MS:-1}
+      STREAM_ACK_LOW_TRAFFIC_GAP_MS: ${STREAM_ACK_LOW_TRAFFIC_GAP_MS:-16}
+      STREAM_ACK_LOW_TRAFFIC_MAX_PENDING: ${STREAM_ACK_LOW_TRAFFIC_MAX_PENDING:-32}
+      STREAM_LAZY_PAYLOAD_PARSE: ${STREAM_LAZY_PAYLOAD_PARSE:-true}
+      STREAM_EXTRACT_USER_FROM_PAYLOAD: ${STREAM_EXTRACT_USER_FROM_PAYLOAD:-false}
+      STREAM_LANE_RUNTIME_PROFILES_ENABLED: ${STREAM_LANE_RUNTIME_PROFILES_ENABLED:-false}
+      STREAM_DIRECT_BROADCAST_FAST_PATH: ${STREAM_DIRECT_BROADCAST_FAST_PATH:-off}
+      STREAM_DIRECT_BROADCAST_MIN_PAYLOAD_BYTES: ${STREAM_DIRECT_BROADCAST_MIN_PAYLOAD_BYTES:-0}
+      STREAM_SOCKET_HOTPATH_PROFILE_ENABLED: ${STREAM_SOCKET_HOTPATH_PROFILE_ENABLED:-false}
+      STREAM_SOCKET_HOTPATH_PROFILE_BUCKETS: ${STREAM_SOCKET_HOTPATH_PROFILE_BUCKETS:-32768:10,32768:50}
+      STREAM_SOCKET_HOTPATH_PROFILE_SAMPLE_LIMIT: ${STREAM_SOCKET_HOTPATH_PROFILE_SAMPLE_LIMIT:-2048}
+      SOCKET_IO_TRANSPORTS: ${SOCKET_IO_TRANSPORTS:-polling,websocket}
+      SOCKET_IO_PARSER: ${SOCKET_IO_PARSER:-default}
+      SOCKET_IO_DISCARD_INITIAL_REQUEST: ${SOCKET_IO_DISCARD_INITIAL_REQUEST:-false}
+      WS_NO_BUFFER_UTIL: ${WS_NO_BUFFER_UTIL:-false}
+      WS_NO_UTF_8_VALIDATE: ${WS_NO_UTF_8_VALIDATE:-false}
+      K8S_SERVICE_NAME: realtime-gateway
+    ports:
+      - "5008:5008"
+    depends_on:
+      redis:
+        condition: service_healthy
+      synapse:
+        condition: service_healthy
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:5008/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  synapse-sugar-glider:
+    build:
+      context: ./platform-services/shared/deepiri-sugar-glider
+      dockerfile: Dockerfile
+    container_name: deepiri-synapse-sugar-glider-rtg-local
+    restart: unless-stopped
+    environment:
+      SIDECAR_SERVICE_NAME: realtime-gateway
+      SIDECAR_REDIS_URL: redis://:redispassword@redis:6379/0
+      SIDECAR_LISTEN_ADDR: tcp://0.0.0.0:8081
+      SIDECAR_GRPC_ADDR: tcp://0.0.0.0:50051
+      SIDECAR_CONSUME_MODE: ${SIDECAR_CONSUME_MODE:-dispatcher}
+      SIDECAR_WAL_REPLAY_MODE: ${SIDECAR_WAL_REPLAY_MODE:-background}
+      SIDECAR_DISPATCHER_CONSUMER_NAME: ${SIDECAR_DISPATCHER_CONSUMER_NAME:-sugar-glider-dispatcher}
+      SIDECAR_DISPATCHER_READ_COUNT: ${SIDECAR_DISPATCHER_READ_COUNT:-512}
+      SIDECAR_DISPATCHER_BLOCK_MS: ${SIDECAR_DISPATCHER_BLOCK_MS:-200}
+      SIDECAR_DISPATCHER_SUBSCRIBER_BUFFER: ${SIDECAR_DISPATCHER_SUBSCRIBER_BUFFER:-1024}
+      SIDECAR_DISPATCHER_ACK_BATCH_SIZE: ${SIDECAR_DISPATCHER_ACK_BATCH_SIZE:-256}
+      SIDECAR_DISPATCHER_ACK_FLUSH_CONCURRENCY: ${SIDECAR_DISPATCHER_ACK_FLUSH_CONCURRENCY:-8}
+      SIDECAR_DISPATCHER_ACK_FLUSH_MS: ${SIDECAR_DISPATCHER_ACK_FLUSH_MS:-6}
+      SIDECAR_DISPATCHER_ACK_QUEUE_SIZE: ${SIDECAR_DISPATCHER_ACK_QUEUE_SIZE:-16384}
+      SIDECAR_PUBLISH_PIPELINE_ENABLED: ${SIDECAR_PUBLISH_PIPELINE_ENABLED:-false}
+      SIDECAR_PUBLISH_PIPELINE_ADAPTIVE_ENABLED: ${SIDECAR_PUBLISH_PIPELINE_ADAPTIVE_ENABLED:-false}
+      SIDECAR_PUBLISH_PIPELINE_MAX_BATCH: ${SIDECAR_PUBLISH_PIPELINE_MAX_BATCH:-64}
+      SIDECAR_PUBLISH_PIPELINE_MIN_BATCH: ${SIDECAR_PUBLISH_PIPELINE_MIN_BATCH:-2}
+      SIDECAR_PUBLISH_PIPELINE_FLUSH_MS: ${SIDECAR_PUBLISH_PIPELINE_FLUSH_MS:-0}
+      SIDECAR_PUBLISH_PIPELINE_QUEUE_SIZE: ${SIDECAR_PUBLISH_PIPELINE_QUEUE_SIZE:-8192}
+      SIDECAR_PUBLISH_PIPELINE_MAX_BYTES: ${SIDECAR_PUBLISH_PIPELINE_MAX_BYTES:-1048576}
+      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events
+      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events
+      SIDECAR_MAX_STREAM_LEN: "10000"
+      SIDECAR_WAL_DIR: /data/synapse-wal
+      SIDECAR_WAL_REPLAY_BATCH: "100"
+      SIDECAR_WAL_REPLAY_INTERVAL_MS: "2000"
+      SIDECAR_DLQ_MAX_RETRIES: "3"
+      SIDECAR_DLQ_MIN_IDLE_MS: "30000"
+      SIDECAR_DLQ_SCAN_INTERVAL_MS: "5000"
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+    volumes:
+      - synapse_sidecar_rtg_local_wal:/data/synapse-wal
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - synapse-sidecar
+    healthcheck:
+      test: ["CMD", "/app/sidecar", "healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  redis_rtg_local_data:
+  synapse_sidecar_rtg_local_wal:

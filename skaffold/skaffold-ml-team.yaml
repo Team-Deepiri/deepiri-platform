@@ -33,11 +33,11 @@ build:
           PYTORCH_VERSION: 2.9.1
           PYTHON_VERSION: 3.11
     
-    # Analytics Service (for feature engineering)
-    - image: deepiri-dev-platform-analytics-service
+    # Decision Intelligence (for feature engineering)
+    - image: deepiri-dev-decision-intelligence
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-platform-analytics-service/Dockerfile
+        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
 
 deploy:
   kubectl:

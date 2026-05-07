@@ -11,10 +11,10 @@ cd "$PROJECT_ROOT"
 
 # ML team services
 SERVICES=(
-  postgres-auth postgres-core postgres-intelligence redis influxdb
+  postgres redis influxdb
   mlflow
   # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
-  platform-analytics-service synapse
+  platform-analytics-service synapse synapse-sugar-glider
 )
 
 echo "🛑 Stopping ML Team services..."

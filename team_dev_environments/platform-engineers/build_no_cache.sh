@@ -6,9 +6,9 @@ set -e
 
 cd "$(dirname "$0")/../.." || exit 1
 
-# Enable BuildKit for better builds
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
+# Force legacy builder for consistency with the normal team build flow.
+export DOCKER_BUILDKIT=0
+export COMPOSE_DOCKER_CLI_BUILD=0
 
 echo "🔨 Building Platform Engineers services (All Services, No Cache)..."
 echo "   (Using docker-compose.dev.yml)"
@@ -18,4 +18,3 @@ echo ""
 docker compose -f docker-compose.dev.yml build --no-cache
 
 echo "✅ Platform Engineers services built successfully!"
-

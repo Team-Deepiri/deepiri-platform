@@ -28,6 +28,31 @@ echo "📂 Repository root: $REPO_ROOT"
 echo "   ✅ Confirmed: Git repository detected"
 echo ""
 
+# Helper function to check if submodule is valid (handles both .git directory and .git file)
+check_submodule() {
+    local submodule_path="$1"
+    if [ ! -d "$submodule_path" ]; then
+        return 1
+    fi
+    if [ ! -d "$submodule_path/.git" ] && [ ! -f "$submodule_path/.git" ]; then
+        return 1
+    fi
+    if ! (cd "$submodule_path" && git rev-parse --git-dir > /dev/null 2>&1); then
+        return 1
+    fi
+    return 0
+}
+
+# Helper function to clean up invalid submodule directory
+cleanup_invalid_submodule() {
+    local submodule_path="$1"
+    if [ -d "$submodule_path" ] && ! check_submodule "$submodule_path"; then
+        echo "    ⚠️  Directory exists but is not a valid submodule. Cleaning up..."
+        rm -rf "$submodule_path"
+        echo "    ✅ Cleaned up invalid directory"
+    fi
+}
+
 # Helper function to ensure submodule is on main branch and tracking it
 ensure_submodule_on_main() {
     local submodule_path="$1"
@@ -148,6 +173,30 @@ fi
 echo "    ✅ shared-utils initialized at: $(pwd)/platform-services/shared/deepiri-shared-utils"
 echo ""
 
+# deepiri-synapse
+echo "  📦 deepiri-synapse (Matrix server - Team-Deepiri/deepiri-synapse)..."
+cleanup_invalid_submodule "platform-services/shared/deepiri-synapse"
+git submodule update --init --recursive platform-services/shared/deepiri-synapse 2>&1 || true
+if ! check_submodule "platform-services/shared/deepiri-synapse"; then
+    echo "    ❌ ERROR: deepiri-synapse not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/shared/deepiri-synapse"
+    exit 1
+fi
+echo "    ✅ synapse initialized at: $(pwd)/platform-services/shared/deepiri-synapse"
+echo ""
+
+# deepiri-sugar-glider
+echo "  📦 deepiri-sugar-glider (Synapse stream bridge - Team-Deepiri/deepiri-sugar-glider)..."
+cleanup_invalid_submodule "platform-services/shared/deepiri-sugar-glider"
+git submodule update --init --recursive platform-services/shared/deepiri-sugar-glider 2>&1 || true
+if ! check_submodule "platform-services/shared/deepiri-sugar-glider"; then
+    echo "    ❌ ERROR: deepiri-sugar-glider not cloned correctly!"
+    echo "    💡 Try: git submodule update --init --recursive platform-services/shared/deepiri-sugar-glider"
+    exit 1
+fi
+echo "    ✅ sugar-glider initialized at: $(pwd)/platform-services/shared/deepiri-sugar-glider"
+echo ""
+
 # Update to latest and ensure on main branch
 echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
 git submodule update --remote diri-cyrex
@@ -168,6 +217,12 @@ echo "    ✅ modelkit updated and on main branch"
 git submodule update --remote platform-services/shared/deepiri-prismpipe 2>/dev/null || true
 ensure_submodule_on_main "platform-services/shared/deepiri-prismpipe"
 echo "    ✅ prismpipe updated and on main branch"
+git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
+ensure_submodule_on_main "platform-services/shared/deepiri-synapse"
+echo "    ✅ synapse updated and on main branch"
+git submodule update --remote platform-services/shared/deepiri-sugar-glider 2>/dev/null || true
+ensure_submodule_on_main "platform-services/shared/deepiri-sugar-glider"
+echo "    ✅ sugar-glider updated and on main branch"
 echo ""
 
 # Show status
@@ -179,6 +234,8 @@ git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
 git submodule status platform-services/shared/deepiri-prismpipe 2>/dev/null || echo "  ⚠️  deepiri-prismpipe (not initialized)"
 git submodule status platform-services/shared/deepiri-shared-utils 2>/dev/null || echo "  ⚠️  deepiri-shared-utils (not initialized)"
+git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
+git submodule status platform-services/shared/deepiri-sugar-glider 2>/dev/null || echo "  ⚠️  deepiri-sugar-glider (not initialized)"
 echo ""
 
 echo "✅ AI Team submodules ready!"
@@ -189,15 +246,21 @@ echo "  - Check status: git submodule status diri-persola"
 echo "  - Check status: git submodule status platform-services/backend/deepiri-api-gateway"
 echo "  - Check status: git submodule status deepiri-modelkit"
 echo "  - Check status: git submodule status platform-services/shared/deepiri-prismpipe"
+echo "  - Check status: git submodule status platform-services/shared/deepiri-synapse"
+echo "  - Check status: git submodule status platform-services/shared/deepiri-sugar-glider"
 echo "  - Update: git submodule update --remote diri-cyrex"
 echo "  - Update: git submodule update --remote diri-persola"
 echo "  - Update: git submodule update --remote platform-services/backend/deepiri-api-gateway"
 echo "  - Update: git submodule update --remote deepiri-modelkit"
 echo "  - Update: git submodule update --remote platform-services/shared/deepiri-prismpipe"
+echo "  - Update: git submodule update --remote platform-services/shared/deepiri-synapse"
+echo "  - Update: git submodule update --remote platform-services/shared/deepiri-sugar-glider"
 echo "  - Work in cyrex: cd diri-cyrex"
 echo "  - Work in api gateway: cd platform-services/backend/deepiri-api-gateway"
 echo "  - Work in modelkit: cd deepiri-modelkit"
 echo "  - Work in prismpipe: cd platform-services/shared/deepiri-prismpipe"
+echo "  - Work in synapse: cd platform-services/shared/deepiri-synapse"
+echo "  - Work in sugar-glider: cd platform-services/shared/deepiri-sugar-glider"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules
@@ -210,4 +273,3 @@ else
     echo "   Hooks will not be automatically configured."
 fi
 echo ""
-

@@ -55,6 +55,13 @@ scripts/
 - `setup.sh` - Initial project setup
 - `dev-utils.sh` - Development utilities
 - `dev-docker.sh` - Development Docker helper
+- `sugarglider/preflight.sh` - Startup preflight checks (Docker, ports, disk/memory, health endpoints)
+- `sugarglider/stack_watchdog.sh` - Health watchdog (checks services/endpoints and heals unhealthy containers)
+- `sugarglider/sugar_glider_smoke_test.sh` - One-shot Sugar Glider publish/read/ack smoke test
+- `sugarglider/sugar_glider_grpc_smoke_test.sh` - One-shot Sugar Glider gRPC Health/Publish/Subscribe/Ack smoke test
+- `sugarglider/sugar_glider_failure_test.sh` - Redis outage/WAL replay + DLQ failure-path test
+- `make rtg-sugar-gate` - Preferred local Sugar Glider fast gate
+- `make rtg-sugar-gate-full` - Preferred local Sugar Glider full gate (includes failure-path test)
 - `dev-start.js` - Development start script
 - `fix-dependencies.sh` - Fix npm/node dependencies
 

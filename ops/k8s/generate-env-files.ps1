@@ -96,12 +96,12 @@ function Extract-SharedSecrets {
 $SERVICES = @(
     "api-gateway",
     "auth-service",
-    "task-orchestrator",
-    "engagement-service",
-    "platform-analytics-service",
-    "notification-service",
+    "workflow-orchestrator",
+    "incentive-engine",
+    "decision-intelligence",
+    "communications-hub",
     "external-bridge-service",
-    "challenge-service",
+    "adaptive-experience-engine",
     "realtime-gateway",
     "cyrex",
     "frontend-dev"

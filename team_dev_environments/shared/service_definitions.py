@@ -78,8 +78,8 @@ def get_microservice_config(
     }
     
     # Add /shared-utils/node_modules volume for services that use shared-utils
-    if name in ["challenge-service", "auth-service", "engagement-service", "external-bridge-service", 
-                "notification-service", "platform-analytics-service", "task-orchestrator", "realtime-gateway",
+    if name in ["adaptive-experience-engine", "auth-service", "incentive-engine", "external-bridge-service", 
+                "communications-hub", "decision-intelligence", "workflow-orchestrator", "realtime-gateway",
                 "language-intelligence-service", "messaging-service"]:
         config["volumes"]["/shared-utils/node_modules"] = {}
     
@@ -99,12 +99,12 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
     )
     database_url_core = (
         f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
-        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5432/"
         f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
     )
     database_url_intelligence = (
         f"postgresql://{env.get('POSTGRES_INTELLIGENCE_USER', 'deepiri_intel')}:"
-        f"{env.get('POSTGRES_INTELLIGENCE_PASSWORD', 'deepiripassword')}@postgres-intelligence:5435/"
+        f"{env.get('POSTGRES_INTELLIGENCE_PASSWORD', 'deepiripassword')}@postgres-intelligence:5432/"
         f"{env.get('POSTGRES_INTELLIGENCE_DB', 'intelligence_db')}"
     )
     redis_url = f"redis://:{env.get('REDIS_PASSWORD', 'redispassword')}@redis:6379"
@@ -117,13 +117,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         f"deepiri-api-gateway-{team_suffix}",
         5100,
         project_root,
-        "platform-services/api-gateway",
+        "platform-services/backend/deepiri-api-gateway",
         database_url_core,
         redis_url,
         {
             "AUTH_SERVICE_URL": f"http://deepiri-auth-service-{team_suffix}:5001",
-            "TASK_ORCHESTRATOR_URL": f"http://deepiri-task-orchestrator-{team_suffix}:5002",
-            "ENGAGEMENT_SERVICE_URL": f"http://deepiri-engagement-service-{team_suffix}:5003",
+            "WORKFLOW_ORCHESTRATOR_URL": f"http://deepiri-workflow-orchestrator-{team_suffix}:5002",
+            "INCENTIVE_ENGINE_URL": f"http://deepiri-incentive-engine-{team_suffix}:5003",
         },
         ["postgres-core", "redis"],
         network_name,
@@ -145,13 +145,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Task Orchestrator
+    # Workflow Orchestrator
     services.append(get_microservice_config(
-        "task-orchestrator",
-        f"deepiri-task-orchestrator-{team_suffix}",
+        "workflow-orchestrator",
+        f"deepiri-workflow-orchestrator-{team_suffix}",
         5002,
         project_root,
-        "platform-services/backend/deepiri-task-orchestrator",
+        "platform-services/backend/deepiri-workflow-orchestrator",
         database_url_core,
         None,
         None,
@@ -160,13 +160,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Engagement Service
+    # Incentive Engine
     services.append(get_microservice_config(
-        "engagement-service",
-        f"deepiri-engagement-service-{team_suffix}",
+        "incentive-engine",
+        f"deepiri-incentive-engine-{team_suffix}",
         5003,
         project_root,
-        "platform-services/backend/deepiri-engagement-service",
+        "platform-services/backend/deepiri-incentive-engine",
         database_url_core,
         redis_url,
         None,
@@ -175,13 +175,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Platform Analytics Service
+    # Decision Intelligence
     services.append(get_microservice_config(
-        "platform-analytics-service",
-        f"deepiri-platform-analytics-service-{team_suffix}",
+        "decision-intelligence",
+        f"deepiri-decision-intelligence-{team_suffix}",
         5004,
         project_root,
-        "platform-services/backend/deepiri-platform-analytics-service",
+        "platform-services/backend/deepiri-decision-intelligence",
         database_url_core,
         None,
         None,
@@ -190,13 +190,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Notification Service
+    # Communications Hub
     services.append(get_microservice_config(
-        "notification-service",
-        f"deepiri-notification-service-{team_suffix}",
+        "communications-hub",
+        f"deepiri-communications-hub-{team_suffix}",
         5005,
         project_root,
-        "platform-services/backend/deepiri-notification-service",
+        "platform-services/backend/deepiri-communications-hub",
         database_url_core,
         redis_url,
         None,
@@ -220,13 +220,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Challenge Service
+    # Adaptive Experience Engine
     services.append(get_microservice_config(
-        "challenge-service",
-        f"deepiri-challenge-service-{team_suffix}",
+        "adaptive-experience-engine",
+        f"deepiri-adaptive-experience-engine-{team_suffix}",
         5007,
         project_root,
-        "platform-services/backend/deepiri-challenge-service",
+        "platform-services/backend/deepiri-adaptive-experience-engine",
         database_url_core,
         None,
         None,
@@ -359,18 +359,18 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
     #     "network": network_name,
     # })
     
-    # Challenge Service
+    # Adaptive Experience Engine
     database_url_core = (
         f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
-        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5432/"
         f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
     )
     services.append(get_microservice_config(
-        "challenge-service",
-        f"deepiri-challenge-service-{team_suffix}",
+        "adaptive-experience-engine",
+        f"deepiri-adaptive-experience-engine-{team_suffix}",
         5007,
         project_root,
-        "platform-services/backend/deepiri-challenge-service",
+        "platform-services/backend/deepiri-adaptive-experience-engine",
         database_url_core,
         None,
         {"CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000"},
@@ -466,15 +466,15 @@ def get_ml_team_services(project_root: Path, env: dict, network_name: str, team_
     # Platform Analytics Service
     database_url_core = (
         f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
-        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5432/"
         f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
     )
     services.append(get_microservice_config(
-        "platform-analytics-service",
-        f"deepiri-platform-analytics-service-{team_suffix}",
+        "decision-intelligence",
+        f"deepiri-decision-intelligence-{team_suffix}",
         5004,
         project_root,
-        "platform-services/backend/deepiri-platform-analytics-service",
+        "platform-services/backend/deepiri-decision-intelligence",
         database_url_core,
         None,
         None,
@@ -515,7 +515,7 @@ def get_frontend_team_services(project_root: Path, env: dict, network_name: str,
     )
     database_url_core = (
         f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
-        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5433/"
+        f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5432/"
         f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
     )
     redis_url = f"redis://:{env.get('REDIS_PASSWORD', 'redispassword')}@redis:6379"

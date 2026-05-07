@@ -10,9 +10,18 @@ echo "=================================="
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$PROJECT_ROOT"
+
+# Install shared utils first so local file dependencies resolve cleanly.
+if [ -f "platform-services/shared/deepiri-shared-utils/package.json" ]; then
+  echo "  Installing dependencies for deepiri-shared-utils..."
+  cd "platform-services/shared/deepiri-shared-utils"
+  npm install --legacy-peer-deps --workspaces=false
+  npm run build
+  cd "$PROJECT_ROOT"
+fi
 
 # Fix Node.js services
 echo ""
@@ -21,32 +30,16 @@ for service in platform-services/backend/*; do
   if [ -f "$service/package.json" ]; then
     echo "  Installing dependencies for $(basename $service)..."
     cd "$service"
-    if [ -f "package-lock.json" ]; then
-      npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-    else
-      npm install --legacy-peer-deps
-    fi
+    npm install --legacy-peer-deps --workspaces=false
     cd "$PROJECT_ROOT"
   fi
 done
-
-# Install shared utils
-if [ -f "platform-services/shared/deepiri-shared-utils/package.json" ]; then
-  echo "  Installing dependencies for deepiri-shared-utils..."
-  cd "platform-services/shared/deepiri-shared-utils"
-  npm install --legacy-peer-deps
-  cd "$PROJECT_ROOT"
-fi
 
 # Fix API server
 if [ -f "deepiri-core-api/package.json" ]; then
   echo "  Installing dependencies for deepiri-core-api..."
   cd "deepiri-core-api"
-  if [ -f "package-lock.json" ]; then
-    npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-  else
-    npm install --legacy-peer-deps
-  fi
+  npm install --legacy-peer-deps --workspaces=false
   cd "$PROJECT_ROOT"
 fi
 
@@ -54,11 +47,7 @@ fi
 if [ -f "deepiri-web-frontend/package.json" ]; then
   echo "  Installing dependencies for deepiri-web-frontend..."
   cd "deepiri-web-frontend"
-  if [ -f "package-lock.json" ]; then
-    npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-  else
-    npm install --legacy-peer-deps
-  fi
+  npm install --legacy-peer-deps --workspaces=false
   cd "$PROJECT_ROOT"
 fi
 
@@ -84,4 +73,3 @@ echo ""
 echo "Next steps:"
 echo "  1. Rebuild Docker images: docker-compose -f docker-compose.dev.yml build"
 echo "  2. Start services: docker-compose -f docker-compose.dev.yml up -d"
-

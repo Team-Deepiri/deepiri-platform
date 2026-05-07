@@ -31,12 +31,12 @@ load_k8s_yaml() {
                     value = value substr($0, 5) "\n"
                 }
             }
-            print "export " key "=\"" value "\""
+            print "[ -z \"$" key "\" ] && export " key "=\"" value "\""
         }' "$yaml_file" | while IFS= read -r line || [ -n "$line" ]; do
             [ -n "$line" ] && eval "$line" 2>/dev/null || true
         done
     fi
-    
+
     # Extract from stringData: section (Secrets)
     if grep -q "^stringData:" "$yaml_file" 2>/dev/null; then
         awk '/^stringData:/{flag=1; next} /^[^ ]/{flag=0} flag && /^  [A-Z_][A-Z0-9_]*:/ {
@@ -53,7 +53,7 @@ load_k8s_yaml() {
                     value = value substr($0, 5) "\n"
                 }
             }
-            print "export " key "=\"" value "\""
+            print "[ -z \"$" key "\" ] && export " key "=\"" value "\""
         }' "$yaml_file" | while IFS= read -r line || [ -n "$line" ]; do
             [ -n "$line" ] && eval "$line" 2>/dev/null || true
         done

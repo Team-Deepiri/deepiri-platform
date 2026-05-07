@@ -11,12 +11,12 @@ cd "$PROJECT_ROOT"
 
 # Infrastructure team services
 SERVICES=(
-  postgres-auth postgres-core postgres-intelligence pgadmin adminer redis influxdb etcd minio
+  postgres pgadmin adminer redis influxdb etcd minio
   api-gateway auth-service task-orchestrator
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  language-intelligence-service messaging-service synapse
+  language-intelligence-service messaging-service synapse synapse-sugar-glider
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 

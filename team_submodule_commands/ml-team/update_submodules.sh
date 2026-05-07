@@ -109,12 +109,22 @@ echo ""
 update_submodule "deepiri-modelkit" "deepiri-modelkit (Shared Contracts & Utilities)"
 echo ""
 
+# Update deepiri-synapse
+update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
+echo ""
+
+# Update deepiri-sugar-glider
+update_submodule "platform-services/shared/deepiri-sugar-glider" "deepiri-sugar-glider (Synapse stream bridge)"
+echo ""
+
 # Also update via git submodule update --remote for consistency
 echo "🔄 Syncing submodule references..."
 git submodule update --remote diri-cyrex 2>/dev/null || true
 git submodule update --remote diri-persola 2>/dev/null || true
 git submodule update --remote diri-helox 2>/dev/null || true
 git submodule update --remote deepiri-modelkit 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
+git submodule update --remote platform-services/shared/deepiri-sugar-glider 2>/dev/null || true
 echo ""
 
 # Show status
@@ -124,6 +134,8 @@ git submodule status diri-cyrex
 git submodule status diri-persola
 git submodule status diri-helox 2>/dev/null || echo "  ⚠️  diri-helox (not initialized)"
 git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
+git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
+git submodule status platform-services/shared/deepiri-sugar-glider 2>/dev/null || echo "  ⚠️  deepiri-sugar-glider (not initialized)"
 echo ""
 
 echo "✅ ML Team submodules updated!"
@@ -133,5 +145,6 @@ echo "  ✅ diri-cyrex"
 echo "  ✅ diri-persola (Persola)"
 echo "  ✅ diri-helox"
 echo "  ✅ deepiri-modelkit"
+echo "  ✅ deepiri-synapse"
+echo "  ✅ deepiri-sugar-glider"
 echo ""
-
