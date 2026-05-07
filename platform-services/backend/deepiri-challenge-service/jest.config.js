@@ -12,6 +12,9 @@ module.exports = {
         types: ['jest', 'node'],
         esModuleInterop: true,
         skipLibCheck: true,
+        // Keep tests focused on runtime behavior even when workspace package
+        // type declarations are not installed in this service node_modules.
+        isolatedModules: true,
       }
     }]
   },

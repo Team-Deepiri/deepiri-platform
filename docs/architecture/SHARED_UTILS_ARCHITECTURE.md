@@ -21,7 +21,42 @@ Each service has its own `utils/logger.js` file that provides logging functional
 Located at `platform-services/shared/deepiri-shared-utils/`, this package provides:
 
 - Logger factory function
+- Redis Streams `StreamingClient`
+- Shared stream topic constants
 - Common utilities (to be expanded)
+
+### Streaming Foundation
+
+The Redis Streams utilities are the platform event-bus foundation. They let
+backend services publish and consume operational events without copying Redis
+boilerplate into every service.
+
+Current PR ownership:
+
+- Auth/challenge/task-style services can publish lifecycle events to
+  `platform-events`.
+- Engagement and analytics services can consume platform, inference, and
+  training events with service-owned consumer groups.
+- Streaming failures must be logged and isolated from user-facing HTTP
+  responses where the publish is fire-and-forget.
+
+This foundation is not the LIS document-routing implementation. The document
+routing plan sits on top of these rails:
+
+- LIS owns document ingestion, MinIO/source metadata, routing decisions, and
+  conditional publication.
+- Cyrex consumes artifact-oriented document routes such as `document.vectorize`
+  and `document.structured`.
+- Helox consumes training-oriented routes such as `document.training`.
+- Sugar Glider/Synapse may observe and monitor the stream topology, but they
+  are not in the producer write path.
+
+Keep these namespaces distinct:
+
+- `platform-events`: product/service lifecycle events.
+- `inference-events` and `training-events`: AI runtime analytics events.
+- `pipeline.helox-training.*`: Cyrex runtime training signals for Helox.
+- `document.*`: LIS document-routing events.
 
 ## Long-Term Solutions
 
