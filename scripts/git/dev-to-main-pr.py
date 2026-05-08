@@ -40,10 +40,31 @@ BASE_BRANCH = "main"
 # ---------------------------------------------------------------------------
 
 def gh(*args: str) -> subprocess.CompletedProcess:
+    """Run the GitHub CLI (`gh`) with the provided arguments.
+
+    This is a thin wrapper around `subprocess.run` that captures output
+    and decodes it to text for easier downstream handling.
+
+    Returns:
+        CompletedProcess: the result object from `subprocess.run`.
+    """
     return subprocess.run(["gh"] + list(args), capture_output=True, text=True)
 
 
 def gh_api(path: str) -> tuple[int, Any]:
+    """Call `gh api <path>` and return a (exit_code, parsed_json) pair.
+
+    The helper parses JSON output when present and returns an empty dict
+    when the output is empty or cannot be decoded as JSON. This keeps
+    callers resilient to non-JSON or empty responses.
+
+    Args:
+        path: The API path to call (e.g. "repos/owner/repo").
+
+    Returns:
+        A tuple of (exit_code, data) where `data` is the parsed JSON
+        response or an empty dict.
+    """
     result = subprocess.run(["gh", "api", path], capture_output=True, text=True)
     try:
         data = json.loads(result.stdout) if result.stdout.strip() else {}
@@ -52,6 +73,11 @@ def gh_api(path: str) -> tuple[int, Any]:
     return result.returncode, data
 
 def get_org_repos() -> list[str]:
+    """Return a list of non-archived, non-fork repository names for the org.
+
+    Uses `gh api --paginate` with a lightweight `jq` filter so this is
+    efficient even for large orgs.
+    """
     result = gh(
         "api",
         f"orgs/{GITHUB_ORG}/repos",
@@ -64,19 +90,32 @@ def get_org_repos() -> list[str]:
     return [r for r in result.stdout.strip().split("\n") if r]
 
 def check_gh_auth() -> bool:
+    """Return True when the GitHub CLI is authenticated for the current user.
+
+    This simply proxies `gh auth status` and checks the exit code.
+    """
     return gh("auth", "status").returncode == 0
 
 
 def repo_slug(repo_name: str) -> str:
+    """Return the full repository slug `ORG/name` for `repo_name`."""
     return f"{GITHUB_ORG}/{repo_name}"
 
 
 def branch_exists(repo_name: str, branch: str) -> bool:
+    """Check whether `branch` exists in the given repository.
+
+    Returns True only when the API call succeeds and returns branch metadata.
+    """
     code, data = gh_api(f"repos/{repo_slug(repo_name)}/branches/{branch}")
     return code == 0 and isinstance(data, dict) and "name" in data
 
 
 def get_compare(repo_name: str, base: str, head: str) -> dict:
+    """Return the compare object for `base...head` or an empty dict on error.
+
+    The compare object includes fields like `ahead_by`, `commits`, and `files`.
+    """
     code, data = gh_api(f"repos/{repo_slug(repo_name)}/compare/{base}...{head}")
     if code != 0 or not isinstance(data, dict):
         return {}
@@ -84,6 +123,11 @@ def get_compare(repo_name: str, base: str, head: str) -> dict:
 
 
 def pr_exists(repo_name: str, head_branch: str, base_branch: str) -> Optional[str]:
+    """Return the URL of an existing PR matching `head_branch -> base_branch`.
+
+    If multiple PRs exist we pick the first returned; callers only need to
+    know whether one exists and what its URL is.
+    """
     result = gh(
         "pr", "list",
         "--repo", repo_slug(repo_name),
@@ -102,6 +146,11 @@ def pr_exists(repo_name: str, head_branch: str, base_branch: str) -> Optional[st
 
 
 def create_pr(repo_name: str, title: str, body: str, draft: bool = False) -> tuple[bool, str]:
+    """Create a pull request and return (success, url_or_error).
+
+    The success path returns the PR URL as reported by `gh pr create`.
+    On failure the helper returns (False, error_message).
+    """
     args = [
         "pr", "create",
         "--repo", repo_slug(repo_name),
@@ -119,6 +168,14 @@ def create_pr(repo_name: str, title: str, body: str, draft: bool = False) -> tup
 
 
 def enable_auto_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
+    """Enable GitHub's auto-merge on the given PR URL using GraphQL.
+
+    The GitHub REST API does not provide an endpoint for enabling auto-merge;
+    the GraphQL `enablePullRequestAutoMerge` mutation must be used instead.
+    This helper extracts the numeric PR number from `pr_url`, fetches the
+    PR's GraphQL node ID, and runs the mutation. It returns (True, message)
+    on success or (False, error_text) when any step fails.
+    """
     repo = repo_slug(repo_name)
     match = re.search(r"(?:/pull/|#)(\d+)$", pr_url)
     if not match:
@@ -126,6 +183,7 @@ def enable_auto_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
 
     pr_number = match.group(1)
 
+    # Fetch the PR node ID (required by the GraphQL mutation)
     node_result = gh("api", f"repos/{repo}/pulls/{pr_number}", "--jq", ".node_id")
     if node_result.returncode != 0:
         return False, (node_result.stderr or node_result.stdout).strip()
