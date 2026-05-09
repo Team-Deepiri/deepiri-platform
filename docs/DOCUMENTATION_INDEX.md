@@ -44,13 +44,6 @@ Quick navigation to all documentation organized by category.
 
 ---
 
-## Planning & Team Rituals
-
-| Document | Description |
-|----------|-------------|
-| [planning/meetings/DEEPIRI_WEEKLY_ENGINEERING_ROUND_TABLE.md](planning/meetings/DEEPIRI_WEEKLY_ENGINEERING_ROUND_TABLE.md) | Weekly AI/ML engineering round table meeting template |
-
----
 
 ## Architecture & Services
 
