@@ -213,6 +213,11 @@ echo "  - Work in sugar-glider: cd platform-services/shared/deepiri-sugar-glider
 echo "  - Training pipelines: cd diri-helox/pipelines/training"
 echo ""
 
+# deepiri-suite (base images for Docker builds)
+echo "🔄 Initializing deepiri-suite submodule..."
+git submodule update --init deepiri-suite 2>&1 && echo "   ✅ deepiri-suite ready" || echo "   ⚠️  deepiri-suite init failed — local Docker image builds may fall back to GHCR"
+echo ""
+
 # Automatically run setup-hooks.sh after pulling submodules
 echo "🔧 Setting up Git hooks for pulled submodules..."
 echo ""

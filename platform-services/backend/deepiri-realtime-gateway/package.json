@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@team-deepiri/shared-utils": "file:../../shared/deepiri-shared-utils",
+    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
     "@grpc/grpc-js": "^1.10.9",
     "@grpc/proto-loader": "^0.7.13",
     "cors": "^2.8.5",

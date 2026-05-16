@@ -71,7 +71,8 @@ build:
     - image: deepiri-dev-frontend
       context: ./deepiri-web-frontend
       docker:
-        dockerfile: Dockerfile.dev
+        dockerfile: Dockerfile
+        target: dev
 
 deploy:
   kubectl:

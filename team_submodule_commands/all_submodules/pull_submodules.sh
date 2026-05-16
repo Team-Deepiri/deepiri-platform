@@ -166,6 +166,18 @@ fi
 echo "    ✅ web-frontend initialized at: $(pwd)/deepiri-web-frontend"
 echo ""
 
+# deepiri-suite
+echo "  📦 deepiri-suite (Base Docker Images - Team-Deepiri/deepiri-suite)..."
+cleanup_invalid_submodule "deepiri-suite"
+git submodule update --init deepiri-suite 2>&1 || true
+if ! check_submodule "deepiri-suite"; then
+    echo "    ❌ ERROR: deepiri-suite not cloned correctly!"
+    echo "    💡 Try: git submodule update --init deepiri-suite"
+    exit 1
+fi
+echo "    ✅ deepiri-suite initialized at: $(pwd)/deepiri-suite"
+echo ""
+
 # deepiri-external-bridge-service
 echo "  📦 deepiri-external-bridge-service (External Bridge - Team-Deepiri/deepiri-external-bridge-service)..."
 cleanup_invalid_submodule "platform-services/backend/deepiri-external-bridge-service"

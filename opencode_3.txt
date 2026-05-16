@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+
+FROM node:20-alpine AS base
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+# -------------------
+# DEV STAGE
+# -------------------
+FROM base AS dev
+ENV NODE_ENV=development
+CMD ["npm", "run", "dev"]
+
+# -------------------
+# PROD BUILD STAGE
+# -------------------
+FROM base AS build
+ENV NODE_ENV=production
+RUN npm run build
+
+# -------------------
+# PROD RUN STAGE
+# -------------------
+FROM node:20-alpine AS prod
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --omit=dev
+
+COPY --from=build /app/dist ./dist
+
+CMD ["npm", "start"]

@@ -1,0 +1,125 @@
+This error looks scary, but it’s actually pretty simple once you break it down.
+
+---
+
+## 🧨 The real error
+
+```text
+Error: ENOENT: no such file or directory, open 'package-lock.json'
+```
+
+### What it means:
+
+Node tried to open a file called:
+
+```
+package-lock.json
+```
+
+…but **it does not exist in the current folder inside the Docker container**, so it crashed.
+
+---
+
+## 🧠 Why it happened (in your case)
+
+From your Docker build step:
+
+```dockerfile
+COPY deepiri-web-frontend/package*.json ./
+```
+
+This copies:
+
+* `package.json`
+* `package-lock.json`
+
+…but only if Docker is running in the correct context and path.
+
+---
+
+### The bigger issue is this line in your build:
+
+```js
+fs.readFileSync('package-lock.json')
+```
+
+That means:
+👉 “I expect package-lock.json to be in the CURRENT directory”
+
+But inside the container at that moment:
+
+* the file is either not copied yet
+* or copied somewhere else (like `/deepiri-web-frontend/`)
+* or the working directory is not where you think it is
+
+So Node looks for:
+
+```
+/app/package-lock.json   ❌ (not there)
+```
+
+---
+
+## 🧱 Think of it like this
+
+You told Docker:
+
+> “Put the file in THIS room”
+
+But the script is standing in a DIFFERENT room and saying:
+
+> “Where’s package-lock.json?”
+
+It’s not missing from your project—it’s just **not where the script is looking.**
+
+---
+
+## 🔥 Why Docker makes this confusing
+
+Inside Docker builds:
+
+* each `RUN` step is isolated
+* file paths depend on `WORKDIR`
+* `COPY` only brings in what you explicitly specify
+
+So even though your repo has:
+
+```
+deepiri-web-frontend/package-lock.json
+```
+
+👉 the container might not.
+
+---
+
+## ⚠️ Secondary clue in your log
+
+This part:
+
+```text
+The command '/bin/sh -c node -e "..."
+```
+
+shows a script is actively doing:
+
+* reading `package-lock.json`
+* modifying it
+* then continuing npm installs
+
+So if that file is missing at that moment → build fails immediately.
+
+---
+
+## ✅ In one sentence
+
+Your Docker build is failing because **the container is trying to read `package-lock.json` in a folder where it was never copied (or the working directory is wrong).**
+
+---
+
+If you want, I can:
+
+* pinpoint the exact broken Dockerfile line
+* or rewrite your Docker build so it works cleanly end-to-end
+
+Just paste the Dockerfile that builds `deepiri-web-frontend`.
+
