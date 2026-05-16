@@ -211,6 +211,8 @@ model Reward {
   @@index([status])
   @@index([expiresAt])
   @@index([rewardType])
+  @@index([userId, status, createdAt(sort: Desc)])
+  @@index([userId, status, expiresAt])
   @@schema("public")
   @@map("rewards")
 }

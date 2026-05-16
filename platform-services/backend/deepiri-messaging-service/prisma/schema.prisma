@@ -59,6 +59,7 @@ model ChatParticipant {
   @@index([userId])
   @@index([agentInstanceId])
   @@index([isActive])
+  @@index([userId, isActive, chatRoomId])
   @@schema("messaging")
   @@map("chat_participants")
 }
@@ -94,6 +95,7 @@ model Message {
   @@index([senderId])
   @@index([parentMessageId])
   @@index([isDeleted])
+  @@index([chatRoomId, isDeleted, createdAt(sort: Desc)])
   @@schema("messaging")
   @@map("messages")
 }
@@ -144,4 +146,3 @@ enum MessageType {
 
   @@schema("messaging")
 }
-

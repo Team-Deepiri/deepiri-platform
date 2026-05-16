@@ -29,9 +29,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Prisma
-prisma/migrations/
-
 # Testing
 coverage/
 .nyc_output/
