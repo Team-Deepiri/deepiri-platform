@@ -862,17 +862,30 @@ services:
     container_name: deepiri-ollama-dev
     restart: unless-stopped
     logging: *minimal-logging
-    # runtime: nvidia and deploy.resources.reservations are in docker-compose.dev.gpu.yml
-    # Base config runs CPU-only for compatibility on all machines
+    runtime: nvidia  # Enable NVIDIA GPU runtime
     ports:
       - "${OLLAMA_PORT:-11435}:11434"
     volumes:
       - ollama_dev_data:/root/.ollama
     environment:
       OLLAMA_HOST: 0.0.0.0
-      OLLAMA_KEEP_ALIVE: "24h"
+      OLLAMA_KEEP_ALIVE: "24h"  # Increased from 30m to prevent model reloads
       OLLAMA_NUM_PARALLEL: "4"
-      OLLAMA_MAX_LOADED_MODELS: "2"
+      # GPU optimizations for RTX 5080 (sm_120, tensor cores)
+      CUDA_VISIBLE_DEVICES: "0"  # Use first GPU
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+      # Ollama GPU optimizations
+      OLLAMA_NUM_GPU: "1"
+      OLLAMA_GPU_OVERHEAD: "0"  # Minimize VRAM overhead
+      OLLAMA_MAX_LOADED_MODELS: "2"  # Keep 2 models in VRAM
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - deepiri-dev-network
 
