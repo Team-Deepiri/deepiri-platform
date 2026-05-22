@@ -1,6 +1,6 @@
 {
   "name": "deepiri-incentive-engine",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Incentive Engine - Multi-Currency, Badges, Leaderboards, Rewards",
   "main": "dist/server.js",
   "scripts": {
@@ -13,7 +13,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
+    "@team-deepiri/shared-utils": "^1.2.4",
     "@prisma/client": "^5.7.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",
