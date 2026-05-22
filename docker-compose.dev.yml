@@ -41,7 +41,8 @@ services:
       retries: 5
       start_period: 30s
 
-  # PostgreSQL Database - Core
+  # PostgreSQL Database - Shared platform services
+  # Service/env names retain "core" for compatibility with existing microservice configs.
   postgres-core:
     image: postgres:16-alpine
     container_name: deepiri-postgres-core-dev
@@ -606,6 +607,7 @@ services:
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-external-bridge-service/src:/app/src
+      - ./platform-services/backend/deepiri-external-bridge-service/config:/app/config:ro
       - ./platform-services/backend/deepiri-external-bridge-service/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     healthcheck:
@@ -620,6 +622,57 @@ services:
       synapse:
         condition: service_started
       kafka:
+        condition: service_started
+    networks:
+      - deepiri-dev-network
+
+  # External Bridge Worker (Boardman event processing)
+  external-bridge-worker:
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+    image: deepiri-dev-external-bridge-service:latest
+    pull_policy: never
+    container_name: deepiri-external-bridge-worker-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
+    environment:
+      # Override or add docker-specific variables here if needed
+      WORKER_PORT: 5007
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
+      SYNAPSE_URL: http://synapse:8002
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      KAFKA_BROKERS: kafka:9092
+      K8S_SERVICE_NAME: external-bridge-service  # Reuse external-bridge configmap
+    volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
+      - ./platform-services/backend/deepiri-external-bridge-service/src:/app/src
+      - ./platform-services/backend/deepiri-external-bridge-service/config:/app/config:ro
+      - ./platform-services/backend/deepiri-external-bridge-service/tsconfig.json:/app/tsconfig.json
+    command: node dist/worker.js
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+      synapse:
         condition: service_started
     networks:
       - deepiri-dev-network

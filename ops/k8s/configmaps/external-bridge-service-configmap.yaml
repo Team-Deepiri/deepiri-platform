@@ -21,3 +21,29 @@ data:
   EXTERNAL_BRIDGE_BASE_URL: "http://external-bridge-service:5006"
   AUTH_SERVICE_URL: "http://auth-service:5001"
 
+  # Boardman non-secret configuration
+  GITHUB_ORG: "Team-Deepiri"
+  GITHUB_APP_ID: "your-github-app-id"
+  GITHUB_INSTALLATION_ID: "your-github-installation-id"
+  PLAKY_BASE_URL: "https://api.plaky.com"
+  PLAKY_WORKSPACE_ID: "your-plaky-workspace-id"
+  PLAKY_BOARD_ID: "your-plaky-board-id"
+  PLAKY_ITEM_GROUP_ID: "your-plaky-item-group-id"
+  PLAKY_FIELD_EXTERNAL_KEY_ID: "your-plaky-external-key-field-id"
+  PLAKY_FIELD_GITHUB_URL_ID: "your-plaky-github-url-field-id"
+  PLAKY_FIELD_REPO_ID: "your-plaky-repo-field-id"
+  PLAKY_FIELD_STATUS_ID: "your-plaky-status-field-id"
+  PLAKY_FIELD_PR_URL_ID: "your-plaky-pr-url-field-id"
+  PLAKY_FIELD_MERGE_STATE_ID: "your-plaky-merge-state-field-id"
+  PLAKY_STATUS_OPEN_VALUE: "To do"
+  PLAKY_STATUS_CLOSED_VALUE: "Done"
+  PLAKY_MERGE_STATE_OPEN_VALUE: "PR Open"
+  PLAKY_MERGE_STATE_MERGED_VALUE: "PR Merged"
+  PLAKY_MERGE_STATE_CLOSED_VALUE: "PR Closed"
+  PLAKY_MERGE_STATE_DRAFT_VALUE: "PR Draft"
+
+  # Secrets are expected via Kubernetes Secret / mounted env:
+  # - GITHUB_APP_PRIVATE_KEY
+  # - GITHUB_WEBHOOK_SECRET
+  # - PLAKY_API_KEY
+  # - ROUTE_SECRET
