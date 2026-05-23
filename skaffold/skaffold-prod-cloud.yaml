@@ -96,7 +96,6 @@ deploy:
     # If not set and running in a pod, kubectl will use in-cluster config
     manifests:
       # Infrastructure services (deploy first)
-      - ops/k8s/mongodb-deployment.yaml
       - ops/k8s/redis-deployment.yaml
       - ops/k8s/localai-deployment.yaml
       

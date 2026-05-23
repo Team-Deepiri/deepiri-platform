@@ -54,7 +54,7 @@ if [ -n "$ALL_IMAGES" ]; then
             
             # Remove images that match deepiri but skip base images
             if echo "$IMAGE_NAME" | grep -q "deepiri" && \
-               ! echo "$IMAGE_NAME" | grep -qE "^(node|python|mongo|redis|influxdb|prometheus|grafana|mlflow|mongo-express|ghcr.io)"; then
+               ! echo "$IMAGE_NAME" | grep -qE "^(node|python|redis|influxdb|prometheus|grafana|mlflow|ghcr.io)"; then
                 echo "  Removing: $IMAGE_NAME"
                 docker rmi -f "$IMAGE_ID" 2>/dev/null || true
             fi
@@ -110,4 +110,3 @@ echo ""
 echo -e "${CYAN}To start services:${NC}"
 echo "  docker-compose -f $COMPOSE_FILE up -d"
 echo ""
-

@@ -4,9 +4,9 @@
 
 The QA Team needs access to **ALL** submodules for comprehensive testing:
 - **diri-cyrex** - AI/ML service
-- **deepiri-core-api** - Main backend API
+- **platform-services/backend/** - Backend microservices
 - **deepiri-web-frontend** - Frontend application
-- **deepiri-api-gateway** - API Gateway service
+- **deepiri-api-gateway** - API gateway entrypoint
 - **deepiri-auth-service** - Authentication service
 - **deepiri-external-bridge-service** - External integrations bridge
 
@@ -64,8 +64,8 @@ git push origin main
 ### Test Specific Service
 
 ```bash
-# Test Core API
-cd deepiri-core-api
+# Test API Gateway
+cd platform-services/backend/deepiri-api-gateway
 npm test
 cd ..
 
@@ -94,10 +94,10 @@ git submodule foreach 'echo "=== $name ===" && git status'
 
 ```bash
 # Update only the service you're testing
-git submodule update --remote deepiri-core-api
+git submodule update --remote platform-services/backend/deepiri-api-gateway
 
 # Or update multiple specific ones
-git submodule update --remote deepiri-core-api deepiri-web-frontend
+git submodule update --remote platform-services/backend/deepiri-api-gateway deepiri-web-frontend
 ```
 
 ## 🌿 Branch Naming Convention (For Test Branches)
@@ -134,12 +134,12 @@ git commit -m "chore: sync all submodules"
 
 ```bash
 # Update to specific branch for testing
-cd deepiri-core-api
+cd platform-services/backend/deepiri-api-gateway
 git checkout firstname_lastname/feature/some-feature
 git pull origin firstname_lastname/feature/some-feature
 cd ..
-git add deepiri-core-api
-git commit -m "chore: update core-api to feature branch for QA"
+git add platform-services/backend/deepiri-api-gateway
+git commit -m "chore: update api-gateway to feature branch for QA"
 ```
 
 ### Clean Test Environment
@@ -170,12 +170,12 @@ git submodule update --init --recursive
 git submodule update --remote --recursive
 
 # 2. Install dependencies for each service
-cd deepiri-core-api && npm install && cd ..
+cd platform-services/backend/deepiri-api-gateway && npm install && cd ..
 cd deepiri-web-frontend && npm install && cd ..
 cd diri-cyrex && pip install -r requirements.txt && cd ..
 
 # 3. Run tests
-cd deepiri-core-api && npm test && cd ..
+cd platform-services/backend/deepiri-api-gateway && npm test && cd ..
 cd deepiri-web-frontend && npm test && cd ..
 cd diri-cyrex && pytest && cd ..
 ```

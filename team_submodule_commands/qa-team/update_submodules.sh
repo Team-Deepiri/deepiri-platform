@@ -109,8 +109,6 @@ echo ""
 update_submodule "platform-services/backend/deepiri-language-intelligence-service" "deepiri-language-intelligence-service (Language Intelligence)"
 echo ""
 
-# Update deepiri-core-api
-update_submodule "deepiri-core-api" "deepiri-core-api (Core API)"
 echo ""
 
 # Update deepiri-web-frontend
@@ -119,10 +117,6 @@ echo ""
 
 # Update deepiri-prismpipe
 update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
-echo ""
-
-# Update diri-persola
-update_submodule "diri-persola" "diri-persola (Persola - Personalized Agentic Framework)"
 echo ""
 
 # Update deepiri-synapse
@@ -139,10 +133,8 @@ git submodule update --remote platform-services/backend/deepiri-auth-service 2>/
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-language-intelligence-service 2>/dev/null || true
-git submodule update --remote deepiri-core-api 2>/dev/null || true
 git submodule update --remote deepiri-web-frontend 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-prismpipe 2>/dev/null || true
-git submodule update --remote diri-persola 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-sugar-glider 2>/dev/null || true
 echo ""
@@ -154,10 +146,8 @@ git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
 git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-language-intelligence-service
-git submodule status deepiri-core-api
 git submodule status deepiri-web-frontend
 git submodule status platform-services/shared/deepiri-prismpipe 2>/dev/null || echo "  ⚠️  deepiri-prismpipe (not initialized)"
-git submodule status diri-persola
 git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
 git submodule status platform-services/shared/deepiri-sugar-glider 2>/dev/null || echo "  ⚠️  deepiri-sugar-glider (not initialized)"
 echo ""
@@ -169,10 +159,8 @@ echo "  ✅ deepiri-auth-service"
 echo "  ✅ deepiri-external-bridge-service"
 echo "  ✅ deepiri-api-gateway"
 echo "  ✅ deepiri-language-intelligence-service"
-echo "  ✅ deepiri-core-api"
 echo "  ✅ deepiri-web-frontend"
 echo "  ✅ deepiri-prismpipe (PrismPipe)"
-echo "  ✅ diri-persola (Persola)"
 echo "  ✅ deepiri-synapse"
 echo "  ✅ deepiri-sugar-glider"
 echo ""

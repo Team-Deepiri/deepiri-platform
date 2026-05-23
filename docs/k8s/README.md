@@ -118,11 +118,9 @@ The `generate-env-files.sh` script:
 - **Secret**: (Optional) API keys, JWT secrets
 
 ### Auth Service
-- **ConfigMap**: MongoDB URI, InfluxDB URL
 - **Secret**: JWT_SECRET, OAUTH_CLIENT_SECRET, INFLUXDB_TOKEN
 
 ### Task Orchestrator
-- **ConfigMap**: MongoDB URI
 - **Secret**: (Optional) API keys
 
 ### Engagement Service
@@ -130,15 +128,12 @@ The `generate-env-files.sh` script:
 - **Secret**: REDIS_PASSWORD
 
 ### Platform Analytics Service
-- **ConfigMap**: MongoDB URI, InfluxDB URL
 - **Secret**: INFLUXDB_TOKEN
 
 ### Notification Service
-- **ConfigMap**: MongoDB URI
 - **Secret**: FCM_SERVER_KEY, APNS_KEY_ID, APNS_TEAM_ID
 
 ### External Bridge Service
-- **ConfigMap**: MongoDB URI
 - **Secret**: GITHUB_CLIENT_SECRET, NOTION_CLIENT_SECRET, TRELLO_API_SECRET, webhook secrets
 
 ### Challenge Service

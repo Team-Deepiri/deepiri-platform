@@ -374,7 +374,6 @@ pip install prometheus-client
 **Key Files:**
 - `infrastructure/disaster_recovery/` (create)
 - `infrastructure/backup/` (create)
-- `scripts/mongo-backup.sh` (review)
 
 ---
 

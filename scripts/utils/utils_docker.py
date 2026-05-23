@@ -275,40 +275,6 @@ def wait_for_db_localhost(db_port=5432, db_user="postgres", max_attempts=30, del
             print(f"Still waiting for the database to accept connections on localhost:{db_port}...")
             time.sleep(delay)
 
-def wait_for_mongo(network, db_url, db_user="admin", db_password="password", max_attempts=30, delay=2):
-    print(f"Using db_url: {db_url}")
-    print(f"Waiting for the MongoDB server to respond on {db_url}...")
-    host, port = db_url.split(":")
-
-    attempts = 0
-    while attempts < max_attempts:
-        try:
-            subprocess.run(
-                [
-                    "docker",
-                    "run",
-                    "--rm",
-                    "--network",
-                    network,
-                    "mongo:6",  # Official MongoDB image with mongosh
-                    "mongosh",
-                    f"mongodb://{db_user}:{db_password}@{host}:{port}/admin",
-                    "--eval",
-                    "db.adminCommand('ping')"
-                ],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            print(f"MongoDB is accepting connections on {db_url}!")
-            return
-        except subprocess.CalledProcessError:
-            print(f"Still waiting for MongoDB to accept connections on {db_url}...")
-            time.sleep(delay)
-            attempts += 1
-
-    raise RuntimeError(f"MongoDB did not become ready after {max_attempts} attempts.")
-  
 def wait_for_url(url, network):
     # Create and start the container
     stop_container("url_test")

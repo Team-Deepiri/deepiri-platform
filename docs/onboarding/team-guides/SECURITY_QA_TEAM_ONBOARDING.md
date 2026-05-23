@@ -135,10 +135,8 @@ docker-compose -f docker-compose.dev.yml up -d
 
 # Or start specific services if testing individual components
 docker-compose -f docker-compose.dev.yml up -d \
-  mongodb \
   redis \
   influxdb \
-  mongo-express \
   api-gateway \
   auth-service \
   task-orchestrator \

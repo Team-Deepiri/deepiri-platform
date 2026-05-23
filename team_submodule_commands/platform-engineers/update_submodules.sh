@@ -93,8 +93,6 @@ echo ""
 echo "🔄 Updating all submodules..."
 echo ""
 
-# Update deepiri-core-api
-update_submodule "deepiri-core-api" "deepiri-core-api (Core API)"
 echo ""
 
 # Update diri-cyrex
@@ -151,7 +149,6 @@ echo ""
 echo "✅ All Platform Engineers submodules updated!"
 echo ""
 echo "📋 Updated Submodules:"
-echo "  ✅ deepiri-core-api"
 echo "  ✅ diri-cyrex"
 echo "  ✅ deepiri-api-gateway"
 echo "  ✅ deepiri-auth-service"

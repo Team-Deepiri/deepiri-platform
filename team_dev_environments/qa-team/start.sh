@@ -11,12 +11,15 @@ cd "$PROJECT_ROOT"
 
 # QA team services (language-intelligence-service is handled separately — optional)
 SERVICES=(
+  postgres-auth postgres-core postgres-intelligence redis influxdb
   postgres-auth postgres-core postgres-intelligence redis influxdb kafka
   synapse synapse-sugar-glider
   api-gateway auth-service workflow-orchestrator
   incentive-engine decision-intelligence
   communications-hub external-bridge-service
   adaptive-experience-engine realtime-gateway
+  language-intelligence-service messaging-service
+  frontend-dev synapse synapse-sugar-glider adminer
   messaging-service frontend-dev adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
@@ -33,6 +36,24 @@ echo ""
 #   echo ""
 # fi
 
+# Start infrastructure services first (without --no-deps to ensure proper startup order)
+echo "📦 Starting infrastructure services..."
+docker compose -f docker-compose.dev.yml up -d --no-build postgres-auth postgres-core postgres-intelligence redis influxdb synapse synapse-sugar-glider
+
+# Wait a moment for infrastructure to be ready
+echo "⏳ Waiting for infrastructure to be ready..."
+sleep 3
+
+# Start backend services (can use --no-deps since infrastructure is up)
+echo "🔧 Starting backend services..."
+docker compose -f docker-compose.dev.yml up -d --no-build --no-deps \
+  api-gateway auth-service workflow-orchestrator \
+  incentive-engine decision-intelligence \
+  communications-hub external-bridge-service \
+  adaptive-experience-engine realtime-gateway \
+  adminer
+
+# Try to start language-intelligence-service if image exists (optional service)
 echo "🔧 Starting services..."
 docker compose -f docker-compose.dev.yml up -d --no-build --no-deps "${SERVICES[@]}"
 
@@ -50,6 +71,18 @@ echo ""
 echo "Access your services:"
 echo ""
 echo "  Frontend & Services:"
+echo "  - Frontend (Vite HMR):     http://localhost:5173"
+echo "  - API Gateway:             http://localhost:${API_GATEWAY_PORT:-5100}"
+echo "  - Auth Service:            http://localhost:5001"
+echo "  - Workflow Orchestrator:  http://localhost:5002"
+echo "  - Incentive Engine:       http://localhost:5003"
+echo "  - Decision Intelligence:   http://localhost:5004"
+echo "  - Communications Hub:      http://localhost:5005"
+echo "  - External Bridge:         http://localhost:5006"
+echo "  - Adaptive Experience:     http://localhost:5007"
+echo "  - Realtime Gateway:        http://localhost:5008"
+echo "  - Messaging Service:       http://localhost:5009"
+echo "  - Synapse:                 http://localhost:8002"
 echo "  - Frontend (Vite HMR):              http://localhost:5173"
 echo "  - API Gateway:                      http://localhost:${API_GATEWAY_PORT:-5100}"
 echo "  - Auth Service:                     http://localhost:5001"

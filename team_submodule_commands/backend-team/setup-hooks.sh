@@ -76,7 +76,6 @@ echo ""
 
 # List of Backend Team submodules
 SUBMODULES=(
-    "deepiri-core-api"
     "platform-services/backend/deepiri-api-gateway"
     "platform-services/backend/deepiri-auth-service"
     "platform-services/backend/deepiri-external-bridge-service"

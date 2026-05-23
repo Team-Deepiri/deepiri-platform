@@ -28,11 +28,6 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 30s
 
-  - job_name: 'mongodb'
-    static_configs:
-      - targets: ['mongodb:27017']
-    scrape_interval: 60s
-
   - job_name: 'redis'
     static_configs:
       - targets: ['redis:6379']

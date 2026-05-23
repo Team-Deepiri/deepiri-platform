@@ -106,15 +106,15 @@ check_submodule() {
     return 0
 }
 
-# deepiri-core-api
-echo "  📦 deepiri-core-api (Core API)..."
-git submodule update --init --recursive deepiri-core-api 2>&1 || true
-if ! check_submodule "deepiri-core-api"; then
-    echo "    ❌ ERROR: deepiri-core-api not cloned correctly!"
-    exit 1
-fi
-echo "    ✅ core-api initialized at: $(pwd)/deepiri-core-api"
-echo ""
+# Helper function to clean up invalid submodule directory
+cleanup_invalid_submodule() {
+    local submodule_path="$1"
+    if [ -d "$submodule_path" ] && ! check_submodule "$submodule_path"; then
+        echo "    ⚠️  Directory exists but is not a valid submodule. Cleaning up..."
+        rm -rf "$submodule_path"
+        echo "    ✅ Cleaned up invalid directory"
+    fi
+}
 
 # deepiri-api-gateway
 echo "  📦 deepiri-api-gateway (API Gateway)..."
@@ -203,11 +203,6 @@ fi
 echo "    ✅ sugar-glider initialized at: $(pwd)/platform-services/shared/deepiri-sugar-glider"
 echo ""
 
-# Update to latest and ensure on main branch
-echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
-git submodule update --remote deepiri-core-api
-ensure_submodule_on_main "deepiri-core-api"
-git submodule update --remote diri-cyrex
 ensure_submodule_on_main "diri-cyrex"
 git submodule update --remote platform-services/backend/deepiri-api-gateway
 ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
@@ -231,7 +226,6 @@ echo ""
 # Show status
 echo "📊 Submodule Status:"
 echo ""
-git submodule status deepiri-core-api
 git submodule status diri-cyrex
 git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-auth-service
@@ -246,8 +240,7 @@ echo "✅ Infrastructure Team submodules ready!"
 echo ""
 echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status"
-echo "  - Update all: git submodule update --remote"
-echo "  - Work in Core API: cd deepiri-core-api"
+echo "  - Update all: git submodule update --init"
 echo "  - Work in Cyrex: cd diri-cyrex"
 echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
 echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-service"
@@ -256,6 +249,11 @@ echo "  - Work in Language Intelligence: cd platform-services/backend/deepiri-la
 echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo "  - Work in Synapse: cd platform-services/shared/deepiri-synapse"
 echo "  - Work in Sugar Glider: cd platform-services/shared/deepiri-sugar-glider"
+echo ""
+
+# deepiri-suite (base images for Docker builds)
+echo "🔄 Initializing deepiri-suite submodule..."
+git submodule update --init deepiri-suite 2>&1 && echo "   ✅ deepiri-suite ready" || echo "   ⚠️  deepiri-suite init failed — local Docker image builds may fall back to GHCR"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules

@@ -203,7 +203,6 @@ VITE_CYREX_URL=http://localhost:8000
 **ConfigMaps** (`ops/k8s/configmaps/*.yaml`):
 - Non-sensitive configuration
 - Ports, feature flags, URLs
-- Service names (e.g., `mongodb:27017`)
 - Each service has its own configmap file
 
 **Secrets** (`ops/k8s/secrets/secrets.yaml`):
@@ -253,14 +252,12 @@ cd team_dev_environments/backend-team
 ### Kubernetes Service Names
 
 In Kubernetes, services communicate using service names:
-- `mongodb-service:27017` (not `localhost:27017`)
 - `redis-service:6379` (not `localhost:6379`)
 - `backend-service:5000` (not `localhost:5000`)
 - `cyrex-service:8000` (not `localhost:8000`)
 - `localai-service:8080` (not `localhost:8080`)
 
 In Docker Compose, use docker service names:
-- `mongodb:27017`
 - `redis:6379`
 - `api-gateway:5000`
 - `cyrex:8000`
@@ -525,8 +522,6 @@ Both Python (diri-cyrex) and TypeScript (@deepiri/shared-utils) validate secrets
 ### Wrong Service URLs
 
 - Local dev: Use `localhost` URLs
-- Docker: Use service names (e.g., `mongodb:27017`)
-- Kubernetes: Use service names (e.g., `mongodb-service:27017`)
 
 ### PROD_* Variables in Local Dev
 

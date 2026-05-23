@@ -149,12 +149,10 @@ cp env.example.deepiri-web-frontend .env.local
 - Core services: User, Task, Gamification, Analytics
 - WebSocket (for real-time updates)
 - Python Agent (for AI features)
-- Databases: MongoDB, Redis
 
 ```bash
 # Start only the services needed for deepiri-web-frontend development
 docker-compose -f docker-compose.dev.yml up -d \
-  mongodb \
   redis \
   api-gateway \
   user-service \
@@ -179,7 +177,6 @@ docker-compose -f docker-compose.dev.yml logs -f deepiri-web-frontend-dev
 - `notification-service` (unless testing notifications)
 - `external-bridge-service` (unless testing integrations)
 - `challenge-service` (unless testing challenges)
-- `mongo-express` (optional, for database admin)
 
 ### 4. Start Development Server
 

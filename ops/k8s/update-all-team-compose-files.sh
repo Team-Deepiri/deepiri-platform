@@ -42,5 +42,4 @@ echo "    - .env-k8s/[service-name].env"
 echo "  environment:"
 echo "    # Override or add docker-specific variables here if needed"
 echo "    PORT: [port-number]"
-echo "    MONGO_URI: mongodb://..."
-
+echo "    REDIS_URL: redis://..."

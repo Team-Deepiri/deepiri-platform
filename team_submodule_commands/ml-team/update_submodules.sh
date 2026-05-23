@@ -97,10 +97,6 @@ echo ""
 update_submodule "diri-cyrex" "diri-cyrex (AI/ML Service)"
 echo ""
 
-# Update diri-persola
-update_submodule "diri-persola" "diri-persola (Persola - Personalized Agentic Framework)"
-echo ""
-
 # Update diri-helox
 update_submodule "diri-helox" "diri-helox (ML Training & Research)"
 echo ""
@@ -120,7 +116,6 @@ echo ""
 # Also update via git submodule update --remote for consistency
 echo "🔄 Syncing submodule references..."
 git submodule update --remote diri-cyrex 2>/dev/null || true
-git submodule update --remote diri-persola 2>/dev/null || true
 git submodule update --remote diri-helox 2>/dev/null || true
 git submodule update --remote deepiri-modelkit 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
@@ -131,7 +126,6 @@ echo ""
 echo "📊 Submodule Status:"
 echo ""
 git submodule status diri-cyrex
-git submodule status diri-persola
 git submodule status diri-helox 2>/dev/null || echo "  ⚠️  diri-helox (not initialized)"
 git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
 git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
@@ -142,7 +136,6 @@ echo "✅ ML Team submodules updated!"
 echo ""
 echo "📋 Updated Submodules:"
 echo "  ✅ diri-cyrex"
-echo "  ✅ diri-persola (Persola)"
 echo "  ✅ diri-helox"
 echo "  ✅ deepiri-modelkit"
 echo "  ✅ deepiri-synapse"

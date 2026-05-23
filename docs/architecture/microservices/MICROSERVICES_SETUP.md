@@ -148,7 +148,6 @@ WebSocket connections go directly to the WebSocket Service:
 Each service requires specific environment variables. See `.env.example` files in each service directory.
 
 ### Common Variables
-- `MONGO_URI` - MongoDB connection string
 - `REDIS_HOST` - Redis host (for services that use it)
 - `NODE_ENV` - Environment (development/production)
 - `PORT` - Service port
@@ -193,14 +192,12 @@ API Gateway
   └── WebSocket Service
 
 All Services
-  ├── MongoDB
   ├── Redis (Gamification, Notification)
   └── InfluxDB (User, Analytics)
 ```
 
 ## Database Connections
 
-- **MongoDB**: All Node.js services connect to MongoDB
 - **Redis**: Used by Gamification and Notification services
 - **InfluxDB**: Used by User and Analytics services for time-series data
 
@@ -223,7 +220,6 @@ The API Gateway uses `http-proxy-middleware` to route requests:
 
 1. **Start Infrastructure**:
    ```bash
-   docker-compose -f docker-compose.dev.yml up mongodb redis influxdb -d
    ```
 
 2. **Start Services** (individually or all):
@@ -278,7 +274,6 @@ Production configuration:
 ### Service Won't Start
 1. Check logs: `docker-compose logs [service-name]`
 2. Verify environment variables
-3. Check service dependencies (MongoDB, Redis, etc.)
 4. Verify port availability
 
 ### Service Communication Issues
@@ -288,7 +283,6 @@ Production configuration:
 4. Check service health endpoints
 
 ### Database Connection Issues
-1. Verify MongoDB is running: `docker-compose ps mongodb`
 2. Check connection string format
 3. Verify credentials
 4. Check network connectivity

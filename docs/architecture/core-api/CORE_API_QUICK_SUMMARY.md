@@ -16,7 +16,6 @@ Instead of deprecating, **repurpose** it into:
 
 ```
 deepiri-core-api/src/
-├── models/           ← 13 Mongoose schemas
 ├── middleware/       ← 7 reusable middleware
 ├── services/         ← 14 business logic files
 ├── routes/           ← 15 API route definitions

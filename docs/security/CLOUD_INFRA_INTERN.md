@@ -53,7 +53,6 @@
    ```
 
 4. Verify infrastructure components:
-   - Database services (PostgreSQL, MongoDB, Redis)
    - Application services
    - Monitoring services
    - Network connectivity

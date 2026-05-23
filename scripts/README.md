@@ -38,9 +38,6 @@ scripts/
 - `check-port-conflicts.sh/ps1` - Check for port conflicts
 
 ### Database (`database/`)
-- `mongo-backup.sh` - Backup MongoDB
-- `mongo-restore.sh` - Restore MongoDB
-- `mongo-init.js` - MongoDB initialization script
 - `postgres-backup.sh` - Backup PostgreSQL
 - `postgres-restore.sh` - Restore PostgreSQL
 - `postgres-init.sql` - PostgreSQL initialization
@@ -152,11 +149,7 @@ docker compose -f docker-compose.dev.yml logs -f
 
 ### Database Backup/Restore
 ```bash
-# Backup MongoDB
-./scripts/database/mongo-backup.sh
 
-# Restore MongoDB
-./scripts/database/mongo-restore.sh
 
 # Backup PostgreSQL
 ./scripts/database/postgres-backup.sh

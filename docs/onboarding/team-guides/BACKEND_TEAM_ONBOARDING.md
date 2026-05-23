@@ -84,7 +84,6 @@ docker compose -f docker-compose.dev.yml logs -f task-orchestrator
 - **Node.js** 18.x or higher
 - **Python** 3.10+ (for AI integration)
 - **Docker** and **Docker Compose**
-- **MongoDB** 6.0+ (or use Docker)
 - **Redis** 7.0+ (or use Docker)
 - **Git**
 - **VS Code** or your preferred IDE
@@ -92,7 +91,6 @@ docker compose -f docker-compose.dev.yml logs -f task-orchestrator
 ### Required Accounts
 
 - **GitHub Account** (for repository access)
-- **MongoDB Atlas** (optional, for cloud database)
 - **Firebase Account** (for authentication and push notifications)
 - **API Keys** for integrations (Notion, Trello, GitHub, Google Docs)
 - **OAuth Credentials** for each integration provider
@@ -162,14 +160,10 @@ cp env.example.server deepiri-core-api/.env
 
 ### 5. Database Setup
 
-**MongoDB:**
 ```bash
 # Using Docker
-docker run -d --name mongodb -p 27017:27017 mongo:6.0
 
 # Or install locally
-# macOS: brew install mongodb-community
-# Ubuntu: sudo apt-get install mongodb
 ```
 
 **Redis:**
@@ -203,10 +197,8 @@ docker run -d --name influxdb -p 8086:8086 \
 ```bash
 # Start all microservices and infrastructure
 docker-compose -f docker-compose.dev.yml up -d \
-  mongodb \
   redis \
   influxdb \
-  mongo-express \
   api-gateway \
   auth-service \
   task-orchestrator \
@@ -232,8 +224,6 @@ docker-compose -f docker-compose.dev.yml logs -f
 ```
 
 **All Backend Services:**
-- **Databases:** mongodb, redis, influxdb
-- **Admin Tools:** mongo-express
 - **API Gateway:** api-gateway (port 5000)
 - **Core Services:** auth-service (5001), task-orchestrator (5002), gamification-service (5003)
 - **Analytics:** analytics-service (5004)
@@ -587,9 +577,7 @@ const response = await axios.post('http://localhost:8000/api/challenge/generate'
 **Additional Setup:**
 ```bash
 # Install database and caching tools
-npm install mongoose
 npm install redis
-npm install mongodb
 npm install @influxdata/influxdb-client  # For time-series analytics
 ```
 
@@ -626,9 +614,7 @@ influx bucket create -n analytics -o deepiri
 **Additional Setup:**
 ```bash
 # Install database tools
-npm install mongoose
 npm install redis
-npm install mongodb
 ```
 
 **First Tasks:**
@@ -1008,7 +994,6 @@ npm init -y
 
 # Install dependencies
 npm install fastify
-npm install mongoose  # if using MongoDB
 ```
 
 ### 2. Testing

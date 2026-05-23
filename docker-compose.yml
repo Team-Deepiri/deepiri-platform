@@ -24,44 +24,6 @@ x-env: &default-env
     - ./ops/k8s/secrets/.env
 
 services:
-  # MongoDB Database
-  mongodb:
-    <<: *default-env
-    image: mongo:7.0
-    container_name: deepiri-mongodb
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?MONGO_ROOT_USER must be set}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set}
-      MONGO_INITDB_DATABASE: ${MONGO_DB:?MONGO_DB must be set}
-    volumes:
-      - mongodb_data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    networks:
-      - deepiri-network
-
-  # MongoDB Admin Interface
-  mongo-express:
-    <<: *default-env
-    image: mongo-express:1.0.2
-    container_name: deepiri-mongo-express
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER:?MONGO_ROOT_USER must be set}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set}
-      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USER:?MONGO_ROOT_USER must be set}:${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set}@mongodb:27017/?authSource=admin
-      ME_CONFIG_BASICAUTH: false
-    depends_on:
-      - mongodb
-    networks:
-      - deepiri-network
-
   # Redis Cache
   redis:
     <<: *default-env
@@ -175,10 +137,6 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5000
       
-      # Database
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:?MONGO_ROOT_USER must be set}:${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set}@mongodb:27017/${MONGO_DB:?MONGO_DB must be set}?authSource=admin
-      MONGODB_URI: mongodb://${MONGO_ROOT_USER:?MONGO_ROOT_USER must be set}:${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set}@mongodb:27017/${MONGO_DB:?MONGO_DB must be set}?authSource=admin
-      
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -235,7 +193,6 @@ services:
       - ./deepiri-core-api/config:/app/config:ro
       - ./deepiri-core-api/logs:/app/logs
     depends_on:
-      - mongodb
       - redis
       - influxdb
     networks:
@@ -382,6 +339,7 @@ services:
     build:
       context: ./deepiri-web-frontend
       dockerfile: Dockerfile
+      target: prod
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
         VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
@@ -621,8 +579,6 @@ services:
       retries: 5
 
 volumes:
-  mongodb_data:
-    driver: local
   redis_data:
     driver: local
   mlflow_data:

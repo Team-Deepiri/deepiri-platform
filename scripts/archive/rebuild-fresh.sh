@@ -39,7 +39,7 @@ docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || true
 echo -e "${GREEN}✅ Containers stopped${NC}"
 echo ""
 
-# Step 3: Remove old images (keep base images like node, mongo, etc.)
+# Step 3: Remove old images (keep base images like node, redis, etc.)
 echo -e "${YELLOW}[2/5] Removing old Deepiri images (keeping base images)...${NC}"
 DEEPIRI_IMAGES=$(docker images --filter "reference=deepiri-dev-*" --format "{{.ID}}" 2>/dev/null || true)
 if [ -n "$DEEPIRI_IMAGES" ]; then
@@ -85,5 +85,4 @@ echo -e "${GREEN}╚════════════════════
 echo ""
 echo -e "${CYAN}View logs:${NC} docker-compose -f $COMPOSE_FILE logs -f"
 echo -e "${CYAN}Stop all:${NC} docker-compose -f $COMPOSE_FILE down"
-
 

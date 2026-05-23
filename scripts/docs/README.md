@@ -33,9 +33,6 @@ Most scripts in this directory are legacy or for specialized use cases. They've 
 - `setup-docker-wsl2.sh` - WSL2 Docker setup
 
 ### Database Management
-- `mongo-backup.sh` - MongoDB backup
-- `mongo-restore.sh` - MongoDB restore
-- `mongo-init.js` - MongoDB initialization
 
 ### Legacy Build Scripts (Deprecated)
 - `force-rebuild-all.sh` - Use `../build.sh --no-cache` instead
@@ -99,6 +96,5 @@ docker compose -f docker-compose.dev.yml up -d
 - **Out of disk space?** → Use `remove-dangling-images.*`
 - **Windows storage issues?** → Use `cleanup-and-compact.ps1` (as Admin)
 - **Need to setup environment?** → Use `setup-dev-venv.*`
-- **Database backup/restore?** → Use `mongo-backup.sh` / `mongo-restore.sh`
 
 Everything else is likely legacy and has been replaced.

@@ -63,12 +63,9 @@ if [ $? -eq 0 ]; then
     echo "🌐 Services available:"
     echo "   Backend API:      http://localhost:5000"
     echo "   Cyrex AI:         http://localhost:8000"
-    echo "   MongoDB:          localhost:27017"
     echo "   Redis:            localhost:6379"
-    echo "   Mongo Express:    http://localhost:8081"
     echo ""
 else
     echo "❌ Failed to start services"
     exit 1
 fi
-

@@ -215,7 +215,6 @@ deploy:
   kubectl:
     manifests:
       # Infrastructure services (deploy first)
-      - ops/k8s/mongodb-deployment.yaml
       - ops/k8s/redis-deployment.yaml
       - ops/k8s/localai-deployment.yaml
       
@@ -243,11 +242,6 @@ portForward:
     namespace: default
     port: 8000
     localPort: 8000
-  - resourceType: service
-    resourceName: mongodb-service
-    namespace: default
-    port: 27017
-    localPort: 27017
   - resourceType: service
     resourceName: redis-service
     namespace: default

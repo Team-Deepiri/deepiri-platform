@@ -121,7 +121,6 @@ Before starting, ensure you have the following installed:
 ### Required Accounts & API Keys
 
 - **OpenAI API Key** (or Anthropic API Key) - for AI features
-- **MongoDB Atlas** (optional) - cloud database, or use local MongoDB
 - **Firebase Account** (optional) - for authentication
 - **GitHub Account** - for repository access
 
@@ -927,8 +926,6 @@ OPENAI_API_KEY=your-openai-api-key-here
 ANTHROPIC_API_KEY=your-anthropic-api-key-here
 
 # Database Configuration
-MONGO_ROOT_PASSWORD=your-secure-password
-MONGO_DATABASE=deepiri
 
 # Redis Configuration
 REDIS_PASSWORD=your-redis-password
@@ -1126,11 +1123,9 @@ Open your browser and navigate to:
 ### 4. Verify Database Connection
 
 ```bash
-# Check MongoDB connection
 kubectl exec -it deployment/deepiri-core-api -- npm run test:db
 
 # Or check logs for connection messages
-kubectl logs deployment/deepiri-core-api | grep -i mongo
 ```
 
 ---

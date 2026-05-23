@@ -131,7 +131,7 @@ $taggedCount = 0
 foreach ($mapping in $tagMappings) {
     $source = $mapping.Source
     $target = $mapping.Target
-    
+
     # Check if source image exists
     $imageExists = docker images --format "{{.Repository}}:{{.Tag}}" | Select-String -Pattern "^$source$"
     if ($imageExists) {
@@ -211,7 +211,6 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "🌐 Services available:" -ForegroundColor Cyan
     Write-Host "   Backend API:      http://localhost:5000"
     Write-Host "   Cyrex AI:         http://localhost:8000"
-    Write-Host "   MongoDB:          localhost:27017"
     Write-Host "   Redis:            localhost:6379"
     Write-Host ""
     Write-Host "💡 Note: Images were built with Minikube's Docker daemon" -ForegroundColor Yellow

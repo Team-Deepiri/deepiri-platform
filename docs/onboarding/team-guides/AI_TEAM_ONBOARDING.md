@@ -238,7 +238,6 @@ mkdir -p model_registry models/staging models/production
 - Python Agent (main AI service) - **cyrex**
 - Jupyter (for experimentation)
 - MLflow (for experiment tracking)
-- MongoDB (for data storage)
 - InfluxDB (for time-series analytics)
 - Challenge Service (for AI integration testing)
 - Redis (for caching, optional)
@@ -265,7 +264,6 @@ mkdir -p model_registry models/staging models/production
 ```bash
 # Start only the services needed for AI development
 docker-compose -f docker-compose.dev.yml up -d \
-  mongodb \
   redis \
   influxdb \
   cyrex \
@@ -288,14 +286,12 @@ docker-compose -f docker-compose.dev.yml logs -f mlflow
 - **Python Agent:** cyrex (port 8000) - Main AI service
 - **Jupyter:** jupyter (port 8888) - For experimentation
 - **MLflow:** mlflow (port 5500) - Experiment tracking
-- **Databases:** mongodb, influxdb, redis
 - **Challenge Service:** challenge-service (port 5007) - For AI integration testing
 
 **Services NOT needed for AI team:**
 - `api-gateway` (unless testing full integration)
 - `deepiri-web-frontend-dev` (deepiri-web-frontend team)
 - `user-service`, `task-service`, etc. (backend team)
-- `mongo-express` (optional, for database admin)
 
 ### 7. Start MLflow UI
 

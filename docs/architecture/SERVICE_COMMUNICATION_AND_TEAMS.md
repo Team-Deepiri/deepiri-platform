@@ -94,7 +94,6 @@ Real-time updates via WebSocket Gateway:
 
 #### 4. **Database Communication**
 All services connect to shared databases:
-- **MongoDB** (Port 27017): Primary data store for all services
 - **Redis** (Port 6379): Caching, session management (Engagement, Notification)
 - **InfluxDB** (Port 8086): Time-series analytics (Auth, Analytics)
 
@@ -107,22 +106,17 @@ API Gateway
 
 Challenge Service
   ├── Depends on: Cyrex AI Service (for challenge generation)
-  └── Uses: MongoDB (challenge data)
 
 Engagement Service
   ├── Depends on: Redis (caching, leaderboards)
-  └── Uses: MongoDB (user points, badges)
 
 Analytics Service
   ├── Depends on: InfluxDB (time-series data)
-  └── Uses: MongoDB (aggregated analytics)
 
 Notification Service
   ├── Depends on: Redis (notification queue)
-  └── Uses: MongoDB (notification history)
 
 All Services
-  ├── MongoDB (primary database)
   ├── Redis (caching, queues)
   └── InfluxDB (time-series)
 ```
@@ -140,7 +134,6 @@ All Services
 - ✅ **Challenge Service** (Port 5007) - Integration testing with AI
 
 **Infrastructure Needed:**
-- ✅ **MongoDB** - Training data, model metadata
 - ✅ **InfluxDB** - Model performance metrics, training metrics
 - ✅ **Redis** (optional) - Caching model predictions
 
@@ -155,7 +148,6 @@ All Services
 **Start Command:**
 ```bash
 docker compose -f docker-compose.dev.yml up -d \
-  mongodb influxdb redis cyrex jupyter mlflow challenge-service
 ```
 
 ---
@@ -169,7 +161,6 @@ docker compose -f docker-compose.dev.yml up -d \
 - ✅ **Analytics Service** (Port 5004) - Feature engineering data
 
 **Infrastructure Needed:**
-- ✅ **MongoDB** - Training datasets
 - ✅ **InfluxDB** - Time-series features, model metrics
 - ✅ **Redis** - Feature caching
 
@@ -181,7 +172,6 @@ docker compose -f docker-compose.dev.yml up -d \
 **Start Command:**
 ```bash
 docker compose -f docker-compose.dev.yml up -d \
-  mongodb influxdb redis cyrex jupyter mlflow platform-analytics-service
 ```
 
 ---
@@ -190,10 +180,8 @@ docker compose -f docker-compose.dev.yml up -d \
 
 **Primary Services:**
 - ✅ **All Infrastructure Services**
-  - MongoDB (Port 27017)
   - Redis (Port 6379)
   - InfluxDB (Port 8086)
-  - Mongo Express (Port 8081) - DB admin UI
 - ✅ **API Gateway** (Port 5100) - Routing and load balancing
 - ✅ **All Microservices** - For monitoring and scaling
 
@@ -212,7 +200,6 @@ docker compose -f docker-compose.dev.yml up -d \
 ```bash
 # Start all infrastructure
 docker compose -f docker-compose.dev.yml up -d \
-  mongodb redis influxdb mongo-express
 
 # Or start everything
 docker compose -f docker-compose.dev.yml up -d
@@ -233,7 +220,6 @@ docker compose -f docker-compose.dev.yml up -d
 - ✅ **Realtime Gateway** (Port 5008) - WebSocket
 
 **Infrastructure Needed:**
-- ✅ **MongoDB** - All services use MongoDB
 - ✅ **Redis** - Engagement and Notification services
 - ✅ **InfluxDB** - Auth and Analytics services
 
@@ -252,7 +238,6 @@ docker compose -f docker-compose.backend-team.yml up -d \
   engagement-service platform-analytics-service \
   notification-service external-bridge-service \
   challenge-service realtime-gateway
-# Infrastructure (mongodb, redis, influxdb, mongo-express) starts automatically
 ```
 
 ---
@@ -266,7 +251,6 @@ docker compose -f docker-compose.backend-team.yml up -d \
 **Infrastructure Needed:**
 - ✅ **API Gateway** (Port 5100) - Routes all API calls from frontend
 - ✅ **All Backend Services** - For API calls (auth-service, task-orchestrator, engagement-service, platform-analytics-service, notification-service, external-bridge-service, challenge-service, realtime-gateway)
-- ✅ **MongoDB, Redis, InfluxDB** - Database infrastructure
 
 **What They Work On:**
 - `deepiri-web-frontend/` - React frontend
@@ -357,7 +341,6 @@ docker compose -f docker-compose.dev.yml up -d
 | Realtime Gateway | 5008 | Backend, Frontend, QA |
 | Cyrex AI | 8000 | AI, ML, QA |
 | Frontend | 5173 | Frontend, QA |
-| MongoDB | 27017 | Infrastructure, All Teams |
 | Redis | 6379 | Infrastructure, Backend |
 | InfluxDB | 8086 | Infrastructure, Backend, ML, AI |
 | MLflow | 5000 | AI, ML |
@@ -394,7 +377,6 @@ docker compose -f docker-compose.dev.yml up -d
 ```
 Frontend → API Gateway (5100)
   → Task Orchestrator (5002)
-    → MongoDB (stores task)
     → Engagement Service (5003) [async]
       → Updates user XP
       → Redis (leaderboard cache)
@@ -412,7 +394,6 @@ Frontend → API Gateway (5100)
       → Generates challenge
       → Returns challenge data
     → Challenge Service
-      → Stores in MongoDB
       → Notifies Engagement Service (5003)
         → Updates challenge stats
       → Notification Service (5005)
@@ -423,7 +404,6 @@ Frontend → API Gateway (5100)
 ```
 Frontend → Realtime Gateway (5008) [WebSocket]
   → Broadcasts to other users
-  → Updates MongoDB (collaboration state)
   → Notifies all connected clients
 ```
 

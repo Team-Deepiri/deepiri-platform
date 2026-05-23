@@ -66,9 +66,7 @@ docker compose -f docker-compose.dev.yml logs -f
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:5000
 - Python AI Service: http://localhost:8000
-- MongoDB: localhost:27017
 - Redis: localhost:6379
-- Mongo Express: http://localhost:8081
 
 ### Option 2: Local Development
 
@@ -119,7 +117,6 @@ This installs dependencies for all services.
 ```
 deepiri/
 ├── deepiri-core-api/          # Node.js backend (Express)
-│   ├── models/         # MongoDB models
 │   ├── services/       # Business logic
 │   ├── routes/         # API routes
 │   ├── middleware/     # Express middleware

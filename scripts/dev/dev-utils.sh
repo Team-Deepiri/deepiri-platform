@@ -247,7 +247,6 @@ validate_env() {
     local required_vars=(
         "NODE_ENV"
         "PORT"
-        "MONGODB_URI"
         "JWT_SECRET"
         "OPENAI_API_KEY"
     )

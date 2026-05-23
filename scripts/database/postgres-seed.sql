@@ -93,7 +93,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- ===========================
 
 INSERT INTO public.tasks (id, user_id, project_id, quest_id, title, description, status, priority, difficulty, momentum_reward, ai_suggestions, tags, metadata) VALUES
-    ('30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'Setup PostgreSQL migration', 'Migrate from MongoDB to PostgreSQL', 'done', 'urgent', 'hard', 150, 
+    ('30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'Finalize PostgreSQL persistence', 'Complete the remaining PostgreSQL persistence work', 'done', 'urgent', 'hard', 150,
      '[{"suggestion": "Create comprehensive migration scripts", "type": "task_breakdown", "confidence": 0.9}]'::jsonb,
      ARRAY['database', 'migration', 'postgresql'],
      '{"estimated_complexity": "high", "requires_review": true}'),

@@ -30,13 +30,13 @@ if command -v kubectl &> /dev/null; then
     echo "🧹 Cleaning up Kubernetes resources..."
     
     # Delete deployments
-    kubectl delete deployment deepiri-core-api deepiri-cyrex mongodb redis localai 2>/dev/null || true
+    kubectl delete deployment deepiri-core-api deepiri-cyrex redis localai 2>/dev/null || true
     
     # Delete services
-    kubectl delete service backend-service cyrex-service mongodb-service redis-service localai-service 2>/dev/null || true
+    kubectl delete service backend-service cyrex-service redis-service localai-service 2>/dev/null || true
     
     # Delete PVCs (optional - uncomment if you want to delete data)
-    # kubectl delete pvc mongodb-pvc redis-pvc 2>/dev/null || true
+    # kubectl delete pvc redis-pvc 2>/dev/null || true
     
     # Delete ConfigMaps and Secrets
     kubectl delete configmap deepiri-config 2>/dev/null || true
@@ -64,4 +64,3 @@ echo "✅ Cleanup complete!"
 echo ""
 echo "💡 To completely remove Minikube cluster:"
 echo "   minikube delete"
-

@@ -121,7 +121,6 @@
 - `skaffold/*.yaml` - Build and deployment
 
 **Your services:**
-- All infrastructure (MongoDB, Redis, InfluxDB)
 - API Gateway
 - All microservices (for monitoring)
 

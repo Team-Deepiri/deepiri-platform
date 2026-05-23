@@ -60,7 +60,7 @@ if ($allImages) {
             
             # Remove images that match deepiri patterns but skip base images
             if ($imageName -match "deepiri" -and 
-                $imageName -notmatch "^(node|python|mongo|redis|influxdb|prometheus|grafana|mlflow|mongo-express|ghcr\.io)") {
+                $imageName -notmatch "^(node|python|redis|influxdb|prometheus|grafana|mlflow|ghcr\.io)") {
                 Write-Output "  Removing: $imageName"
                 docker rmi -f $imageId 2>$null | Out-Null
                 if ($LASTEXITCODE -eq 0) {

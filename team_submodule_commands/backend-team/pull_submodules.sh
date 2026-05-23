@@ -35,7 +35,6 @@ echo ""
 
 # Backend Team required submodules
 # Backend Team has direct access to these repositories:
-# - Team-Deepiri/deepiri-core-api
 # - Team-Deepiri/deepiri-api-gateway
 # - Team-Deepiri/deepiri-auth-service
 # - Team-Deepiri/deepiri-external-bridge-service
@@ -124,18 +123,6 @@ ensure_submodule_on_main() {
     return 0
 }
 
-# deepiri-core-api
-echo "  📦 deepiri-core-api (Core API - Team-Deepiri/deepiri-core-api)..."
-cleanup_invalid_submodule "deepiri-core-api"
-git submodule update --init --recursive deepiri-core-api 2>&1 || true
-if ! check_submodule "deepiri-core-api"; then
-    echo "    ❌ ERROR: deepiri-core-api not cloned correctly!"
-    echo "    💡 Try: git submodule update --init --recursive deepiri-core-api"
-    exit 1
-fi
-echo "    ✅ core-api initialized at: $(pwd)/deepiri-core-api"
-echo ""
-
 # deepiri-api-gateway
 echo "  📦 deepiri-api-gateway (API Gateway - Team-Deepiri/deepiri-api-gateway)..."
 cleanup_invalid_submodule "platform-services/backend/deepiri-api-gateway"
@@ -220,6 +207,9 @@ fi
 echo "    ✅ shared-utils initialized at: $(pwd)/platform-services/shared/deepiri-shared-utils"
 echo ""
 
+# Initialize submodules at platform-pinned commits
+echo "🔄 Verifying submodules at platform-pinned commits..."
+git submodule update --init platform-services/backend/deepiri-api-gateway
 # deepiri-synapse
 echo "  📦 deepiri-synapse (Matrix server - Team-Deepiri/deepiri-synapse)..."
 cleanup_invalid_submodule "platform-services/shared/deepiri-synapse"
@@ -244,11 +234,6 @@ fi
 echo "    ✅ sugar-glider initialized at: $(pwd)/platform-services/shared/deepiri-sugar-glider"
 echo ""
 
-# Update to latest and ensure on main branch
-echo "🔄 Updating submodules to latest and ensuring they're on main branch..."
-git submodule update --remote deepiri-core-api
-ensure_submodule_on_main "deepiri-core-api"
-git submodule update --remote platform-services/backend/deepiri-api-gateway
 ensure_submodule_on_main "platform-services/backend/deepiri-api-gateway"
 git submodule update --remote platform-services/backend/deepiri-auth-service
 ensure_submodule_on_main "platform-services/backend/deepiri-auth-service"
@@ -272,7 +257,6 @@ echo ""
 # Show status
 echo "📊 Submodule Status:"
 echo ""
-git submodule status deepiri-core-api
 git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
@@ -287,7 +271,6 @@ echo ""
 echo "✅ Backend Team submodules ready!"
 echo ""
 echo "📋 Backend Team Repositories (Direct Access):"
-echo "  ✅ Team-Deepiri/deepiri-core-api"
 echo "  ✅ Team-Deepiri/deepiri-api-gateway"
 echo "  ✅ Team-Deepiri/deepiri-auth-service"
 echo "  ✅ Team-Deepiri/deepiri-external-bridge-service"
@@ -299,8 +282,7 @@ echo "  ✅ Team-Deepiri/deepiri-sugar-glider"
 echo ""
 echo "📋 Quick Commands:"
 echo "  - Check status: git submodule status"
-echo "  - Update all: git submodule update --remote"
-echo "  - Work in Core API: cd deepiri-core-api"
+echo "  - Update all: git submodule update --init"
 echo "  - Work in API Gateway: cd platform-services/backend/deepiri-api-gateway"
 echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-service"
 echo "  - Work in External Bridge: cd platform-services/backend/deepiri-external-bridge-service"
@@ -309,6 +291,11 @@ echo "  - Work in Frontend: cd deepiri-web-frontend"
 echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo "  - Work in Synapse: cd platform-services/shared/deepiri-synapse"
 echo "  - Work in Sugar Glider: cd platform-services/shared/deepiri-sugar-glider"
+echo ""
+
+# deepiri-suite (base images for Docker builds)
+echo "🔄 Initializing deepiri-suite submodule..."
+git submodule update --init deepiri-suite 2>&1 && echo "   ✅ deepiri-suite ready" || echo "   ⚠️  deepiri-suite init failed — local Docker image builds may fall back to GHCR"
 echo ""
 
 # Automatically run setup-hooks.sh after pulling submodules

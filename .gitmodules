@@ -25,9 +25,6 @@
 [submodule "platform-services/backend/deepiri-language-intelligence-service"]
 	path = platform-services/backend/deepiri-language-intelligence-service
 	url = git@github.com:Team-Deepiri/deepiri-language-intelligence-service.git
-[submodule "diri-persola"]
-	path = diri-persola
-	url = git@github.com:Team-Deepiri/diri-persola.git
 [submodule "platform-services/shared/deepiri-prismpipe"]
 	path = platform-services/shared/deepiri-prismpipe
 	url = git@github.com:Team-Deepiri/deepiri-prismpipe.git
@@ -42,3 +39,6 @@
 	path = platform-services/shared/deepiri-sugar-glider
 	url = git@github.com:Team-Deepiri/deepiri-sugar-glider.git
 	branch = dev
+[submodule "deepiri-suite"]
+	path = deepiri-suite
+	url = git@github.com:Team-Deepiri/deepiri-suite.git

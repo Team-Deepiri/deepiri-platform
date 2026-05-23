@@ -1,22 +1,29 @@
-FROM ghcr.io/team-deepiri/deepiri-base:18-slim
+FROM ghcr.io/team-deepiri/deepiri-suite:18-slim
 
 # Prisma binary compatibility (service-specific)
 RUN mkdir -p /lib64 \
  && ln -sf /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 \
            /lib64/ld-linux-x86-64.so.2
 
-COPY shared/deepiri-shared-utils/package*.json /shared/deepiri-shared-utils/
+COPY shared/deepiri-shared-utils/package.json /shared/deepiri-shared-utils/
+COPY shared/deepiri-shared-utils/package-lock.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/tsconfig.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/src /shared/deepiri-shared-utils/src
-COPY backend/deepiri-workflow-orchestrator/package*.json ./
+COPY backend/deepiri-workflow-orchestrator/package.json ./
 COPY backend/deepiri-workflow-orchestrator/tsconfig.json ./
 COPY backend/deepiri-workflow-orchestrator/prisma ./prisma
 
 RUN cd /shared/deepiri-shared-utils \
- && npm install --legacy-peer-deps \
+ && npm ci --legacy-peer-deps \
  && npm run build \
+ && node -e "const fs=require('fs'),p=JSON.parse(fs.readFileSync('package.json'));delete p.scripts.prepare;fs.writeFileSync('package.json',JSON.stringify(p,null,2));" \
+ && rm -rf node_modules \
  && cd /app \
+ && npm install --legacy-peer-deps file:/shared/deepiri-shared-utils \
  && npm install --legacy-peer-deps \
+ && cd /shared/deepiri-shared-utils \
+ && npm ci --omit=dev --legacy-peer-deps \
+ && cd /app \
  && npm cache clean --force
 
 COPY backend/deepiri-workflow-orchestrator/src ./src

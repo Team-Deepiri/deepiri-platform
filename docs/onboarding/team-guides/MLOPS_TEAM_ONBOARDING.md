@@ -111,7 +111,6 @@ pip install mlflow kubernetes prometheus-client
 **MLOps team only needs these services:**
 - MLflow (for model tracking and registry)
 - Python Agent (for model deployment testing) - **cyrex**
-- MongoDB (for model registry data)
 - InfluxDB (for monitoring metrics)
 - Jupyter (for experimentation, optional)
 
@@ -137,7 +136,6 @@ pip install mlflow kubernetes prometheus-client
 ```bash
 # Start only the services needed for MLOps
 docker-compose -f docker-compose.dev.yml up -d \
-  mongodb \
   influxdb \
   mlflow \
   cyrex \
@@ -157,14 +155,12 @@ docker-compose -f docker-compose.dev.yml logs -f cyrex
 - **MLflow:** mlflow (port 5500) - Model tracking and registry
 - **Python Agent:** cyrex (port 8000) - For model deployment testing
 - **Jupyter:** jupyter (port 8888) - For experimentation (optional)
-- **Databases:** mongodb, influxdb
 
 **Services NOT needed for MLOps:**
 - `api-gateway` (unless testing full integration)
 - `deepiri-web-frontend-dev` (deepiri-web-frontend team)
 - `user-service`, `task-service`, etc. (backend team)
 - `redis` (unless needed for caching)
-- `mongo-express` (optional)
 
 **Access Points:**
 - MLflow UI: http://localhost:5500

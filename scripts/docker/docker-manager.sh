@@ -153,7 +153,7 @@ reset_all() {
 health_check() {
     log_info "Performing health checks..."
     
-    local services=("backend" "cyrex" "deepiri-web-frontend" "mongodb" "redis")
+    local services=("backend" "cyrex" "deepiri-web-frontend" "redis")
     local all_healthy=true
     
     for service in "${services[@]}"; do
@@ -173,47 +173,12 @@ health_check() {
     fi
 }
 
-# Database backup
-backup_database() {
-    local backup_file="backup_$(date +%Y%m%d_%H%M%S).tar.gz"
-    log_info "Creating database backup: $backup_file"
-    
-    docker-compose -f "$COMPOSE_FILE" exec mongodb mongodump --out /backup
-    docker-compose -f "$COMPOSE_FILE" exec mongodb tar -czf "/backup/$backup_file" /backup/deepiri
-    docker cp "$(docker-compose -f "$COMPOSE_FILE" ps -q mongodb):/backup/$backup_file" "./$backup_file"
-    
-    log_success "Database backup created: $backup_file"
-}
-
-# Database restore
-restore_database() {
-    local backup_file=$1
-    if [ -z "$backup_file" ]; then
-        log_error "Please specify a backup file"
-        exit 1
-    fi
-    
-    if [ ! -f "$backup_file" ]; then
-        log_error "Backup file not found: $backup_file"
-        exit 1
-    fi
-    
-    log_info "Restoring database from: $backup_file"
-    
-    docker cp "$backup_file" "$(docker-compose -f "$COMPOSE_FILE" ps -q mongodb):/backup/"
-    docker-compose -f "$COMPOSE_FILE" exec mongodb tar -xzf "/backup/$backup_file" -C /
-    docker-compose -f "$COMPOSE_FILE" exec mongodb mongorestore /backup/deepiri
-    
-    log_success "Database restored successfully!"
-}
-
 # Development setup
 dev_setup() {
     log_info "Setting up development environment..."
     
     # Create necessary directories
     mkdir -p logs
-    mkdir -p data/mongodb
     mkdir -p data/redis
     
     # Set proper permissions
@@ -298,8 +263,6 @@ show_help() {
     echo "  health         Perform health checks"
     echo "  cleanup        Clean up Docker resources"
     echo "  reset          Reset everything (nuclear option)"
-    echo "  backup         Backup database"
-    echo "  restore [file] Restore database from backup"
     echo "  dev-setup      Setup development environment"
     echo "  prod-deploy    Deploy to production"
     echo "  monitor        Monitor resource usage"
@@ -309,7 +272,6 @@ show_help() {
     echo "Examples:"
     echo "  $0 start"
     echo "  $0 logs backend"
-    echo "  $0 restore backup_20240101_120000.tar.gz"
 }
 
 # Main script logic
@@ -348,12 +310,6 @@ main() {
             ;;
         reset)
             reset_all
-            ;;
-        backup)
-            backup_database
-            ;;
-        restore)
-            restore_database "$2"
             ;;
         dev-setup)
             dev_setup

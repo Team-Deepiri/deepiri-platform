@@ -1,7 +1,6 @@
 # Services are now defined in their respective deployment files
 # backend-service is in backend-deployment.yaml
 # cyrex-service is in cyrex-deployment.yaml
-# mongodb-service is in mongodb-deployment.yaml
 # redis-service is in redis-deployment.yaml
 # localai-service is in localai-deployment.yaml
 

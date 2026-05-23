@@ -248,7 +248,6 @@ docker compose -f docker-compose.dev.yml ps
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:5000
 - Python Agent: http://localhost:8000
-- MongoDB: localhost:27017
 - Redis: localhost:6379
 
 **📚 More Details:**
@@ -263,10 +262,6 @@ docker compose -f docker-compose.dev.yml ps
 **Best for:** Developers who prefer running services directly on their machine
 
 ```bash
-# 1. Start MongoDB
-# macOS: brew services start mongodb-community
-# Linux: sudo systemctl start mongodb
-# Windows: Start MongoDB service from Services panel
 
 # 2. Start Redis
 # macOS: brew services start redis
@@ -331,7 +326,6 @@ kubectl apply -f configmaps/configmap.yaml
 kubectl apply -f secrets/secrets.yaml
 
 # Deploy services
-kubectl apply -f mongodb-deployment.yaml
 kubectl apply -f redis-deployment.yaml
 kubectl apply -f localai-deployment.yaml
 kubectl apply -f cyrex-deployment.yaml
@@ -372,7 +366,6 @@ kubectl port-forward svc/cyrex-service 8000:8000
 ### Optional but Recommended
 
 - **VS Code** or your preferred IDE
-- **MongoDB Compass** (for database management)
 - **Docker Compose** (for alternative method)
 
 ### System Requirements
@@ -421,7 +414,6 @@ kubectl port-forward svc/cyrex-service 8000:8000
 | **Frontend** | http://localhost:5173 | N/A | Port-forward | ✅ Yes |
 | **Backend** | http://localhost:5000 | backend:5000 | backend-service:5000 | ✅ Yes |
 | **Python Agent** | http://localhost:8000 | cyrex:8000 | cyrex-service:8000 | ✅ Yes |
-| **MongoDB** | localhost:27017 | mongodb:27017 | mongodb-service:27017 | ✅ Yes |
 | **Redis** | localhost:6379 | redis:6379 | redis-service:6379 | ✅ Yes |
 | **LocalAI/Ollama** | http://localhost:8080 | localai:8080 | localai-service:8080 | ✅ Yes (for free AI) |
 | **ChromaDB** | Embedded in Cyrex | Embedded | Embedded | ✅ Yes (for RAG) |
@@ -450,7 +442,6 @@ kubectl port-forward svc/cyrex-service 8000:8000
         │ HTTP                          │ HTTP
         ▼                               ▼
 ┌───────────────┐              ┌──────────────────┐
-│   MongoDB     │              │  Python Agent    │
 │  localhost:   │              │  localhost:8000  │
 │   27017       │              │  - AI/LLM        │
 └───────────────┘              │  - RAG/Embeddings│
@@ -519,7 +510,6 @@ skaffold run -f skaffold-local.yaml --port-forward
 **Services Available (auto port-forwarded):**
 - Backend: http://localhost:5000
 - Cyrex: http://localhost:8000
-- MongoDB: localhost:27017
 - Redis: localhost:6379
 - LocalAI: http://localhost:8080
 
@@ -549,7 +539,6 @@ kubectl logs -f -l app=deepiri-cyrex
 # Specific deployment
 kubectl logs -f deployment/deepiri-core-api
 kubectl logs -f deployment/deepiri-cyrex
-kubectl logs -f deployment/mongodb
 kubectl logs -f deployment/redis
 
 # Specific pod
@@ -600,7 +589,6 @@ docker compose -f docker-compose.dev.yml up
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:5000
 - Python Agent: http://localhost:8000
-- MongoDB: localhost:27017
 - Redis: localhost:6379
 
 #### **How to Stop**
@@ -631,7 +619,6 @@ docker compose -f docker-compose.dev.yml logs --tail=100
 # Examples:
 docker compose -f docker-compose.dev.yml logs -f backend
 docker compose -f docker-compose.dev.yml logs -f cyrex
-docker compose -f docker-compose.dev.yml logs -f mongodb
 ```
 
 ---
@@ -743,7 +730,6 @@ kubectl logs <pod-name>
 | Component | Cost | Notes |
 |-----------|------|-------|
 | **LocalAI/Ollama** | $0 | Runs locally, no API costs |
-| **MongoDB** | $0 | Local instance or Docker |
 | **Redis** | $0 | Local instance or Docker |
 | **ChromaDB** | $0 | Embedded, runs in Python Agent |
 | **Node.js Backend** | $0 | Runs locally |

@@ -13,7 +13,6 @@ Starts ONLY the services needed by the frontend:
 
 Services NOT started (not needed by frontend):
   - external-bridge-service (only needed for integrations)
-  - core-api / deepiri-core-api (deprecated legacy monolith, replaced by microservices)
   - cyrex, jupyter, mlflow (AI/ML services, not needed by frontend)
 """
 

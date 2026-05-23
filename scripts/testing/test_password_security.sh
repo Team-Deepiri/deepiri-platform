@@ -57,7 +57,6 @@ echo "Test 5: Docker Compose requires env vars"
 assert_pass "POSTGRES_PASSWORD required" grep -q "POSTGRES_PASSWORD:?" "$PROJECT_ROOT/docker-compose.yml"
 assert_pass "REDIS_PASSWORD required" grep -q "REDIS_PASSWORD:?" "$PROJECT_ROOT/docker-compose.yml"
 assert_pass "JWT_SECRET required" grep -q "JWT_SECRET:?" "$PROJECT_ROOT/docker-compose.yml"
-assert_pass "MONGO_ROOT_PASSWORD required" grep -q "MONGO_ROOT_PASSWORD:?" "$PROJECT_ROOT/docker-compose.yml"
 assert_pass "INFLUXDB_PASSWORD required" grep -q "INFLUXDB_PASSWORD:?" "$PROJECT_ROOT/docker-compose.yml"
 assert_pass "GRAFANA_ADMIN_PASSWORD required" grep -q "GRAFANA_ADMIN_PASSWORD:?" "$PROJECT_ROOT/docker-compose.yml"
 

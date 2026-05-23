@@ -99,7 +99,6 @@ The cleanup scripts remove the unused cache and old images while keeping what's 
 Run `docker system df` to see:
 - **Images**: Your container images (can be 30-50GB for all services)
 - **Containers**: Running/stopped containers (usually small, <1GB)
-- **Volumes**: Data volumes (MongoDB, Redis, etc. - keep these!)
 - **Build Cache**: Build layers (can be 10-50GB - safe to remove)
 
 ## Best Practices

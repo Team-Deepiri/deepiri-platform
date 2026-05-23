@@ -47,8 +47,6 @@ rebuild-fresh.bat
 #### **Database**
 | Script | Purpose |
 |--------|---------|
-| `mongo-backup.sh` | Backup MongoDB database |
-| `mongo-restore.sh` | Restore MongoDB database |
 
 #### **Development**
 | Script | Purpose |
@@ -104,7 +102,6 @@ docker system df
 **What you'll see:**
 - **Images**: Your container images (30-50GB for all services)
 - **Containers**: Running/stopped containers (usually <1GB)
-- **Volumes**: Data volumes (MongoDB, Redis - **keep these!**)
 - **Build Cache**: Build layers (10-50GB - **safe to remove**)
 
 ### Check WSL Disk Usage (from WSL)
@@ -122,7 +119,6 @@ The WSL virtual disk doesn't automatically shrink. Use `compact-wsl-disk.bat` to
 ### `rebuild-fresh.sh` Deletes:
 - ✅ All `deepiri-dev-*` images (your project images)
 - ✅ All build cache
-- ❌ **Keeps**: Base images (node, mongo, redis, etc.)
 - ❌ **Keeps**: Data volumes (your database data)
 
 ### `docker-cleanup.sh` Deletes:
@@ -143,7 +139,6 @@ The WSL virtual disk doesn't automatically shrink. Use `compact-wsl-disk.bat` to
 
 1. **Data Volumes**: Most scripts **preserve** your database volumes. Only `stop-and-cleanup.sh --no-keep-volumes` will delete them.
 
-2. **Base Images**: Scripts keep base images (node:18-alpine, mongo:7.0, etc.) to speed up rebuilds.
 
 3. **WSL Disk**: The WSL virtual disk file doesn't shrink automatically. Use `compact-wsl-disk.bat` periodically.
 

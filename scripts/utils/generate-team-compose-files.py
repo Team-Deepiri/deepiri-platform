@@ -11,22 +11,22 @@ from pathlib import Path
 # Team service mappings (from their start.sh scripts)
 TEAM_SERVICES = {
     'ai-team': [
-        'mongodb', 'influxdb', 'redis', 'etcd', 'minio', 'milvus',
+        'influxdb', 'redis', 'etcd', 'minio', 'milvus',
         'cyrex', 'jupyter', 'mlflow', 'adaptive-experience-engine'
     ],
     'ml-team': [
-        'mongodb', 'influxdb', 'redis',
+        'influxdb', 'redis',
         'cyrex', 'jupyter', 'mlflow', 'decision-intelligence'
     ],
     'backend-team': [
-        'mongodb', 'redis', 'influxdb',
+        'redis', 'influxdb',
         'api-gateway', 'auth-service', 'workflow-orchestrator',
         'incentive-engine', 'decision-intelligence',
         'communications-hub', 'external-bridge-service',
         'adaptive-experience-engine', 'realtime-gateway'
     ],
     'frontend-team': [
-        'mongodb', 'redis', 'influxdb',
+        'redis', 'influxdb',
         'api-gateway', 'auth-service', 'workflow-orchestrator',
         'incentive-engine', 'decision-intelligence',
         'communications-hub', 'external-bridge-service',
@@ -71,7 +71,7 @@ def update_volume_refs_in_service(service_def, team_suffix):
         updated_volumes = []
         for vol in service_def['volumes']:
             if isinstance(vol, str) and ':' in vol:
-                # Named volume reference (e.g., mongodb_dev_data:/data/db)
+                # Named volume reference (e.g., redis_dev_data:/data)
                 parts = vol.split(':')
                 if len(parts) == 2:
                     vol_name = parts[0]

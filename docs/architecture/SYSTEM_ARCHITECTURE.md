@@ -65,10 +65,8 @@ Deepiri transforms productivity by gamifying tasks, study material, coding proje
 │ - Notification   │                    │                         │
 └───────┬──────────┘                    └─────────────────────────┘
         │
-        │ MongoDB + Redis
 ┌───────▼─────────────────────────────────────────────────────────┐
 │                    Data Layer                                    │
-│  MongoDB: Tasks, Users, Challenges, Gamification, Analytics      │
 │  Redis: Caching, Leaderboards, Real-time Data                   │
 └──────────────────────────────────────────────────────────────────┘
 ```
@@ -172,7 +170,6 @@ Deepiri transforms productivity by gamifying tasks, study material, coding proje
   - Volume mounting for hot reload
 
 - ✅ **Database**
-  - MongoDB connection and models
   - Redis caching layer
   - Data persistence
 
@@ -292,7 +289,6 @@ Deepiri transforms productivity by gamifying tasks, study material, coding proje
 ### Backend (Node.js)
 - **Express.js**: Web framework
 - **Socket.IO**: Real-time WebSocket communication
-- **Mongoose**: MongoDB ODM
 - **Redis**: Caching and pub/sub
 - **JWT**: Authentication tokens
 - **Helmet**: Security middleware
@@ -307,13 +303,11 @@ Deepiri transforms productivity by gamifying tasks, study material, coding proje
 - **Prometheus Client**: Metrics
 
 ### Database
-- **MongoDB 7.0**: Primary database
 - **Redis 7.2**: Caching and real-time data
 
 ### DevOps
 - **Docker**: Containerization
 - **Docker Compose**: Multi-container orchestration
-- **Mongo Express**: Database admin UI
 - **Prometheus**: Metrics collection
 - **Grafana**: Metrics visualization (optional)
 
@@ -516,7 +510,6 @@ User Input
                          Task Service
                                  │
                                  ▼
-                         Task Storage (MongoDB)
                                  │
                                  ▼
                     Challenge Generation Request
@@ -580,7 +573,6 @@ Integration Service
             Task Service
                      │
                      ▼
-            Create Tasks in MongoDB
                      │
                      ▼
             Notification Service
@@ -893,7 +885,6 @@ Integration Service
 - [ ] Add staging environment
 - [ ] Set up monitoring (Prometheus + Grafana)
 - [ ] Add logging aggregation (ELK stack or similar)
-- [ ] Set up backup strategy for MongoDB
 
 ---
 
@@ -950,7 +941,6 @@ npm test
 
 ### Backend
 - `deepiri-core-api/src/server.ts` - Main Express server (TypeScript)
-- `deepiri-core-api/src/models/` - MongoDB models (TypeScript)
 - `deepiri-core-api/src/services/` - Business logic services (TypeScript)
 - `deepiri-core-api/src/routes/` - API route handlers (TypeScript)
 - `deepiri-core-api/src/middleware/` - Express middleware (TypeScript)

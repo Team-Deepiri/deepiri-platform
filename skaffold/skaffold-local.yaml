@@ -187,7 +187,6 @@ deploy:
     # This prevents the "KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT must be defined" error
     manifests:
       # Infrastructure services (deploy first)
-      - ops/k8s/mongodb-deployment.yaml
       - ops/k8s/redis-deployment.yaml
       - ops/k8s/localai-deployment.yaml
       
@@ -215,11 +214,6 @@ portForward:
     namespace: default
     port: 8000
     localPort: 8000
-  - resourceType: service
-    resourceName: mongodb-service
-    namespace: default
-    port: 27017
-    localPort: 27017
   - resourceType: service
     resourceName: redis-service
     namespace: default
@@ -279,7 +273,8 @@ profiles:
         - image: deepiri-dev-frontend
           context: ./deepiri-web-frontend
           docker:
-            dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile
+            target: dev
         
         - image: deepiri-dev-api-gateway
           context: ./platform-services
@@ -372,4 +367,3 @@ profiles:
               BASE_IMAGE: python:3.11-slim
               PYTORCH_VERSION: 2.9.1
               PYTHON_VERSION: 3.11
-

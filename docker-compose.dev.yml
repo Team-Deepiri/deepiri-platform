@@ -172,11 +172,11 @@ services:
     logging: *minimal-logging
     ports:
       - "6380:6379"  # Using 6380 to avoid conflict with system Redis on 6379
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD:-password} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_dev_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-password}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -315,6 +315,8 @@ services:
       - deepiri-dev-network
 
   # API Gateway - Routes requests to all microservices
+  # Legacy backend monolith is retired from team workflows;
+  # api-gateway is the backend entrypoint for local dev.
   api-gateway:
     build:
       context: ./platform-services
@@ -337,8 +339,8 @@ services:
       DB_PASSWORD: ${POSTGRES_CORE_PASSWORD:-deepiripassword}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
       WORKFLOW_ORCHESTRATOR_URL: http://workflow-orchestrator:5002
       INCENTIVE_ENGINE_URL: http://incentive-engine:5003
       DECISION_INTELLIGENCE_URL: http://decision-intelligence:5004
@@ -399,11 +401,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_AUTH_USER:-deepiri_auth}:${POSTGRES_AUTH_PASSWORD:-deepiripassword}@postgres-auth:5432/${POSTGRES_AUTH_DB:-auth_db}
       SYNAPSE_URL: http://synapse:8002
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-deepiri-local-dev-jwt-key-for-dev-only-x9z}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-deepiri-local-dev-internal-key-for-dev-x9z}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       K8S_SERVICE_NAME: auth-service  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -447,8 +449,8 @@ services:
       SYNAPSE_URL: http://synapse:8002
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
       K8S_SERVICE_NAME: workflow-orchestrator  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -485,8 +487,8 @@ services:
       SYNAPSE_URL: http://synapse:8002
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
       K8S_SERVICE_NAME: incentive-engine  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -598,7 +600,7 @@ services:
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       KAFKA_BROKERS: kafka:9092
       K8S_SERVICE_NAME: external-bridge-service  # Filter to only load this service's configmap
     volumes:
@@ -677,7 +679,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}:${POSTGRES_INTELLIGENCE_PASSWORD:-deepiripassword}@postgres-intelligence:5432/${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       STORAGE_PROVIDER: minio
       STORAGE_BUCKET: language-intelligence-documents
       STORAGE_REGION: us-east-1
@@ -736,7 +738,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       CYREX_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
@@ -810,7 +812,7 @@ services:
       SOCKET_IO_DISCARD_INITIAL_REQUEST: ${SOCKET_IO_DISCARD_INITIAL_REQUEST:-false}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       K8S_SERVICE_NAME: realtime-gateway  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -826,18 +828,13 @@ services:
       - deepiri-dev-network
 
   # ════════════════════════════════════════════════════════════════════════
-  # Ollama - CPU Mode (Default)
+  # Ollama
   # ════════════════════════════════════════════════════════════════════════
-  # Usage (CPU mode - works on all systems):
+  # Usage:
   #   docker compose up -d ollama
   #
-  # Usage (GPU mode - requires NVIDIA GPU):
-  #   docker compose -f docker-compose.dev.yml -f docker-compose.dev.gpu.yml up -d ollama
-  #
-  # The base configuration runs in CPU mode for maximum compatibility.
-  # For GPU support, use the docker-compose.dev.gpu.yml override file.
-  #
-  # GPU Setup (one-time, if you have NVIDIA GPU):
+  # The ollama image auto-detects GPU at runtime if the host has one.
+  # For GPU acceleration (one-time host setup, if you have NVIDIA GPU):
   #   sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
   #   sudo systemctl restart docker
   # ════════════════════════════════════════════════════════════════════════
@@ -862,8 +859,6 @@ services:
     container_name: deepiri-ollama-dev
     restart: unless-stopped
     logging: *minimal-logging
-    # runtime: nvidia and deploy.resources.reservations are in docker-compose.dev.gpu.yml
-    # Base config runs CPU-only for compatibility on all machines
     ports:
       - "${OLLAMA_PORT:-11435}:11434"
     volumes:
@@ -924,7 +919,7 @@ services:
       # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       # PostgreSQL Configuration
       POSTGRES_HOST: postgres-cyrex
       POSTGRES_PORT: 5434
@@ -1043,78 +1038,6 @@ services:
     networks:
       - deepiri-dev-network
 
-  # Persola - Personalized Agentic Framework
-  persola:
-    build:
-      context: ./diri-persola
-      dockerfile: docker/Dockerfile
-    image: deepiri-dev-persola:latest
-    pull_policy: never
-    container_name: deepiri-persola-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    environment:
-      # Server
-      HOST: 0.0.0.0
-      PORT: 8002
-      DEBUG: "true"
-      CORS_ORIGIN: "*"
-      # Database (shares the cyrex postgres instance)
-      POSTGRES_HOST: postgres-cyrex
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
-      POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
-      POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
-      # Redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
-      # Model Providers
-      OLLAMA_BASE_URL: http://ollama:11434
-      DEFAULT_MODEL: llama3:8b
-      DEFAULT_PROVIDER: ollama
-      # External APIs
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      # Cyrex Integration
-      CYREX_URL: http://cyrex:8000
-      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
-    ports:
-      - "8010:8002"
-    volumes:
-      - ./diri-persola:/app
-    command: uvicorn persola.api.main:app --host 0.0.0.0 --port 8002 --reload
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    depends_on:
-      - postgres-cyrex
-      - redis
-      - ollama
-      - cyrex
-    networks:
-      - deepiri-dev-network
-
-  # Persola UI - React Frontend
-  persola-ui:
-    build:
-      context: ./diri-persola/ui
-      dockerfile: Dockerfile
-    image: deepiri-dev-persola-ui:latest
-    pull_policy: never
-    container_name: deepiri-persola-ui-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "3000:3000"
-    depends_on:
-      - persola
-    networks:
-      - deepiri-dev-network
-
   # Cyrex-AGI - Commented out for now
   # cyrex-agi:
   #   build:
@@ -1129,7 +1052,7 @@ services:
   #     # Redis Configuration for streaming
   #     REDIS_HOST: redis
   #     REDIS_PORT: 6379
-  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+  #     REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
   #     # Cyrex Runtime Bridge
   #     CYREX_BASE_URL: http://cyrex:8000
   #     # Platform Services
@@ -1201,8 +1124,8 @@ services:
   # Deepiri Synapse - Central Streaming Service
   synapse:
     build:
-      context: ./platform-services/shared/deepiri-synapse
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: platform-services/shared/deepiri-synapse/Dockerfile
     container_name: deepiri-synapse-dev
     restart: unless-stopped
     logging: *minimal-logging
@@ -1212,7 +1135,7 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       K8S_SERVICE_NAME: synapse  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -1248,7 +1171,7 @@ services:
       - "50051:50051"
     environment:
       SIDECAR_SERVICE_NAME: deepiri-platform
-      SIDECAR_REDIS_URL: redis://:${REDIS_PASSWORD:-redispassword}@redis:6379/0
+      SIDECAR_REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/0
       SIDECAR_LISTEN_ADDR: tcp://0.0.0.0:8081
       SIDECAR_GRPC_ADDR: tcp://0.0.0.0:50051
       SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events
@@ -1309,11 +1232,12 @@ services:
   #   networks:
   #     - deepiri-dev-network
 
-  # Frontend with Vite HMR
+  # Frontend with Vite HMR (consolidated Dockerfile — target: dev)
   frontend-dev:
     build:
-      context: .
-      dockerfile: ./deepiri-web-frontend/Dockerfile.dev
+      context: ./deepiri-web-frontend
+      dockerfile: Dockerfile
+      target: dev
     image: deepiri-dev-frontend:latest
     pull_policy: never
     container_name: deepiri-frontend-dev

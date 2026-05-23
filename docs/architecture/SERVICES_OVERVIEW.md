@@ -28,11 +28,8 @@ These services provide web-based user interfaces that you can access in your bro
 
 ---
 
-### 2. **Mongo Express** 🗄️
 - **URL:** http://localhost:8081
 - **Port:** 8081
-- **Service Name:** `mongo-express`
-- **Description:** Web-based MongoDB administration interface
 - **How to Access:**
   ```bash
   open http://localhost:8081
@@ -383,26 +380,17 @@ These services provide REST APIs and can be tested via HTTP requests.
 
 These are database and cache services that support the application.
 
-### 16. **MongoDB** 🍃
 - **Port:** 27017
-- **Service Name:** `mongodb`
 - **Description:** Primary NoSQL database for application data
 - **How to Test:**
   ```bash
-  # Connect via MongoDB client
-  mongosh mongodb://admin:password@localhost:27017/deepiri?authSource=admin
   
-  # Or use mongo-express UI at http://localhost:8081
   
   # Test connection
-  docker exec -it deepiri-mongodb-dev mongosh \
     -u admin -p password \
     --authenticationDatabase admin
   ```
 - **Default Credentials:**
-  - Username: `admin` (or from `MONGO_ROOT_USER` env var)
-  - Password: `password` (or from `MONGO_ROOT_PASSWORD` env var)
-  - Database: `deepiri` (or from `MONGO_DB` env var)
 
 ---
 
@@ -521,7 +509,6 @@ docker compose -f docker-compose.dev.yml config --services
 
 - **API Documentation:** Check each service's `/docs` or `/api-docs` endpoint (if available)
 - **Service Logs:** Use `docker compose logs` to debug issues
-- **Database Access:** Use Mongo Express (http://localhost:8081) for MongoDB
 - **Monitoring:** Check service health endpoints regularly
 
 ---
@@ -539,7 +526,6 @@ docker compose -f docker-compose.dev.yml config --services
 - Change port in `docker-compose.dev.yml` if needed
 
 ### Service Dependencies?
-- Services depend on databases (MongoDB, Redis, InfluxDB)
 - Check that infrastructure services are running first
 - Use `depends_on` in docker-compose to ensure startup order
 

@@ -72,12 +72,9 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "🌐 Services available:" -ForegroundColor Cyan
     Write-Host "   Backend API:      http://localhost:5000"
     Write-Host "   Cyrex AI:         http://localhost:8000"
-    Write-Host "   MongoDB:          localhost:27017"
     Write-Host "   Redis:            localhost:6379"
-    Write-Host "   Mongo Express:    http://localhost:8081"
     Write-Host ""
 } else {
     Write-Host "❌ Failed to start services" -ForegroundColor Red
     exit 1
 }
-

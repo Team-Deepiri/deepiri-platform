@@ -192,7 +192,6 @@ Quick navigation to all documentation organized by category.
 |----------|-------------|
 | [operations/DETONATOR_IMPLEMENTATION.md](operations/DETONATOR_IMPLEMENTATION.md) | Detonator system implementation |
 | [operations/DETONATOR_MECHANISMS.md](operations/DETONATOR_MECHANISMS.md) | Detonator mechanisms documentation |
-| [operations/MONGODB_TO_POSTGRESQL_MIGRATION.md](operations/MONGODB_TO_POSTGRESQL_MIGRATION.md) | MongoDB to PostgreSQL migration |
 | [operations/BACKEND_POSTGRESQL_MIGRATION.md](operations/BACKEND_POSTGRESQL_MIGRATION.md) | Backend PostgreSQL migration |
 | [operations/DEV_DEVICE_SPECS.md](operations/DEV_DEVICE_SPECS.md) | Development device specifications |
 

@@ -19,8 +19,6 @@ The Deepiri platform now enforces strong password requirements for production de
 ```bash
 # Generate all required passwords at once
 echo "POSTGRES_PASSWORD=$(openssl rand -base64 32)"
-echo "MONGO_ROOT_USER=deepiri_admin"
-echo "MONGO_ROOT_PASSWORD=$(openssl rand -base64 32)"
 echo "REDIS_PASSWORD=$(openssl rand -base64 32)"
 echo "MINIO_ROOT_USER=$(openssl rand -base64 16)"
 echo "MINIO_ROOT_PASSWORD=$(openssl rand -base64 32)"
@@ -55,7 +53,6 @@ If migrating a running deployment, update passwords in the actual databases:
 -- PostgreSQL
 ALTER USER deepiri WITH PASSWORD 'new-password-here';
 
--- MongoDB (via mongosh)
 db.changeUserPassword("admin", "new-password-here")
 ```
 

@@ -76,7 +76,6 @@ echo ""
 
 # List of Infrastructure Team submodules (all except deepiri-web-frontend)
 SUBMODULES=(
-    "deepiri-core-api"
     "diri-cyrex"
     "platform-services/backend/deepiri-api-gateway"
     "platform-services/backend/deepiri-external-bridge-service"

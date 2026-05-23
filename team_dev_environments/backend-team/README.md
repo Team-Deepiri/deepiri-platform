@@ -147,7 +147,7 @@ docker compose -f docker-compose.dev.yml logs -f workflow-orchestrator
 ## What You Work On
 
 - `platform-services/backend/*/` - All microservices
-- `deepiri-core-api/` - Legacy monolith (being migrated)
+- `platform-services/backend/deepiri-api-gateway/` - API gateway entrypoint for backend microservices
 - API Gateway routing logic
 - Service-to-service communication
 

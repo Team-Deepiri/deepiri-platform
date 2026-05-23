@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@team-deepiri/shared-utils": "file:../../shared/deepiri-shared-utils",
+    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
     "@prisma/client": "^5.7.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",

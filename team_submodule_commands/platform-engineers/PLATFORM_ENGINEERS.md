@@ -4,9 +4,9 @@
 
 Platform Engineers need access to **ALL** submodules for platform management:
 - **diri-cyrex** - AI/ML service
-- **deepiri-core-api** - Main backend API
+- **platform-services/backend/** - Backend microservices
 - **deepiri-web-frontend** - Frontend application
-- **deepiri-api-gateway** - API Gateway service
+- **deepiri-api-gateway** - API gateway entrypoint
 - **deepiri-auth-service** - Authentication service
 - **deepiri-external-bridge-service** - External integrations bridge
 
@@ -65,10 +65,10 @@ git push origin main
 
 ```bash
 # Update a specific service
-git submodule update --remote deepiri-core-api
+git submodule update --remote platform-services/backend/deepiri-api-gateway
 
 # Or update multiple specific ones
-git submodule update --remote deepiri-core-api platform-services/backend/deepiri-api-gateway
+git submodule update --remote platform-services/backend/deepiri-api-gateway platform-services/backend/deepiri-auth-service
 ```
 
 ### Check All Submodule Statuses
@@ -235,10 +235,10 @@ git push origin main
 
 ```bash
 # Update application services
-git submodule update --remote deepiri-core-api
+git submodule update --remote platform-services/backend/deepiri-api-gateway
 git submodule update --remote deepiri-web-frontend
 
-git add deepiri-core-api deepiri-web-frontend
+git add platform-services/backend/deepiri-api-gateway deepiri-web-frontend
 git commit -m "chore: update application services"
 git push origin main
 ```

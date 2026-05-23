@@ -38,7 +38,6 @@ fi
 
 echo -e "${RED}⚠️  WARNING: This will delete ALL $VOLUME_COUNT volumes!${NC}"
 echo -e "${RED}   This includes:${NC}"
-echo -e "${RED}   - MongoDB data${NC}"
 echo -e "${RED}   - Redis data${NC}"
 echo -e "${RED}   - InfluxDB data${NC}"
 echo -e "${RED}   - MLflow data${NC}"
@@ -62,4 +61,3 @@ echo -e "${GREEN}✅ All volumes deleted!${NC}"
 echo ""
 echo -e "${YELLOW}📦 Remaining volumes:${NC}"
 docker volume ls
-

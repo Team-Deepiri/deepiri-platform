@@ -365,7 +365,6 @@ docker exec deepiri-postgres-dev psql -U deepiri -d deepiri -c \
 
 ### 🔗 Related Documentation
 
-- [MONGODB_TO_POSTGRESQL_MIGRATION.md](../MONGODB_TO_POSTGRESQL_MIGRATION.md) - Migration guide
 - [ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md) - Configuration
 - [docker-compose files](../) - Infrastructure setup
 

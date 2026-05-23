@@ -8,7 +8,6 @@ echo ========================================
 echo.
 echo WARNING: This will delete ALL Docker volumes!
 echo This includes:
-echo   - MongoDB data
 echo   - Redis data
 echo   - InfluxDB data
 echo   - MLflow data

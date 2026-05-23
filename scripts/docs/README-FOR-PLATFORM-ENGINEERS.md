@@ -57,9 +57,6 @@ This `scripts/` directory is the primary workspace for **Platform Engineering** 
 ### Database Operations
 | Script | Purpose | Maintainer |
 |--------|---------|------------|
-| `mongo-backup.sh` | MongoDB backup | Platform Engineering |
-| `mongo-restore.sh` | MongoDB restore | Platform Engineering |
-| `mongo-init.js` | MongoDB initialization | Platform Engineering |
 
 ### Development Tools
 | Script | Purpose | Maintainer |
