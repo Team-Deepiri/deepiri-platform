@@ -1,6 +1,6 @@
 {
   "name": "deepiri-workflow-orchestrator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Workflow Orchestrator - Task Lifecycle, Versioning, Dependency Graphs",
   "main": "dist/server.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
+    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.0.0",
     "@prisma/client": "^5.7.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",

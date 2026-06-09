@@ -1,6 +1,6 @@
 {
   "name": "deepiri-realtime-gateway",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Realtime Gateway - Real-time Communication & Updates",
   "main": "dist/server.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
+    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.0.0",
     "@grpc/grpc-js": "^1.10.9",
     "@grpc/proto-loader": "^0.7.13",
     "cors": "^2.8.5",
