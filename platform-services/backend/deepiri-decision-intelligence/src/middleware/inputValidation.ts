@@ -2,13 +2,9 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
-import winston from 'winston';
+import { createLogger } from '@team-deepiri/shared-utils';
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [new winston.transports.Console({ format: winston.format.simple() })],
-});
+const logger = createLogger('decision-intelligence');
 
 const MAX_BODY_KEYS = 50;
 const MAX_STRING_VALUE_LENGTH = 10000;

@@ -1,15 +1,8 @@
 // Database connection using Prisma
 import { PrismaClient } from '@prisma/client';
-import { secureLog } from '@team-deepiri/shared-utils';
-import winston from 'winston';
+import { createLogger, secureLog } from '@team-deepiri/shared-utils';
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.Console({ format: winston.format.simple() })
-  ]
-});
+const logger = createLogger('incentive-engine');
 
 // Prisma Client singleton
 const prisma = new PrismaClient({

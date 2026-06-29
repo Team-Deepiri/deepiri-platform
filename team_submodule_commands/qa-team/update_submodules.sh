@@ -119,6 +119,12 @@ echo ""
 update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
 echo ""
 
+# Update deepiri-ollama-utils
+update_submodule "deepiri-ollama-utils" "deepiri-ollama-utils (Shared Ollama Utilities)"
+git submodule update --remote deepiri-ollama-utils 2>/dev/null || true
+git submodule status deepiri-ollama-utils
+echo "  ✅ deepiri-ollama-utils (Ollama Utils)"
+
 # Update deepiri-synapse
 update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
 echo ""

@@ -97,6 +97,12 @@ echo ""
 update_submodule "diri-cyrex" "diri-cyrex (AI/ML Service)"
 echo ""
 
+# Update deepiri-ollama-utils
+update_submodule "deepiri-ollama-utils" "deepiri-ollama-utils (Shared Ollama Utilities)"
+git submodule update --remote deepiri-ollama-utils 2>/dev/null || true
+git submodule status deepiri-ollama-utils
+echo "  ✅ deepiri-ollama-utils (Ollama Utils)"
+
 # Update diri-helox
 update_submodule "diri-helox" "diri-helox (ML Training & Research)"
 echo ""

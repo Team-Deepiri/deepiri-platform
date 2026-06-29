@@ -97,6 +97,15 @@ echo ""
 update_submodule "diri-cyrex" "diri-cyrex (AI/ML Service)"
 echo ""
 
+# deepiri-ollama-utils - Shared Ollama runtime and CLI utilities
+echo "  📦 deepiri-ollama-utils (Shared Ollama Utilities)..."
+git submodule update --init --recursive deepiri-ollama-utils
+echo "    ✅ deepiri-ollama-utils initialized"
+git submodule update --remote deepiri-ollama-utils
+ensure_submodule_on_main "deepiri-ollama-utils"
+echo "    ✅ deepiri-ollama-utils updated and on main branch"
+git submodule status deepiri-ollama-utils
+
 # Update deepiri-api-gateway
 update_submodule "platform-services/backend/deepiri-api-gateway" "deepiri-api-gateway (API Gateway)"
 echo ""

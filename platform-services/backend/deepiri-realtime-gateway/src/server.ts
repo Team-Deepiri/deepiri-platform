@@ -1,12 +1,16 @@
 import { createServer } from 'http';
-import { Server } from 'socket.io';
-import express, { Express, Request, Response } from 'express';
+import { Server, Socket } from 'socket.io';
+import express, { Express, NextFunction, Request, Response } from 'express';
+import { randomUUID } from 'crypto';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { secureLog } from '@team-deepiri/shared-utils';
-import { setupGamificationEvents, GamificationEventEmitter } from './gamificationEvents';
-import { validateBodyIfPresent } from './middleware/inputValidation';
+import {
+  getRuntimeBreakthroughSnapshot,
+  getSocketHotPathProfileSnapshot,
+  startEventConsumption,
+} from './streaming/eventConsumer';
 
 dotenv.config();
 
@@ -183,8 +187,8 @@ const socketServerOptions = {
 const io = new Server(httpServer, socketServerOptions as any);
 
 if (discardInitialRequest) {
-  io.engine.on('connection', (rawSocket) => {
-    (rawSocket as { request?: unknown }).request = undefined;
+  io.engine.on('connection', (rawSocket: { request?: unknown }) => {
+    rawSocket.request = undefined;
   });
 }
 
@@ -193,80 +197,61 @@ const PORT: number = parseInt(process.env.PORT || '5008', 10);
 app.use(cors());
 app.use(helmet());
 app.use(express.json({ limit: '100kb' }));
-app.use(validateBodyIfPresent());
 
-// Setup gamification events
-const gamificationEmitter = setupGamificationEvents(io);
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const incomingRequestId = req.headers['x-request-id'];
+  const requestId =
+    typeof incomingRequestId === 'string' && incomingRequestId.trim().length > 0
+      ? incomingRequestId.trim()
+      : randomUUID();
+
+  res.locals.requestId = requestId;
+  res.setHeader('x-request-id', requestId);
+
+  const startedAt = Date.now();
+
+  secureLog('info', 'Incoming request', {
+    requestId,
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+  });
+
+  res.on('finish', () => {
+    secureLog('info', 'Request completed', {
+      requestId,
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      durationMs: Date.now() - startedAt,
+    });
+  });
+
+  next();
+});
 
 // Start event consumption for streaming events
-import {
-  getRuntimeBreakthroughSnapshot,
-  getSocketHotPathProfileSnapshot,
-  startEventConsumption,
-} from './streaming/eventConsumer';
 startEventConsumption(io).catch((err) => {
   secureLog('error', 'Failed to start event consumption:', err);
 });
 
-// HTTP endpoint to emit gamification events (called by engagement service)
-app.post('/emit/gamification', (req: Request, res: Response) => {
-  const { userId, type, data } = req.body;
-  
-  if (!userId || !type) {
-    return res.status(400).json({ error: 'userId and type are required' });
-  }
-
-  // Emit based on type
-  switch (type) {
-    case 'momentum_awarded':
-      gamificationEmitter.emitMomentumAwarded(userId, data.amount, data.source, data.newTotal, data.currentLevel);
-      break;
-    case 'level_up':
-      gamificationEmitter.emitLevelUp(userId, data.newLevel, data.totalMomentum);
-      break;
-    case 'streak_updated':
-      gamificationEmitter.emitStreakUpdated(userId, data.streakType, data.currentStreak, data.longestStreak);
-      break;
-    case 'boost_activated':
-      gamificationEmitter.emitBoostActivated(userId, data.boostType, data.duration, data.expiresAt);
-      break;
-    case 'objective_completed':
-      gamificationEmitter.emitObjectiveCompleted(userId, data.objectiveId, data.title, data.momentumEarned);
-      break;
-    case 'milestone_completed':
-      gamificationEmitter.emitMilestoneCompleted(userId, data.odysseyId, data.milestoneTitle, data.momentumEarned);
-      break;
-    case 'reward_earned':
-      gamificationEmitter.emitRewardEarned(userId, data.rewardType, data.amount, data.description);
-      break;
-    default:
-      return res.status(400).json({ error: 'Unknown event type' });
-  }
-
-  res.json({ success: true });
-});
-
-// Export emitter for use by other services
-export { gamificationEmitter };
-
-io.on('connection', (socket) => {
+io.on('connection', (socket: Socket) => {
   secureLog('info', `WebSocket client connected: ${socket.id}`);
-  
   socket.emit('connection_confirmed', {
     socketId: socket.id,
     timestamp: new Date().toISOString()
   });
-  
+
   socket.on('join_user_room', (userId: string) => {
     socket.join(`user_${userId}`);
     secureLog('info', `User ${userId} joined room`);
   });
-  
+
   socket.on('join_adventure_room', (adventureId: string) => {
     socket.join(`adventure_${adventureId}`);
     secureLog('info', `User joined adventure room: ${adventureId}`);
   });
-  
+
   socket.on('disconnect', (reason: string) => {
     secureLog('info', `WebSocket client disconnected: ${socket.id}, reason: ${reason}`);
   });
@@ -274,8 +259,8 @@ io.on('connection', (socket) => {
 
 app.get('/health', (req: Request, res: Response) => {
   const hotPathProfile = getSocketHotPathProfileSnapshot();
-  res.json({ 
-    status: 'healthy', 
+  res.json({
+    status: 'healthy',
     service: 'realtime-gateway',
     connections: io.sockets.sockets.size,
     timestamp: new Date().toISOString(),
@@ -306,9 +291,33 @@ app.get('/v1/streaming/profile', (req: Request, res: Response) => {
   res.json(getSocketHotPathProfileSnapshot());
 });
 
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  const requestId =
+    (res.locals.requestId as string | undefined) ||
+    (typeof req.headers['x-request-id'] === 'string' ? req.headers['x-request-id'] : 'unknown');
+
+  secureLog('error', 'Unhandled server error', {
+    requestId,
+    method: req.method,
+    path: req.path,
+    error: err?.message || String(err),
+    stack: err?.stack,
+  });
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    requestId,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 httpServer.listen(PORT, () => {
   secureLog('info', `Realtime Gateway running on port ${PORT}`);
-  secureLog('info', `Gamification events enabled`);
   secureLog('info', `Socket.IO transports: ${socketTransports.join(',')}`);
   secureLog(
     'info',
@@ -322,4 +331,3 @@ httpServer.listen(PORT, () => {
 });
 
 export { app, io };
-

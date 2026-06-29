@@ -26,6 +26,7 @@ declare -a SUBMODULES=(
   "platform-services/backend/deepiri-language-intelligence-service"
   "deepiri-web-frontend"
   "deepiri-suite"
+  "deepiri-ollama-utils"
 )
 
 FAILED=()
@@ -97,3 +98,7 @@ echo ""
 if [ ${#FAILED[@]} -gt 0 ]; then
   exit 1
 fi
+
+
+git submodule update --remote deepiri-ollama-utils
+git submodule status deepiri-ollama-utils

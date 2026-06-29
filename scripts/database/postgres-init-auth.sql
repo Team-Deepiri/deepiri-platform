@@ -66,13 +66,13 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_roles_name ON roles(name);
-CREATE INDEX idx_role_abilities_role_id ON role_abilities(role_id);
-CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_token ON sessions(token);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+CREATE INDEX IF NOT EXISTS idx_roles_name ON roles(name);
+CREATE INDEX IF NOT EXISTS idx_role_abilities_role_id ON role_abilities(role_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 
 -- Seed default roles
 INSERT INTO roles (name, description, is_system) VALUES
@@ -81,6 +81,44 @@ INSERT INTO roles (name, description, is_system) VALUES
     ('moderator', 'Content moderator', true),
     ('developer', 'Development team member', true)
 ON CONFLICT (name) DO NOTHING;
+
+-- Seed users used across segmented databases
+-- Password for all seed users: "password123" (bcrypt hashed placeholder)
+INSERT INTO users (id, email, password, name, bio, status, email_verified) VALUES
+    ('00000000-0000-0000-0000-000000000001', 'admin@deepiri.com', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Admin User', 'System administrator', 'active', true),
+    ('00000000-0000-0000-0000-000000000002', 'alice@deepiri.com', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Alice Johnson', 'Product manager who loves shipping features', 'active', true),
+    ('00000000-0000-0000-0000-000000000003', 'bob@deepiri.com', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Bob Smith', 'Senior developer and code review champion', 'active', true),
+    ('00000000-0000-0000-0000-000000000004', 'carol@deepiri.com', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Carol Davis', 'UX designer focused on user experience', 'active', true),
+    ('00000000-0000-0000-0000-000000000005', 'dave@deepiri.com', '$2a$10$rKJ8qD4EZFQhqvJBqC0VXO1YqQqQqQqQqQqQqQqQqQqQqQqQqQ', 'Dave Wilson', 'DevOps engineer keeping things running', 'active', true)
+ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    bio = EXCLUDED.bio,
+    status = EXCLUDED.status,
+    email_verified = EXCLUDED.email_verified;
+
+-- Assign roles to seed users
+INSERT INTO user_roles (user_id, role_id, granted_by)
+SELECT u.id, r.id, '00000000-0000-0000-0000-000000000001'::UUID
+FROM users u
+CROSS JOIN roles r
+WHERE u.email = 'admin@deepiri.com' AND r.name = 'admin'
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+INSERT INTO user_roles (user_id, role_id, granted_by)
+SELECT u.id, r.id, '00000000-0000-0000-0000-000000000001'::UUID
+FROM users u
+CROSS JOIN roles r
+WHERE u.email IN ('alice@deepiri.com', 'bob@deepiri.com', 'carol@deepiri.com', 'dave@deepiri.com')
+AND r.name = 'user'
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+INSERT INTO user_roles (user_id, role_id, granted_by)
+SELECT u.id, r.id, '00000000-0000-0000-0000-000000000001'::UUID
+FROM users u
+CROSS JOIN roles r
+WHERE u.email IN ('bob@deepiri.com', 'dave@deepiri.com') AND r.name = 'developer'
+ON CONFLICT (user_id, role_id) DO NOTHING;
 
 -- Success message
 DO $$

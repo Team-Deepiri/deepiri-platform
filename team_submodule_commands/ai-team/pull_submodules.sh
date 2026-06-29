@@ -122,6 +122,20 @@ git submodule update --init --recursive diri-cyrex
 echo "    ✅ diri-cyrex initialized"
 echo ""
 
+# deepiri-ollama-utils - Shared Ollama runtime and CLI utilities
+echo "  📦 deepiri-ollama-utils (Shared Ollama Utilities)..."
+git submodule update --init --recursive deepiri-ollama-utils
+echo "    ✅ deepiri-ollama-utils initialized"
+
+git submodule update --remote deepiri-ollama-utils
+ensure_submodule_on_main "deepiri-ollama-utils"
+echo "    ✅ deepiri-ollama-utils updated and on main branch"
+
+git submodule status deepiri-ollama-utils
+echo "  - Check status: git submodule status deepiri-ollama-utils"
+echo "  - Update: git submodule update --remote deepiri-ollama-utils"
+
+
 # deepiri-modelkit - Shared contracts and utilities
 echo "  📦 deepiri-modelkit (Shared Contracts & Utilities)..."
 mkdir -p deepiri-modelkit

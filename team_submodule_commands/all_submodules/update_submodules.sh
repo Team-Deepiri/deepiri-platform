@@ -127,6 +127,12 @@ echo ""
 update_submodule "diri-cyrex" "diri-cyrex (Cyrex)"
 echo ""
 
+# Update deepiri-ollama-utils
+update_submodule "deepiri-ollama-utils" "deepiri-ollama-utils (Shared Ollama Utilities)"
+git submodule update --remote deepiri-ollama-utils 2>/dev/null || true
+git submodule status deepiri-ollama-utils
+echo "  ✅ deepiri-ollama-utils (Ollama Utils)"
+
 # Update deepiri-api-gateway
 update_submodule "platform-services/backend/deepiri-api-gateway" "deepiri-api-gateway (API Gateway)"
 echo ""

@@ -24,7 +24,7 @@
   "dependencies": {
     "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
     "@prisma/client": "^5.7.0",
-    "axios": "^1.6.2",
+    "axios": "^1.16.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -45,4 +45,3 @@
     "typescript": "^5.3.3"
   }
 }
-

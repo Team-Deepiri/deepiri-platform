@@ -20,6 +20,7 @@ import tempfile
 import shutil
 from functools import lru_cache
 from typing import Optional
+from deepiri_ollama.runtime import check
 
 import difflib
 
@@ -163,14 +164,9 @@ def get_os_type() -> str:
     return "linux"
 
 
-def is_ollama_running(base_url: str) -> bool:
-    try:
-        import urllib.request
-        req = urllib.request.Request(f"{base_url}/api/tags")
-        urllib.request.urlopen(req, timeout=2)
-        return True
-    except Exception:
-        return False
+def is_ollama_running(base_url="http://localhost:11434"):
+    result = asyncio.run(check(base_url))
+    return result.get("running", False)
 
 
 def start_ollama(root_path: str, base_url: str) -> bool:

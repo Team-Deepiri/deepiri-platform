@@ -70,9 +70,10 @@ CREATE TABLE IF NOT EXISTS public.seasons (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_seasons_is_active ON public.seasons(is_active);
-CREATE INDEX idx_seasons_dates ON public.seasons(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_seasons_is_active ON public.seasons(is_active);
+CREATE INDEX IF NOT EXISTS idx_seasons_dates ON public.seasons(start_date, end_date);
 
+DROP TRIGGER IF EXISTS update_seasons_updated_at ON public.seasons;
 CREATE TRIGGER update_seasons_updated_at BEFORE UPDATE ON public.seasons 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -93,13 +94,15 @@ CREATE TABLE IF NOT EXISTS public.projects (
     updated_by UUID
 );
 
-CREATE INDEX idx_projects_owner_id ON public.projects(owner_id);
-CREATE INDEX idx_projects_status ON public.projects(status);
-CREATE INDEX idx_projects_priority ON public.projects(priority);
-CREATE INDEX idx_projects_metadata ON public.projects USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_projects_owner_id ON public.projects(owner_id);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON public.projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_priority ON public.projects(priority);
+CREATE INDEX IF NOT EXISTS idx_projects_metadata ON public.projects USING GIN (metadata);
 
+DROP TRIGGER IF EXISTS update_projects_updated_at ON public.projects;
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON public.projects 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS projects_audit_log ON public.projects;
 CREATE TRIGGER projects_audit_log AFTER INSERT OR UPDATE OR DELETE ON public.projects
     FOR EACH ROW EXECUTE FUNCTION create_audit_log();
 
@@ -118,9 +121,10 @@ CREATE TABLE IF NOT EXISTS public.project_milestones (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_project_milestones_project_id ON public.project_milestones(project_id);
-CREATE INDEX idx_project_milestones_completed ON public.project_milestones(completed);
+CREATE INDEX IF NOT EXISTS idx_project_milestones_project_id ON public.project_milestones(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_milestones_completed ON public.project_milestones(completed);
 
+DROP TRIGGER IF EXISTS update_project_milestones_updated_at ON public.project_milestones;
 CREATE TRIGGER update_project_milestones_updated_at BEFORE UPDATE ON public.project_milestones 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -147,13 +151,15 @@ CREATE TABLE IF NOT EXISTS public.quests (
     updated_by UUID
 );
 
-CREATE INDEX idx_quests_user_id ON public.quests(user_id);
-CREATE INDEX idx_quests_season_id ON public.quests(season_id);
-CREATE INDEX idx_quests_status ON public.quests(status);
-CREATE INDEX idx_quests_metadata ON public.quests USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_quests_user_id ON public.quests(user_id);
+CREATE INDEX IF NOT EXISTS idx_quests_season_id ON public.quests(season_id);
+CREATE INDEX IF NOT EXISTS idx_quests_status ON public.quests(status);
+CREATE INDEX IF NOT EXISTS idx_quests_metadata ON public.quests USING GIN (metadata);
 
+DROP TRIGGER IF EXISTS update_quests_updated_at ON public.quests;
 CREATE TRIGGER update_quests_updated_at BEFORE UPDATE ON public.quests 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS quests_audit_log ON public.quests;
 CREATE TRIGGER quests_audit_log AFTER INSERT OR UPDATE OR DELETE ON public.quests
     FOR EACH ROW EXECUTE FUNCTION create_audit_log();
 
@@ -183,20 +189,22 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     updated_by UUID
 );
 
-CREATE INDEX idx_tasks_user_id ON public.tasks(user_id);
-CREATE INDEX idx_tasks_project_id ON public.tasks(project_id);
-CREATE INDEX idx_tasks_quest_id ON public.tasks(quest_id);
-CREATE INDEX idx_tasks_parent_task_id ON public.tasks(parent_task_id);
-CREATE INDEX idx_tasks_status ON public.tasks(status);
-CREATE INDEX idx_tasks_priority ON public.tasks(priority);
-CREATE INDEX idx_tasks_due_date ON public.tasks(due_date);
-CREATE INDEX idx_tasks_tags ON public.tasks USING GIN (tags);
-CREATE INDEX idx_tasks_ai_suggestions ON public.tasks USING GIN (ai_suggestions);
-CREATE INDEX idx_tasks_metadata ON public.tasks USING GIN (metadata);
-CREATE INDEX idx_tasks_title_search ON public.tasks USING GIN (to_tsvector('english', title));
+CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON public.tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON public.tasks(project_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_quest_id ON public.tasks(quest_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_parent_task_id ON public.tasks(parent_task_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON public.tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_priority ON public.tasks(priority);
+CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON public.tasks(due_date);
+CREATE INDEX IF NOT EXISTS idx_tasks_tags ON public.tasks USING GIN (tags);
+CREATE INDEX IF NOT EXISTS idx_tasks_ai_suggestions ON public.tasks USING GIN (ai_suggestions);
+CREATE INDEX IF NOT EXISTS idx_tasks_metadata ON public.tasks USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_tasks_title_search ON public.tasks USING GIN (to_tsvector('english', title));
 
+DROP TRIGGER IF EXISTS update_tasks_updated_at ON public.tasks;
 CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON public.tasks 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS tasks_audit_log ON public.tasks;
 CREATE TRIGGER tasks_audit_log AFTER INSERT OR UPDATE OR DELETE ON public.tasks
     FOR EACH ROW EXECUTE FUNCTION create_audit_log();
 
@@ -213,10 +221,11 @@ CREATE TABLE IF NOT EXISTS public.subtasks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_subtasks_task_id ON public.subtasks(task_id);
-CREATE INDEX idx_subtasks_completed ON public.subtasks(completed);
-CREATE INDEX idx_subtasks_sort_order ON public.subtasks(task_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_subtasks_task_id ON public.subtasks(task_id);
+CREATE INDEX IF NOT EXISTS idx_subtasks_completed ON public.subtasks(completed);
+CREATE INDEX IF NOT EXISTS idx_subtasks_sort_order ON public.subtasks(task_id, sort_order);
 
+DROP TRIGGER IF EXISTS update_subtasks_updated_at ON public.subtasks;
 CREATE TRIGGER update_subtasks_updated_at BEFORE UPDATE ON public.subtasks 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -230,8 +239,8 @@ CREATE TABLE IF NOT EXISTS public.task_dependencies (
     UNIQUE(task_id, depends_on_task_id)
 );
 
-CREATE INDEX idx_task_dependencies_task_id ON public.task_dependencies(task_id);
-CREATE INDEX idx_task_dependencies_depends_on ON public.task_dependencies(depends_on_task_id);
+CREATE INDEX IF NOT EXISTS idx_task_dependencies_task_id ON public.task_dependencies(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_dependencies_depends_on ON public.task_dependencies(depends_on_task_id);
 
 -- Task Versions table (for version history)
 CREATE TABLE IF NOT EXISTS public.task_versions (
@@ -249,8 +258,8 @@ CREATE TABLE IF NOT EXISTS public.task_versions (
     UNIQUE(task_id, version)
 );
 
-CREATE INDEX idx_task_versions_task_id ON public.task_versions(task_id);
-CREATE INDEX idx_task_versions_version ON public.task_versions(version);
+CREATE INDEX IF NOT EXISTS idx_task_versions_task_id ON public.task_versions(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_versions_version ON public.task_versions(version);
 
 -- Season Boosts table
 CREATE TABLE IF NOT EXISTS public.season_boosts (
@@ -268,10 +277,11 @@ CREATE TABLE IF NOT EXISTS public.season_boosts (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_season_boosts_season_id ON public.season_boosts(season_id);
-CREATE INDEX idx_season_boosts_boost_type ON public.season_boosts(boost_type);
-CREATE INDEX idx_season_boosts_is_active ON public.season_boosts(is_active);
+CREATE INDEX IF NOT EXISTS idx_season_boosts_season_id ON public.season_boosts(season_id);
+CREATE INDEX IF NOT EXISTS idx_season_boosts_boost_type ON public.season_boosts(boost_type);
+CREATE INDEX IF NOT EXISTS idx_season_boosts_is_active ON public.season_boosts(is_active);
 
+DROP TRIGGER IF EXISTS update_season_boosts_updated_at ON public.season_boosts;
 CREATE TRIGGER update_season_boosts_updated_at BEFORE UPDATE ON public.season_boosts 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -289,10 +299,11 @@ CREATE TABLE IF NOT EXISTS public.quest_milestones (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_quest_milestones_quest_id ON public.quest_milestones(quest_id);
-CREATE INDEX idx_quest_milestones_completed ON public.quest_milestones(completed);
-CREATE INDEX idx_quest_milestones_sort_order ON public.quest_milestones(quest_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_quest_milestones_quest_id ON public.quest_milestones(quest_id);
+CREATE INDEX IF NOT EXISTS idx_quest_milestones_completed ON public.quest_milestones(completed);
+CREATE INDEX IF NOT EXISTS idx_quest_milestones_sort_order ON public.quest_milestones(quest_id, sort_order);
 
+DROP TRIGGER IF EXISTS update_quest_milestones_updated_at ON public.quest_milestones;
 CREATE TRIGGER update_quest_milestones_updated_at BEFORE UPDATE ON public.quest_milestones 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -313,11 +324,12 @@ CREATE TABLE IF NOT EXISTS public.rewards (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_rewards_user_id ON public.rewards(user_id);
-CREATE INDEX idx_rewards_status ON public.rewards(status);
-CREATE INDEX idx_rewards_expires_at ON public.rewards(expires_at);
-CREATE INDEX idx_rewards_reward_type ON public.rewards(reward_type);
+CREATE INDEX IF NOT EXISTS idx_rewards_user_id ON public.rewards(user_id);
+CREATE INDEX IF NOT EXISTS idx_rewards_status ON public.rewards(status);
+CREATE INDEX IF NOT EXISTS idx_rewards_expires_at ON public.rewards(expires_at);
+CREATE INDEX IF NOT EXISTS idx_rewards_reward_type ON public.rewards(reward_type);
 
+DROP TRIGGER IF EXISTS update_rewards_updated_at ON public.rewards;
 CREATE TRIGGER update_rewards_updated_at BEFORE UPDATE ON public.rewards 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -352,10 +364,11 @@ CREATE TABLE IF NOT EXISTS analytics.momentum (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_momentum_user_id ON analytics.momentum(user_id);
-CREATE INDEX idx_momentum_total_momentum ON analytics.momentum(total_momentum DESC);
-CREATE INDEX idx_momentum_current_level ON analytics.momentum(current_level DESC);
+CREATE INDEX IF NOT EXISTS idx_momentum_user_id ON analytics.momentum(user_id);
+CREATE INDEX IF NOT EXISTS idx_momentum_total_momentum ON analytics.momentum(total_momentum DESC);
+CREATE INDEX IF NOT EXISTS idx_momentum_current_level ON analytics.momentum(current_level DESC);
 
+DROP TRIGGER IF EXISTS update_momentum_updated_at ON analytics.momentum;
 CREATE TRIGGER update_momentum_updated_at BEFORE UPDATE ON analytics.momentum 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -368,8 +381,8 @@ CREATE TABLE IF NOT EXISTS analytics.level_progress (
     total_momentum_at_time INT NOT NULL
 );
 
-CREATE INDEX idx_level_progress_momentum_id ON analytics.level_progress(momentum_id);
-CREATE INDEX idx_level_progress_reached_at ON analytics.level_progress(reached_at DESC);
+CREATE INDEX IF NOT EXISTS idx_level_progress_momentum_id ON analytics.level_progress(momentum_id);
+CREATE INDEX IF NOT EXISTS idx_level_progress_reached_at ON analytics.level_progress(reached_at DESC);
 
 -- Achievements table
 CREATE TABLE IF NOT EXISTS analytics.achievements (
@@ -385,9 +398,9 @@ CREATE TABLE IF NOT EXISTS analytics.achievements (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX idx_achievements_momentum_id ON analytics.achievements(momentum_id);
-CREATE INDEX idx_achievements_achievement_id ON analytics.achievements(achievement_id);
-CREATE INDEX idx_achievements_rarity ON analytics.achievements(rarity);
+CREATE INDEX IF NOT EXISTS idx_achievements_momentum_id ON analytics.achievements(momentum_id);
+CREATE INDEX IF NOT EXISTS idx_achievements_achievement_id ON analytics.achievements(achievement_id);
+CREATE INDEX IF NOT EXISTS idx_achievements_rarity ON analytics.achievements(rarity);
 
 -- Streaks table
 CREATE TABLE IF NOT EXISTS analytics.streaks (
@@ -431,9 +444,10 @@ CREATE TABLE IF NOT EXISTS analytics.streaks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_streaks_user_id ON analytics.streaks(user_id);
-CREATE INDEX idx_streaks_daily_current ON analytics.streaks(daily_current DESC);
+CREATE INDEX IF NOT EXISTS idx_streaks_user_id ON analytics.streaks(user_id);
+CREATE INDEX IF NOT EXISTS idx_streaks_daily_current ON analytics.streaks(daily_current DESC);
 
+DROP TRIGGER IF EXISTS update_streaks_updated_at ON analytics.streaks;
 CREATE TRIGGER update_streaks_updated_at BEFORE UPDATE ON analytics.streaks 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -447,8 +461,8 @@ CREATE TABLE IF NOT EXISTS analytics.cashed_in_streaks (
     cashed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_cashed_in_streaks_streak_id ON analytics.cashed_in_streaks(streak_id);
-CREATE INDEX idx_cashed_in_streaks_cashed_at ON analytics.cashed_in_streaks(cashed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cashed_in_streaks_streak_id ON analytics.cashed_in_streaks(streak_id);
+CREATE INDEX IF NOT EXISTS idx_cashed_in_streaks_cashed_at ON analytics.cashed_in_streaks(cashed_at DESC);
 
 -- Boosts table
 CREATE TABLE IF NOT EXISTS analytics.boosts (
@@ -467,8 +481,9 @@ CREATE TABLE IF NOT EXISTS analytics.boosts (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_boosts_user_id ON analytics.boosts(user_id);
+CREATE INDEX IF NOT EXISTS idx_boosts_user_id ON analytics.boosts(user_id);
 
+DROP TRIGGER IF EXISTS update_boosts_updated_at ON analytics.boosts;
 CREATE TRIGGER update_boosts_updated_at BEFORE UPDATE ON analytics.boosts 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -484,9 +499,9 @@ CREATE TABLE IF NOT EXISTS analytics.active_boosts (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX idx_active_boosts_boost_id ON analytics.active_boosts(boost_id);
-CREATE INDEX idx_active_boosts_expires_at ON analytics.active_boosts(expires_at);
-CREATE INDEX idx_active_boosts_boost_type ON analytics.active_boosts(boost_type);
+CREATE INDEX IF NOT EXISTS idx_active_boosts_boost_id ON analytics.active_boosts(boost_id);
+CREATE INDEX IF NOT EXISTS idx_active_boosts_expires_at ON analytics.active_boosts(expires_at);
+CREATE INDEX IF NOT EXISTS idx_active_boosts_boost_type ON analytics.active_boosts(boost_type);
 
 -- Boost History table
 CREATE TABLE IF NOT EXISTS analytics.boost_history (
@@ -502,8 +517,8 @@ CREATE TABLE IF NOT EXISTS analytics.boost_history (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX idx_boost_history_boost_id ON analytics.boost_history(boost_id);
-CREATE INDEX idx_boost_history_activated_at ON analytics.boost_history(activated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_boost_history_boost_id ON analytics.boost_history(boost_id);
+CREATE INDEX IF NOT EXISTS idx_boost_history_activated_at ON analytics.boost_history(activated_at DESC);
 
 -- ===========================
 -- AUDIT SCHEMA: ACTIVITY & LOGS
@@ -523,10 +538,10 @@ CREATE TABLE IF NOT EXISTS audit.activity_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_activity_logs_entity ON audit.activity_logs(entity_type, entity_id);
-CREATE INDEX idx_activity_logs_user_id ON audit.activity_logs(user_id);
-CREATE INDEX idx_activity_logs_action ON audit.activity_logs(action);
-CREATE INDEX idx_activity_logs_created_at ON audit.activity_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity ON audit.activity_logs(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON audit.activity_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON audit.activity_logs(action);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON audit.activity_logs(created_at DESC);
 
 -- Task Completions table (specific tracking)
 CREATE TABLE IF NOT EXISTS audit.task_completions (
@@ -542,9 +557,9 @@ CREATE TABLE IF NOT EXISTS audit.task_completions (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX idx_task_completions_task_id ON audit.task_completions(task_id);
-CREATE INDEX idx_task_completions_user_id ON audit.task_completions(user_id);
-CREATE INDEX idx_task_completions_completed_at ON audit.task_completions(completed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_task_completions_task_id ON audit.task_completions(task_id);
+CREATE INDEX IF NOT EXISTS idx_task_completions_user_id ON audit.task_completions(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_completions_completed_at ON audit.task_completions(completed_at DESC);
 
 -- User Activity Summary (for quick lookups)
 CREATE TABLE IF NOT EXISTS audit.user_activity_summary (
@@ -560,9 +575,10 @@ CREATE TABLE IF NOT EXISTS audit.user_activity_summary (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_user_activity_summary_user_id ON audit.user_activity_summary(user_id);
-CREATE INDEX idx_user_activity_summary_last_active ON audit.user_activity_summary(last_active_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_activity_summary_user_id ON audit.user_activity_summary(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_summary_last_active ON audit.user_activity_summary(last_active_at DESC);
 
+DROP TRIGGER IF EXISTS update_user_activity_summary_updated_at ON audit.user_activity_summary;
 CREATE TRIGGER update_user_activity_summary_updated_at BEFORE UPDATE ON audit.user_activity_summary 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -581,6 +597,207 @@ VALUES (
     '{"primary_color": "#6366f1", "secondary_color": "#8b5cf6", "icon": "rocket"}',
     '{"momentum_multiplier": 1.5, "special_badges": ["early_adopter", "founder"]}'
 ) ON CONFLICT DO NOTHING;
+
+-- Seed projects
+INSERT INTO public.projects (id, owner_id, name, description, status, priority, metadata) VALUES
+    ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 'Deepiri Platform Launch', 'Complete platform development and launch', 'active', 'urgent', '{"category": "product", "team_size": 5}'),
+    ('10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', 'API Optimization', 'Improve API performance and scalability', 'active', 'high', '{"category": "engineering", "expected_improvement": "50%"}'),
+    ('10000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000004', 'Design System v2', 'Create comprehensive design system', 'planning', 'medium', '{"category": "design", "components": 50}')
+ON CONFLICT (id) DO UPDATE SET
+    owner_id = EXCLUDED.owner_id,
+    name = EXCLUDED.name,
+    description = EXCLUDED.description,
+    status = EXCLUDED.status,
+    priority = EXCLUDED.priority,
+    metadata = EXCLUDED.metadata;
+
+-- Project milestones
+INSERT INTO public.project_milestones (project_id, title, description, due_date, momentum_reward)
+SELECT *
+FROM (
+    VALUES
+        ('10000000-0000-0000-0000-000000000001'::UUID, 'Beta Launch', 'Launch beta version to 100 users', CURRENT_TIMESTAMP + INTERVAL '30 days', 500),
+        ('10000000-0000-0000-0000-000000000001'::UUID, 'Public Launch', 'Full public launch', CURRENT_TIMESTAMP + INTERVAL '90 days', 1000),
+        ('10000000-0000-0000-0000-000000000002'::UUID, 'Performance Baseline', 'Establish performance metrics', CURRENT_TIMESTAMP + INTERVAL '7 days', 200),
+        ('10000000-0000-0000-0000-000000000002'::UUID, 'Optimization Complete', 'Achieve 50% improvement', CURRENT_TIMESTAMP + INTERVAL '45 days', 400)
+) AS v(project_id, title, description, due_date, momentum_reward)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM public.project_milestones pm
+    WHERE pm.project_id = v.project_id AND pm.title = v.title
+);
+
+-- Seed quests
+INSERT INTO public.quests (id, user_id, season_id, title, description, status, total_objectives, metadata) VALUES
+    ('20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', (SELECT id FROM public.seasons WHERE is_active = true ORDER BY created_at DESC LIMIT 1), 'Ship First Feature', 'Ship the first major feature of Season 1', 'active', 5, '{"difficulty": "medium", "estimated_hours": 40}'),
+    ('20000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', (SELECT id FROM public.seasons WHERE is_active = true ORDER BY created_at DESC LIMIT 1), 'Code Review Master', 'Complete 50 code reviews with quality feedback', 'active', 50, '{"difficulty": "hard", "focus": "quality"}'),
+    ('20000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000004', (SELECT id FROM public.seasons WHERE is_active = true ORDER BY created_at DESC LIMIT 1), 'Design Sprint', 'Complete comprehensive design sprint', 'planning', 10, '{"difficulty": "medium", "deliverables": ["wireframes", "mockups", "prototypes"]}')
+ON CONFLICT (id) DO UPDATE SET
+    user_id = EXCLUDED.user_id,
+    season_id = EXCLUDED.season_id,
+    title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    status = EXCLUDED.status,
+    total_objectives = EXCLUDED.total_objectives,
+    metadata = EXCLUDED.metadata;
+
+-- Seed tasks
+INSERT INTO public.tasks (id, user_id, project_id, quest_id, title, description, status, priority, difficulty, momentum_reward, ai_suggestions, tags, metadata) VALUES
+    ('30000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'Setup PostgreSQL migration', 'Migrate from MongoDB to PostgreSQL', 'done', 'urgent', 'hard', 150,
+     '[{"suggestion": "Create comprehensive migration scripts", "type": "task_breakdown", "confidence": 0.9}]'::jsonb,
+     ARRAY['database', 'migration', 'postgresql'],
+     '{"estimated_complexity": "high", "requires_review": true}'),
+    ('30000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'Implement user authentication', 'JWT-based auth system', 'in_progress', 'high', 'medium', 100,
+     '[{"suggestion": "Use industry-standard JWT library", "type": "optimization", "confidence": 0.95}, {"suggestion": "Add refresh token mechanism", "type": "resource", "confidence": 0.85}]'::jsonb,
+     ARRAY['auth', 'security', 'backend'],
+     '{"requires_security_review": true}'),
+    ('30000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000002', null, 'Optimize database queries', 'Add indexes and optimize slow queries', 'todo', 'high', 'medium', 120,
+     '[{"suggestion": "Start with EXPLAIN ANALYZE on slow queries", "type": "task_breakdown", "confidence": 0.9}, {"suggestion": "Consider query result caching", "type": "optimization", "confidence": 0.8}]'::jsonb,
+     ARRAY['performance', 'database', 'optimization'],
+     '{"performance_target": "sub_100ms"}'),
+    ('30000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000003', 'Create component library', 'Build reusable React components', 'in_progress', 'medium', 'medium', 80,
+     '[{"suggestion": "Use Storybook for component documentation", "type": "resource", "confidence": 0.92}, {"suggestion": "Implement accessibility standards", "type": "optimization", "confidence": 0.88}]'::jsonb,
+     ARRAY['design', 'frontend', 'react'],
+     '{"accessibility_required": true, "documentation": "storybook"}'),
+    ('30000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000005', null, null, 'Setup CI/CD pipeline', 'Configure GitHub Actions for automated deployment', 'todo', 'high', 'hard', 130,
+     '[{"suggestion": "Use Docker for consistent environments", "type": "optimization", "confidence": 0.94}, {"suggestion": "Implement blue-green deployment", "type": "resource", "confidence": 0.75}]'::jsonb,
+     ARRAY['devops', 'ci-cd', 'automation'],
+     '{"deployment_target": "production", "rollback_strategy": "required"}')
+ON CONFLICT (id) DO UPDATE SET
+    user_id = EXCLUDED.user_id,
+    project_id = EXCLUDED.project_id,
+    quest_id = EXCLUDED.quest_id,
+    title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    status = EXCLUDED.status,
+    priority = EXCLUDED.priority,
+    difficulty = EXCLUDED.difficulty,
+    momentum_reward = EXCLUDED.momentum_reward,
+    ai_suggestions = EXCLUDED.ai_suggestions,
+    tags = EXCLUDED.tags,
+    metadata = EXCLUDED.metadata;
+
+-- Subtasks
+INSERT INTO public.subtasks (task_id, title, completed, momentum_reward, sort_order)
+SELECT *
+FROM (
+    VALUES
+        ('30000000-0000-0000-0000-000000000001'::UUID, 'Create migration scripts', true, 30, 1),
+        ('30000000-0000-0000-0000-000000000001'::UUID, 'Update docker-compose files', true, 30, 2),
+        ('30000000-0000-0000-0000-000000000001'::UUID, 'Update environment variables', true, 30, 3),
+        ('30000000-0000-0000-0000-000000000001'::UUID, 'Test migration', false, 30, 4),
+        ('30000000-0000-0000-0000-000000000002'::UUID, 'Design auth schema', true, 20, 1),
+        ('30000000-0000-0000-0000-000000000002'::UUID, 'Implement JWT generation', false, 30, 2),
+        ('30000000-0000-0000-0000-000000000002'::UUID, 'Add refresh token logic', false, 30, 3)
+) AS v(task_id, title, completed, momentum_reward, sort_order)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM public.subtasks st
+    WHERE st.task_id = v.task_id AND st.title = v.title
+);
+
+-- Seed analytics: momentum, streaks, boosts
+INSERT INTO analytics.momentum (user_id, total_momentum, current_level, commits, docs, tasks, features_shipped)
+VALUES
+    ('00000000-0000-0000-0000-000000000001', 850, 5, 22, 9, 44, 6),
+    ('00000000-0000-0000-0000-000000000002', 620, 4, 16, 10, 31, 4),
+    ('00000000-0000-0000-0000-000000000003', 700, 4, 28, 7, 40, 5),
+    ('00000000-0000-0000-0000-000000000004', 510, 3, 9, 14, 26, 3),
+    ('00000000-0000-0000-0000-000000000005', 580, 4, 18, 8, 34, 4)
+ON CONFLICT (user_id) DO UPDATE SET
+    total_momentum = EXCLUDED.total_momentum,
+    current_level = EXCLUDED.current_level,
+    commits = EXCLUDED.commits,
+    docs = EXCLUDED.docs,
+    tasks = EXCLUDED.tasks,
+    features_shipped = EXCLUDED.features_shipped;
+
+INSERT INTO analytics.streaks (user_id, daily_current, daily_longest, daily_last_date, weekly_current, weekly_longest)
+VALUES
+    ('00000000-0000-0000-0000-000000000001', 5, 19, CURRENT_DATE, 2, 7),
+    ('00000000-0000-0000-0000-000000000002', 3, 11, CURRENT_DATE, 1, 5),
+    ('00000000-0000-0000-0000-000000000003', 6, 21, CURRENT_DATE, 3, 8),
+    ('00000000-0000-0000-0000-000000000004', 2, 9, CURRENT_DATE, 1, 4),
+    ('00000000-0000-0000-0000-000000000005', 4, 14, CURRENT_DATE, 2, 6)
+ON CONFLICT (user_id) DO UPDATE SET
+    daily_current = EXCLUDED.daily_current,
+    daily_longest = EXCLUDED.daily_longest,
+    daily_last_date = EXCLUDED.daily_last_date,
+    weekly_current = EXCLUDED.weekly_current,
+    weekly_longest = EXCLUDED.weekly_longest;
+
+INSERT INTO analytics.boosts (user_id, boost_credits)
+VALUES
+    ('00000000-0000-0000-0000-000000000001', 90),
+    ('00000000-0000-0000-0000-000000000002', 40),
+    ('00000000-0000-0000-0000-000000000003', 65),
+    ('00000000-0000-0000-0000-000000000004', 30),
+    ('00000000-0000-0000-0000-000000000005', 55)
+ON CONFLICT (user_id) DO UPDATE SET
+    boost_credits = EXCLUDED.boost_credits;
+
+INSERT INTO analytics.achievements (momentum_id, achievement_id, name, description, rarity, showcaseable)
+SELECT m.id, 'early_adopter', 'Early Adopter', 'One of the first users of Deepiri', 'legendary', true
+FROM analytics.momentum m
+WHERE m.user_id = '00000000-0000-0000-0000-000000000001'::UUID
+AND NOT EXISTS (
+    SELECT 1 FROM analytics.achievements a
+    WHERE a.momentum_id = m.id AND a.achievement_id = 'early_adopter'
+);
+
+INSERT INTO analytics.achievements (momentum_id, achievement_id, name, description, rarity, showcaseable)
+SELECT m.id, 'first_task', 'Getting Started', 'Completed your first task', 'common', false
+FROM analytics.momentum m
+WHERE m.user_id IN ('00000000-0000-0000-0000-000000000002'::UUID, '00000000-0000-0000-0000-000000000003'::UUID)
+AND NOT EXISTS (
+    SELECT 1 FROM analytics.achievements a
+    WHERE a.momentum_id = m.id AND a.achievement_id = 'first_task'
+);
+
+-- Seed audit summary and completions
+INSERT INTO audit.user_activity_summary (user_id, last_active_at, total_tasks_completed, total_momentum_earned, active_days_count)
+VALUES
+    ('00000000-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, 14, 820, 20),
+    ('00000000-0000-0000-0000-000000000002', CURRENT_TIMESTAMP, 11, 600, 16),
+    ('00000000-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, 13, 680, 18),
+    ('00000000-0000-0000-0000-000000000004', CURRENT_TIMESTAMP, 8, 500, 12),
+    ('00000000-0000-0000-0000-000000000005', CURRENT_TIMESTAMP, 10, 560, 15)
+ON CONFLICT (user_id) DO UPDATE SET
+    last_active_at = EXCLUDED.last_active_at,
+    total_tasks_completed = EXCLUDED.total_tasks_completed,
+    total_momentum_earned = EXCLUDED.total_momentum_earned,
+    active_days_count = EXCLUDED.active_days_count;
+
+INSERT INTO audit.task_completions (task_id, user_id, momentum_earned, time_taken_minutes, quality_rating, auto_detected)
+SELECT '30000000-0000-0000-0000-000000000001'::UUID, '00000000-0000-0000-0000-000000000002'::UUID, 150, 240, 5, false
+WHERE NOT EXISTS (
+    SELECT 1 FROM audit.task_completions tc
+    WHERE tc.task_id = '30000000-0000-0000-0000-000000000001'::UUID
+    AND tc.user_id = '00000000-0000-0000-0000-000000000002'::UUID
+);
+
+-- Seed season boosts
+INSERT INTO public.season_boosts (season_id, name, description, boost_type, boost_multiplier, duration_minutes, cost_credits)
+SELECT id, 'Focus Mode', 'Double momentum for 1 hour of focused work', 'focus', 2.0, 60, 50
+FROM public.seasons
+WHERE is_active = true
+AND NOT EXISTS (
+    SELECT 1 FROM public.season_boosts sb WHERE sb.season_id = public.seasons.id AND sb.boost_type = 'focus'
+)
+UNION ALL
+SELECT id, 'Sprint Boost', '1.5x momentum for rapid task completion', 'sprint', 1.5, 30, 30
+FROM public.seasons
+WHERE is_active = true
+AND NOT EXISTS (
+    SELECT 1 FROM public.season_boosts sb WHERE sb.season_id = public.seasons.id AND sb.boost_type = 'sprint'
+)
+UNION ALL
+SELECT id, 'Learning Boost', '2.5x momentum for documentation and learning tasks', 'learning', 2.5, 90, 75
+FROM public.seasons
+WHERE is_active = true
+AND NOT EXISTS (
+    SELECT 1 FROM public.season_boosts sb WHERE sb.season_id = public.seasons.id AND sb.boost_type = 'learning'
+);
 
 -- ===========================
 -- COMMENTS

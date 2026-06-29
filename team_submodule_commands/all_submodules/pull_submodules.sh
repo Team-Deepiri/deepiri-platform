@@ -339,3 +339,11 @@ echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo "  - Work in Synapse: cd platform-services/shared/deepiri-synapse"
 echo "  - Work in Sugar Glider: cd platform-services/shared/deepiri-sugar-glider"
 echo ""
+
+# deepiri-ollama-utils - Shared Ollama runtime and CLI utilities
+echo "  📦 deepiri-ollama-utils (Shared Ollama Utilities)..."
+git submodule update --init --recursive deepiri-ollama-utils
+echo "    ✅ deepiri-ollama-utils initialized"
+
+git submodule update --remote deepiri-ollama-utils
+git submodule status deepiri-ollama-utils

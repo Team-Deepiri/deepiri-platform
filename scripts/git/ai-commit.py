@@ -26,6 +26,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import Optional
+from deepiri_ollama.runtime import check
 
 try:
     import httpx
@@ -42,14 +43,9 @@ def get_os_type() -> str:
     return "linux"
 
 
-def is_ollama_running(base_url: str) -> bool:
-    try:
-        import urllib.request
-        req = urllib.request.Request(f"{base_url}/api/tags")
-        urllib.request.urlopen(req, timeout=2)
-        return True
-    except Exception:
-        return False
+def is_ollama_running(base_url="http://localhost:11434"):
+    result = asyncio.run(check(base_url))
+    return result.get("running", False)
 
 
 def start_ollama(root_path: str, base_url: str) -> bool:
@@ -1896,7 +1892,8 @@ async def main():
         print(f"{Colors.RED}No repositories with changes to process.{Colors.NC}")
         sys.exit(0)
 
-    if not is_ollama_running(ollama_url):
+    status = check()
+    if not status["ok"]:
         print(f"\n{Colors.YELLOW}Ollama is not running.{Colors.NC}")
         print(f"{Colors.CYAN}[s] Start automatically  [m] Pull models  [q] Quit: {Colors.NC}", end="")
         response = input().strip().lower()
