@@ -26,7 +26,7 @@ jest.mock('@team-deepiri/shared-utils', () => ({
     MODEL_EVENTS:     'model-events',
   },
   secureLog: jest.fn(),
-}));
+}), { virtual: true });
 
 const mockAwardMomentum    = jest.fn().mockResolvedValue({ totalMomentum: 10 });
 const mockUpdateDailyStreak   = jest.fn().mockResolvedValue({});

@@ -31,7 +31,7 @@ jest.mock('@influxdata/influxdb-client', () => {
 jest.mock('@team-deepiri/shared-utils', () => ({
   secureLog: jest.fn(),
   createLogger: () => ({ debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() }),
-}));
+}), { virtual: true });
 
 // Static import — module loads AFTER mocks are hoisted, so InfluxDB is mocked in the constructor
 import service from '../timeSeriesAnalytics';

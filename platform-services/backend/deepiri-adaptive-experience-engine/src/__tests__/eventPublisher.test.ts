@@ -11,7 +11,7 @@ jest.mock('@team-deepiri/shared-utils', () => ({
   })),
   StreamTopics: { PLATFORM_EVENTS: 'platform-events' },
   secureLog: jest.fn(),
-}));
+}), { virtual: true });
 
 describe('Adaptive Experience eventPublisher', () => {
   beforeEach(() => {
