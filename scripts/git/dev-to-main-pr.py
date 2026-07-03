@@ -18,6 +18,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from typing import Any, Optional
 
 
@@ -125,16 +126,41 @@ def get_pr_number(pr_url: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
-def check_mergeable(repo_name: str, pr_url: str) -> bool:
-    """Returns True if the PR has no merge conflicts (mergeable == true)."""
+def get_mergeable(repo_name: str, pr_url: str) -> Optional[bool]:
+    """Return mergeability: True, False, or None while GitHub is still computing."""
     pr_number = get_pr_number(pr_url)
     if not pr_number:
-        return False
+        return None
     code, data = gh_api(f"repos/{repo_slug(repo_name)}/pulls/{pr_number}")
     if code != 0 or not isinstance(data, dict):
-        return False
-    # mergeable can be True, False, or None (still computing); only proceed on True
-    return data.get("mergeable") is True
+        return None
+    return data.get("mergeable")
+
+
+def wait_for_mergeable(
+    repo_name: str,
+    pr_url: str,
+    max_attempts: int = 15,
+    delay_seconds: float = 2.0,
+) -> Optional[bool]:
+    """Poll until mergeability is known or attempts are exhausted."""
+    for _ in range(max_attempts):
+        mergeable = get_mergeable(repo_name, pr_url)
+        if mergeable is not None:
+            return mergeable
+        time.sleep(delay_seconds)
+    return None
+
+
+def merge_with_admin_fallback(repo_name: str, pr_url: str) -> tuple[bool, str]:
+    """Retry merge with --admin unless GitHub confirms merge conflicts."""
+    print(f"  {Colors.GRAY}Checking mergeability...{Colors.NC}")
+    mergeable = wait_for_mergeable(repo_name, pr_url)
+    if mergeable is False:
+        return False, "PR has merge conflicts"
+
+    print(f"  {Colors.GRAY}Retrying with --admin...{Colors.NC}")
+    return admin_merge(repo_name, pr_url)
 
 
 def admin_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
@@ -257,19 +283,16 @@ def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bo
             print(f"  {Colors.GREEN}Auto-merge enabled on existing PR: {existing}{Colors.NC}")
             return {"repo": repo_name, "status": "auto_merged", "url": existing}
         else:
-            print(f"  {Colors.YELLOW}Auto-merge failed: {msg}. Checking for conflicts...{Colors.NC}")
-            if check_mergeable(repo_name, existing):
-                print(f"  {Colors.GRAY}No conflicts detected, retrying with --admin...{Colors.NC}")
-                ok_adm, msg_adm = admin_merge(repo_name, existing)
-                if ok_adm:
-                    print(f"  {Colors.GREEN}Admin-merged: {existing}{Colors.NC}")
-                    return {"repo": repo_name, "status": "auto_merged", "url": existing}
-                else:
-                    print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
-                    return {"repo": repo_name, "status": "exists", "url": existing, "auto_merge_error": msg_adm}
+            print(f"  {Colors.YELLOW}Auto-merge failed: {msg}. Trying admin fallback...{Colors.NC}")
+            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, existing)
+            if ok_adm:
+                print(f"  {Colors.GREEN}Admin-merged: {existing}{Colors.NC}")
+                return {"repo": repo_name, "status": "auto_merged", "url": existing}
+            if msg_adm == "PR has merge conflicts":
+                print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
             else:
-                print(f"  {Colors.YELLOW}PR has conflicts or mergeability unknown, skipping --admin.{Colors.NC}")
-                return {"repo": repo_name, "status": "exists", "url": existing, "auto_merge_error": msg}
+                print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
+            return {"repo": repo_name, "status": "exists", "url": existing, "auto_merge_error": msg_adm}
 
     # Compare branches
     print(f"  {Colors.GRAY}Comparing {HEAD_BRANCH}...{BASE_BRANCH}...{Colors.NC}", end="", flush=True)
@@ -320,19 +343,16 @@ def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bo
             print(f"  {Colors.GREEN}Auto-merge enabled: {url_or_err}{Colors.NC}")
             return {"repo": repo_name, "status": "auto_merged", "url": url_or_err}
         else:
-            print(f"  {Colors.YELLOW}Auto-merge failed: {msg_am}. Checking for conflicts...{Colors.NC}")
-            if check_mergeable(repo_name, url_or_err):
-                print(f"  {Colors.GRAY}No conflicts detected, retrying with --admin...{Colors.NC}")
-                ok_adm, msg_adm = admin_merge(repo_name, url_or_err)
-                if ok_adm:
-                    print(f"  {Colors.GREEN}Admin-merged: {url_or_err}{Colors.NC}")
-                    return {"repo": repo_name, "status": "auto_merged", "url": url_or_err}
-                else:
-                    print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
-                    return {"repo": repo_name, "status": "created", "url": url_or_err, "auto_merge_error": msg_adm}
+            print(f"  {Colors.YELLOW}Auto-merge failed: {msg_am}. Trying admin fallback...{Colors.NC}")
+            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, url_or_err)
+            if ok_adm:
+                print(f"  {Colors.GREEN}Admin-merged: {url_or_err}{Colors.NC}")
+                return {"repo": repo_name, "status": "auto_merged", "url": url_or_err}
+            if msg_adm == "PR has merge conflicts":
+                print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
             else:
-                print(f"  {Colors.YELLOW}PR has conflicts or mergeability unknown, skipping --admin.{Colors.NC}")
-                return {"repo": repo_name, "status": "created", "url": url_or_err, "auto_merge_error": msg_am}
+                print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
+            return {"repo": repo_name, "status": "created", "url": url_or_err, "auto_merge_error": msg_adm}
     else:
         print(f"  {Colors.RED}Failed: {url_or_err}{Colors.NC}")
         return {"repo": repo_name, "status": "failed", "error": url_or_err}
