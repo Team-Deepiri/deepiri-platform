@@ -1,3 +1,10 @@
+# Platform CI: selective Docker builds + compose validation.
+#
+# GitHub Actions secrets (see ops/ci/GITHUB_SECRETS.md):
+#   REQUIRED: PLATFORM_ACCESS_TOKEN — PAT with read access to private submodule repos
+#              (from secrets.7z on Discord, or fine-grained PAT). GITHUB_TOKEN is automatic.
+#   NOT NEEDED FOR CI: OAuth/OpenAI/ML keys — workflow uses dummy compose env vars.
+#
 name: Platform Build and Test
 
 on:
@@ -20,11 +27,17 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ALL_PLATFORM_SERVICES: >-
-    ["api-gateway","auth-service","workflow-orchestrator","incentive-engine",
-    "decision-intelligence","external-bridge-service","adaptive-experience-engine",
-    "language-intelligence-service","communications-hub","messaging-service",
-    "realtime-gateway","synapse","sugar-glider"]
+  # Compose interpolations without defaults — CI placeholders (not production secrets).
+  GOOGLE_CLIENT_ID: ci-google-client-id-not-used
+  GOOGLE_CLIENT_SECRET: ci-google-client-secret-not-used
+  AUTH_SERVICE_URL: http://auth-service:5001
+  EXTERNAL_BRIDGE_BASE_URL: http://external-bridge-service:5006
+  OPENAI_API_KEY: ci-openai-key-not-used
+  WANDB_API_KEY: ci-wandb-key-not-used
+  PINECONE_API_KEY: ci-pinecone-key-not-used
+  WEAVIATE_URL: http://localhost:8080
+  INFLUXDB_TOKEN: ci-influxdb-token-minimum-48-characters-for-validation-xx
+  REDIS_PASSWORD: password
 
 jobs:
   detect:
@@ -34,12 +47,12 @@ jobs:
       services: ${{ steps.plan.outputs.services }}
       needs_shared_utils: ${{ steps.plan.outputs.build_shared_utils }}
       needs_suite: ${{ steps.plan.outputs.build_shared_utils }}
-      smoke_sugar_glider: ${{ steps.plan.outputs.smoke_sugar_glider }}
       skip_docker: ${{ steps.plan.outputs.skip_docker }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
       - name: Plan selective builds
@@ -140,8 +153,11 @@ jobs:
                     mark_service synapse ;;
                   platform-services/shared/deepiri-sugar-glider/*|platform-services/shared/deepiri-sugar-glider)
                     mark_service sugar-glider ;;
-                  docker-compose.dev.yml|docker-compose.yml|.github/workflows/platform-build-and-test.yml|ops/k8s/*)
-                    : # validate only; no automatic full rebuild
+                  docker-compose.dev.yml|docker-compose.yml|.github/workflows/platform-build-and-test.yml)
+                    mark_service sugar-glider
+                    ;;
+                  ops/k8s/*)
+                    : # config-only; validate compose, no docker build
                     ;;
                   *)
                     : # docs, unrelated paths
@@ -162,11 +178,6 @@ jobs:
           done
           services_json+="]"
 
-          smoke_sugar_glider=false
-          if [ -n "${SELECTED[sugar-glider]:-}" ]; then
-            smoke_sugar_glider=true
-          fi
-
           skip_docker=true
           if [ "$docker_relevant" = true ] && [ "$services_json" != "[]" ]; then
             skip_docker=false
@@ -174,7 +185,6 @@ jobs:
 
           echo "services=$services_json" >>"$GITHUB_OUTPUT"
           echo "build_shared_utils=$build_shared_utils" >>"$GITHUB_OUTPUT"
-          echo "smoke_sugar_glider=$smoke_sugar_glider" >>"$GITHUB_OUTPUT"
           echo "skip_docker=$skip_docker" >>"$GITHUB_OUTPUT"
 
           echo "Planned services: $services_json"
@@ -187,16 +197,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Bootstrap CI secrets
         run: |
           set -euo pipefail
           SECRETS_DIR=ops/k8s/secrets
           mkdir -p "$SECRETS_DIR"
-          JWT_SECRET=ci-jwt-secret-minimum-32-characters-long
-          INTERNAL_SERVICE_SECRET=ci-internal-service-secret
-          REDIS_PASSWORD=password
-          INFLUXDB_TOKEN=ci-influxdb-token-minimum-48-characters-for-validation-xx
           write_secret() {
             local svc="$1"
             {
@@ -207,8 +215,8 @@ jobs:
               echo "  namespace: default"
               echo "type: Opaque"
               echo "stringData:"
-              echo "  JWT_SECRET: \"${JWT_SECRET}\""
-              echo "  INTERNAL_SERVICE_SECRET: \"${INTERNAL_SERVICE_SECRET}\""
+              echo "  JWT_SECRET: \"ci-jwt-secret-minimum-32-characters-long\""
+              echo "  INTERNAL_SERVICE_SECRET: \"ci-internal-service-secret\""
               echo "  REDIS_PASSWORD: \"${REDIS_PASSWORD}\""
               echo "  INFLUXDB_TOKEN: \"${INFLUXDB_TOKEN}\""
             } >"$SECRETS_DIR/${svc}-secret.yaml"
@@ -224,8 +232,10 @@ jobs:
         run: |
           set -euo pipefail
           docker compose -f docker-compose.dev.yml config --quiet
-          docker compose -f docker-compose.dev.yml config --services | grep -qx sugar-glider
-          docker compose -f docker-compose.dev.yml config | grep -q 'deepiri-dev-sugar-glider:latest'
+          services="$(docker compose -f docker-compose.dev.yml config --services)"
+          echo "$services"
+          echo "$services" | grep -Fxq sugar-glider
+          docker compose -f docker-compose.dev.yml config | grep -Fq 'deepiri-dev-sugar-glider:latest'
 
   prepare:
     name: Prepare build inputs
@@ -236,6 +246,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
 
@@ -295,6 +306,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
 
@@ -332,10 +344,6 @@ jobs:
           set -euo pipefail
           SECRETS_DIR=ops/k8s/secrets
           mkdir -p "$SECRETS_DIR"
-          JWT_SECRET=ci-jwt-secret-minimum-32-characters-long
-          INTERNAL_SERVICE_SECRET=ci-internal-service-secret
-          REDIS_PASSWORD=password
-          INFLUXDB_TOKEN=ci-influxdb-token-minimum-48-characters-for-validation-xx
           write_secret() {
             local svc="$1"
             {
@@ -346,8 +354,8 @@ jobs:
               echo "  namespace: default"
               echo "type: Opaque"
               echo "stringData:"
-              echo "  JWT_SECRET: \"${JWT_SECRET}\""
-              echo "  INTERNAL_SERVICE_SECRET: \"${INTERNAL_SERVICE_SECRET}\""
+              echo "  JWT_SECRET: \"ci-jwt-secret-minimum-32-characters-long\""
+              echo "  INTERNAL_SERVICE_SECRET: \"ci-internal-service-secret\""
               echo "  REDIS_PASSWORD: \"${REDIS_PASSWORD}\""
               echo "  INFLUXDB_TOKEN: \"${INFLUXDB_TOKEN}\""
             } >"$SECRETS_DIR/${svc}-secret.yaml"
@@ -397,4 +405,17 @@ jobs:
 
       - name: Smoke test sugar-glider
         if: matrix.service == 'sugar-glider'
-        run: docker run --rm deepiri-dev-sugar-glider:latest /app/sidecar healthcheck
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.dev.yml up -d redis
+          docker compose -f docker-compose.dev.yml up -d --no-build sugar-glider
+          for _ in $(seq 1 30); do
+            if docker compose -f docker-compose.dev.yml exec -T sugar-glider /app/sidecar healthcheck; then
+              docker compose -f docker-compose.dev.yml down
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f docker-compose.dev.yml logs sugar-glider
+          docker compose -f docker-compose.dev.yml down
+          exit 1
