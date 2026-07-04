@@ -34,10 +34,10 @@ build:
           PYTHON_VERSION: 3.11
     
     # Decision Intelligence (for feature engineering)
-    - image: deepiri-dev-decision-intelligence
+    - image: deepiri-dev-telemetry
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
+        dockerfile: backend/deepiri-telemetry/Dockerfile
 
 deploy:
   kubectl:

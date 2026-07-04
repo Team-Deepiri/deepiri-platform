@@ -44,18 +44,16 @@ extract_configmap() {
     }' "$configmap_file" > "$output_file"
 }
 
-# Function to extract ALL secrets from the shared secrets.yaml file
-extract_shared_secrets() {
-    local secret_file="$SCRIPT_DIR/secrets/secrets.yaml"
-    local output_file="$1"
-    
+# Extract stringData from a per-service Secret YAML file
+extract_service_secrets() {
+    local service="$1"
+    local output_file="$2"
+    local secret_file="$SCRIPT_DIR/secrets/${service}-secret.yaml"
+
     if [ ! -f "$secret_file" ]; then
-        echo -e "${YELLOW}⚠️  Shared secrets file not found: $secret_file${NC}"
-        return 1
+        return 0
     fi
-    
-    # Extract stringData section and convert YAML key-value pairs to KEY=value format
-    # This appends all secrets to every service (they can use what they need)
+
     awk '/^stringData:/{flag=1; next} /^[^ ]/{flag=0} flag && /^  [A-Z_]+:/ {
         key = $1
         gsub(/^  /, "", key)
@@ -70,13 +68,15 @@ extract_shared_secrets() {
 SERVICES=(
     "api-gateway"
     "auth-service"
-    "workflow-orchestrator"
-    "incentive-engine"
-    "decision-intelligence"
+    "truss"
+    "registry"
+    "telemetry"
     "communications-hub"
     "external-bridge-service"
-    "adaptive-experience-engine"
+    "jobs"
     "realtime-gateway"
+    "messaging-service"
+    "language-intelligence-service"
     "cyrex"
     "frontend-dev"
 )
@@ -97,8 +97,8 @@ for service in "${SERVICES[@]}"; do
         touch "$env_file"
     fi
     
-    # Append shared secrets (all services get all secrets - they use what they need)
-    extract_shared_secrets "$env_file"
+    # Append this service's secret file (if present locally)
+    extract_service_secrets "$service" "$env_file"
     echo -e "   ✓ Secrets synced"
     
     # Count variables

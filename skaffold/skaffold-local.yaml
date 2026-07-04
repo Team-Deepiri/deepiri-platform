@@ -97,51 +97,51 @@ build:
             dest: /app/
     
     # Microservices - Workflow Orchestrator
-    - image: deepiri-workflow-orchestrator
+    - image: deepiri-truss
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
+        dockerfile: backend/deepiri-truss/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-workflow-orchestrator/**/*.ts'
+          - src: 'backend/deepiri-truss/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-workflow-orchestrator/**/*.json'
+          - src: 'backend/deepiri-truss/**/*.json'
             dest: /app/
     
     # Microservices - Adaptive Experience Engine
-    - image: deepiri-adaptive-experience-engine
+    - image: deepiri-jobs
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
+        dockerfile: backend/deepiri-jobs/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-adaptive-experience-engine/**/*.ts'
+          - src: 'backend/deepiri-jobs/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-adaptive-experience-engine/**/*.json'
+          - src: 'backend/deepiri-jobs/**/*.json'
             dest: /app/
     
     # Microservices - Incentive Engine (Gamification)
-    - image: deepiri-incentive-engine
+    - image: deepiri-registry
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-incentive-engine/Dockerfile
+        dockerfile: backend/deepiri-registry/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-incentive-engine/**/*.ts'
+          - src: 'backend/deepiri-registry/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-incentive-engine/**/*.json'
+          - src: 'backend/deepiri-registry/**/*.json'
             dest: /app/
     
     # Microservices - Decision Intelligence
-    - image: deepiri-decision-intelligence
+    - image: deepiri-telemetry
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
+        dockerfile: backend/deepiri-telemetry/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-decision-intelligence/**/*.ts'
+          - src: 'backend/deepiri-telemetry/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-decision-intelligence/**/*.json'
+          - src: 'backend/deepiri-telemetry/**/*.json'
             dest: /app/
     
     # Microservices - External Bridge Service
@@ -286,25 +286,25 @@ profiles:
           docker:
             dockerfile: backend/deepiri-auth-service/Dockerfile
         
-        - image: deepiri-dev-workflow-orchestrator
+        - image: deepiri-dev-truss
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
+            dockerfile: backend/deepiri-truss/Dockerfile
         
-        - image: deepiri-dev-adaptive-experience-engine
+        - image: deepiri-dev-jobs
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
+            dockerfile: backend/deepiri-jobs/Dockerfile
         
-        - image: deepiri-dev-incentive-engine
+        - image: deepiri-dev-registry
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-incentive-engine/Dockerfile
+            dockerfile: backend/deepiri-registry/Dockerfile
         
-        - image: deepiri-dev-decision-intelligence
+        - image: deepiri-dev-telemetry
           context: ./platform-services
           docker:
-            dockerfile: backend/deepiri-decision-intelligence/Dockerfile
+            dockerfile: backend/deepiri-telemetry/Dockerfile
         
         - image: deepiri-dev-external-bridge-service
           context: ./platform-services

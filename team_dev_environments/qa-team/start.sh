@@ -14,10 +14,10 @@ SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
   postgres-auth postgres-core postgres-intelligence redis influxdb kafka
   synapse synapse-sugar-glider
-  api-gateway auth-service workflow-orchestrator
-  incentive-engine decision-intelligence
+  api-gateway auth-service truss
+  registry telemetry
   communications-hub external-bridge-service
-  adaptive-experience-engine realtime-gateway
+  jobs realtime-gateway
   language-intelligence-service messaging-service
   frontend-dev synapse synapse-sugar-glider adminer
   messaging-service frontend-dev adminer
@@ -47,10 +47,10 @@ sleep 3
 # Start backend services (can use --no-deps since infrastructure is up)
 echo "🔧 Starting backend services..."
 docker compose -f docker-compose.dev.yml up -d --no-build --no-deps \
-  api-gateway auth-service workflow-orchestrator \
-  incentive-engine decision-intelligence \
+  api-gateway auth-service truss \
+  registry telemetry \
   communications-hub external-bridge-service \
-  adaptive-experience-engine realtime-gateway \
+  jobs realtime-gateway \
   adminer
 
 # Try to start language-intelligence-service if image exists (optional service)
