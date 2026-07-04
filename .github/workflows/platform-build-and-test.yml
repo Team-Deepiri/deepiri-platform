@@ -66,13 +66,96 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Bootstrap CI secrets
-        run: bash ops/ci/bootstrap-secrets-for-ci.sh
+        run: |
+          set -euo pipefail
+          SECRETS_DIR=ops/k8s/secrets
+          mkdir -p "$SECRETS_DIR"
+          JWT_SECRET=ci-jwt-secret-minimum-32-characters-long
+          INTERNAL_SERVICE_SECRET=ci-internal-service-secret
+          REDIS_PASSWORD=password
+          INFLUXDB_TOKEN=ci-influxdb-token-minimum-48-characters-for-validation-xx
+          write_secret() {
+            local svc="$1"
+            {
+              echo "apiVersion: v1"
+              echo "kind: Secret"
+              echo "metadata:"
+              echo "  name: ${svc}-secret"
+              echo "  namespace: default"
+              echo "type: Opaque"
+              echo "stringData:"
+              echo "  JWT_SECRET: \"${JWT_SECRET}\""
+              echo "  INTERNAL_SERVICE_SECRET: \"${INTERNAL_SERVICE_SECRET}\""
+              echo "  REDIS_PASSWORD: \"${REDIS_PASSWORD}\""
+              echo "  INFLUXDB_TOKEN: \"${INFLUXDB_TOKEN}\""
+            } >"$SECRETS_DIR/${svc}-secret.yaml"
+          }
+          for svc in \
+            api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence \
+            external-bridge-service adaptive-experience-engine language-intelligence-service \
+            communications-hub messaging-service realtime-gateway synapse frontend-dev cyrex; do
+            write_secret "$svc"
+          done
 
       - name: Validate compose file
         run: docker compose -f docker-compose.dev.yml config --quiet
 
       - name: Build platform Docker services
-        run: bash ops/ci/build-platform-services.sh
+        env:
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+        run: |
+          set -euo pipefail
+          ensure_suite_image() {
+            local tag="$1"
+            local base="$2"
+            local img="ghcr.io/team-deepiri/deepiri-suite:${tag}"
+            if docker image inspect "$img" >/dev/null 2>&1; then
+              echo "  ok $img (cached)"
+              return 0
+            fi
+            echo "  pulling $img..."
+            if docker pull "$img" 2>/dev/null; then
+              echo "  ok $img (pulled)"
+              return 0
+            fi
+            echo "  building $img from deepiri-suite submodule..."
+            docker build --build-arg "BASE_IMAGE=${base}" -t "$img" ./deepiri-suite
+          }
+          echo "==> Ensuring deepiri-suite base images"
+          ensure_suite_image "18-alpine" "node:18-alpine"
+          ensure_suite_image "18-slim" "node:18-slim"
+          ensure_suite_image "20-alpine" "node:20-alpine"
+          echo "==> Building deepiri-shared-utils (required by Node service Dockerfiles)"
+          npm ci --legacy-peer-deps --prefix platform-services/shared/deepiri-shared-utils
+          npm run build --prefix platform-services/shared/deepiri-shared-utils
+          PLATFORM_SERVICES=(
+            api-gateway
+            auth-service
+            workflow-orchestrator
+            incentive-engine
+            decision-intelligence
+            external-bridge-service
+            adaptive-experience-engine
+            language-intelligence-service
+            communications-hub
+            messaging-service
+            realtime-gateway
+            synapse
+            synapse-sugar-glider
+          )
+          failed=()
+          for svc in "${PLATFORM_SERVICES[@]}"; do
+            echo ""
+            echo "── docker compose build $svc ──"
+            if ! docker compose -f docker-compose.dev.yml build "$svc"; then
+              failed+=("$svc")
+            fi
+          done
+          if ((${#failed[@]} > 0)); then
+            echo "FAILED builds: ${failed[*]}"
+            exit 1
+          fi
 
       - name: Smoke test sugar-glider image
         run: |
