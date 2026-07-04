@@ -28,9 +28,10 @@ app.use(validateBodyIfPresent());
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
-    service: 'deepiri-decision-intelligence',
+    service: 'deepiri-telemetry',
     capabilities: [
       'time-series-analytics',
+      'platform-signals',
       'behavioral-clustering',
       'predictive-modeling',
       'anomaly-detection',
@@ -43,6 +44,7 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+app.use('/api/telemetry', routes);
 app.use('/', routes);
 
 // Decision Intelligence API
