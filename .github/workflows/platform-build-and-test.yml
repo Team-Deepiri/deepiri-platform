@@ -142,7 +142,7 @@ jobs:
             messaging-service
             realtime-gateway
             synapse
-            synapse-sugar-glider
+            sugar-glider
           )
           failed=()
           for svc in "${PLATFORM_SERVICES[@]}"; do
@@ -160,4 +160,4 @@ jobs:
       - name: Smoke test sugar-glider image
         run: |
           set -euo pipefail
-          docker run --rm deepiri-dev-synapse-sugar-glider:latest /app/sidecar healthcheck
+          docker run --rm deepiri-dev-sugar-glider:latest /app/sidecar healthcheck

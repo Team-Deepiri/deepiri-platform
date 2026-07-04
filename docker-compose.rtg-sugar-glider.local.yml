@@ -59,9 +59,9 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: redispassword
       SYNAPSE_URL: http://synapse:8002
-      SYNAPSE_SUGAR_GLIDER_URL: http://synapse-sugar-glider:8081
-      SYNAPSE_SIDECAR_URL: http://synapse-sugar-glider:8081
-      SYNAPSE_GRPC_ADDR: synapse-sugar-glider:50051
+      SYNAPSE_SUGAR_GLIDER_URL: http://sugar-glider:8081
+      SYNAPSE_SIDECAR_URL: http://sugar-glider:8081
+      SYNAPSE_GRPC_ADDR: sugar-glider:50051
       STREAM_TRANSPORT: ${STREAM_TRANSPORT:-sugar-glider-grpc}
       STREAM_GRPC_KEEPALIVE_MS: ${STREAM_GRPC_KEEPALIVE_MS:-300000}
       STREAM_GRPC_KEEPALIVE_TIMEOUT_MS: ${STREAM_GRPC_KEEPALIVE_TIMEOUT_MS:-20000}
@@ -115,11 +115,11 @@ services:
       timeout: 5s
       retries: 5
 
-  synapse-sugar-glider:
+  sugar-glider:
     build:
       context: ./platform-services/shared/deepiri-sugar-glider
       dockerfile: Dockerfile
-    container_name: deepiri-synapse-sugar-glider-rtg-local
+    container_name: deepiri-sugar-glider-rtg-local
     restart: unless-stopped
     environment:
       SIDECAR_SERVICE_NAME: realtime-gateway
@@ -156,14 +156,10 @@ services:
       - "8081:8081"
       - "50051:50051"
     volumes:
-      - synapse_sidecar_rtg_local_wal:/data/synapse-wal
+      - sugar_glider_rtg_local_wal:/data/synapse-wal
     depends_on:
       redis:
         condition: service_healthy
-    networks:
-      default:
-        aliases:
-          - synapse-sidecar
     healthcheck:
       test: ["CMD", "/app/sidecar", "healthcheck"]
       interval: 5s
@@ -172,4 +168,4 @@ services:
 
 volumes:
   redis_rtg_local_data:
-  synapse_sidecar_rtg_local_wal:
+  sugar_glider_rtg_local_wal:
