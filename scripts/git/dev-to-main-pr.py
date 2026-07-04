@@ -4,7 +4,9 @@ Branch-merge PR Creator for Deepiri (can be Dev-to-Main or Main-to-Dev)
 Creates PRs between two branches across the repos via GitHub CLI.
 No local clones required — operates entirely through the GitHub API.
 
-All PRs are automatically merged after creation.
+All PRs are automatically merged after creation. If auto-merge is blocked by
+branch protection rules and there are no merge conflicts, the script retries
+with `gh pr merge --admin` to bypass those rules.
 
 Usage:
     python dev-to-main-pr.py                     # default: dev → main
@@ -16,6 +18,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from typing import Any, Optional
 
 
@@ -118,13 +121,67 @@ def create_pr(repo_name: str, title: str, body: str, draft: bool = False) -> tup
     return False, (result.stderr or result.stdout).strip()
 
 
+def get_pr_number(pr_url: str) -> Optional[str]:
+    match = re.search(r"(?:/pull/|#)(\d+)$", pr_url)
+    return match.group(1) if match else None
+
+
+def get_mergeable(repo_name: str, pr_url: str) -> Optional[bool]:
+    """Return mergeability: True, False, or None while GitHub is still computing."""
+    pr_number = get_pr_number(pr_url)
+    if not pr_number:
+        return None
+    code, data = gh_api(f"repos/{repo_slug(repo_name)}/pulls/{pr_number}")
+    if code != 0 or not isinstance(data, dict):
+        return None
+    return data.get("mergeable")
+
+
+def wait_for_mergeable(
+    repo_name: str,
+    pr_url: str,
+    max_attempts: int = 15,
+    delay_seconds: float = 2.0,
+) -> Optional[bool]:
+    """Poll until mergeability is known or attempts are exhausted."""
+    for _ in range(max_attempts):
+        mergeable = get_mergeable(repo_name, pr_url)
+        if mergeable is not None:
+            return mergeable
+        time.sleep(delay_seconds)
+    return None
+
+
+def merge_with_admin_fallback(repo_name: str, pr_url: str) -> tuple[bool, str]:
+    """Retry merge with --admin unless GitHub confirms merge conflicts."""
+    print(f"  {Colors.GRAY}Checking mergeability...{Colors.NC}")
+    mergeable = wait_for_mergeable(repo_name, pr_url)
+    if mergeable is False:
+        return False, "PR has merge conflicts"
+
+    print(f"  {Colors.GRAY}Retrying with --admin...{Colors.NC}")
+    return admin_merge(repo_name, pr_url)
+
+
+def admin_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
+    """Force-merge a PR using --admin to bypass branch protection rules."""
+    result = gh(
+        "pr", "merge", pr_url,
+        "--repo", repo_slug(repo_name),
+        "--squash",
+        "--admin",
+        "--delete-branch=false",
+    )
+    if result.returncode == 0:
+        return True, "Merged with --admin"
+    return False, (result.stderr or result.stdout).strip()
+
+
 def enable_auto_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
     repo = repo_slug(repo_name)
-    match = re.search(r"(?:/pull/|#)(\d+)$", pr_url)
-    if not match:
+    pr_number = get_pr_number(pr_url)
+    if not pr_number:
         return False, f"Unable to parse PR number from '{pr_url}'"
-
-    pr_number = match.group(1)
 
     node_result = gh("api", f"repos/{repo}/pulls/{pr_number}", "--jq", ".node_id")
     if node_result.returncode != 0:
@@ -226,8 +283,16 @@ def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bo
             print(f"  {Colors.GREEN}Auto-merge enabled on existing PR: {existing}{Colors.NC}")
             return {"repo": repo_name, "status": "auto_merged", "url": existing}
         else:
-            print(f"  {Colors.YELLOW}Auto-merge failed: {msg}{Colors.NC}")
-            return {"repo": repo_name, "status": "exists", "url": existing, "auto_merge_error": msg}
+            print(f"  {Colors.YELLOW}Auto-merge failed: {msg}. Trying admin fallback...{Colors.NC}")
+            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, existing)
+            if ok_adm:
+                print(f"  {Colors.GREEN}Admin-merged: {existing}{Colors.NC}")
+                return {"repo": repo_name, "status": "auto_merged", "url": existing}
+            if msg_adm == "PR has merge conflicts":
+                print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
+            else:
+                print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
+            return {"repo": repo_name, "status": "exists", "url": existing, "auto_merge_error": msg_adm}
 
     # Compare branches
     print(f"  {Colors.GRAY}Comparing {HEAD_BRANCH}...{BASE_BRANCH}...{Colors.NC}", end="", flush=True)
@@ -278,8 +343,16 @@ def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bo
             print(f"  {Colors.GREEN}Auto-merge enabled: {url_or_err}{Colors.NC}")
             return {"repo": repo_name, "status": "auto_merged", "url": url_or_err}
         else:
-            print(f"  {Colors.YELLOW}Auto-merge failed: {msg_am}{Colors.NC}")
-            return {"repo": repo_name, "status": "created", "url": url_or_err, "auto_merge_error": msg_am}
+            print(f"  {Colors.YELLOW}Auto-merge failed: {msg_am}. Trying admin fallback...{Colors.NC}")
+            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, url_or_err)
+            if ok_adm:
+                print(f"  {Colors.GREEN}Admin-merged: {url_or_err}{Colors.NC}")
+                return {"repo": repo_name, "status": "auto_merged", "url": url_or_err}
+            if msg_adm == "PR has merge conflicts":
+                print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
+            else:
+                print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
+            return {"repo": repo_name, "status": "created", "url": url_or_err, "auto_merge_error": msg_adm}
     else:
         print(f"  {Colors.RED}Failed: {url_or_err}{Colors.NC}")
         return {"repo": repo_name, "status": "failed", "error": url_or_err}

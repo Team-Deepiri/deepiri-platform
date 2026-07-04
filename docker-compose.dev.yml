@@ -884,8 +884,9 @@ services:
       context: .
       dockerfile: ./diri-cyrex/Dockerfile
       args:
-        BUILD_TYPE: prebuilt
-        BASE_IMAGE: pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime
+        BUILD_TYPE: ${CYREX_BUILD_TYPE:-prebuilt}
+        BASE_IMAGE: ${CYREX_BASE_IMAGE:-pytorch/pytorch:2.9.1-cuda12.8-cudnn9-runtime}
+        DEVICE_TYPE: ${CYREX_DEVICE_TYPE:-auto}
         PYTORCH_VERSION: 2.9.1
         PYTHON_VERSION: 3.11
         # Using CUDA 12.8 base image for RTX 5080/5090 (sm_120) support
