@@ -3,16 +3,78 @@ name: Platform Build and Test
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: platform-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   platform-ci:
+    name: Submodules + Docker builds
     runs-on: ubuntu-latest
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Validate CI workflow
-        run: echo "Platform CI workflow validated"
+      - name: Init submodules (private repos)
+        env:
+          TOKEN: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # GITHUB_TOKEN cannot read other private repos; prefer PLATFORM_ACCESS_TOKEN (repo read).
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Verify submodules checked out
+        run: |
+          set -euo pipefail
+          test -f platform-services/backend/deepiri-api-gateway/package.json
+          test -f platform-services/shared/deepiri-shared-utils/package.json
+          test -f deepiri-suite/Dockerfile
+          test -f diri-cyrex/Dockerfile
+          echo "Submodule paths present"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: platform-services/shared/deepiri-shared-utils/package-lock.json
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Bootstrap CI secrets
+        run: bash ops/ci/bootstrap-secrets-for-ci.sh
+
+      - name: Validate compose file
+        run: docker compose -f docker-compose.dev.yml config --quiet
+
+      - name: Build platform Docker services
+        run: bash ops/ci/build-platform-services.sh
+
+      - name: Smoke test sugar-glider image
+        run: |
+          set -euo pipefail
+          docker run --rm deepiri-dev-synapse-sugar-glider:latest /app/sidecar healthcheck
