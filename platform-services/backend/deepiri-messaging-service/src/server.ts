@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { config } from './config/environment';
 import { logger } from './utils/logger';
 import routes from './routes';
+import notificationRoutes from './routes/notificationRoutes';
 import { validateBodyIfPresent } from './middleware/inputValidation';
 
 export function createServer(): Express {
@@ -26,12 +27,16 @@ export function createServer(): Express {
     res.json({
       status: 'healthy',
       service: 'messaging-service',
+      capabilities: ['chat', 'agent-messaging', 'push', 'webhooks', 'templates', 'preferences'],
       timestamp: new Date().toISOString(),
     });
   });
 
   // API routes
   app.use('/api/v1', routes);
+  // Legacy communications-hub paths (push, webhooks — no Socket.IO here; RTG owns realtime)
+  app.use('/comm', notificationRoutes);
+  app.use('/api/notifications', notificationRoutes);
 
   // Error handling middleware
   app.use((err: any, req: Request, res: Response, next: any) => {

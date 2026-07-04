@@ -350,7 +350,8 @@ services:
       WORKFLOW_ORCHESTRATOR_URL: http://truss:5002
       INCENTIVE_ENGINE_URL: http://registry:5003
       DECISION_INTELLIGENCE_URL: http://telemetry:5004
-      COMMUNICATIONS_HUB_URL: http://communications-hub:5005
+      NOTIFICATION_SERVICE_URL: http://messaging-service:5009
+      COMMUNICATIONS_HUB_URL: http://messaging-service:5009
       ADAPTIVE_EXPERIENCE_ENGINE_URL: http://jobs:5007
       EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
@@ -376,7 +377,6 @@ services:
       - truss
       - registry
       - telemetry
-      - communications-hub
       - jobs
       - realtime-gateway
       - language-intelligence-service
@@ -543,42 +543,6 @@ services:
       - postgres-core
       - influxdb
       - synapse
-    networks:
-      - deepiri-dev-network
-
-  # Communications Hub Service
-  communications-hub:
-    build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-communications-hub/Dockerfile
-    image: deepiri-dev-communications-hub:latest
-    pull_policy: never
-    container_name: deepiri-communications-hub-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "5005:5005"
-    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
-    environment:
-      # Override or add docker-specific variables here if needed
-      PORT: 5005
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
-      SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: communications-hub  # Filter to only load this service's configmap
-    volumes:
-      - ./ops/k8s/configmaps:/k8s-configmaps:ro
-      - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
-      - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-communications-hub/src:/app/src
-      - ./platform-services/backend/deepiri-communications-hub/tsconfig.json:/app/tsconfig.json
-    command: node dist/server.js
-    depends_on:
-      postgres-core:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      synapse:
-        condition: service_started
     networks:
       - deepiri-dev-network
 

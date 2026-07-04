@@ -15,7 +15,6 @@ data:
   TRUSS_URL: "http://truss:5002"
   REGISTRY_URL: "http://registry:5003"
   TELEMETRY_URL: "http://telemetry:5004"
-  COMMUNICATIONS_HUB_URL: "http://communications-hub:5005"
   MESSAGING_SERVICE_URL: "http://messaging-service:5009"
   EXTERNAL_BRIDGE_SERVICE_URL: "http://external-bridge-service:5006"
   JOBS_URL: "http://jobs:5007"
