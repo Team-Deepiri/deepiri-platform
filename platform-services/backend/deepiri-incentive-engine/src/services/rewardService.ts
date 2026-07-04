@@ -140,7 +140,7 @@ class RewardService {
         }
       });
       
-      return rewards.map((reward: any) => this.rewardToInterface(reward));
+      return rewards.map(reward => this.rewardToInterface(reward));
     } catch (error: any) {
       secureLog('error', 'Error getting rewards:', error);
       throw error;

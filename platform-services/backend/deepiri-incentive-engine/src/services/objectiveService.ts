@@ -224,7 +224,7 @@ class ObjectiveService {
         }
       });
       
-      const objectives = tasks.map((task: any) => this.taskToObjective(task));
+      const objectives = tasks.map(task => this.taskToObjective(task));
       
       res.json({
         success: true,

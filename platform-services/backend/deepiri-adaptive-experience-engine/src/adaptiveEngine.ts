@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { secureLog } from '@team-deepiri/shared-utils';
-import { publishAdaptiveExperienceGenerated } from './streaming/eventPublisher';
 
 const CYREX_URL = process.env.CYREX_URL || 'http://cyrex:8000';
 
@@ -149,7 +148,6 @@ export const experienceEngine = new AdaptiveExperienceEngine();
 export async function handleGenerateMission(req: Request, res: Response): Promise<void> {
   try {
     const mission = await experienceEngine.generateMission(req.body);
-    publishAdaptiveExperienceGenerated(req.body?.userId, 'mission', mission).catch(() => {});
     res.json(mission);
   } catch (error: any) {
     secureLog('error', 'Mission generation error:', error);
@@ -160,7 +158,6 @@ export async function handleGenerateMission(req: Request, res: Response): Promis
 export async function handleGenerateObjective(req: Request, res: Response): Promise<void> {
   try {
     const objective = await experienceEngine.generateObjective(req.body);
-    publishAdaptiveExperienceGenerated(req.body?.userId, 'objective', objective).catch(() => {});
     res.json(objective);
   } catch (error: any) {
     secureLog('error', 'Objective generation error:', error);
@@ -171,7 +168,6 @@ export async function handleGenerateObjective(req: Request, res: Response): Prom
 export async function handleGeneratePrompt(req: Request, res: Response): Promise<void> {
   try {
     const prompt = await experienceEngine.generatePrompt(req.body);
-    publishAdaptiveExperienceGenerated(req.body?.userId, 'prompt', prompt).catch(() => {});
     res.json(prompt);
   } catch (error: any) {
     secureLog('error', 'Prompt generation error:', error);

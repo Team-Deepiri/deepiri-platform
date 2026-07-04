@@ -38,7 +38,7 @@ class TimeSeriesAnalyticsService {
   async recordData(req: Request, res: Response): Promise<void> {
     try {
       const { userId, metric, value, tags } = req.body;
-
+      
       if (!userId || !metric || value === undefined) {
         res.status(400).json({ error: 'Missing required fields' });
         return;
@@ -56,7 +56,7 @@ class TimeSeriesAnalyticsService {
     try {
       const { userId } = req.params;
       const { metric, startTime, endTime } = req.query;
-
+      
       if (!metric || !startTime || !endTime) {
         res.status(400).json({ error: 'Missing query parameters' });
         return;
@@ -72,47 +72,6 @@ class TimeSeriesAnalyticsService {
     } catch (error: any) {
       secureLog('error', 'Error getting analytics:', error);
       res.status(500).json({ error: 'Failed to get analytics' });
-    }
-  }
-
-  async recordInferenceMetrics(data: {
-    model_name?: string;
-    version?: string;
-    user_id?: string;
-    latency_ms?: number;
-    tokens_used?: number;
-    confidence?: number;
-  }): Promise<void> {
-    const userId = data.user_id || 'anonymous';
-    const tags: Record<string, string> = {
-      model_name: data.model_name || 'unknown',
-      version: data.version || 'unknown',
-    };
-    if (data.latency_ms !== undefined)
-      await this.recordMetric(userId, 'inference_latency_ms', data.latency_ms, tags);
-    if (data.tokens_used !== undefined)
-      await this.recordMetric(userId, 'inference_tokens_used', data.tokens_used, tags);
-    if (data.confidence !== undefined)
-      await this.recordMetric(userId, 'inference_confidence', data.confidence, tags);
-  }
-
-  async recordTrainingMetrics(data: {
-    experiment_id?: string;
-    model_name?: string;
-    status?: string;
-    progress?: number;
-    metrics?: Record<string, number>;
-  }): Promise<void> {
-    const tags: Record<string, string> = {
-      experiment_id: data.experiment_id || 'unknown',
-      model_name: data.model_name || 'unknown',
-      status: data.status || 'unknown',
-    };
-    if (data.progress !== undefined)
-      await this.recordMetric('system', 'training_progress', data.progress, tags);
-    for (const [key, val] of Object.entries(data.metrics || {})) {
-      if (typeof val === 'number')
-        await this.recordMetric('system', `training_${key}`, val, tags);
     }
   }
 

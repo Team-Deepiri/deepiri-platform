@@ -12,7 +12,6 @@ import {
   handleNextBestAction,
   handleCheckPacing
 } from './adaptiveEngine';
-import { initializeEventPublisher } from './streaming/eventPublisher';
 
 dotenv.config();
 
@@ -22,10 +21,6 @@ const PORT: number = parseInt(process.env.PORT || '5007', 10);
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-
-initializeEventPublisher().catch((err: Error) => {
-  secureLog('error', 'Adaptive Experience Engine: Failed to initialize event publisher', err);
-});
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({

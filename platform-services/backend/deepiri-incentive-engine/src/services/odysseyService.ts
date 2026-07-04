@@ -336,7 +336,7 @@ class OdysseyService {
         }
       });
       
-      const odysseys = quests.map((quest: any) => this.questToOdyssey(quest));
+      const odysseys = quests.map(quest => this.questToOdyssey(quest));
       
       res.json({
         success: true,

@@ -27,18 +27,19 @@ Located at `platform-services/shared/deepiri-shared-utils/`, this package provid
 
 ### Streaming Foundation
 
-The Redis Streams utilities are the platform event-bus foundation. They let
-backend services publish and consume operational events without copying Redis
-boilerplate into every service.
+The Redis Streams utilities are transport/event infrastructure only. They let
+backend services publish and consume events without copying Redis boilerplate
+into every service, but they must not define product-specific producer logic,
+subscriber behavior, document schemas, or Cyrex/Helox training semantics.
 
 Current PR ownership:
 
-- Auth/challenge/task-style services can publish lifecycle events to
-  `platform-events`.
-- Engagement and analytics services can consume platform, inference, and
-  training events with service-owned consumer groups.
-- Streaming failures must be logged and isolated from user-facing HTTP
-  responses where the publish is fire-and-forget.
+- Keep shared-utils focused on the generic `StreamingClient`, topic constants,
+  ACK/error handling, and transport-level documentation.
+- Put service-specific producers and consumers in the owning service PRs after
+  that service's purpose and data ownership are confirmed.
+- Keep streaming failures logged and isolated from user-facing HTTP responses
+  where a publish is fire-and-forget.
 
 This foundation is not the LIS document-routing implementation. The document
 routing plan sits on top of these rails:
@@ -47,7 +48,8 @@ routing plan sits on top of these rails:
   conditional publication.
 - Cyrex consumes artifact-oriented document routes such as `document.vectorize`
   and `document.structured`.
-- Helox consumes training-oriented routes such as `document.training`.
+- Helox consumes Cyrex-produced training streams such as
+  `pipeline.helox-training.raw` and `pipeline.helox-training.structured`.
 - Sugar Glider/Synapse may observe and monitor the stream topology, but they
   are not in the producer write path.
 

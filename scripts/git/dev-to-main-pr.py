@@ -375,7 +375,7 @@ def main():
     all_repos = get_all_repos()
     selected = list(all_repos)
     print_banner(len(all_repos))
-
+    
     if not check_gh_auth():
         print(f"{Colors.RED}Error: GitHub CLI not authenticated. Run 'gh auth login' first.{Colors.NC}")
         sys.exit(1)

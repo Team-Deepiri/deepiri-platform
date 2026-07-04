@@ -13,7 +13,6 @@ import {
   handleCheckRateLimits,
   handleCheckTrust
 } from './core/incentiveEngineCore';
-import { startEventConsumption } from './streaming/eventConsumer';
 
 dotenv.config();
 
@@ -31,10 +30,6 @@ connectDatabase()
     secureLog('error', 'Incentive Engine: Failed to connect to PostgreSQL', err);
     process.exit(1);
   });
-
-startEventConsumption().catch((err: Error) => {
-  secureLog('error', 'Incentive Engine: Failed to start event consumption', err);
-});
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({

@@ -5,6 +5,11 @@
 **Out of scope:** `postgres-cyrex` / `cyrex_db` — see Cyrex AGI artifact-store plan separately
 **Status:** Target architecture (refined). Documents current state + migration direction.
 
+**Coordination note:** This is a platform-side target, not the final cross-team
+database allocation by itself. The final split between additional containers,
+schemas, and service-owned databases still needs review with Connor, Daev,
+Future, and Joe before migrations are implemented.
+
 ---
 
 ## Table of Contents
@@ -568,6 +573,7 @@ scripts/database/
 | MLflow + LIS share `intelligence_db` | Separate schemas; consider separate DB user permissions |
 | Helox `POSTGRES_DSN` defaults to wrong host DB | Wire to `cyrex_db` in compose (Cyrex doc) |
 | `postgres-init.sql` still in repo | Add deprecation banner; remove from docs |
+| Final DB/container count may change | Review with Connor, Daev, Future, and Joe before implementing migrations |
 
 ---
 

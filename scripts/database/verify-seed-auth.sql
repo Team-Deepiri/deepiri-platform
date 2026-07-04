@@ -42,3 +42,4 @@ results AS (
     FROM checks
 )
 SELECT * FROM results ORDER BY check_name;
+

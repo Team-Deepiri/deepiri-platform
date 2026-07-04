@@ -36,7 +36,7 @@ class BoostService {
           boostHistory: { orderBy: { activatedAt: 'desc' }, take: 50 }
         }
       });
-
+      
       if (!profile) {
         profile = await prisma.boost.create({
           data: {
@@ -53,7 +53,7 @@ class BoostService {
           }
         });
       }
-
+      
       // Reset autopilot time if it's a new day
       const now = new Date();
       const lastReset = profile.lastAutopilotReset;
@@ -73,14 +73,14 @@ class BoostService {
           });
         }
       }
-
+      
       // Remove expired boosts
       const nowTime = now.getTime();
       const activeBoosts = profile.activeBoosts || [];
-      const expiredBoosts = activeBoosts.filter((boost: any) =>
+      const expiredBoosts = activeBoosts.filter((boost) => 
         new Date(boost.expiresAt).getTime() <= nowTime
       );
-
+      
       if (expiredBoosts.length > 0) {
         // Move expired boosts to history
         for (const boost of expiredBoosts) {
@@ -96,14 +96,14 @@ class BoostService {
             }
           });
         }
-
+        
         // Delete expired active boosts
         await prisma.activeBoost.deleteMany({
           where: {
-            id: { in: expiredBoosts.map((b: any) => b.id) }
+            id: { in: expiredBoosts.map((b) => b.id) }
           }
         });
-
+        
         // Refresh profile
         profile = await prisma.boost.findUnique({
           where: { userId },
@@ -113,7 +113,7 @@ class BoostService {
           }
         })!;
       }
-
+      
       return profile!;
     } catch (error: any) {
       secureLog('error', 'Error getting boost profile:', error);
@@ -132,18 +132,18 @@ class BoostService {
   ) {
     try {
       const profile = await this.getOrCreateProfile(userId);
-
+      
       // Check if user has reached max concurrent boosts
       if (profile.activeBoosts.length >= profile.maxConcurrentBoosts) {
         throw new Error('Maximum concurrent boosts reached');
       }
-
+      
       // Check autopilot time limit
       const boostDuration = duration || BOOST_DURATIONS[boostType];
       if (profile.autopilotTimeUsedToday + boostDuration > profile.maxAutopilotTimePerDay) {
         throw new Error('Daily autopilot time limit reached');
       }
-
+      
       // Check if user has enough credits (if purchasing)
       let newCredits = profile.boostCredits;
       if (source === 'purchased') {
@@ -153,11 +153,11 @@ class BoostService {
         }
         newCredits = profile.boostCredits - cost;
       }
-
+      
       // Activate boost
       const now = new Date();
       const expiresAt = new Date(now.getTime() + boostDuration * 60 * 1000);
-
+      
       const activeBoost = await prisma.activeBoost.create({
         data: {
           boostId: profile.id,
@@ -167,7 +167,7 @@ class BoostService {
           multiplier: 1.0
         }
       });
-
+      
       // Update boost profile
       const updated = await prisma.boost.update({
         where: { userId },
@@ -180,9 +180,9 @@ class BoostService {
           boostHistory: { orderBy: { activatedAt: 'desc' }, take: 50 }
         }
       });
-
+      
       secureLog('info', `Boost activated: ${boostType} for user ${userId}`);
-
+      
       return updated;
     } catch (error: any) {
       secureLog('error', 'Error activating boost:', error);
@@ -197,7 +197,7 @@ class BoostService {
     try {
       const profile = await this.getOrCreateProfile(userId);
       const now = new Date();
-      return profile.activeBoosts.filter((boost: any) => new Date(boost.expiresAt) > now);
+      return profile.activeBoosts.filter((boost) => new Date(boost.expiresAt) > now);
     } catch (error: any) {
       secureLog('error', 'Error getting active boosts:', error);
       throw error;
@@ -229,29 +229,29 @@ class BoostService {
   async activate(req: Request, res: Response): Promise<void> {
     try {
       const { userId, boostType, source, duration } = req.body;
-
+      
       if (!userId || !boostType) {
         res.status(400).json({ error: 'userId and boostType are required' });
         return;
       }
-
+      
       const validTypes: BoostType[] = ['focus', 'velocity', 'clarity', 'debug', 'cleanup'];
       if (!validTypes.includes(boostType)) {
         res.status(400).json({ error: `Invalid boostType. Must be one of: ${validTypes.join(', ')}` });
         return;
       }
-
+      
       const profile = await this.activateBoost(
         userId,
         boostType,
         source || 'purchased',
         duration
       );
-
+      
       res.json({
         success: true,
         data: {
-          activeBoosts: profile.activeBoosts.map((ab: any) => ({
+          activeBoosts: profile.activeBoosts.map((ab) => ({
             boostType: ab.boostType,
             activatedAt: ab.activatedAt,
             expiresAt: ab.expiresAt,
@@ -274,18 +274,18 @@ class BoostService {
   async getProfile(req: Request, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
-
+      
       if (!userId) {
         res.status(400).json({ error: 'userId is required' });
         return;
       }
-
+      
       const profile = await this.getOrCreateProfile(userId);
-
+      
       res.json({
         success: true,
         data: {
-          activeBoosts: profile.activeBoosts.map((ab: any) => ({
+          activeBoosts: profile.activeBoosts.map((ab) => ({
             boostType: ab.boostType,
             activatedAt: ab.activatedAt,
             expiresAt: ab.expiresAt,
@@ -314,14 +314,14 @@ class BoostService {
   async addCreditsEndpoint(req: Request, res: Response): Promise<void> {
     try {
       const { userId, amount } = req.body;
-
+      
       if (!userId || !amount) {
         res.status(400).json({ error: 'userId and amount are required' });
         return;
       }
-
+      
       const profile = await this.addCredits(userId, amount);
-
+      
       res.json({
         success: true,
         data: {
