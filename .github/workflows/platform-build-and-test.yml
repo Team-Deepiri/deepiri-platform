@@ -44,6 +44,7 @@ jobs:
           set -euo pipefail
           test -f platform-services/backend/deepiri-api-gateway/package.json
           test -f platform-services/shared/deepiri-shared-utils/package.json
+          test -f platform-services/shared/deepiri-sugar-glider/go.mod
           test -f deepiri-suite/Dockerfile
           test -f diri-cyrex/Dockerfile
           echo "Submodule paths present"
@@ -93,12 +94,16 @@ jobs:
           for svc in \
             api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence \
             external-bridge-service adaptive-experience-engine language-intelligence-service \
-            communications-hub messaging-service realtime-gateway synapse frontend-dev cyrex; do
+            communications-hub messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
             write_secret "$svc"
           done
 
       - name: Validate compose file
-        run: docker compose -f docker-compose.dev.yml config --quiet
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.dev.yml config --quiet
+          docker compose -f docker-compose.dev.yml config --services | grep -qx sugar-glider
+          docker compose -f docker-compose.dev.yml config | grep -q 'deepiri-dev-sugar-glider:latest'
 
       - name: Build platform Docker services
         env:
