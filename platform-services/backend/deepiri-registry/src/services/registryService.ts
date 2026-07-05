@@ -1,3 +1,5 @@
+import prisma from '../db';
+
 export interface RegistryEntry {
   name: string;
   repo?: string;
@@ -8,46 +10,81 @@ export interface RegistryEntry {
   metadata?: Record<string, unknown>;
 }
 
-const store = new Map<string, RegistryEntry>();
+function toEntry(row: {
+  name: string;
+  repo: string | null;
+  healthUrl: string | null;
+  tier: number;
+  status: string;
+  lastSeen: Date | null;
+  metadata: unknown;
+}): RegistryEntry {
+  return {
+    name: row.name,
+    repo: row.repo ?? undefined,
+    healthUrl: row.healthUrl ?? undefined,
+    tier: row.tier as RegistryEntry['tier'],
+    status: row.status as RegistryEntry['status'],
+    lastSeen: row.lastSeen?.toISOString(),
+    metadata: (row.metadata ?? {}) as Record<string, unknown>,
+  };
+}
 
 class RegistryService {
-  listServices(): RegistryEntry[] {
-    return Array.from(store.values());
+  async listServices(): Promise<RegistryEntry[]> {
+    const rows = await prisma.registeredService.findMany({ orderBy: { name: 'asc' } });
+    return rows.map(toEntry);
   }
 
-  getService(name: string): RegistryEntry | undefined {
-    return store.get(name);
+  async getService(name: string): Promise<RegistryEntry | undefined> {
+    const row = await prisma.registeredService.findUnique({ where: { name } });
+    return row ? toEntry(row) : undefined;
   }
 
-  registerService(payload: Partial<RegistryEntry> & { name: string }): RegistryEntry {
-    const existing = store.get(payload.name);
-    const entry: RegistryEntry = {
-      name: payload.name,
-      repo: payload.repo ?? existing?.repo,
-      healthUrl: payload.healthUrl ?? existing?.healthUrl,
-      tier: (payload.tier ?? existing?.tier ?? 1) as RegistryEntry['tier'],
-      status: payload.status ?? existing?.status ?? 'unknown',
-      lastSeen: new Date().toISOString(),
-      metadata: payload.metadata ?? existing?.metadata,
-    };
-    store.set(entry.name, entry);
-    return entry;
+  async registerService(payload: Partial<RegistryEntry> & { name: string }): Promise<RegistryEntry> {
+    const row = await prisma.registeredService.upsert({
+      where: { name: payload.name },
+      create: {
+        name: payload.name,
+        repo: payload.repo,
+        healthUrl: payload.healthUrl,
+        tier: payload.tier ?? 1,
+        status: payload.status ?? 'unknown',
+        lastSeen: new Date(),
+        metadata: payload.metadata ?? {},
+      },
+      update: {
+        repo: payload.repo,
+        healthUrl: payload.healthUrl,
+        tier: payload.tier,
+        status: payload.status,
+        lastSeen: new Date(),
+        metadata: payload.metadata ?? {},
+      },
+    });
+    return toEntry(row);
   }
 
   async pollHealth(): Promise<RegistryEntry[]> {
+    const rows = await prisma.registeredService.findMany();
     const results: RegistryEntry[] = [];
-    for (const entry of store.values()) {
-      if (!entry.healthUrl) continue;
+
+    for (const row of rows) {
+      if (!row.healthUrl) continue;
+      let status: RegistryEntry['status'] = 'down';
       try {
-        const res = await fetch(entry.healthUrl, { signal: AbortSignal.timeout(5000) });
-        entry.status = res.ok ? 'healthy' : 'degraded';
+        const res = await fetch(row.healthUrl, { signal: AbortSignal.timeout(5000) });
+        status = res.ok ? 'healthy' : 'degraded';
       } catch {
-        entry.status = 'down';
+        status = 'down';
       }
-      entry.lastSeen = new Date().toISOString();
-      store.set(entry.name, entry);
-      results.push(entry);
+      const updated = await prisma.registeredService.update({
+        where: { id: row.id },
+        data: { status, lastSeen: new Date() },
+      });
+      results.push(toEntry(updated));
     }
+
     return results;
   }
 }
