@@ -245,6 +245,10 @@ def enable_auto_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
 
     return False, "Auto-merge was not enabled"
 
+def merge_commit_message(head_branch: str, base_branch: str) -> str:
+    return f"Merge {head_branch} into {base_branch} {SKIP_CI}"
+
+
 def direct_merge(
     repo_name: str,
     base_branch: str,
