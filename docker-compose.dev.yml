@@ -457,7 +457,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      K8S_SERVICE_NAME: truss  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-truss  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
@@ -495,7 +495,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      K8S_SERVICE_NAME: registry  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-registry  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
@@ -531,7 +531,7 @@ services:
       PORT: 5004
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: telemetry  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-telemetry  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
@@ -650,7 +650,7 @@ services:
       PORT: 5007
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: jobs  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-jobs  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro

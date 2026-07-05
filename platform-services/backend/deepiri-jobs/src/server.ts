@@ -25,7 +25,7 @@ app.use(express.json());
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
-    service: 'deepiri-adaptive-experience-engine',
+    service: 'deepiri-jobs',
     capabilities: [
       'mission-generation',
       'objective-generation',
@@ -50,7 +50,7 @@ app.post('/pacing/check', handleCheckPacing);
 
 app.get('/capabilities', (req: Request, res: Response) => {
   res.json({
-    service: 'deepiri-adaptive-experience-engine',
+    service: 'deepiri-jobs',
     version: '2.0.0',
     capabilities: {
       mission: {

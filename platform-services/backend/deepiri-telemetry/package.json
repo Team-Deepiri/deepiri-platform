@@ -1,5 +1,5 @@
 {
-  "name": "deepiri-decision-intelligence",
+  "name": "deepiri-telemetry",
   "version": "1.0.0",
   "description": "Decision Intelligence - Time-Series, Clustering, Predictive Analytics",
   "main": "dist/server.js",
