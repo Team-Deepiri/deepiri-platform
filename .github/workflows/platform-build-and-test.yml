@@ -103,7 +103,7 @@ jobs:
           else
             BASE=""
             if [ "${{ github.event_name }}" = "pull_request" ]; then
-              git fetch origin "${{ github.base_ref }}" --depth=1
+              git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}" --depth=1
               BASE="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
             elif [ "${{ github.event_name }}" = "push" ] \
               && [ -n "${{ github.event.before }}" ] \
