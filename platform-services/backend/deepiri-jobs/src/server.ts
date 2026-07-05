@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { secureLog } from '@team-deepiri/shared-utils';
 import { handleCreateJob, handleGetJob, handleListJobs } from './jobsService';
 import { validateBodyIfPresent } from './middleware/inputValidation';
+import { connectDatabase } from './db';
 
 dotenv.config();
 
@@ -35,7 +36,8 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 };
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await connectDatabase();
   secureLog('info', `Jobs service running on port ${PORT}`);
 });
 

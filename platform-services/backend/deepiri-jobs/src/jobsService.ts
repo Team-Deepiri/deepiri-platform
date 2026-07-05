@@ -1,10 +1,14 @@
+import { Job } from '@prisma/client';
 import { Request, Response } from 'express';
 import { secureLog } from '@team-deepiri/shared-utils';
+import prisma from './db';
+
+export type JobStatus = 'queued' | 'running' | 'completed' | 'failed';
 
 export interface JobRecord {
   id: string;
   type: string;
-  status: 'queued' | 'running' | 'completed' | 'failed';
+  status: JobStatus;
   payload: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -12,10 +16,17 @@ export interface JobRecord {
   error?: string;
 }
 
-const jobs = new Map<string, JobRecord>();
-
-function newId(): string {
-  return `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+function toRecord(job: Job): JobRecord {
+  return {
+    id: job.id,
+    type: job.type,
+    status: job.status as JobStatus,
+    payload: (job.payload ?? {}) as Record<string, unknown>,
+    createdAt: job.createdAt.toISOString(),
+    updatedAt: job.updatedAt.toISOString(),
+    result: job.result ? (job.result as Record<string, unknown>) : undefined,
+    error: job.error ?? undefined,
+  };
 }
 
 export async function handleCreateJob(req: Request, res: Response): Promise<void> {
@@ -24,42 +35,62 @@ export async function handleCreateJob(req: Request, res: Response): Promise<void
     res.status(400).json({ error: 'type is required' });
     return;
   }
-  const now = new Date().toISOString();
-  const job: JobRecord = {
-    id: newId(),
-    type,
-    status: 'queued',
-    payload: payload ?? {},
-    createdAt: now,
-    updatedAt: now,
-  };
-  jobs.set(job.id, job);
+
+  const job = await prisma.job.create({
+    data: {
+      type,
+      status: 'queued',
+      payload: payload ?? {},
+    },
+  });
 
   if (type === 'helox.train') {
-    void triggerHeloxTraining(job);
+    void triggerHeloxTraining(job.id);
   }
 
-  res.status(201).json(job);
+  res.status(201).json(toRecord(job));
 }
 
-export function handleListJobs(_req: Request, res: Response): void {
-  res.json({ jobs: Array.from(jobs.values()) });
+export async function handleListJobs(_req: Request, res: Response): Promise<void> {
+  const jobs = await prisma.job.findMany({ orderBy: { createdAt: 'desc' } });
+  res.json({ jobs: jobs.map(toRecord) });
 }
 
-export function handleGetJob(req: Request, res: Response): void {
-  const job = jobs.get(req.params.id);
+export async function handleGetJob(req: Request, res: Response): Promise<void> {
+  const job = await prisma.job.findUnique({ where: { id: req.params.id } });
   if (!job) {
     res.status(404).json({ error: 'Job not found' });
     return;
   }
-  res.json(job);
+  res.json(toRecord(job));
 }
 
-async function triggerHeloxTraining(job: JobRecord): Promise<void> {
-  const heloxUrl = process.env.HELOX_URL || process.env.CYREX_URL || 'http://cyrex:8000';
-  job.status = 'running';
-  job.updatedAt = new Date().toISOString();
-  jobs.set(job.id, job);
+function resolveHeloxUrl(): string {
+  const heloxUrl = process.env.HELOX_URL?.trim();
+  if (!heloxUrl) {
+    throw new Error('HELOX_URL is not configured');
+  }
+  return heloxUrl.replace(/\/$/, '');
+}
+
+async function triggerHeloxTraining(jobId: string): Promise<void> {
+  let heloxUrl: string;
+  try {
+    heloxUrl = resolveHeloxUrl();
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'HELOX_URL is not configured';
+    await prisma.job.update({
+      where: { id: jobId },
+      data: { status: 'failed', error: message },
+    });
+    secureLog('error', 'helox.train failed: missing HELOX_URL', err);
+    return;
+  }
+
+  const job = await prisma.job.update({
+    where: { id: jobId },
+    data: { status: 'running' },
+  });
 
   try {
     const res = await fetch(`${heloxUrl}/training/runs`, {
@@ -68,17 +99,25 @@ async function triggerHeloxTraining(job: JobRecord): Promise<void> {
         'Content-Type': 'application/json',
         ...(process.env.HELOX_API_KEY ? { 'x-api-key': process.env.HELOX_API_KEY } : {}),
       },
-      body: JSON.stringify({ jobId: job.id, ...job.payload }),
+      body: JSON.stringify({ jobId: job.id, ...(job.payload as Record<string, unknown>) }),
     });
     const body = await res.json().catch(() => ({}));
-    job.status = res.ok ? 'completed' : 'failed';
-    job.result = body as Record<string, unknown>;
-    if (!res.ok) job.error = `Helox returned ${res.status}`;
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        status: res.ok ? 'completed' : 'failed',
+        result: body as Record<string, unknown>,
+        error: res.ok ? null : `Helox returned ${res.status}`,
+      },
+    });
   } catch (err: unknown) {
-    job.status = 'failed';
-    job.error = err instanceof Error ? err.message : 'Helox request failed';
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        status: 'failed',
+        error: err instanceof Error ? err.message : 'Helox request failed',
+      },
+    });
     secureLog('error', 'helox.train failed', err);
   }
-  job.updatedAt = new Date().toISOString();
-  jobs.set(job.id, job);
 }
