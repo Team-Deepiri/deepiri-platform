@@ -27,16 +27,18 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# Walk up to find repo root (script may live at root or in scripts/dev-setup/)
+# Find repo root via git (script may live at root or in scripts/dev-setup/).
+# The parent repo is not listed in its own .gitmodules, so we ask git for the
+# working-tree root instead of grepping that file.
 function Find-RepoRoot {
-    $d = $PSScriptRoot
-    for ($i = 0; $i -lt 3; $i++) {
-        if (Test-Path (Join-Path $d ".gitmodules")) {
-            $content = Get-Content (Join-Path $d ".gitmodules") -Raw
-            if ($content -match "Team-Deepiri/deepiri-platform") { return $d }
+    Push-Location $PSScriptRoot
+    try {
+        $toplevel = git rev-parse --show-toplevel 2>$null
+        if ($LASTEXITCODE -eq 0 -and $toplevel) {
+            return $toplevel.Trim()
         }
-        $d = Split-Path $d -Parent
-    }
+    } catch { }
+    finally { Pop-Location }
     return $PSScriptRoot
 }
 
@@ -297,12 +299,12 @@ if (-not $SkipDocker) {
 
     $buildFlag = if ($Build) { "" } else { "--no-build" }
 
-    $AI = "postgres redis influxdb etcd minio milvus cyrex cyrex-interface mlflow challenge-service api-gateway messaging-service realtime-gateway synapse synapse-sugar-glider"
-    $ML = "synapse synapse-sugar-glider"
-    $BackendInfra = "postgres-auth postgres-core postgres-intelligence redis influxdb api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway language-intelligence-service messaging-service frontend-dev synapse synapse-sugar-glider adminer"
+    $AI = "postgres redis influxdb etcd minio milvus cyrex cyrex-interface mlflow challenge-service api-gateway messaging-service realtime-gateway synapse sugar-glider"
+    $ML = "synapse sugar-glider"
+    $BackendInfra = "postgres-auth postgres-core postgres-intelligence redis influxdb api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway language-intelligence-service messaging-service frontend-dev synapse sugar-glider adminer"
     $Frontend = "frontend-dev api-gateway auth-service communications-hub messaging-service realtime-gateway postgres-auth postgres-core postgres-intelligence"
     $Cyrex = "postgres redis postgres-cyrex cyrex cyrex-interface api-gateway"
-    $QaInfra = "postgres-auth postgres-core postgres-intelligence redis influxdb synapse synapse-sugar-glider"
+    $QaInfra = "postgres-auth postgres-core postgres-intelligence redis influxdb synapse sugar-glider"
     $QaBackend = "api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway adminer"
     $QaAll = "$QaInfra kafka $QaBackend language-intelligence-service messaging-service frontend-dev"
 

@@ -538,12 +538,12 @@ start_services() {
     [[ "$DO_BUILD" == true ]] && build_flag=""
 
     # Service lists verified against team_dev_environments/<team>/start.sh
-    local AI="postgres redis influxdb etcd minio milvus cyrex cyrex-interface mlflow challenge-service api-gateway messaging-service realtime-gateway synapse synapse-sugar-glider"
-    local ML="synapse synapse-sugar-glider"
-    local BACKEND_INFRA="postgres-auth postgres-core postgres-intelligence redis influxdb api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway language-intelligence-service messaging-service frontend-dev synapse synapse-sugar-glider adminer"
+    local AI="postgres redis influxdb etcd minio milvus cyrex cyrex-interface mlflow challenge-service api-gateway messaging-service realtime-gateway synapse sugar-glider"
+    local ML="synapse sugar-glider"
+    local BACKEND_INFRA="postgres-auth postgres-core postgres-intelligence redis influxdb api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway language-intelligence-service messaging-service frontend-dev synapse sugar-glider adminer"
     local FRONTEND="frontend-dev api-gateway auth-service communications-hub messaging-service realtime-gateway postgres-auth postgres-core postgres-intelligence"
     local CYREX="postgres redis postgres-cyrex cyrex cyrex-interface api-gateway"
-    local QA_INFRA="postgres-auth postgres-core postgres-intelligence redis influxdb synapse synapse-sugar-glider"
+    local QA_INFRA="postgres-auth postgres-core postgres-intelligence redis influxdb synapse sugar-glider"
     local QA_BACKEND="api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway adminer"
     local QA_ALL="$QA_INFRA kafka $QA_BACKEND language-intelligence-service messaging-service frontend-dev"
 
