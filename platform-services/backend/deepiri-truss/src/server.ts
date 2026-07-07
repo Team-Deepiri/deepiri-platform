@@ -31,7 +31,7 @@ initializeEventPublisher().catch((err) => {
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
-    service: 'deepiri-workflow-orchestrator',
+    service: 'deepiri-truss',
     capabilities: [
       'task-lifecycle',
       'task-versioning',
@@ -48,7 +48,7 @@ app.use('/', routes);
 
 app.get('/fastapi', (req: Request, res: Response) => {
   res.json({
-    service: 'deepiri-workflow-orchestrator',
+    service: 'deepiri-truss',
     fastapi_available: true,
     docs: '/docs (when uvicorn running)',
     modules: [
@@ -62,7 +62,7 @@ app.get('/fastapi', (req: Request, res: Response) => {
 
 app.get('/capabilities', (req: Request, res: Response) => {
   res.json({
-    service: 'deepiri-workflow-orchestrator',
+    service: 'deepiri-truss',
     version: '2.0.0',
     capabilities: {
       task: {
