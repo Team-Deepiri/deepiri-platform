@@ -63,14 +63,14 @@ jobs:
           set -euo pipefail
 
           ALL_SERVICES=(
-            api-gateway auth-service workflow-orchestrator incentive-engine
-            decision-intelligence external-bridge-service adaptive-experience-engine
+            api-gateway auth-service truss registry
+            telemetry external-bridge-service jobs
             language-intelligence-service communications-hub messaging-service
             realtime-gateway synapse sugar-glider
           )
           NODE_SERVICES=(
-            api-gateway auth-service workflow-orchestrator incentive-engine
-            decision-intelligence external-bridge-service adaptive-experience-engine
+            api-gateway auth-service truss registry
+            telemetry external-bridge-service jobs
             language-intelligence-service communications-hub messaging-service
             realtime-gateway
           )
@@ -131,18 +131,18 @@ jobs:
                     mark_node_service api-gateway ;;
                   platform-services/backend/deepiri-auth-service/*|platform-services/backend/deepiri-auth-service)
                     mark_node_service auth-service ;;
-                  platform-services/backend/deepiri-workflow-orchestrator/*|platform-services/backend/deepiri-workflow-orchestrator)
-                    mark_node_service workflow-orchestrator ;;
-                  platform-services/backend/deepiri-incentive-engine/*|platform-services/backend/deepiri-incentive-engine)
-                    mark_node_service incentive-engine ;;
-                  platform-services/backend/deepiri-decision-intelligence/*|platform-services/backend/deepiri-decision-intelligence)
-                    mark_node_service decision-intelligence ;;
+                  platform-services/backend/deepiri-truss/*|platform-services/backend/deepiri-truss)
+                    mark_node_service truss ;;
+                  platform-services/backend/deepiri-registry/*|platform-services/backend/deepiri-registry)
+                    mark_node_service registry ;;
+                  platform-services/backend/deepiri-telemetry/*|platform-services/backend/deepiri-telemetry)
+                    mark_node_service telemetry ;;
                   platform-services/backend/deepiri-communications-hub/*|platform-services/backend/deepiri-communications-hub)
                     mark_node_service communications-hub ;;
                   platform-services/backend/deepiri-external-bridge-service/*|platform-services/backend/deepiri-external-bridge-service)
                     mark_node_service external-bridge-service ;;
-                  platform-services/backend/deepiri-adaptive-experience-engine/*|platform-services/backend/deepiri-adaptive-experience-engine)
-                    mark_node_service adaptive-experience-engine ;;
+                  platform-services/backend/deepiri-jobs/*|platform-services/backend/deepiri-jobs)
+                    mark_node_service jobs ;;
                   platform-services/backend/deepiri-language-intelligence-service/*|platform-services/backend/deepiri-language-intelligence-service)
                     mark_node_service language-intelligence-service ;;
                   platform-services/backend/deepiri-messaging-service/*|platform-services/backend/deepiri-messaging-service)
@@ -222,8 +222,8 @@ jobs:
             } >"$SECRETS_DIR/${svc}-secret.yaml"
           }
           for svc in \
-            api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence \
-            external-bridge-service adaptive-experience-engine language-intelligence-service \
+            api-gateway auth-service truss registry telemetry \
+            external-bridge-service jobs language-intelligence-service \
             communications-hub messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
             write_secret "$svc"
           done
@@ -361,8 +361,8 @@ jobs:
             } >"$SECRETS_DIR/${svc}-secret.yaml"
           }
           for svc in \
-            api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence \
-            external-bridge-service adaptive-experience-engine language-intelligence-service \
+            api-gateway auth-service truss registry telemetry \
+            external-bridge-service jobs language-intelligence-service \
             communications-hub messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
             write_secret "$svc"
           done
