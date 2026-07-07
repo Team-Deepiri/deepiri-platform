@@ -118,8 +118,8 @@ if ($Tier -eq "") {
                  elseif ($RamGB -ge 16) { "2" }
                  else { "3" }
     Write-Host ""
-    Write-Host "  T1 - GPU + 16GB+  : Full stack including Ollama"
-    Write-Host "  T2 - No GPU, 16GB+: All services except Ollama"
+    Write-Host "  T1 - GPU + 16GB+  : Full stack (best for local LLM / Ollama)"
+    Write-Host "  T2 - No GPU, 16GB+: Full stack"
     Write-Host "  T3 - <16GB        : Core only"
     Write-Host ""
     Write-Info "Detected hardware suggests Tier $suggested"
@@ -131,8 +131,8 @@ if ($Tier -eq "") {
     }
 }
 switch ($Tier) {
-    "1" { Write-Ok "Tier 1 - Full stack with Ollama" }
-    "2" { Write-Ok "Tier 2 - Full stack, no Ollama" }
+    "1" { Write-Ok "Tier 1 - Full stack (GPU present)" }
+    "2" { Write-Ok "Tier 2 - Full stack (no GPU)" }
     "3" { Write-Ok "Tier 3 - Core services only" }
     default { Write-Err "Invalid tier: $Tier" }
 }
@@ -327,8 +327,8 @@ if (-not $SkipDocker) {
         docker compose -f docker-compose.dev.yml up -d @buildArgs --no-deps @arr
     } else {
         $services = switch ($TeamKey) {
-            "cyrex"          { if ($Tier -eq "1") { "$Cyrex ollama" } else { $Cyrex } }
-            "ai"             { if ($Tier -eq "1") { "$AI ollama" } else { $AI } }
+            "cyrex"          { $Cyrex }
+            "ai"             { "$AI ollama" }   # Windows/WSL runs ollama in Docker (MPS is Mac-only, AI team only)
             "ml"             { $ML }
             "backend"        { $BackendInfra }
             "infrastructure" { $BackendInfra }
@@ -358,7 +358,7 @@ Write-Host "    Cyrex Interface: http://localhost:5175"
 Write-Host "    MLflow:          http://localhost:5500"
 Write-Host "    Frontend:        http://localhost:5173"
 Write-Host "    Synapse:         http://localhost:8002"
-if ($Tier -eq "1") { Write-Host "    Ollama:          http://localhost:11434" }
+if ($TeamKey -eq "ai" -and $Tier -ne "3") { Write-Host "    Ollama:          http://localhost:11434" }
 Write-Host ""
 Write-Host "  Commands:"
 Write-Host "    Logs:   docker compose -f docker-compose.dev.yml logs -f <service>"

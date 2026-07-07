@@ -12,7 +12,8 @@
 #   5. Team selection (AI / Backend / Frontend / Infrastructure / ML /
 #      Platform / QA / Cyrex)
 #   6. Hardware detection + tier selection (T1/T2/T3) — decides whether
-#      GPU-gated services (ollama) run
+#      how many services run (T3 = core only). Ollama runs on Linux/WSL,
+#      excluded on Mac/MPS, per the original ai-team behavior.
 #   7. Team-scoped submodule init (replaces team_submodule_commands/)
 #   8. Team + tier-scoped docker compose up (replaces team_dev_environments/)
 #   9. Postgres core DB seeding
@@ -133,8 +134,8 @@ select_tier() {
         else suggested=3; fi
 
         echo ""
-        echo "  T1 - GPU + 16GB+  : Full stack including Ollama (local LLM)"
-        echo "  T2 - No GPU, 16GB+: All services except Ollama"
+        echo "  T1 - GPU + 16GB+  : Full stack (best for local LLM / Ollama)"
+        echo "  T2 - No GPU, 16GB+: Full stack"
         echo "  T3 - <16GB        : Core only (postgres, redis, api-gateway, auth)"
         echo ""
         info "Detected hardware suggests Tier ${suggested}"
@@ -149,8 +150,8 @@ select_tier() {
     fi
 
     case "$TIER" in
-        1) ok "Tier 1 - Full stack with Ollama" ;;
-        2) ok "Tier 2 - Full stack, no Ollama" ;;
+        1) ok "Tier 1 - Full stack (GPU present)" ;;
+        2) ok "Tier 2 - Full stack (no GPU)" ;;
         3) ok "Tier 3 - Core services only" ;;
         *) fatal "Invalid tier: $TIER (must be 1, 2, or 3)" ;;
     esac
@@ -571,12 +572,25 @@ start_services() {
         *)
             local services
             case "$TEAM_KEY" in
-                cyrex)          services="$CYREX"; [[ "$TIER" == "1" ]] && services="$services ollama" ;;
-                ai)             services="$AI"; [[ "$TIER" == "1" ]] && services="$services ollama" ;;
+                cyrex)          services="$CYREX" ;;
+                ai)             services="$AI" ;;
                 ml)             services="$ML" ;;
                 backend|infrastructure) services="$BACKEND_INFRA" ;;
                 frontend)       services="$FRONTEND" ;;
             esac
+
+            # Ollama handling for the AI team (matches original ai-team start.sh):
+            # Ollama runs in Docker on Linux / WSL (cuda or other backend).
+            # On Mac (MPS) cyrex and ollama run natively, NOT in Docker, so exclude both.
+            if [[ "$TEAM_KEY" == "ai" ]]; then
+                if [[ "$GPU" == "mps" ]]; then
+                    warn "MPS (Mac) detected — excluding cyrex and ollama from Docker (run natively instead)"
+                    services=$(echo "$services" | tr ' ' '\n' | grep -vE '^(cyrex|ollama)$' | xargs)
+                else
+                    services="$services ollama"
+                fi
+            fi
+
             services=$(echo "$services" | tr ' ' '\n' | sort -u | xargs)
             info "Services: $services"
             docker compose -f docker-compose.dev.yml up -d $build_flag --no-deps $services
@@ -638,7 +652,9 @@ print_summary() {
     Frontend:        http://localhost:5173
     Synapse:         http://localhost:8002
 EOF
-    [[ "$TIER" == "1" ]] && echo "    Ollama:          http://localhost:11434"
+    if [[ "$TEAM_KEY" == "ai" && "$GPU" != "mps" && "$TIER" != "3" ]]; then
+        echo "    Ollama:          http://localhost:11434"
+    fi
     cat <<EOF
 
   Useful commands (from $PLATFORM_REPO_DIR):
