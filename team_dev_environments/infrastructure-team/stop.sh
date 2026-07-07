@@ -16,7 +16,7 @@ SERVICES=(
   engagement-service platform-analytics-service
   notification-service external-bridge-service
   challenge-service realtime-gateway
-  language-intelligence-service messaging-service synapse synapse-sugar-glider
+  language-intelligence-service messaging-service synapse sugar-glider
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 

@@ -1,6 +1,7 @@
 import * as webpush from 'web-push';
 import { createLogger } from '@team-deepiri/shared-utils';
 import { secureLog } from '@team-deepiri/shared-utils';
+import { prisma } from '../db';
 
 const logger = createLogger('push-notification-service');
 
@@ -170,8 +171,32 @@ class PushNotificationService {
   }
 
   async getUserNotifications(userId: string) {
-    // Placeholder - would query notification database
-    return [];
+    return prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+  }
+
+  async registerSubscription(userId: string, subscription: PushSubscription) {
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: subscription.endpoint },
+      create: {
+        userId,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+      update: {
+        userId,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+    });
+  }
+
+  async removeSubscription(userId: string, endpoint: string) {
+    await prisma.pushSubscription.deleteMany({ where: { userId, endpoint } });
   }
 }
 

@@ -28,7 +28,7 @@ app.use(validateBodyIfPresent());
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
-    service: 'deepiri-decision-intelligence',
+    service: 'deepiri-telemetry',
     capabilities: [
       'time-series-analytics',
       'behavioral-clustering',
@@ -56,7 +56,7 @@ app.post('/experiment/effect', handleMeasureEffect);
 
 app.get('/capabilities', (req: Request, res: Response) => {
   res.json({
-    service: 'deepiri-decision-intelligence',
+    service: 'deepiri-telemetry',
     version: '2.0.0',
     capabilities: {
       analytics: {
