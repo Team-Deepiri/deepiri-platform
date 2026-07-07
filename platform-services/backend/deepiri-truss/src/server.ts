@@ -19,7 +19,7 @@ app.use(validateBodyIfPresent());
 
 connectDatabase()
   .catch((err: Error) => {
-    secureLog('error', 'Workflow Orchestrator: Failed to connect to PostgreSQL', err);
+    secureLog('error', 'Truss: Failed to connect to PostgreSQL', err);
     process.exit(1);
   });
 
@@ -33,6 +33,7 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'healthy',
     service: 'deepiri-truss',
     capabilities: [
+      'workflow-orchestration',
       'task-lifecycle',
       'task-versioning',
       'dependency-graphs',
@@ -44,6 +45,8 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+app.use('/api/truss', routes);
+app.use('/tasks', routes);
 app.use('/', routes);
 
 app.get('/fastapi', (req: Request, res: Response) => {
@@ -90,13 +93,13 @@ app.get('/capabilities', (req: Request, res: Response) => {
 });
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  secureLog('error', 'Workflow Orchestrator error:', err);
+  secureLog('error', 'Truss error:', err);
   res.status(500).json({ error: 'Internal server error' });
 };
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  secureLog('info', `Workflow Orchestrator running on port ${PORT}`);
+  secureLog('info', `Truss running on port ${PORT}`);
   secureLog('info', `FastAPI module available at src/fastapi_app.py`);
 });
 

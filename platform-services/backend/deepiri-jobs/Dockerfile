@@ -7,6 +7,7 @@ COPY shared/deepiri-shared-utils/src /shared/deepiri-shared-utils/src
 COPY backend/deepiri-jobs/package.json ./
 COPY backend/deepiri-jobs/package-lock.json ./
 COPY backend/deepiri-jobs/tsconfig.json ./
+COPY backend/deepiri-jobs/prisma ./prisma
 
 RUN node -e "const fs=require('fs'),lock=JSON.parse(fs.readFileSync('package-lock.json'));for(const k of Object.keys(lock.packages)){if(k.includes('deepiri-shared-utils')||k==='node_modules/@team-deepiri/shared-utils')delete lock.packages[k]}fs.writeFileSync('package-lock.json',JSON.stringify(lock));" \
  && cd /shared/deepiri-shared-utils \
@@ -24,7 +25,8 @@ RUN node -e "const fs=require('fs'),lock=JSON.parse(fs.readFileSync('package-loc
 
 COPY backend/deepiri-jobs/src ./src
 
-RUN npm run build
+RUN npx prisma generate \
+ && npm run build
 
 RUN mkdir -p logs && chown -R nodejs:nodejs /app
 
