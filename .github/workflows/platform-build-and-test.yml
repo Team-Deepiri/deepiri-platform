@@ -65,13 +65,13 @@ jobs:
           ALL_SERVICES=(
             api-gateway auth-service truss registry
             telemetry external-bridge-service jobs
-            language-intelligence-service communications-hub messaging-service
+            language-intelligence-service messaging-service
             realtime-gateway synapse sugar-glider
           )
           NODE_SERVICES=(
             api-gateway auth-service truss registry
             telemetry external-bridge-service jobs
-            language-intelligence-service communications-hub messaging-service
+            language-intelligence-service messaging-service
             realtime-gateway
           )
 
@@ -137,8 +137,6 @@ jobs:
                     mark_node_service registry ;;
                   platform-services/backend/deepiri-telemetry/*|platform-services/backend/deepiri-telemetry)
                     mark_node_service telemetry ;;
-                  platform-services/backend/deepiri-communications-hub/*|platform-services/backend/deepiri-communications-hub)
-                    mark_node_service communications-hub ;;
                   platform-services/backend/deepiri-external-bridge-service/*|platform-services/backend/deepiri-external-bridge-service)
                     mark_node_service external-bridge-service ;;
                   platform-services/backend/deepiri-jobs/*|platform-services/backend/deepiri-jobs)
@@ -224,7 +222,7 @@ jobs:
           for svc in \
             api-gateway auth-service truss registry telemetry \
             external-bridge-service jobs language-intelligence-service \
-            communications-hub messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
+            messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
             write_secret "$svc"
           done
 
@@ -363,7 +361,7 @@ jobs:
           for svc in \
             api-gateway auth-service truss registry telemetry \
             external-bridge-service jobs language-intelligence-service \
-            communications-hub messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
+            messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
             write_secret "$svc"
           done
 
