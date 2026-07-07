@@ -18,10 +18,10 @@ export COMPOSE_DOCKER_CLI_BUILD=0
 # Future: Will include cloud infrastructure and data infrastructure services
 SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
-  api-gateway auth-service workflow-orchestrator
-  incentive-engine decision-intelligence
+  api-gateway auth-service truss
+  registry telemetry
   communications-hub external-bridge-service
-  adaptive-experience-engine realtime-gateway
+  jobs realtime-gateway
   language-intelligence-service messaging-service
   synapse sugar-glider frontend-dev adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)

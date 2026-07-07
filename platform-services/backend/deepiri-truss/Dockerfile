@@ -1,41 +1,51 @@
-FROM ghcr.io/team-deepiri/deepiri-suite:18-alpine
+FROM ghcr.io/team-deepiri/deepiri-suite:18-slim
+
+# Prisma binary compatibility (service-specific)
+RUN mkdir -p /lib64 \
+ && ln -sf /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 \
+           /lib64/ld-linux-x86-64.so.2
 
 COPY shared/deepiri-shared-utils/package.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/package-lock.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/tsconfig.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/src /shared/deepiri-shared-utils/src
-COPY backend/deepiri-incentive-engine/package.json ./
-COPY backend/deepiri-incentive-engine/package-lock.json ./
-COPY backend/deepiri-incentive-engine/tsconfig.json ./
-COPY backend/deepiri-incentive-engine/prisma ./prisma
+COPY backend/deepiri-truss/package.json ./
+COPY backend/deepiri-truss/tsconfig.json ./
+COPY backend/deepiri-truss/prisma ./prisma
 
-RUN node -e "const fs=require('fs'),lock=JSON.parse(fs.readFileSync('package-lock.json'));for(const k of Object.keys(lock.packages)){if(k.includes('deepiri-shared-utils')||k==='node_modules/@team-deepiri/shared-utils')delete lock.packages[k]}fs.writeFileSync('package-lock.json',JSON.stringify(lock));" \
- && cd /shared/deepiri-shared-utils \
+RUN cd /shared/deepiri-shared-utils \
  && npm ci --legacy-peer-deps \
  && npm run build \
  && node -e "const fs=require('fs'),p=JSON.parse(fs.readFileSync('package.json'));delete p.scripts.prepare;fs.writeFileSync('package.json',JSON.stringify(p,null,2));" \
  && rm -rf node_modules \
  && cd /app \
  && npm install --legacy-peer-deps file:/shared/deepiri-shared-utils \
- && npm ci --legacy-peer-deps \
+ && npm install --legacy-peer-deps \
  && cd /shared/deepiri-shared-utils \
  && npm ci --omit=dev --legacy-peer-deps \
  && cd /app \
  && npm cache clean --force
 
-COPY backend/deepiri-incentive-engine/src ./src
+COPY backend/deepiri-truss/src ./src
 
 RUN npx prisma generate \
- && npm run build
+ && npm run build \
+ && cd node_modules/.prisma/client \
+ && if [ -f libquery_engine-debian-openssl-3.0.x.so.node ]; then \
+      cp libquery_engine-debian-openssl-3.0.x.so.node \
+         libquery_engine-linux-musl.so.node; \
+    fi \
+ && cd /app
 
-RUN mkdir -p logs && chown -R nodejs:nodejs /app
+RUN mkdir -p logs /home/nodejs/.npm \
+ && chown -R nodejs:nodejs /app /home/nodejs
 
 USER nodejs
 
-EXPOSE 5003
+EXPOSE 5002
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:5003/health || exit 1
+  CMD curl -f http://localhost:5002/health || exit 1
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/usr/bin/dumb-init", "--", "node", "dist/server.js"]
+CMD ["dumb-init", "--", "node", "dist/server.js"]

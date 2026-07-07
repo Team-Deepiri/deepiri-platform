@@ -76,10 +76,17 @@ if [ -d "$K8S_CONFIGMAPS_DIR" ]; then
     fi
 fi
 
-# Load all Secrets
+# Load Secrets — one file per service (matches configmap filtering)
 if [ -d "$K8S_SECRETS_DIR" ]; then
-    for secret in "$K8S_SECRETS_DIR"/*.yaml; do
-        [ -f "$secret" ] && load_k8s_yaml "$secret"
-    done
+    if [ -n "$K8S_SERVICE_NAME" ]; then
+        secret_file="$K8S_SECRETS_DIR/${K8S_SERVICE_NAME}-secret.yaml"
+        if [ -f "$secret_file" ]; then
+            load_k8s_yaml "$secret_file"
+        fi
+    else
+        for secret in "$K8S_SECRETS_DIR"/*.yaml; do
+            [ -f "$secret" ] && load_k8s_yaml "$secret"
+        done
+    fi
 fi
 

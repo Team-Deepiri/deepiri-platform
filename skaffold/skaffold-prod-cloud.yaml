@@ -61,22 +61,22 @@ build:
         dockerfile: backend/deepiri-auth-service/Dockerfile
     
     # Microservices - Task Orchestrator
-- image: deepiri-workflow-orchestrator
+- image: deepiri-truss
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
-    - image: deepiri-adaptive-experience-engine
+        dockerfile: backend/deepiri-truss/Dockerfile
+    - image: deepiri-jobs
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
-    - image: deepiri-incentive-engine
+        dockerfile: backend/deepiri-jobs/Dockerfile
+    - image: deepiri-registry
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-incentive-engine/Dockerfile
-    - image: deepiri-decision-intelligence
+        dockerfile: backend/deepiri-registry/Dockerfile
+    - image: deepiri-telemetry
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
+        dockerfile: backend/deepiri-telemetry/Dockerfile
     - image: deepiri-communications-hub
       context: ./platform-services
       docker:

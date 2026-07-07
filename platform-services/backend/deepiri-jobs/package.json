@@ -1,7 +1,7 @@
 {
-  "name": "deepiri-decision-intelligence",
+  "name": "deepiri-jobs",
   "version": "1.0.0",
-  "description": "Decision Intelligence - Time-Series, Clustering, Predictive Analytics",
+  "description": "Adaptive Experience Engine - Dynamic Challenge/Mission/Objective Generation",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
-    "@influxdata/influxdb-client": "^1.33.2",
     "@prisma/client": "^5.7.0",
     "axios": "^1.16.0",
     "cors": "^2.8.5",

@@ -347,11 +347,11 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      WORKFLOW_ORCHESTRATOR_URL: http://workflow-orchestrator:5002
-      INCENTIVE_ENGINE_URL: http://incentive-engine:5003
-      DECISION_INTELLIGENCE_URL: http://decision-intelligence:5004
+      WORKFLOW_ORCHESTRATOR_URL: http://truss:5002
+      INCENTIVE_ENGINE_URL: http://registry:5003
+      DECISION_INTELLIGENCE_URL: http://telemetry:5004
       COMMUNICATIONS_HUB_URL: http://communications-hub:5005
-      ADAPTIVE_EXPERIENCE_ENGINE_URL: http://adaptive-experience-engine:5007
+      ADAPTIVE_EXPERIENCE_ENGINE_URL: http://jobs:5007
       EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
       MESSAGING_SERVICE_URL: http://messaging-service:5009
@@ -373,11 +373,11 @@ services:
       start_period: 20s
     depends_on:
       - auth-service
-      - workflow-orchestrator
-      - incentive-engine
-      - decision-intelligence
+      - truss
+      - registry
+      - telemetry
       - communications-hub
-      - adaptive-experience-engine
+      - jobs
       - realtime-gateway
       - language-intelligence-service
       - messaging-service
@@ -435,13 +435,13 @@ services:
       - deepiri-dev-network
 
   # Workflow Orchestrator Service
-  workflow-orchestrator:
+  truss:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
-    image: deepiri-dev-workflow-orchestrator:latest
+      dockerfile: backend/deepiri-truss/Dockerfile
+    image: deepiri-dev-truss:latest
     pull_policy: never
-    container_name: deepiri-workflow-orchestrator-dev
+    container_name: deepiri-truss-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -457,13 +457,13 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      K8S_SERVICE_NAME: workflow-orchestrator  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-truss  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-workflow-orchestrator/src:/app/src
-      - ./platform-services/backend/deepiri-workflow-orchestrator/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-truss/src:/app/src
+      - ./platform-services/backend/deepiri-truss/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       postgres-core:
@@ -474,13 +474,13 @@ services:
       - deepiri-dev-network
 
   # Incentive Engine Service
-  incentive-engine:
+  registry:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-incentive-engine/Dockerfile
-    image: deepiri-dev-incentive-engine:latest
+      dockerfile: backend/deepiri-registry/Dockerfile
+    image: deepiri-dev-registry:latest
     pull_policy: never
-    container_name: deepiri-incentive-engine-dev
+    container_name: deepiri-registry-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -495,13 +495,13 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      K8S_SERVICE_NAME: incentive-engine  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-registry  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-incentive-engine/src:/app/src
-      - ./platform-services/backend/deepiri-incentive-engine/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-registry/src:/app/src
+      - ./platform-services/backend/deepiri-registry/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       postgres-core:
@@ -514,13 +514,13 @@ services:
       - deepiri-dev-network
 
   # Decision Intelligence Service
-  decision-intelligence:
+  telemetry:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-decision-intelligence/Dockerfile
-    image: deepiri-dev-decision-intelligence:latest
+      dockerfile: backend/deepiri-telemetry/Dockerfile
+    image: deepiri-dev-telemetry:latest
     pull_policy: never
-    container_name: deepiri-decision-intelligence-dev
+    container_name: deepiri-telemetry-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -531,13 +531,13 @@ services:
       PORT: 5004
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: decision-intelligence  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-telemetry  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-decision-intelligence/src:/app/src
-      - ./platform-services/backend/deepiri-decision-intelligence/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-telemetry/src:/app/src
+      - ./platform-services/backend/deepiri-telemetry/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       - postgres-core
@@ -633,13 +633,13 @@ services:
       - deepiri-dev-network
 
   # Adaptive Experience Engine Service
-  adaptive-experience-engine:
+  jobs:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
-    image: deepiri-dev-adaptive-experience-engine:latest
+      dockerfile: backend/deepiri-jobs/Dockerfile
+    image: deepiri-dev-jobs:latest
     pull_policy: never
-    container_name: deepiri-adaptive-experience-engine-dev
+    container_name: deepiri-jobs-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -650,13 +650,13 @@ services:
       PORT: 5007
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: adaptive-experience-engine  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: deepiri-jobs  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-adaptive-experience-engine/src:/app/src
-      - ./platform-services/backend/deepiri-adaptive-experience-engine/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-jobs/src:/app/src
+      - ./platform-services/backend/deepiri-jobs/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       - postgres-core

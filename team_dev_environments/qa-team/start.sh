@@ -14,10 +14,10 @@ SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
   postgres-auth postgres-core postgres-intelligence redis influxdb kafka
   synapse sugar-glider
-  api-gateway auth-service workflow-orchestrator
-  incentive-engine decision-intelligence
+  api-gateway auth-service truss
+  registry telemetry
   communications-hub external-bridge-service
-  adaptive-experience-engine realtime-gateway
+  jobs realtime-gateway
   language-intelligence-service messaging-service
   frontend-dev synapse sugar-glider adminer
   messaging-service frontend-dev adminer
@@ -47,10 +47,10 @@ sleep 3
 # Start backend services (can use --no-deps since infrastructure is up)
 echo "🔧 Starting backend services..."
 docker compose -f docker-compose.dev.yml up -d --no-build --no-deps \
-  api-gateway auth-service workflow-orchestrator \
-  incentive-engine decision-intelligence \
+  api-gateway auth-service truss \
+  registry telemetry \
   communications-hub external-bridge-service \
-  adaptive-experience-engine realtime-gateway \
+  jobs realtime-gateway \
   adminer
 
 # Try to start language-intelligence-service if image exists (optional service)
@@ -74,24 +74,24 @@ echo "  Frontend & Services:"
 echo "  - Frontend (Vite HMR):     http://localhost:5173"
 echo "  - API Gateway:             http://localhost:${API_GATEWAY_PORT:-5100}"
 echo "  - Auth Service:            http://localhost:5001"
-echo "  - Workflow Orchestrator:  http://localhost:5002"
-echo "  - Incentive Engine:       http://localhost:5003"
-echo "  - Decision Intelligence:   http://localhost:5004"
+echo "  - Truss:                  http://localhost:5002"
+echo "  - Registry:                http://localhost:5003"
+echo "  - Telemetry:               http://localhost:5004"
 echo "  - Communications Hub:      http://localhost:5005"
 echo "  - External Bridge:         http://localhost:5006"
-echo "  - Adaptive Experience:     http://localhost:5007"
+echo "  - Jobs:                    http://localhost:5007"
 echo "  - Realtime Gateway:        http://localhost:5008"
 echo "  - Messaging Service:       http://localhost:5009"
 echo "  - Synapse:                 http://localhost:8002"
 echo "  - Frontend (Vite HMR):              http://localhost:5173"
 echo "  - API Gateway:                      http://localhost:${API_GATEWAY_PORT:-5100}"
 echo "  - Auth Service:                     http://localhost:5001"
-echo "  - Workflow Orchestrator:            http://localhost:5002"
-echo "  - Incentive Engine:                 http://localhost:5003"
-echo "  - Decision Intelligence:            http://localhost:5004"
+echo "  - Truss:                             http://localhost:5002"
+echo "  - Registry:                          http://localhost:5003"
+echo "  - Telemetry:                         http://localhost:5004"
 echo "  - Communications Hub:               http://localhost:5005"
 echo "  - External Bridge:                  http://localhost:5006"
-echo "  - Adaptive Experience Engine:       http://localhost:5007"
+echo "  - Jobs:                              http://localhost:5007"
 echo "  - Realtime Gateway:                 http://localhost:5008"
 echo "  - Messaging Service:                http://localhost:5009"
 echo "  - Synapse:                          http://localhost:8002"

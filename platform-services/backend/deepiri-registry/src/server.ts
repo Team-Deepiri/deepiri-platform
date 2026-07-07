@@ -34,7 +34,7 @@ connectDatabase()
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
-    service: 'deepiri-incentive-engine',
+    service: 'deepiri-registry',
     capabilities: [
       'multi-currency',
       'badges',
@@ -65,7 +65,7 @@ app.post('/incentive/trust/check', handleCheckTrust);
 
 app.get('/capabilities', (req: Request, res: Response) => {
   res.json({
-    service: 'deepiri-incentive-engine',
+    service: 'deepiri-registry',
     version: '2.0.0',
     capabilities: {
       gamification: {

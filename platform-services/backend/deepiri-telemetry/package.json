@@ -1,7 +1,7 @@
 {
-  "name": "deepiri-workflow-orchestrator",
+  "name": "deepiri-telemetry",
   "version": "1.0.0",
-  "description": "Workflow Orchestrator - Task Lifecycle, Versioning, Dependency Graphs",
+  "description": "Decision Intelligence - Time-Series, Clustering, Predictive Analytics",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
+    "@influxdata/influxdb-client": "^1.33.2",
     "@prisma/client": "^5.7.0",
     "axios": "^1.16.0",
     "cors": "^2.8.5",

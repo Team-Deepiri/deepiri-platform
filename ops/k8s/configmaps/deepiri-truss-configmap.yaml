@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: truss-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Truss (workflow orchestration) service"
+data:
+  NODE_ENV: "development"
+  PORT: "5002"
+  SYNAPSE_URL: "http://synapse:8002"
