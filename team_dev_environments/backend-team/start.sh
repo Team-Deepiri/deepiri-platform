@@ -15,7 +15,7 @@ SERVICES=(
   communications-hub external-bridge-service
   jobs realtime-gateway
   language-intelligence-service messaging-service
-  frontend-dev synapse synapse-sugar-glider adminer
+  frontend-dev synapse sugar-glider adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 

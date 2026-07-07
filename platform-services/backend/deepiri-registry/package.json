@@ -1,5 +1,5 @@
 {
-  "name": "deepiri-incentive-engine",
+  "name": "deepiri-registry",
   "version": "1.0.0",
   "description": "Incentive Engine - Multi-Currency, Badges, Leaderboards, Rewards",
   "main": "dist/server.js",

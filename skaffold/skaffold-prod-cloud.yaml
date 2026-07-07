@@ -77,10 +77,10 @@ build:
       context: ./platform-services
       docker:
         dockerfile: backend/deepiri-telemetry/Dockerfile
-    - image: deepiri-communications-hub
+    - image: deepiri-messaging-service
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-communications-hub/Dockerfile
+        dockerfile: backend/deepiri-messaging-service/Dockerfile
     
     # Microservices - Realtime Gateway (WebSocket)
     - image: deepiri-realtime-gateway

@@ -106,9 +106,10 @@ export class CommunicationsHub {
   private async sendEmail(pPayload: MessagePayload): Promise<DeliveryStatus> {
     return {
       messageId: pPayload.id,
-      status: 'sent',
+      status: 'failed',
       timestamp: new Date().toISOString(),
-      channel: 'email'
+      channel: 'email',
+      error: 'not_implemented',
     };
   }
 

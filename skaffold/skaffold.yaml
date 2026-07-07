@@ -187,15 +187,15 @@ build:
             dest: /app/
     
 # Microservices - Communications Hub
-    - image: deepiri-communications-hub
+    - image: deepiri-messaging-service
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-communications-hub/Dockerfile
+        dockerfile: backend/deepiri-messaging-service/Dockerfile
       sync:
         manual:
-          - src: 'backend/deepiri-communications-hub/**/*.ts'
+          - src: 'backend/deepiri-messaging-service/**/*.ts'
             dest: /app/src/
-          - src: 'backend/deepiri-communications-hub/**/*.json'
+          - src: 'backend/deepiri-messaging-service/**/*.json'
             dest: /app/
     
     # Microservices - Realtime Gateway (WebSocket)
