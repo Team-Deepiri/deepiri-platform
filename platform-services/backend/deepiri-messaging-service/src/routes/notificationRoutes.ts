@@ -7,9 +7,12 @@ import {
   handleSetPreferences,
 } from '../services/communicationsHub';
 import pushNotificationService from '../services/pushNotificationService';
+import { handleListNotifications, handleMarkNotificationRead } from '../services/notificationService';
 
 const router = Router();
 
+router.get('/', handleListNotifications);
+router.post('/:id/read', handleMarkNotificationRead);
 router.post('/send', handleSend);
 router.post('/send-batch', handleSendBatch);
 router.post('/template', handleRegisterTemplate);

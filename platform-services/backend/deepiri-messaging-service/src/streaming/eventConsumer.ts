@@ -1,5 +1,6 @@
 import { StreamingClient, StreamEvent, StreamTopics } from '@team-deepiri/shared-utils';
 import { secureLog } from '@team-deepiri/shared-utils';
+import { createNotification } from '../services/notificationService';
 
 let streamingClient: StreamingClient | null = null;
 let isConsuming = false;
@@ -10,6 +11,14 @@ async function publishNotificationEvent(
   message: string,
   data: Record<string, unknown> = {},
 ): Promise<void> {
+  // Persist first so GET /api/notifications reflects this even if the live
+  // stream publish below fails or nothing is connected to receive it.
+  try {
+    await createNotification(userId, eventType, message, message, data);
+  } catch (err: unknown) {
+    secureLog('error', '[Messaging] failed to persist notification row', err);
+  }
+
   if (!streamingClient) return;
   await streamingClient.publish(StreamTopics.PLATFORM_EVENTS, {
     event_type: eventType,
