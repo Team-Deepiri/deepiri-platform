@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../db';
 
 export interface RegistryEntry {
@@ -51,7 +52,7 @@ class RegistryService {
         tier: payload.tier ?? 1,
         status: payload.status ?? 'unknown',
         lastSeen: new Date(),
-        metadata: payload.metadata ?? {},
+        metadata: (payload.metadata ?? {}) as Prisma.InputJsonValue,
       },
       update: {
         repo: payload.repo,
@@ -59,7 +60,7 @@ class RegistryService {
         tier: payload.tier,
         status: payload.status,
         lastSeen: new Date(),
-        metadata: payload.metadata ?? {},
+        metadata: (payload.metadata ?? {}) as Prisma.InputJsonValue,
       },
     });
     return toEntry(row);
