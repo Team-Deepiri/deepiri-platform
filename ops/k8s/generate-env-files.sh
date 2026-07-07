@@ -71,7 +71,6 @@ SERVICES=(
     "truss"
     "registry"
     "telemetry"
-    "communications-hub"
     "external-bridge-service"
     "jobs"
     "realtime-gateway"
