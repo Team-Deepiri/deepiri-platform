@@ -25,6 +25,9 @@ app.get('/health', (_req: Request, res: Response) => {
       'platform-signals',
       'behavioral-clustering',
       'predictive-modeling',
+      'ecosystem-health',
+      'job-metrics',
+      'recent-events-feed',
     ],
     timestamp: new Date().toISOString(),
   });
@@ -40,7 +43,19 @@ app.get('/capabilities', (_req: Request, res: Response) => {
     capabilities: {
       analytics: {
         description: 'Time-series and behavioral analytics',
-        endpoints: ['/*'],
+        endpoints: ['/time-series/*', '/clustering/*', '/predictive/*'],
+      },
+      ecosystem: {
+        description: 'Ecosystem health aggregation from deepiri-registry',
+        endpoints: ['/health/ecosystem'],
+      },
+      jobs: {
+        description: 'Job queue metrics from deepiri-jobs',
+        endpoints: ['/metrics/jobs'],
+      },
+      events: {
+        description: 'Recent Synapse event feed across the platform',
+        endpoints: ['/events/recent'],
       },
     },
   });

@@ -4,6 +4,7 @@
  */
 import { StreamingClient, StreamTopics, StreamEvent } from '@team-deepiri/shared-utils';
 import { secureLog } from '@team-deepiri/shared-utils';
+import { recordEvent } from '../services/synapseEventIndexService';
 
 let streamingClient: StreamingClient | null = null;
 let isConsuming = false;
@@ -37,6 +38,13 @@ export async function startEventConsumption(): Promise<void> {
       secureLog('error', '[Analytics] Training events consumption error:', err);
     });
 
+    // Start consuming ecosystem-wide platform events (registry/truss/jobs/
+    // notification/etc.) so GET /events/recent reflects the whole platform,
+    // not just AI-specific traffic.
+    consumePlatformEvents().catch((err) => {
+      secureLog('error', '[Analytics] Platform events consumption error:', err);
+    });
+
     isConsuming = true;
     secureLog('info', '[Analytics] Event consumption started');
   } catch (error) {
@@ -62,6 +70,8 @@ async function consumeInferenceEvents(): Promise<void> {
           latency_ms: event.latency_ms,
           user_id: event.user_id
         });
+
+        recordEvent(String(event.event || 'inference-event'), 'inference-events', event);
 
         // TODO: Store in InfluxDB
         // await influxDB.writePoint({
@@ -110,6 +120,8 @@ async function consumeTrainingEvents(): Promise<void> {
           status: event.status
         });
 
+        recordEvent(String(event.event || 'training-event'), 'training-events', event);
+
         // TODO: Store in InfluxDB
         // await influxDB.writePoint({
         //   measurement: 'training_metrics',
@@ -128,6 +140,34 @@ async function consumeTrainingEvents(): Promise<void> {
         secureLog('info', '[Analytics] Training event processed');
       } catch (error) {
         secureLog('error', '[Analytics] Error processing training event:', error);
+      }
+    },
+    {
+      consumerGroup: 'analytics-service',
+      consumerName: 'analytics-1',
+      blockMs: 1000
+    }
+  );
+}
+
+/**
+ * Consume ecosystem-wide platform events (registry.*, truss.*, jobs.*,
+ * notification.*, etc.) so the recent-events feed reflects the whole
+ * platform, not just AI-specific traffic.
+ */
+async function consumePlatformEvents(): Promise<void> {
+  if (!streamingClient) {
+    throw new Error('Streaming client not initialized');
+  }
+
+  await streamingClient.subscribe(
+    StreamTopics.PLATFORM_EVENTS,
+    async (event: StreamEvent) => {
+      try {
+        const eventType = String(event.event_type || event.event || 'platform-event');
+        recordEvent(eventType, String(event.source || 'platform-events'), event);
+      } catch (error) {
+        secureLog('error', '[Analytics] Error processing platform event:', error);
       }
     },
     {
