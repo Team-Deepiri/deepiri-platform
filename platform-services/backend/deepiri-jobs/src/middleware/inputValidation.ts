@@ -56,3 +56,14 @@ export const generateBodyValidations = () => [
       return true;
     }),
 ];
+
+/** Run body validation only when request has a JSON body. */
+export const validateBodyIfPresent = () => {
+  const validations = generateBodyValidations();
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
+      return validate(validations)(req, res, next);
+    }
+    next();
+  };
+};

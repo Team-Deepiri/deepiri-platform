@@ -2,11 +2,13 @@ import { createServer } from './server';
 import { connectDatabase, disconnectDatabase } from './db';
 import { config } from './config/environment';
 import { logger } from './utils/logger';
+import { startEventConsumption, stopEventConsumption } from './streaming/eventConsumer';
 
 async function startServer() {
   try {
     // Connect to database
     await connectDatabase();
+    await startEventConsumption();
 
     // Create and start server
     const app = createServer();
@@ -18,6 +20,7 @@ async function startServer() {
     process.on('SIGTERM', async () => {
       logger.info('SIGTERM received, shutting down gracefully');
       server.close(async () => {
+        await stopEventConsumption();
         await disconnectDatabase();
         process.exit(0);
       });
@@ -26,6 +29,7 @@ async function startServer() {
     process.on('SIGINT', async () => {
       logger.info('SIGINT received, shutting down gracefully');
       server.close(async () => {
+        await stopEventConsumption();
         await disconnectDatabase();
         process.exit(0);
       });

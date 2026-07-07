@@ -5,15 +5,6 @@ import dotenv from 'dotenv';
 import { secureLog } from '@team-deepiri/shared-utils';
 import routes from './index';
 import { validateBodyIfPresent } from './middleware/inputValidation';
-import {
-  handleCreateExperiment,
-  handleAssignVariant,
-  handleTrackMetric,
-  handleDetectAnomalies,
-  handleForecast,
-  handleGetInsights,
-  handleMeasureEffect
-} from './core/decisionIntelligence';
 
 dotenv.config();
 
@@ -25,66 +16,53 @@ app.use(cors());
 app.use(express.json({ limit: '100kb' }));
 app.use(validateBodyIfPresent());
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
-    service: 'deepiri-decision-intelligence',
+    service: 'deepiri-telemetry',
     capabilities: [
       'time-series-analytics',
+      'platform-signals',
       'behavioral-clustering',
       'predictive-modeling',
-      'anomaly-detection',
-      'forecasting',
-      'experimentation',
-      'effect-measurement',
-      'insights'
+      'ecosystem-health',
+      'job-metrics',
+      'recent-events-feed',
     ],
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
+app.use('/api/telemetry', routes);
 app.use('/', routes);
 
-// Decision Intelligence API
-app.post('/experiment', handleCreateExperiment);
-app.post('/experiment/assign', handleAssignVariant);
-app.post('/experiment/track', handleTrackMetric);
-app.get('/anomaly', handleDetectAnomalies);
-app.get('/forecast', handleForecast);
-app.get('/insights', handleGetInsights);
-app.post('/experiment/effect', handleMeasureEffect);
-
-app.get('/capabilities', (req: Request, res: Response) => {
+app.get('/capabilities', (_req: Request, res: Response) => {
   res.json({
-    service: 'deepiri-decision-intelligence',
+    service: 'deepiri-telemetry',
     version: '2.0.0',
     capabilities: {
       analytics: {
         description: 'Time-series and behavioral analytics',
-        endpoints: ['/*']
+        endpoints: ['/time-series/*', '/clustering/*', '/predictive/*'],
       },
-      experimentation: {
-        description: 'A/B testing and effect measurement',
-        endpoints: ['POST /experiment/*', 'GET /experiment/effect']
+      ecosystem: {
+        description: 'Ecosystem health aggregation from deepiri-registry',
+        endpoints: ['/health/ecosystem'],
       },
-      anomalyDetection: {
-        description: 'Anomaly early warning',
-        endpoints: ['GET /anomaly']
+      jobs: {
+        description: 'Job queue metrics from deepiri-jobs',
+        endpoints: ['/metrics/jobs'],
       },
-      forecasting: {
-        description: 'Predictive forecasts',
-        endpoints: ['GET /forecast']
+      events: {
+        description: 'Recent Synapse event feed across the platform',
+        endpoints: ['/events/recent'],
       },
-      insights: {
-        description: 'AI-powered insights',
-        endpoints: ['GET /insights']
-      }
-    }
+    },
   });
 });
 
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  secureLog('error', 'Decision Intelligence error:', err);
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  secureLog('error', 'Telemetry service error:', err);
   res.status(500).json({ error: 'Internal server error' });
 };
 app.use(errorHandler);
@@ -95,8 +73,7 @@ startEventConsumption().catch((err) => {
 });
 
 app.listen(PORT, () => {
-  secureLog('info', `Decision Intelligence running on port ${PORT}`);
+  secureLog('info', `Telemetry service running on port ${PORT}`);
 });
 
 export default app;
-

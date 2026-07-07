@@ -3,8 +3,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { secureLog } from '@team-deepiri/shared-utils';
-import { handleCreateJob, handleGetJob, handleListJobs } from './jobsService';
+import {
+  handleCreateJob,
+  handleGetJob,
+  handleListJobs,
+  handleGetJobLogs,
+  handleCancelJob,
+  handleRetryJob,
+  handleQueueStats,
+} from './jobsService';
 import { validateBodyIfPresent } from './middleware/inputValidation';
+import { connectDatabase } from './db';
 
 dotenv.config();
 
@@ -28,6 +37,10 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/api/jobs', handleListJobs);
 app.post('/api/jobs', handleCreateJob);
 app.get('/api/jobs/:id', handleGetJob);
+app.get('/api/jobs/:id/logs', handleGetJobLogs);
+app.post('/api/jobs/:id/cancel', handleCancelJob);
+app.post('/api/jobs/:id/retry', handleRetryJob);
+app.get('/api/queues/stats', handleQueueStats);
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   secureLog('error', 'Jobs service error:', err);
@@ -35,7 +48,8 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 };
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await connectDatabase();
   secureLog('info', `Jobs service running on port ${PORT}`);
 });
 
