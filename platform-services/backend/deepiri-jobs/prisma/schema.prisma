@@ -8,16 +8,32 @@ datasource db {
 }
 
 model Job {
-  id        String   @id @default(uuid()) @db.Uuid
-  type      String   @db.VarChar(128)
-  status    String   @default("queued") @db.VarChar(32)
-  payload   Json     @default("{}")
-  result    Json?
-  error     String?  @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+  id             String   @id @default(uuid()) @db.Uuid
+  type           String   @db.VarChar(128)
+  status         String   @default("queued") @db.VarChar(32)
+  payload        Json     @default("{}")
+  labels         Json     @default("{}")
+  idempotencyKey String?  @unique @map("idempotency_key") @db.VarChar(255)
+  result         Json?
+  error          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  logs JobLog[]
 
   @@index([status])
   @@index([type])
   @@map("jobs")
+}
+
+model JobLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId     String   @map("job_id") @db.Uuid
+  line      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("job_logs")
 }
