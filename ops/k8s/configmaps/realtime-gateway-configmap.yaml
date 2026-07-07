@@ -12,9 +12,9 @@ data:
   
   # Streaming Service Configuration (for consuming events for real-time updates)
   SYNAPSE_URL: "http://synapse:8002"
-  SYNAPSE_SUGAR_GLIDER_URL: "http://synapse-sugar-glider:8081"
-  SYNAPSE_SIDECAR_URL: "http://synapse-sugar-glider:8081"
-  SYNAPSE_GRPC_ADDR: "synapse-sugar-glider:50051"
+  SYNAPSE_SUGAR_GLIDER_URL: "http://sugar-glider:8081"
+  SYNAPSE_SIDECAR_URL: "http://sugar-glider:8081"
+  SYNAPSE_GRPC_ADDR: "sugar-glider:50051"
   STREAM_TRANSPORT: "sugar-glider-grpc"
   STREAM_GRPC_KEEPALIVE_MS: "300000"
   STREAM_GRPC_KEEPALIVE_TIMEOUT_MS: "20000"
