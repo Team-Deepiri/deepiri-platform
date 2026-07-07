@@ -43,10 +43,10 @@ build:
       docker:
         dockerfile: backend/deepiri-telemetry/Dockerfile
     
-    - image: deepiri-dev-communications-hub
+    - image: deepiri-dev-messaging-service
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-communications-hub/Dockerfile
+        dockerfile: backend/deepiri-messaging-service/Dockerfile
     
     - image: deepiri-dev-external-bridge-service
       context: ./platform-services

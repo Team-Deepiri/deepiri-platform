@@ -1,5 +1,5 @@
 {
-  "name": "deepiri-workflow-orchestrator",
+  "name": "deepiri-truss",
   "version": "1.0.0",
   "description": "Workflow Orchestrator - Task Lifecycle, Versioning, Dependency Graphs",
   "main": "dist/server.js",
