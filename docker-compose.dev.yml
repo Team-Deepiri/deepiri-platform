@@ -347,16 +347,14 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      WORKFLOW_ORCHESTRATOR_URL: http://truss:5002
-      INCENTIVE_ENGINE_URL: http://registry:5003
-      DECISION_INTELLIGENCE_URL: http://telemetry:5004
-      NOTIFICATION_SERVICE_URL: http://messaging-service:5009
-      COMMUNICATIONS_HUB_URL: http://messaging-service:5009
-      ADAPTIVE_EXPERIENCE_ENGINE_URL: http://jobs:5007
+      TRUSS_URL: http://truss:5002
+      REGISTRY_URL: http://registry:5003
+      TELEMETRY_URL: http://telemetry:5004
+      MESSAGING_SERVICE_URL: http://messaging-service:5009
+      JOBS_URL: http://jobs:5007
       EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
-      MESSAGING_SERVICE_URL: http://messaging-service:5009
-      LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5003
+      LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5010
       SYNAPSE_URL: http://synapse:8002
       K8S_SERVICE_NAME: api-gateway  # Filter to only load this service's configmap
     volumes:

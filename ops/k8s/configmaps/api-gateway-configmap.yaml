@@ -23,14 +23,3 @@ data:
   CYREX_URL: "http://cyrex:8000"
   SYNAPSE_URL: "http://synapse:8002"
   MLFLOW_URL: "http://mlflow:5000"
-
-  # Legacy aliases (one release — removed in PR14)
-  WORKFLOW_ORCHESTRATOR_URL: "http://truss:5002"
-  TASK_ORCHESTRATOR_URL: "http://truss:5002"
-  INCENTIVE_ENGINE_URL: "http://registry:5003"
-  ENGAGEMENT_SERVICE_URL: "http://registry:5003"
-  DECISION_INTELLIGENCE_URL: "http://telemetry:5004"
-  PLATFORM_ANALYTICS_SERVICE_URL: "http://telemetry:5004"
-  ADAPTIVE_EXPERIENCE_ENGINE_URL: "http://jobs:5007"
-  CHALLENGE_SERVICE_URL: "http://jobs:5007"
-  NOTIFICATION_SERVICE_URL: "http://messaging-service:5009"
