@@ -51,11 +51,6 @@ build:
       docker:
         dockerfile: backend/deepiri-telemetry/Dockerfile
     
-    - image: deepiri-dev-communications-hub
-      context: ./platform-services
-      docker:
-        dockerfile: backend/deepiri-communications-hub/Dockerfile
-    
     - image: deepiri-dev-external-bridge-service
       context: ./platform-services
       docker:

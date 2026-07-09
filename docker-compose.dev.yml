@@ -753,9 +753,9 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5008
       SYNAPSE_URL: http://synapse:8002
-      SYNAPSE_SUGAR_GLIDER_URL: ${SYNAPSE_SUGAR_GLIDER_URL:-http://synapse-sidecar:8081}
-      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
-      SYNAPSE_GRPC_ADDR: ${SYNAPSE_GRPC_ADDR:-synapse-sidecar:50051}
+      SYNAPSE_SUGAR_GLIDER_URL: ${SYNAPSE_SUGAR_GLIDER_URL:-http://sugar-glider:8081}
+      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://sugar-glider:8081}
+      SYNAPSE_GRPC_ADDR: ${SYNAPSE_GRPC_ADDR:-sugar-glider:50051}
       STREAM_TRANSPORT: ${STREAM_TRANSPORT:-sugar-glider-grpc}
       STREAM_SHADOW_MODE: ${STREAM_SHADOW_MODE:-false}
       STREAM_CONSUMER_GROUP: ${STREAM_CONSUMER_GROUP:-realtime-gateway}
@@ -908,7 +908,7 @@ services:
       SYNAPSE_URL: http://synapse:8002
       # Synapse transport (redis|sidecar). Default to sidecar in dev.
       SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
-      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
+      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://sugar-glider:8081}
       SYNAPSE_SIDECAR_TIMEOUT_SEC: ${SYNAPSE_SIDECAR_TIMEOUT_SEC:-5}
       SYNAPSE_SIDECAR_SENDER: ${SYNAPSE_SIDECAR_SENDER:-cyrex}
       SYNAPSE_CONSUMER_NAME: ${SYNAPSE_CONSUMER_NAME:-cyrex-1}
@@ -1126,14 +1126,14 @@ services:
     networks:
       - deepiri-dev-network
 
-  # Synapse Sugar Glider - stream transport service
-  synapse-sugar-glider:
+  # Sugar Glider - Redis Streams transport sidecar
+  sugar-glider:
     build:
       context: ./platform-services/shared/deepiri-sugar-glider
       dockerfile: Dockerfile
-    image: deepiri-dev-synapse-sugar-glider:latest
+    image: deepiri-dev-sugar-glider:latest
     pull_policy: never
-    container_name: deepiri-synapse-sugar-glider-dev
+    container_name: deepiri-sugar-glider-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -1154,7 +1154,7 @@ services:
       SIDECAR_DLQ_MIN_IDLE_MS: "30000"
       SIDECAR_DLQ_SCAN_INTERVAL_MS: "5000"
     volumes:
-      - synapse_sugar_glider_dev_wal:/data/synapse-wal
+      - sugar_glider_dev_wal:/data/synapse-wal
     depends_on:
       - redis
     healthcheck:
@@ -1163,9 +1163,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      deepiri-dev-network:
-        aliases:
-          - synapse-sidecar
+      - deepiri-dev-network
 
   # Jupyter Notebook for AI Research
   # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
@@ -1290,7 +1288,7 @@ volumes:
     driver: local
   minio_dev_data:
     driver: local
-  synapse_sugar_glider_dev_wal:
+  sugar_glider_dev_wal:
     driver: local
 
 networks:

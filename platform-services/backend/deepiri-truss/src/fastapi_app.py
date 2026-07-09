@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import asyncio
 
-app = FastAPI(title="Workflow Orchestrator API", version="2.0.0")
+app = FastAPI(title="Truss API", version="2.0.0")
 
 class TaskInput(BaseModel):
     name: str
@@ -53,13 +53,13 @@ task_counter = 0
 
 @app.get("/")
 async def root():
-    return {"service": "deepiri-workflow-orchestrator", "version": "2.0.0"}
+    return {"service": "deepiri-truss", "version": "2.0.0"}
 
 @app.get("/health")
 async def health():
     return {
         "status": "healthy",
-        "service": "deepiri-workflow-orchestrator",
+        "service": "deepiri-truss",
         "capabilities": [
             "task-lifecycle",
             "task-versioning",
@@ -215,7 +215,7 @@ async def run_workflow(workflow_id: str):
 @app.get("/capabilities")
 async def get_capabilities():
     return {
-        "service": "deepiri-workflow-orchestrator",
+        "service": "deepiri-truss",
         "version": "2.0.0",
         "capabilities": {
             "task": {

@@ -17,10 +17,10 @@ ALL_SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
   api-gateway auth-service truss
   registry telemetry
-  communications-hub external-bridge-service
+   external-bridge-service
   jobs realtime-gateway
   language-intelligence-service messaging-service
-  frontend-dev synapse synapse-sugar-glider adminer
+  frontend-dev synapse sugar-glider adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
@@ -55,7 +55,7 @@ for service in "${ALL_SERVICES[@]}"; do
         echo "⚠️  Skipping $service (not found)"
       fi
       ;;
-    synapse-sugar-glider)
+    sugar-glider)
       if [ -f "platform-services/shared/deepiri-sugar-glider/Dockerfile" ]; then
         SERVICES_TO_START+=("$service")
       else

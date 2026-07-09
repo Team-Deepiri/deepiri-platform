@@ -38,8 +38,8 @@ Each team has its own folder with:
 
 ## Teams
 
-- **ai-team/** - AI Team (cyrex, jupyter, mlflow, adaptive-experience-engine)
-- **ml-team/** - ML Team (cyrex, jupyter, mlflow, decision-intelligence)
+- **ai-team/** - AI Team (cyrex, jupyter, mlflow, jobs)
+- **ml-team/** - ML Team (cyrex, jupyter, mlflow, telemetry)
 - **backend-team/** - Backend Team (all backend microservices)
 - **frontend-team/** - Frontend Team (frontend + all backend services)
 - **infrastructure-team/** - Infrastructure Team (all infrastructure + all microservices)

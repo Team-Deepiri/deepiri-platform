@@ -125,7 +125,7 @@ build:
           - src: 'backend/deepiri-auth-service/**/*.json'
             dest: /app/
     
-# Microservices - Workflow Orchestrator
+# Microservices - Truss
     - image: deepiri-truss
       context: ./platform-services
       docker:
@@ -137,7 +137,7 @@ build:
           - src: 'backend/deepiri-truss/**/*.json'
             dest: /app/
     
-    # Microservices - Adaptive Experience Engine
+    # Microservices - Jobs
     - image: deepiri-jobs
       context: ./platform-services
       docker:
@@ -149,7 +149,7 @@ build:
           - src: 'backend/deepiri-jobs/**/*.json'
             dest: /app/
     
-    # Microservices - Incentive Engine
+    # Microservices - Registry
     - image: deepiri-registry
       context: ./platform-services
       docker:
@@ -161,7 +161,7 @@ build:
           - src: 'backend/deepiri-registry/**/*.json'
             dest: /app/
     
-    # Microservices - Decision Intelligence
+    # Microservices - Telemetry
     - image: deepiri-telemetry
       context: ./platform-services
       docker:
@@ -184,18 +184,6 @@ build:
           - src: 'backend/deepiri-external-bridge-service/**/*.ts'
             dest: /app/src/
           - src: 'backend/deepiri-external-bridge-service/**/*.json'
-            dest: /app/
-    
-# Microservices - Communications Hub
-    - image: deepiri-communications-hub
-      context: ./platform-services
-      docker:
-        dockerfile: backend/deepiri-communications-hub/Dockerfile
-      sync:
-        manual:
-          - src: 'backend/deepiri-communications-hub/**/*.ts'
-            dest: /app/src/
-          - src: 'backend/deepiri-communications-hub/**/*.json'
             dest: /app/
     
     # Microservices - Realtime Gateway (WebSocket)

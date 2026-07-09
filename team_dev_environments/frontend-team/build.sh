@@ -56,7 +56,6 @@ SERVICES=(
   frontend-dev
   api-gateway
   auth-service
-  communications-hub
   messaging-service
   realtime-gateway
   postgres-auth

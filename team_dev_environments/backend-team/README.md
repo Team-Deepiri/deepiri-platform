@@ -45,12 +45,11 @@ This protects `main`, `master`, and branches containing `team-dev` from accident
 This builds all backend microservices:
 - `api-gateway`
 - `auth-service`
-- `workflow-orchestrator`
-- `incentive-engine`
-- `decision-intelligence`
-- `communications-hub`
+- `truss`
+- `registry`
+- `telemetry`
 - `external-bridge-service`
-- `adaptive-experience-engine`
+- `jobs`
 - `realtime-gateway`
 
 ### Start Services
@@ -67,10 +66,10 @@ This starts all infrastructure and backend services.
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
   postgres redis influxdb \
-  api-gateway auth-service workflow-orchestrator \
-  incentive-engine decision-intelligence \
-  communications-hub external-bridge-service \
-  adaptive-experience-engine realtime-gateway
+  api-gateway auth-service truss \
+  registry telemetry \
+   external-bridge-service \
+  jobs realtime-gateway
 ```
 
 ### Rebuild After Code Changes
@@ -140,7 +139,7 @@ docker compose -f docker-compose.dev.yml logs -f
 ```bash
 docker compose -f docker-compose.dev.yml logs -f api-gateway
 docker compose -f docker-compose.dev.yml logs -f auth-service
-docker compose -f docker-compose.dev.yml logs -f workflow-orchestrator
+docker compose -f docker-compose.dev.yml logs -f truss
 # ... etc for all services
 ```
 
@@ -173,5 +172,5 @@ PostgreSQL is automatically initialized with the schema from `scripts/postgres-i
 - `analytics` schema - Analytics and metrics (momentum, streaks, boosts, etc.)
 - `audit` schema - Audit logs and history
 
-For services using Prisma (e.g., incentive-engine), migrations are handled automatically during service startup. The Prisma client is generated during the Docker build process.
+For services using Prisma (e.g., registry), migrations are handled automatically during service startup. The Prisma client is generated during the Docker build process.
 

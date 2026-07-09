@@ -14,7 +14,6 @@ declare -A SERVICE_ENV_MAP=(
     ["truss"]=".env-k8s/truss.env"
     ["registry"]=".env-k8s/registry.env"
     ["telemetry"]=".env-k8s/telemetry.env"
-    ["communications-hub"]=".env-k8s/communications-hub.env"
     ["external-bridge-service"]=".env-k8s/external-bridge-service.env"
     ["jobs"]=".env-k8s/jobs.env"
     ["realtime-gateway"]=".env-k8s/realtime-gateway.env"

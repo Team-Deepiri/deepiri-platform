@@ -14,10 +14,10 @@ SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
   api-gateway auth-service truss
   registry telemetry
-  communications-hub external-bridge-service
+   external-bridge-service
   jobs realtime-gateway
   language-intelligence-service messaging-service
-  synapse synapse-sugar-glider frontend-dev adminer
+  synapse sugar-glider frontend-dev adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
