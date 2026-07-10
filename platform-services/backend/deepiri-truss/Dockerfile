@@ -9,9 +9,9 @@ COPY shared/deepiri-shared-utils/package.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/package-lock.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/tsconfig.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/src /shared/deepiri-shared-utils/src
-COPY backend/deepiri-workflow-orchestrator/package.json ./
-COPY backend/deepiri-workflow-orchestrator/tsconfig.json ./
-COPY backend/deepiri-workflow-orchestrator/prisma ./prisma
+COPY backend/deepiri-truss/package.json ./
+COPY backend/deepiri-truss/tsconfig.json ./
+COPY backend/deepiri-truss/prisma ./prisma
 
 RUN cd /shared/deepiri-shared-utils \
  && npm ci --legacy-peer-deps \
@@ -26,7 +26,7 @@ RUN cd /shared/deepiri-shared-utils \
  && cd /app \
  && npm cache clean --force
 
-COPY backend/deepiri-workflow-orchestrator/src ./src
+COPY backend/deepiri-truss/src ./src
 
 RUN npx prisma generate \
  && npm run build \

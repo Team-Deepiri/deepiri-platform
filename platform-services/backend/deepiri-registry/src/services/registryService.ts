@@ -8,6 +8,38 @@ export interface RegistryEntry {
   metadata?: Record<string, unknown>;
 }
 
+// Known in-network service hostnames health checks are allowed to target.
+// registerService() accepts caller-supplied healthUrl values, so without this
+// allowlist a caller could point pollHealth()'s fetch at an arbitrary internal
+// or external host (SSRF) -- see CodeQL js/request-forgery.
+const ALLOWED_HEALTH_HOSTS = new Set([
+  'api-gateway',
+  'auth-service',
+  'truss',
+  'registry',
+  'telemetry',
+  'external-bridge-service',
+  'jobs',
+  'realtime-gateway',
+  'language-intelligence-service',
+  'messaging-service',
+  'cyrex',
+  'synapse',
+  'sugar-glider',
+  'localhost',
+  '127.0.0.1',
+]);
+
+function isAllowedHealthUrl(value: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+  return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && ALLOWED_HEALTH_HOSTS.has(parsed.hostname);
+}
+
 const store = new Map<string, RegistryEntry>();
 
 class RegistryService {
@@ -21,10 +53,14 @@ class RegistryService {
 
   registerService(payload: Partial<RegistryEntry> & { name: string }): RegistryEntry {
     const existing = store.get(payload.name);
+    const healthUrl = payload.healthUrl ?? existing?.healthUrl;
+    if (healthUrl && !isAllowedHealthUrl(healthUrl)) {
+      throw new Error(`Rejected healthUrl for "${payload.name}": host is not an allowed internal service.`);
+    }
     const entry: RegistryEntry = {
       name: payload.name,
       repo: payload.repo ?? existing?.repo,
-      healthUrl: payload.healthUrl ?? existing?.healthUrl,
+      healthUrl,
       tier: (payload.tier ?? existing?.tier ?? 1) as RegistryEntry['tier'],
       status: payload.status ?? existing?.status ?? 'unknown',
       lastSeen: new Date().toISOString(),
@@ -37,7 +73,7 @@ class RegistryService {
   async pollHealth(): Promise<RegistryEntry[]> {
     const results: RegistryEntry[] = [];
     for (const entry of store.values()) {
-      if (!entry.healthUrl) continue;
+      if (!entry.healthUrl || !isAllowedHealthUrl(entry.healthUrl)) continue;
       try {
         const res = await fetch(entry.healthUrl, { signal: AbortSignal.timeout(5000) });
         entry.status = res.ok ? 'healthy' : 'degraded';

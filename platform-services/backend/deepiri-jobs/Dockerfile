@@ -4,9 +4,9 @@ COPY shared/deepiri-shared-utils/package.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/package-lock.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/tsconfig.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/src /shared/deepiri-shared-utils/src
-COPY backend/deepiri-adaptive-experience-engine/package.json ./
-COPY backend/deepiri-adaptive-experience-engine/package-lock.json ./
-COPY backend/deepiri-adaptive-experience-engine/tsconfig.json ./
+COPY backend/deepiri-jobs/package.json ./
+COPY backend/deepiri-jobs/package-lock.json ./
+COPY backend/deepiri-jobs/tsconfig.json ./
 
 RUN node -e "const fs=require('fs'),lock=JSON.parse(fs.readFileSync('package-lock.json'));for(const k of Object.keys(lock.packages)){if(k.includes('deepiri-shared-utils')||k==='node_modules/@team-deepiri/shared-utils')delete lock.packages[k]}fs.writeFileSync('package-lock.json',JSON.stringify(lock));" \
  && cd /shared/deepiri-shared-utils \
@@ -22,7 +22,7 @@ RUN node -e "const fs=require('fs'),lock=JSON.parse(fs.readFileSync('package-loc
  && cd /app \
  && npm cache clean --force
 
-COPY backend/deepiri-adaptive-experience-engine/src ./src
+COPY backend/deepiri-jobs/src ./src
 
 RUN npm run build
 

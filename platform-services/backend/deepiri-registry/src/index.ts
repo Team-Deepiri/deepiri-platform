@@ -17,8 +17,12 @@ router.get('/services/:name', (req: Request, res: Response) => {
 });
 
 router.post('/services', (req: Request, res: Response) => {
-  const entry = registryService.registerService(req.body);
-  res.status(201).json(entry);
+  try {
+    const entry = registryService.registerService(req.body);
+    res.status(201).json(entry);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'Invalid service registration' });
+  }
 });
 
 router.post('/poll', async (_req: Request, res: Response) => {
