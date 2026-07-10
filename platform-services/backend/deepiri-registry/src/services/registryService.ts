@@ -8,36 +8,46 @@ export interface RegistryEntry {
   metadata?: Record<string, unknown>;
 }
 
-// Known in-network service hostnames health checks are allowed to target.
-// registerService() accepts caller-supplied healthUrl values, so without this
-// allowlist a caller could point pollHealth()'s fetch at an arbitrary internal
-// or external host (SSRF) -- see CodeQL js/request-forgery.
-const ALLOWED_HEALTH_HOSTS = new Set([
-  'api-gateway',
-  'auth-service',
-  'truss',
-  'registry',
-  'telemetry',
-  'external-bridge-service',
-  'jobs',
-  'realtime-gateway',
-  'language-intelligence-service',
-  'messaging-service',
-  'cyrex',
-  'synapse',
-  'sugar-glider',
-  'localhost',
-  '127.0.0.1',
-]);
+// Known in-network service base URLs health checks are allowed to target.
+// registerService() accepts a caller-supplied healthUrl, so rather than just
+// validating that string and re-using it, we look up the trusted base URL
+// from this fixed map and only take the path/query off the caller's input --
+// otherwise pollHealth()'s fetch would let a caller aim outbound requests at
+// an arbitrary internal or external host (SSRF, CodeQL js/request-forgery).
+const ALLOWED_HEALTH_BASE_URLS: Record<string, string> = {
+  'api-gateway': 'http://api-gateway:5000',
+  'auth-service': 'http://auth-service:5001',
+  truss: 'http://truss:5002',
+  registry: 'http://registry:5003',
+  telemetry: 'http://telemetry:5004',
+  'external-bridge-service': 'http://external-bridge-service:5006',
+  jobs: 'http://jobs:5007',
+  'realtime-gateway': 'http://realtime-gateway:5008',
+  'language-intelligence-service': 'http://language-intelligence-service:5010',
+  'messaging-service': 'http://messaging-service:5009',
+  cyrex: 'http://cyrex:8000',
+  synapse: 'http://synapse:8002',
+  'sugar-glider': 'http://sugar-glider:8081',
+};
 
-function isAllowedHealthUrl(value: string): boolean {
+/**
+ * Resolves a caller-supplied healthUrl to a same-shape URL whose scheme and
+ * host are taken from ALLOWED_HEALTH_BASE_URLS (a fixed, trusted value), not
+ * from the input string -- only the path/query are carried over from the
+ * caller. Returns undefined if the input doesn't name a known service.
+ */
+function resolveTrustedHealthUrl(value: string): string | undefined {
   let parsed: URL;
   try {
     parsed = new URL(value);
   } catch {
-    return false;
+    return undefined;
   }
-  return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && ALLOWED_HEALTH_HOSTS.has(parsed.hostname);
+  const trustedBase = ALLOWED_HEALTH_BASE_URLS[parsed.hostname];
+  if (!trustedBase) {
+    return undefined;
+  }
+  return new URL(parsed.pathname + parsed.search, trustedBase).toString();
 }
 
 const store = new Map<string, RegistryEntry>();
@@ -54,7 +64,7 @@ class RegistryService {
   registerService(payload: Partial<RegistryEntry> & { name: string }): RegistryEntry {
     const existing = store.get(payload.name);
     const healthUrl = payload.healthUrl ?? existing?.healthUrl;
-    if (healthUrl && !isAllowedHealthUrl(healthUrl)) {
+    if (healthUrl && resolveTrustedHealthUrl(healthUrl) === undefined) {
       throw new Error(`Rejected healthUrl for "${payload.name}": host is not an allowed internal service.`);
     }
     const entry: RegistryEntry = {
@@ -73,9 +83,11 @@ class RegistryService {
   async pollHealth(): Promise<RegistryEntry[]> {
     const results: RegistryEntry[] = [];
     for (const entry of store.values()) {
-      if (!entry.healthUrl || !isAllowedHealthUrl(entry.healthUrl)) continue;
+      if (!entry.healthUrl) continue;
+      const trustedUrl = resolveTrustedHealthUrl(entry.healthUrl);
+      if (!trustedUrl) continue;
       try {
-        const res = await fetch(entry.healthUrl, { signal: AbortSignal.timeout(5000) });
+        const res = await fetch(trustedUrl, { signal: AbortSignal.timeout(5000) });
         entry.status = res.ok ? 'healthy' : 'degraded';
       } catch {
         entry.status = 'down';
