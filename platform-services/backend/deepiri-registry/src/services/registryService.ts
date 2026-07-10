@@ -8,33 +8,34 @@ export interface RegistryEntry {
   metadata?: Record<string, unknown>;
 }
 
-// Known in-network service base URLs health checks are allowed to target.
-// registerService() accepts a caller-supplied healthUrl, so rather than just
-// validating that string and re-using it, we look up the trusted base URL
-// from this fixed map and only take the path/query off the caller's input --
-// otherwise pollHealth()'s fetch would let a caller aim outbound requests at
-// an arbitrary internal or external host (SSRF, CodeQL js/request-forgery).
-const ALLOWED_HEALTH_BASE_URLS: Record<string, string> = {
-  'api-gateway': 'http://api-gateway:5000',
-  'auth-service': 'http://auth-service:5001',
-  truss: 'http://truss:5002',
-  registry: 'http://registry:5003',
-  telemetry: 'http://telemetry:5004',
-  'external-bridge-service': 'http://external-bridge-service:5006',
-  jobs: 'http://jobs:5007',
-  'realtime-gateway': 'http://realtime-gateway:5008',
-  'language-intelligence-service': 'http://language-intelligence-service:5010',
-  'messaging-service': 'http://messaging-service:5009',
-  cyrex: 'http://cyrex:8000',
-  synapse: 'http://synapse:8002',
-  'sugar-glider': 'http://sugar-glider:8081',
+// Known in-network services' fixed health-check URLs. registerService()
+// accepts a caller-supplied healthUrl, so rather than validate that string
+// and re-use any part of it, we use its hostname only as a lookup key into
+// this fixed map and return the corresponding constant URL untouched --
+// nothing from the caller's input ends up in the request pollHealth() sends.
+// Otherwise a caller could aim the registry server's outbound requests at an
+// arbitrary internal or external host (SSRF, CodeQL js/request-forgery).
+const ALLOWED_HEALTH_URLS: Record<string, string> = {
+  'api-gateway': 'http://api-gateway:5000/health',
+  'auth-service': 'http://auth-service:5001/health',
+  truss: 'http://truss:5002/health',
+  registry: 'http://registry:5003/health',
+  telemetry: 'http://telemetry:5004/health',
+  'external-bridge-service': 'http://external-bridge-service:5006/health',
+  jobs: 'http://jobs:5007/health',
+  'realtime-gateway': 'http://realtime-gateway:5008/health',
+  'language-intelligence-service': 'http://language-intelligence-service:5010/health',
+  'messaging-service': 'http://messaging-service:5009/health',
+  cyrex: 'http://cyrex:8000/health',
+  synapse: 'http://synapse:8002/health',
+  'sugar-glider': 'http://sugar-glider:8081/health',
 };
 
 /**
- * Resolves a caller-supplied healthUrl to a same-shape URL whose scheme and
- * host are taken from ALLOWED_HEALTH_BASE_URLS (a fixed, trusted value), not
- * from the input string -- only the path/query are carried over from the
- * caller. Returns undefined if the input doesn't name a known service.
+ * Resolves a caller-supplied healthUrl to one of the fixed URLs in
+ * ALLOWED_HEALTH_URLS, selected by hostname. The caller's path/query are
+ * discarded entirely, not incorporated into the result -- returns undefined
+ * if the input doesn't name a known service.
  */
 function resolveTrustedHealthUrl(value: string): string | undefined {
   let parsed: URL;
@@ -43,11 +44,7 @@ function resolveTrustedHealthUrl(value: string): string | undefined {
   } catch {
     return undefined;
   }
-  const trustedBase = ALLOWED_HEALTH_BASE_URLS[parsed.hostname];
-  if (!trustedBase) {
-    return undefined;
-  }
-  return new URL(parsed.pathname + parsed.search, trustedBase).toString();
+  return ALLOWED_HEALTH_URLS[parsed.hostname];
 }
 
 const store = new Map<string, RegistryEntry>();
