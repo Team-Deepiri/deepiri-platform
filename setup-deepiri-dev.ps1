@@ -34,15 +34,31 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# git writes ordinary progress ("Cloning into ...") to stderr. With
+# ErrorActionPreference=Stop, PowerShell turns that into a terminating
+# NativeCommandError and aborts the script. Run git through this helper so
+# stderr is treated as output, and only a non-zero exit code counts as failure.
+function Invoke-Git {
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & git @args 2>&1
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prevEAP
+    }
+    return [pscustomobject]@{ Output = $output; ExitCode = $code }
+}
+
 # Find repo root via git (script may live at root or in scripts/dev-setup/).
 # The parent repo is not listed in its own .gitmodules, so we ask git for the
 # working-tree root instead of grepping that file.
 function Find-RepoRoot {
     Push-Location $PSScriptRoot
     try {
-        $toplevel = git rev-parse --show-toplevel 2>$null
-        if ($LASTEXITCODE -eq 0 -and $toplevel) {
-            return $toplevel.Trim()
+        $r = Invoke-Git rev-parse --show-toplevel
+        if ($r.ExitCode -eq 0 -and $r.Output) {
+            return ("$($r.Output | Select-Object -First 1)").Trim()
         }
     } catch { }
     finally { Pop-Location }
@@ -230,14 +246,19 @@ if (Test-Path "$sshKey.pub") {
 #   - Fresh / not yet initialized  -> init AND bump to the latest branch tip.
 #   - Already initialized          -> leave it exactly as-is (do not touch).
 #   - -UpdateSubmodules passed     -> force-bump every submodule to latest.
-function Initialize-Submodule($path) {
-    # Clean up a stale directory that is not a valid submodule.
-    if ((Test-Path $path) -and -not (Test-Path "$path/.git")) {
-        Write-Warn "Cleaning invalid directory at $path"
-        Remove-Item -Recurse -Force $path
-    }
+# Ask git (not the filesystem) whether a submodule is initialized.
+# `git submodule status <path>` prefixes the line with "-" when the submodule
+# is NOT initialized, and with " " or "+" once it is.
+function Test-SubmoduleInitialized($path) {
+    $r = Invoke-Git submodule status -- $path
+    if ($r.ExitCode -ne 0) { return $false }
+    $line = ($r.Output | Select-Object -First 1)
+    if (-not $line) { return $false }
+    return -not ("$line".StartsWith("-"))
+}
 
-    $wasInitialized = Test-Path "$path/.git"
+function Initialize-Submodule($path) {
+    $wasInitialized = Test-SubmoduleInitialized $path
 
     if ($wasInitialized -and -not $UpdateSubmodules) {
         Write-Ok "$path (already initialized - left as-is)"
@@ -250,21 +271,35 @@ function Initialize-Submodule($path) {
         Write-Info "Initializing $path (fresh - will pull latest)..."
     }
 
-    git submodule update --init --recursive $path 2>&1 | Out-Null
-    if (-not (Test-Path $path)) {
+    $r = Invoke-Git submodule update --init --recursive -- $path
+    if ($r.ExitCode -ne 0) {
         Write-Warn "Could not init $path - check SSH key / GitHub access"
         return
     }
+    if (-not (Test-Path $path)) {
+        Write-Warn "Could not init $path - path missing after init"
+        return
+    }
 
+    # Bump to the tip of the tracking branch (fresh clone, or explicit update).
     Push-Location $path
-    git fetch origin 2>$null
-    $branch = if ($path -match "deepiri-synapse|deepiri-sugar-glider") { "dev" } else { "main" }
-    $exists = git show-ref --verify "refs/remotes/origin/$branch" 2>$null
-    if (-not $exists) { $branch = "master" }
-    $headRef = git symbolic-ref -q HEAD 2>$null
-    if (-not $headRef) { git checkout -B $branch "origin/$branch" 2>$null }
-    git pull origin $branch 2>$null
-    Pop-Location
+    try {
+        Invoke-Git fetch origin | Out-Null
+
+        $branch = if ($path -match "deepiri-synapse|deepiri-sugar-glider") { "dev" } else { "main" }
+        if ((Invoke-Git show-ref --verify "refs/remotes/origin/$branch").ExitCode -ne 0) {
+            if ((Invoke-Git show-ref --verify "refs/remotes/origin/master").ExitCode -eq 0) {
+                $branch = "master"
+            }
+        }
+
+        if ((Invoke-Git symbolic-ref -q HEAD).ExitCode -ne 0) {
+            Invoke-Git checkout -B $branch "origin/$branch" | Out-Null
+        }
+        Invoke-Git pull origin $branch | Out-Null
+    } finally {
+        Pop-Location
+    }
     Write-Ok "$path (at latest $branch)"
 }
 
@@ -322,7 +357,11 @@ if (-not $SkipSubmodules) {
         Write-Info "Platform team: all submodules"
         # Apply the same policy per-submodule rather than a blanket update, so
         # already-initialized submodules are left untouched.
-        $allPaths = git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | ForEach-Object { ($_ -split '\s+')[1] }
+        $r = Invoke-Git config -f .gitmodules --get-regexp '^submodule\..*\.path$'
+        $allPaths = @()
+        if ($r.ExitCode -eq 0) {
+            $allPaths = $r.Output | ForEach-Object { ("$_" -split '\s+')[1] } | Where-Object { $_ }
+        }
         foreach ($sub in $allPaths) { if ($sub) { Initialize-Submodule $sub } }
         Write-Ok "All submodules ready"
     } else {

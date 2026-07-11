@@ -466,17 +466,23 @@ clone_platform_repo() {
 #   - --update-submodules passed   -> force-bump every submodule to latest.
 # This keeps existing checkouts stable (no surprise pointer changes) while a
 # first-time clone still gets current code.
+# Ask git (not the filesystem) whether a submodule is initialized.
+# `git submodule status <path>` prefixes the line with "-" when it is NOT
+# initialized, and with " " or "+" once it is. Guessing from the presence of
+# a .git file/dir is unreliable and risks deleting a valid checkout.
+submodule_is_initialized() {
+    local path="$1" line
+    line=$(git submodule status -- "$path" 2>/dev/null | head -1) || return 1
+    [[ -n "$line" ]] || return 1
+    [[ "$line" == -* ]] && return 1
+    return 0
+}
+
 init_submodule() {
     local path="$1"
 
-    # Clean up a stale directory that is not a valid submodule.
-    if [[ -d "$path" && ! -f "$path/.git" && ! -d "$path/.git" ]]; then
-        warn "Cleaning invalid directory at $path"; rm -rf "$path"
-    fi
-
-    # Was this submodule already initialized before we touched it?
     local was_initialized=false
-    if [[ -f "$path/.git" || -d "$path/.git" ]]; then
+    if submodule_is_initialized "$path"; then
         was_initialized=true
     fi
 
