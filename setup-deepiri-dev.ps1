@@ -270,9 +270,8 @@ if (-not $SkipSubmodules) {
         Write-Info "        (use -UpdateSubmodules to force-pull the latest for all)"
     }
 
-    Write-Info "Initializing deepiri-suite (base images)..."
-    git submodule update --init deepiri-suite 2>&1 | Out-Null
-    if (Test-Path "deepiri-suite") { Write-Ok "deepiri-suite" } else { Write-Warn "deepiri-suite failed - Docker builds may fall back to GHCR" }
+    # deepiri-suite provides the Docker base images; it follows the same policy.
+    Initialize-Submodule "deepiri-suite"
 
     $Shared = @(
         "platform-services/shared/deepiri-prismpipe",

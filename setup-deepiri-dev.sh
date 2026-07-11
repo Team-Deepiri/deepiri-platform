@@ -513,9 +513,8 @@ pull_submodules() {
         info "        (use --update-submodules to force-pull the latest for all)"
     fi
 
-    info "Initializing deepiri-suite (base images)..."
-    git submodule update --init deepiri-suite 2>&1 && ok "deepiri-suite" \
-        || warn "deepiri-suite failed -- Docker builds may fall back to GHCR"
+    # deepiri-suite provides the Docker base images; it follows the same policy.
+    init_submodule "deepiri-suite"
 
     local SHARED=(
         "platform-services/shared/deepiri-prismpipe"
