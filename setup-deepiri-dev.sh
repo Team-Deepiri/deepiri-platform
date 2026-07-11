@@ -21,7 +21,13 @@
 # Usage:
 #   bash setup-deepiri-dev.sh [--team <team>] [--tier <1|2|3>]
 #                             [--skip-submodules] [--skip-docker]
-#                             [--build] [--non-interactive]
+#                             [--build] [--update-submodules] [--non-interactive]
+#
+# Submodule policy:
+#   Fresh / uninitialized submodules are pulled at the latest branch tip.
+#   Already-initialized submodules are left exactly as they are, so running
+#   this script never silently moves someone's submodule pointers.
+#   Pass --update-submodules to force every submodule to the latest.
 # ============================================================================
 
 set -u
@@ -29,7 +35,7 @@ set -o pipefail
 
 # ---------- args -----------------------------------------------------------
 ARG_TEAM=""; ARG_TIER=""; SKIP_SUBMODULES=false; SKIP_DOCKER=false
-DO_BUILD=false; NON_INTERACTIVE=false
+DO_BUILD=false; NON_INTERACTIVE=false; UPDATE_SUBMODULES=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -38,6 +44,7 @@ while [[ $# -gt 0 ]]; do
         --skip-submodules) SKIP_SUBMODULES=true; shift ;;
         --skip-docker) SKIP_DOCKER=true; shift ;;
         --build) DO_BUILD=true; shift ;;
+        --update-submodules) UPDATE_SUBMODULES=true; shift ;;
         --non-interactive) NON_INTERACTIVE=true; shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
@@ -440,16 +447,43 @@ clone_platform_repo() {
 }
 
 # ---------- submodules (team-scoped, from unified setup) ------------------
+# Submodule policy:
+#   - Fresh / not yet initialized  -> init AND bump to the latest branch tip.
+#   - Already initialized          -> leave it exactly as-is (do not touch).
+#   - --update-submodules passed   -> force-bump every submodule to latest.
+# This keeps existing checkouts stable (no surprise pointer changes) while a
+# first-time clone still gets current code.
 init_submodule() {
     local path="$1"
-    info "Initializing $path..."
+
+    # Clean up a stale directory that is not a valid submodule.
     if [[ -d "$path" && ! -f "$path/.git" && ! -d "$path/.git" ]]; then
         warn "Cleaning invalid directory at $path"; rm -rf "$path"
     fi
+
+    # Was this submodule already initialized before we touched it?
+    local was_initialized=false
+    if [[ -f "$path/.git" || -d "$path/.git" ]]; then
+        was_initialized=true
+    fi
+
+    if [[ "$was_initialized" == true && "$UPDATE_SUBMODULES" == false ]]; then
+        ok "$path (already initialized -- left as-is)"
+        return
+    fi
+
+    if [[ "$was_initialized" == true ]]; then
+        info "Updating $path to latest (--update-submodules)..."
+    else
+        info "Initializing $path (fresh -- will pull latest)..."
+    fi
+
     git submodule update --init --recursive "$path" 2>&1 || true
     if [[ ! -d "$path" ]]; then
         warn "Could not init $path -- check SSH key / GitHub access"; return
     fi
+
+    # Bump to the tip of the tracking branch (fresh clone, or explicit update).
     (
         cd "$path"
         git fetch origin 2>/dev/null || true
@@ -465,12 +499,19 @@ init_submodule() {
         fi
         git pull origin "$branch" 2>/dev/null || true
     )
-    ok "$path"
+    ok "$path (at latest $branch)"
 }
 
 pull_submodules() {
     step "Initializing submodules ($TEAM_DISPLAY)"
     cd "$PLATFORM_REPO_DIR"
+
+    if [[ "$UPDATE_SUBMODULES" == true ]]; then
+        info "Policy: --update-submodules -- every submodule will be bumped to the latest branch tip"
+    else
+        info "Policy: fresh submodules get the latest; already-initialized ones are left untouched"
+        info "        (use --update-submodules to force-pull the latest for all)"
+    fi
 
     info "Initializing deepiri-suite (base images)..."
     git submodule update --init deepiri-suite 2>&1 && ok "deepiri-suite" \
@@ -513,9 +554,15 @@ pull_submodules() {
     esac
 
     if [[ "${SUBS[0]}" == "ALL" ]]; then
-        info "Platform team: initializing all submodules..."
-        git submodule update --init --recursive
-        ok "All submodules initialized"
+        info "Platform team: all submodules"
+        # Apply the same policy per-submodule rather than a blanket update, so
+        # already-initialized submodules are left untouched.
+        local all_paths
+        all_paths=$(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}')
+        while IFS= read -r sub; do
+            [[ -n "$sub" ]] && init_submodule "$sub"
+        done <<< "$all_paths"
+        ok "All submodules ready"
     else
         local uniq; uniq=$(printf "%s\n" "${SUBS[@]}" | sort -u)
         while IFS= read -r sub; do

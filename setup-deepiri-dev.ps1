@@ -12,7 +12,13 @@
 #
 # Usage:
 #   .\setup-deepiri-dev.ps1 [-Team <team>] [-Tier <1|2|3>]
-#                           [-SkipSubmodules] [-SkipDocker] [-Build] [-NonInteractive]
+#                           [-SkipSubmodules] [-SkipDocker] [-Build]
+#                           [-UpdateSubmodules] [-NonInteractive]
+#
+# Submodule policy:
+#   Fresh / uninitialized submodules are pulled at the latest branch tip.
+#   Already-initialized submodules are left exactly as they are.
+#   Pass -UpdateSubmodules to force every submodule to the latest.
 # ============================================================================
 
 param(
@@ -21,6 +27,7 @@ param(
     [switch]$SkipSubmodules,
     [switch]$SkipDocker,
     [switch]$Build,
+    [switch]$UpdateSubmodules,
     [switch]$NonInteractive
 )
 
@@ -211,17 +218,36 @@ if (Test-Path "$sshKey.pub") {
 }
 
 # ---------- submodules ----------------------------------------------------
+# Submodule policy:
+#   - Fresh / not yet initialized  -> init AND bump to the latest branch tip.
+#   - Already initialized          -> leave it exactly as-is (do not touch).
+#   - -UpdateSubmodules passed     -> force-bump every submodule to latest.
 function Initialize-Submodule($path) {
-    Write-Info "Initializing $path..."
+    # Clean up a stale directory that is not a valid submodule.
     if ((Test-Path $path) -and -not (Test-Path "$path/.git")) {
         Write-Warn "Cleaning invalid directory at $path"
         Remove-Item -Recurse -Force $path
     }
+
+    $wasInitialized = Test-Path "$path/.git"
+
+    if ($wasInitialized -and -not $UpdateSubmodules) {
+        Write-Ok "$path (already initialized - left as-is)"
+        return
+    }
+
+    if ($wasInitialized) {
+        Write-Info "Updating $path to latest (-UpdateSubmodules)..."
+    } else {
+        Write-Info "Initializing $path (fresh - will pull latest)..."
+    }
+
     git submodule update --init --recursive $path 2>&1 | Out-Null
     if (-not (Test-Path $path)) {
         Write-Warn "Could not init $path - check SSH key / GitHub access"
         return
     }
+
     Push-Location $path
     git fetch origin 2>$null
     $branch = if ($path -match "deepiri-synapse|deepiri-sugar-glider") { "dev" } else { "main" }
@@ -231,11 +257,18 @@ function Initialize-Submodule($path) {
     if (-not $headRef) { git checkout -B $branch "origin/$branch" 2>$null }
     git pull origin $branch 2>$null
     Pop-Location
-    Write-Ok $path
+    Write-Ok "$path (at latest $branch)"
 }
 
 if (-not $SkipSubmodules) {
     Write-Step "Initializing submodules ($TeamDisplay)"
+
+    if ($UpdateSubmodules) {
+        Write-Info "Policy: -UpdateSubmodules - every submodule will be bumped to the latest branch tip"
+    } else {
+        Write-Info "Policy: fresh submodules get the latest; already-initialized ones are left untouched"
+        Write-Info "        (use -UpdateSubmodules to force-pull the latest for all)"
+    }
 
     Write-Info "Initializing deepiri-suite (base images)..."
     git submodule update --init deepiri-suite 2>&1 | Out-Null
@@ -279,9 +312,12 @@ if (-not $SkipSubmodules) {
     }
 
     if ($AllSubs) {
-        Write-Info "Platform team: initializing all submodules..."
-        git submodule update --init --recursive
-        Write-Ok "All submodules initialized"
+        Write-Info "Platform team: all submodules"
+        # Apply the same policy per-submodule rather than a blanket update, so
+        # already-initialized submodules are left untouched.
+        $allPaths = git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | ForEach-Object { ($_ -split '\s+')[1] }
+        foreach ($sub in $allPaths) { if ($sub) { Initialize-Submodule $sub } }
+        Write-Ok "All submodules ready"
     } else {
         foreach ($sub in ($Subs | Select-Object -Unique)) { Initialize-Submodule $sub }
         Write-Ok "Submodules ready for $TeamDisplay"
