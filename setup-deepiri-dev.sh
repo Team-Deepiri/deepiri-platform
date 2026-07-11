@@ -65,9 +65,14 @@ warn()  { printf "  ${C_YELLOW}!!${C_RESET}  %s\n" "$*"; }
 err()   { printf "  ${C_RED}xx${C_RESET}  %s\n" "$*" >&2; }
 fatal() { err "$*"; exit 1; }
 
+# In non-interactive mode we never prompt; we honour the supplied default.
+# Callers that would change the system (package installs) pass "N" in that mode
+# so they are skipped rather than silently auto-approved.
 confirm() {
     local prompt="$1" default="${2:-Y}" answer suffix
-    if [[ "$NON_INTERACTIVE" == true ]]; then return 0; fi
+    if [[ "$NON_INTERACTIVE" == true ]]; then
+        [[ "$default" =~ ^[Yy]$ ]] && return 0 || return 1
+    fi
     if [[ "$default" =~ ^[Yy]$ ]]; then suffix="[Y/n]"; else suffix="[y/N]"; fi
     read -r -p "  ?? $prompt $suffix " answer || answer=""
     answer="${answer:-$default}"
@@ -234,7 +239,9 @@ install_pkg() {
         ok "$cmd already installed ($(command -v "$cmd"))"; return
     fi
     warn "$cmd is missing."
-    if ! confirm "Install $cmd now?" "Y"; then
+    local install_default="Y"
+    [[ "$NON_INTERACTIVE" == true ]] && install_default="N"
+    if ! confirm "Install $cmd now?" "$install_default"; then
         warn "Skipped $cmd -- install it manually before running services"
         return
     fi
@@ -275,7 +282,13 @@ ensure_docker() {
     if command -v docker >/dev/null 2>&1; then
         ok "docker already installed ($(docker --version 2>/dev/null | head -1))"
     else
-        warn "docker missing -- installing"
+        warn "docker is missing."
+        local install_default="Y"
+        [[ "$NON_INTERACTIVE" == true ]] && install_default="N"
+        if ! confirm "Install Docker now?" "$install_default"; then
+            warn "Skipped Docker -- install Docker Desktop / Engine manually, then re-run"
+            return
+        fi
         case "$PKG_MANAGER" in
             apt)  install_docker_wsl ;;
             brew) brew_install --cask docker ;;

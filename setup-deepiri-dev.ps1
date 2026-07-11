@@ -58,8 +58,11 @@ function Write-Ok($msg)   { Write-Host "  OK  $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "  !!  $msg" -ForegroundColor Yellow }
 function Write-Err($msg)  { Write-Host "  xx  $msg" -ForegroundColor Red; exit 1 }
 
+# In non-interactive mode we never prompt. We return the supplied default, so
+# callers that would change the system (package installs, SSH keygen) pass "N"
+# and are skipped rather than silently auto-approved.
 function Confirm-Prompt($prompt, $default = "Y") {
-    if ($NonInteractive) { return $true }
+    if ($NonInteractive) { return ($default -match "^[Yy]$") }
     $suffix = if ($default -match "^[Yy]$") { "[Y/n]" } else { "[y/N]" }
     $answer = Read-Host "  ?? $prompt $suffix"
     if ($answer -eq "") { $answer = $default }
@@ -166,7 +169,8 @@ foreach ($p in $PrereqMap) {
         Write-Ok "$($p.Cmd) found"
     } elseif ($WingetAvailable) {
         Write-Warn "$($p.Cmd) is missing."
-        if (Confirm-Prompt "Install $($p.Cmd) via winget ($($p.Id))?" "Y") {
+        $installDefault = if ($NonInteractive) { "N" } else { "Y" }
+        if (Confirm-Prompt "Install $($p.Cmd) via winget ($($p.Id))?" $installDefault) {
             winget install --id $($p.Id) --silent --accept-package-agreements --accept-source-agreements
             $InstalledSomething = $true
         } else {
@@ -197,6 +201,9 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
 
 # ---------- SSH key check -------------------------------------------------
 Write-Step "Checking GitHub SSH access"
+if ($NonInteractive) {
+    Write-Warn "Non-interactive mode -- skipping SSH key setup"
+} else {
 $sshKey = "$HOME\.ssh\id_ed25519"
 if (-not (Test-Path $sshKey) -and -not (Test-Path "$HOME\.ssh\id_rsa")) {
     Write-Warn "No SSH key found in ~\.ssh"
@@ -215,6 +222,7 @@ if (Test-Path "$sshKey.pub") {
     Write-Host "  ----------------------------------------------------------------"
     Get-Content "$sshKey.pub" | Set-Clipboard
     Write-Info "Public key copied to clipboard"
+}
 }
 
 # ---------- submodules ----------------------------------------------------
