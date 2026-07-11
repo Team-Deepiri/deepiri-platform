@@ -603,12 +603,20 @@ start_services() {
     local build_flag="--no-build"
     [[ "$DO_BUILD" == true ]] && build_flag=""
 
+    # Track whether any compose invocation failed, so we do not claim success
+    # when nothing actually started (e.g. images not built yet).
+    COMPOSE_FAILED=false
+    compose_up() {
+        # shellcheck disable=SC2086
+        docker compose -f docker-compose.dev.yml up -d $build_flag "$@" || COMPOSE_FAILED=true
+    }
+
     # Service lists verified against team_dev_environments/<team>/start.sh
-    local AI="postgres redis influxdb etcd minio milvus cyrex cyrex-interface mlflow challenge-service api-gateway messaging-service realtime-gateway synapse sugar-glider"
+    local AI="postgres-cyrex redis influxdb etcd minio milvus cyrex cyrex-interface mlflow adaptive-experience-engine api-gateway messaging-service realtime-gateway synapse sugar-glider"
     local ML="synapse sugar-glider"
     local BACKEND_INFRA="postgres-auth postgres-core postgres-intelligence redis influxdb api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway language-intelligence-service messaging-service frontend-dev synapse sugar-glider adminer"
     local FRONTEND="frontend-dev api-gateway auth-service communications-hub messaging-service realtime-gateway postgres-auth postgres-core postgres-intelligence"
-    local CYREX="postgres redis postgres-cyrex cyrex cyrex-interface api-gateway"
+    local CYREX="postgres-cyrex redis cyrex cyrex-interface api-gateway"
     local QA_INFRA="postgres-auth postgres-core postgres-intelligence redis influxdb synapse sugar-glider"
     local QA_BACKEND="api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway adminer"
     local QA_ALL="$QA_INFRA kafka $QA_BACKEND language-intelligence-service messaging-service frontend-dev"
@@ -616,23 +624,25 @@ start_services() {
     # Tier 3 override for all teams
     if [[ "$TIER" == "3" ]]; then
         warn "Tier 3: core services only"
-        docker compose -f docker-compose.dev.yml up -d $build_flag --no-deps \
-            postgres-auth postgres-core redis api-gateway auth-service
-        ok "Services started"
+        compose_up --no-deps postgres-auth postgres-core redis api-gateway auth-service
+        report_compose_result
         return
     fi
 
     case "$TEAM_KEY" in
         platform)
             info "Platform team: starting all services..."
-            docker compose -f docker-compose.dev.yml up -d $build_flag
+            compose_up
             ;;
         qa)
             info "QA team: staged startup..."
-            docker compose -f docker-compose.dev.yml up -d $build_flag $QA_INFRA
+            # shellcheck disable=SC2086
+            compose_up $QA_INFRA
             info "Waiting 3s for infrastructure..."; sleep 3
-            docker compose -f docker-compose.dev.yml up -d $build_flag --no-deps $QA_BACKEND
-            docker compose -f docker-compose.dev.yml up -d $build_flag --no-deps $QA_ALL
+            # shellcheck disable=SC2086
+            compose_up --no-deps $QA_BACKEND
+            # shellcheck disable=SC2086
+            compose_up --no-deps $QA_ALL
             ;;
         *)
             local services
@@ -658,13 +668,24 @@ start_services() {
 
             services=$(echo "$services" | tr ' ' '\n' | sort -u | xargs)
             info "Services: $services"
-            docker compose -f docker-compose.dev.yml up -d $build_flag --no-deps $services
+            # shellcheck disable=SC2086
+            compose_up --no-deps $services
             ;;
     esac
 
-    ok "Services started"
+    report_compose_result
     info "Running containers:"
     docker ps --format "    {{.Names}}\t{{.Status}}" | head -40
+}
+
+# Report the real outcome instead of unconditionally claiming success.
+report_compose_result() {
+    if [[ "${COMPOSE_FAILED:-false}" == true ]]; then
+        warn "docker compose reported errors -- some services may not have started."
+        warn "If the images are missing, build them first: re-run with --build (or ./build.sh)."
+    else
+        ok "Services started"
+    fi
 }
 
 # ---------- DB seeding (from original) ------------------------------------

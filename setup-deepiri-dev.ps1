@@ -381,32 +381,47 @@ if (-not $SkipDocker) {
 
     $buildFlag = if ($Build) { "" } else { "--no-build" }
 
-    $AI = "postgres redis influxdb etcd minio milvus cyrex cyrex-interface mlflow challenge-service api-gateway messaging-service realtime-gateway synapse sugar-glider"
+    $AI = "postgres-cyrex redis influxdb etcd minio milvus cyrex cyrex-interface mlflow adaptive-experience-engine api-gateway messaging-service realtime-gateway synapse sugar-glider"
     $ML = "synapse sugar-glider"
     $BackendInfra = "postgres-auth postgres-core postgres-intelligence redis influxdb api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway language-intelligence-service messaging-service frontend-dev synapse sugar-glider adminer"
     $Frontend = "frontend-dev api-gateway auth-service communications-hub messaging-service realtime-gateway postgres-auth postgres-core postgres-intelligence"
-    $Cyrex = "postgres redis postgres-cyrex cyrex cyrex-interface api-gateway"
+    $Cyrex = "postgres-cyrex redis cyrex cyrex-interface api-gateway"
     $QaInfra = "postgres-auth postgres-core postgres-intelligence redis influxdb synapse sugar-glider"
     $QaBackend = "api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence communications-hub external-bridge-service adaptive-experience-engine realtime-gateway adminer"
     $QaAll = "$QaInfra kafka $QaBackend language-intelligence-service messaging-service frontend-dev"
 
-    $buildArgs = if ($buildFlag -eq "") { @() } else { @($buildFlag) }
+    # Build the compose argument list explicitly. Splatting an array that may be
+    # empty into a native command inserts a stray "-" argument, which docker
+    # compose then reads as a service name ("no such service: -").
+    function Invoke-Compose {
+        param([string[]]$ComposeArgs)
+        $argv = @("compose", "-f", "docker-compose.dev.yml", "up", "-d")
+        if (-not $Build) { $argv += "--no-build" }
+        $argv += $ComposeArgs
+        & docker @argv
+        return $LASTEXITCODE
+    }
+
+    $failed = $false
 
     if ($Tier -eq "3") {
         Write-Warn "Tier 3: core services only"
-        docker compose -f docker-compose.dev.yml up -d @buildArgs --no-deps postgres-auth postgres-core redis api-gateway auth-service
+        if ((Invoke-Compose @("--no-deps", "postgres-auth", "postgres-core", "redis", "api-gateway", "auth-service")) -ne 0) { $failed = $true }
+
     } elseif ($TeamKey -eq "platform") {
         Write-Info "Platform team: starting all services..."
-        docker compose -f docker-compose.dev.yml up -d @buildArgs
+        if ((Invoke-Compose @()) -ne 0) { $failed = $true }
+
     } elseif ($TeamKey -eq "qa") {
         Write-Info "QA team: staged startup..."
-        $arr = $QaInfra -split '\s+'
-        docker compose -f docker-compose.dev.yml up -d @buildArgs @arr
+        $arr = @($QaInfra -split '\s+' | Where-Object { $_ })
+        if ((Invoke-Compose $arr) -ne 0) { $failed = $true }
         Write-Info "Waiting 3s for infrastructure..."; Start-Sleep -Seconds 3
-        $arr = $QaBackend -split '\s+'
-        docker compose -f docker-compose.dev.yml up -d @buildArgs --no-deps @arr
-        $arr = ($QaAll -split '\s+' | Select-Object -Unique)
-        docker compose -f docker-compose.dev.yml up -d @buildArgs --no-deps @arr
+        $arr = @("--no-deps") + @($QaBackend -split '\s+' | Where-Object { $_ })
+        if ((Invoke-Compose $arr) -ne 0) { $failed = $true }
+        $arr = @("--no-deps") + @($QaAll -split '\s+' | Where-Object { $_ } | Select-Object -Unique)
+        if ((Invoke-Compose $arr) -ne 0) { $failed = $true }
+
     } else {
         $services = switch ($TeamKey) {
             "cyrex"          { $Cyrex }
@@ -416,12 +431,17 @@ if (-not $SkipDocker) {
             "infrastructure" { $BackendInfra }
             "frontend"       { $Frontend }
         }
-        $arr = ($services -split '\s+' | Where-Object { $_ -ne "" } | Select-Object -Unique)
-        Write-Info "Services: $($arr -join ' ')"
-        docker compose -f docker-compose.dev.yml up -d @buildArgs --no-deps @arr
+        $svc = @($services -split '\s+' | Where-Object { $_ } | Select-Object -Unique)
+        Write-Info "Services: $($svc -join ' ')"
+        if ((Invoke-Compose (@("--no-deps") + $svc)) -ne 0) { $failed = $true }
     }
 
-    Write-Ok "Services started"
+    if ($failed) {
+        Write-Warn "docker compose reported errors -- some services may not have started."
+        Write-Warn "If the images are missing, build them first: re-run with -Build (or ./build.sh)."
+    } else {
+        Write-Ok "Services started"
+    }
 } else {
     Write-Warn "Skipping Docker (-SkipDocker)"
 }
