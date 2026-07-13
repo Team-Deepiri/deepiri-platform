@@ -1,12 +1,5 @@
-export interface RegistryEntry {
-  name: string;
-  repo?: string;
-  healthUrl?: string;
-  tier: 0 | 1 | 2 | 3;
-  status: 'unknown' | 'healthy' | 'degraded' | 'down';
-  lastSeen?: string;
-  metadata?: Record<string, unknown>;
-}
+import { Prisma } from '@prisma/client';
+import prisma from '../db';
 
 // Known in-network services' fixed health-check URLs. registerService()
 // accepts a caller-supplied healthUrl, so rather than validate that string
@@ -47,52 +40,96 @@ function resolveTrustedHealthUrl(value: string): string | undefined {
   return ALLOWED_HEALTH_URLS[parsed.hostname];
 }
 
-const store = new Map<string, RegistryEntry>();
+export interface RegistryEntry {
+  name: string;
+  repo?: string;
+  healthUrl?: string;
+  tier: 0 | 1 | 2 | 3;
+  status: 'unknown' | 'healthy' | 'degraded' | 'down';
+  lastSeen?: string;
+  metadata?: Record<string, unknown>;
+}
+
+function toEntry(row: {
+  name: string;
+  repo: string | null;
+  healthUrl: string | null;
+  tier: number;
+  status: string;
+  lastSeen: Date | null;
+  metadata: unknown;
+}): RegistryEntry {
+  return {
+    name: row.name,
+    repo: row.repo ?? undefined,
+    healthUrl: row.healthUrl ?? undefined,
+    tier: row.tier as RegistryEntry['tier'],
+    status: row.status as RegistryEntry['status'],
+    lastSeen: row.lastSeen?.toISOString(),
+    metadata: (row.metadata ?? {}) as Record<string, unknown>,
+  };
+}
 
 class RegistryService {
-  listServices(): RegistryEntry[] {
-    return Array.from(store.values());
+  async listServices(): Promise<RegistryEntry[]> {
+    const rows = await prisma.registeredService.findMany({ orderBy: { name: 'asc' } });
+    return rows.map(toEntry);
   }
 
-  getService(name: string): RegistryEntry | undefined {
-    return store.get(name);
+  async getService(name: string): Promise<RegistryEntry | undefined> {
+    const row = await prisma.registeredService.findUnique({ where: { name } });
+    return row ? toEntry(row) : undefined;
   }
 
-  registerService(payload: Partial<RegistryEntry> & { name: string }): RegistryEntry {
-    const existing = store.get(payload.name);
-    const healthUrl = payload.healthUrl ?? existing?.healthUrl;
-    if (healthUrl && resolveTrustedHealthUrl(healthUrl) === undefined) {
+  async registerService(payload: Partial<RegistryEntry> & { name: string }): Promise<RegistryEntry> {
+    if (payload.healthUrl && resolveTrustedHealthUrl(payload.healthUrl) === undefined) {
       throw new Error(`Rejected healthUrl for "${payload.name}": host is not an allowed internal service.`);
     }
-    const entry: RegistryEntry = {
-      name: payload.name,
-      repo: payload.repo ?? existing?.repo,
-      healthUrl,
-      tier: (payload.tier ?? existing?.tier ?? 1) as RegistryEntry['tier'],
-      status: payload.status ?? existing?.status ?? 'unknown',
-      lastSeen: new Date().toISOString(),
-      metadata: payload.metadata ?? existing?.metadata,
-    };
-    store.set(entry.name, entry);
-    return entry;
+    const row = await prisma.registeredService.upsert({
+      where: { name: payload.name },
+      create: {
+        name: payload.name,
+        repo: payload.repo,
+        healthUrl: payload.healthUrl,
+        tier: payload.tier ?? 1,
+        status: payload.status ?? 'unknown',
+        lastSeen: new Date(),
+        metadata: (payload.metadata ?? {}) as Prisma.InputJsonValue,
+      },
+      update: {
+        repo: payload.repo,
+        healthUrl: payload.healthUrl,
+        tier: payload.tier,
+        status: payload.status,
+        lastSeen: new Date(),
+        metadata: (payload.metadata ?? {}) as Prisma.InputJsonValue,
+      },
+    });
+    return toEntry(row);
   }
 
   async pollHealth(): Promise<RegistryEntry[]> {
+    const rows = await prisma.registeredService.findMany();
     const results: RegistryEntry[] = [];
-    for (const entry of store.values()) {
-      if (!entry.healthUrl) continue;
-      const trustedUrl = resolveTrustedHealthUrl(entry.healthUrl);
+
+    for (const row of rows) {
+      if (!row.healthUrl) continue;
+      const trustedUrl = resolveTrustedHealthUrl(row.healthUrl);
       if (!trustedUrl) continue;
+      let status: RegistryEntry['status'] = 'down';
       try {
         const res = await fetch(trustedUrl, { signal: AbortSignal.timeout(5000) });
-        entry.status = res.ok ? 'healthy' : 'degraded';
+        status = res.ok ? 'healthy' : 'degraded';
       } catch {
-        entry.status = 'down';
+        status = 'down';
       }
-      entry.lastSeen = new Date().toISOString();
-      store.set(entry.name, entry);
-      results.push(entry);
+      const updated = await prisma.registeredService.update({
+        where: { id: row.id },
+        data: { status, lastSeen: new Date() },
+      });
+      results.push(toEntry(updated));
     }
+
     return results;
   }
 }
