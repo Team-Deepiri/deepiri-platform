@@ -1,5 +1,5 @@
 {
-  "name": "deepiri-adaptive-experience-engine",
+  "name": "deepiri-jobs",
   "version": "1.0.0",
   "description": "Adaptive Experience Engine - Dynamic Challenge/Mission/Objective Generation",
   "main": "dist/server.js",

@@ -1201,6 +1201,7 @@ function resolveRepurposeSocketEvent(event: StreamEvent, defaultEvent: string): 
   if (type.startsWith('jobs.')) return 'jobs-event';
   if (type.startsWith('telemetry.')) return 'telemetry-event';
   if (type.startsWith('training.')) return 'training-event';
+  if (type.startsWith('notification.') || type.startsWith('messaging.')) return 'notification-event';
   return defaultEvent;
 }
 
