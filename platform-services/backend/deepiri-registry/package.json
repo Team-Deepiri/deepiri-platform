@@ -1,7 +1,7 @@
 {
   "name": "deepiri-registry",
   "version": "1.0.0",
-  "description": "Incentive Engine - Multi-Currency, Badges, Leaderboards, Rewards",
+  "description": "Registry service for service catalog, tool registration, and ecosystem health",
   "main": "dist/server.js",
   "scripts": {
     "build": "prisma generate && tsc",
