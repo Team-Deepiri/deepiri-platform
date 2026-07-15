@@ -8,11 +8,12 @@ import {
 } from '../services/communicationsHub';
 import pushNotificationService from '../services/pushNotificationService';
 import { handleListNotifications, handleMarkNotificationRead } from '../services/notificationService';
+import { authenticate } from './middleware/auth';
 
 const router = Router();
 
-router.get('/', handleListNotifications);
-router.post('/:id/read', handleMarkNotificationRead);
+router.get('/', authenticate, handleListNotifications);
+router.post('/:id/read', authenticate, handleMarkNotificationRead);
 router.post('/send', handleSend);
 router.post('/send-batch', handleSendBatch);
 router.post('/template', handleRegisterTemplate);

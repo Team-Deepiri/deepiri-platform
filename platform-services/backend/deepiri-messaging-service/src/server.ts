@@ -12,10 +12,11 @@ export function createServer(): Express {
 
   // Security middleware
   app.use(helmet());
-  app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
-    credentials: true,
-  }));
+  // This service is only ever reached through the gateway's own proxy,
+  // never directly by a browser -- combining a wildcard origin fallback
+  // with credentials:true (flagged by CodeQL js/cors-permissive-configuration)
+  // served no real purpose here.
+  app.use(cors());
 
   // Body parsing
   app.use(express.json({ limit: '10mb' }));

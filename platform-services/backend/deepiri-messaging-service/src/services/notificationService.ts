@@ -17,11 +17,10 @@ export async function createNotification(
 
 export async function handleListNotifications(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req.query.userId as string) || (req.headers['x-user-id'] as string);
-    if (!userId) {
-      res.status(400).json({ error: 'userId query param or x-user-id header is required' });
-      return;
-    }
+    // req.user is set by the authenticate() middleware -- never trust a
+    // client-supplied userId here, or any caller could read anyone's
+    // notifications by passing a different id.
+    const userId = req.user!.id;
     const notifications = await prisma.notification.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -36,13 +35,20 @@ export async function handleListNotifications(req: Request, res: Response): Prom
 
 export async function handleMarkNotificationRead(req: Request, res: Response): Promise<void> {
   try {
-    const notification = await prisma.notification.update({
-      where: { id: req.params.id },
+    // Scope the update to the authenticated user's own notifications --
+    // updating by id alone let any caller mark any user's notification as
+    // read by guessing/enumerating ids.
+    const result = await prisma.notification.updateMany({
+      where: { id: req.params.id, userId: req.user!.id },
       data: { readAt: new Date() },
     });
-    res.json(notification);
+    if (result.count === 0) {
+      res.status(404).json({ error: 'Notification not found' });
+      return;
+    }
+    res.json({ success: true });
   } catch (error: unknown) {
     secureLog('error', 'Mark notification read error:', error);
-    res.status(404).json({ error: 'Notification not found' });
+    res.status(500).json({ error: 'Failed to mark notification read' });
   }
 }
