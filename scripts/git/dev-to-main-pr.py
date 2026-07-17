@@ -161,7 +161,7 @@ def wait_for_mergeable(
     return None
 
 
-def merge_with_admin_fallback(repo_name: str, pr_url: str) -> tuple[bool, str]:
+def merge_with_admin_fallback(repo_name: str, pr_url: str, head_branch: str = "", base_branch: str = "") -> tuple[bool, str]:
     """Retry merge with --admin unless GitHub confirms merge conflicts."""
     print(f"  {Colors.GRAY}Checking mergeability...{Colors.NC}")
     mergeable = wait_for_mergeable(repo_name, pr_url)
@@ -169,21 +169,7 @@ def merge_with_admin_fallback(repo_name: str, pr_url: str) -> tuple[bool, str]:
         return False, "PR has merge conflicts"
 
     print(f"  {Colors.GRAY}Retrying with --admin...{Colors.NC}")
-    return admin_merge(repo_name, pr_url)
-
-
-def admin_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
-    """Force-merge a PR using --admin to bypass branch protection rules."""
-    result = gh(
-        "pr", "merge", pr_url,
-        "--repo", repo_slug(repo_name),
-        "--squash",
-        "--admin",
-        "--delete-branch=false",
-    )
-    if result.returncode == 0:
-        return True, "Merged with --admin"
-    return False, (result.stderr or result.stdout).strip()
+    return admin_merge(repo_name, pr_url, head_branch, base_branch)
 
 
 def enable_auto_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
@@ -423,8 +409,8 @@ def merge_direction(
         if msg_adm == "PR has merge conflicts":
             print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
         else:
-            print(f"  {Colors.YELLOW}Auto-merge failed: {msg}. Trying admin fallback...{Colors.NC}")
-            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, existing)
+            print(f"  {Colors.YELLOW}Auto-merge failed: {msg_adm}. Trying admin fallback...{Colors.NC}")
+            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, existing, head_branch, base_branch)
             if ok_adm:
                 print(f"  {Colors.GREEN}Admin-merged: {existing}{Colors.NC}")
                 return {"repo": repo_name, "status": "auto_merged", "url": existing}
@@ -471,7 +457,7 @@ def merge_direction(
         return {"repo": repo_name, "status": "dry_run", "title": title}
 
     print(f"  {Colors.GRAY}Creating PR...{Colors.NC}")
-    ok, url_or_err = create_pr(repo_name, title, body, draft=draft)
+    ok, url_or_err = create_pr(repo_name, head_branch, base_branch, title, body, draft=draft)
     if ok:
         print(f"  {Colors.GREEN}PR created: {url_or_err}{Colors.NC}")
 
@@ -482,7 +468,7 @@ def merge_direction(
             return {"repo": repo_name, "status": "auto_merged", "url": url_or_err}
         else:
             print(f"  {Colors.YELLOW}Auto-merge failed: {msg_am}. Trying admin fallback...{Colors.NC}")
-            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, url_or_err)
+            ok_adm, msg_adm = merge_with_admin_fallback(repo_name, url_or_err, head_branch, base_branch)
             if ok_adm:
                 print(f"  {Colors.GREEN}Admin-merged: {url_or_err}{Colors.NC}")
                 return {"repo": repo_name, "status": "auto_merged", "url": url_or_err}
@@ -494,18 +480,6 @@ def merge_direction(
     else:
         print(f"  {Colors.RED}Failed: {url_or_err}{Colors.NC}")
         return {"status": "failed", "error": url_or_err}
-
-    print(f"  {Colors.GREEN}PR created: {url_or_err}{Colors.NC}")
-    ok_adm, msg_adm = merge_pr(repo_name, url_or_err, head_branch, base_branch)
-    if ok_adm:
-        print(f"  {Colors.GREEN}{msg_adm}: {url_or_err}{Colors.NC}")
-        return {"status": "merged", "url": url_or_err}
-
-    if msg_adm == "PR has merge conflicts":
-        print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
-    else:
-        print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
-    return {"status": "created", "url": url_or_err, "error": msg_adm}
 
 
 def handle_repo(
