@@ -12,7 +12,7 @@ Usage:
     python dev-to-main-pr.py                     # default: dev → main
     python dev-to-main-pr.py --draft             # create PRs as drafts
     python dev-to-main-pr.py --dry-run           # preview only, no PRs created
-    python dev-to-main-pr.py --backwards         # reverse: main → dev
+    python dev-to-main-pr.py --backwards         # main → dev, then dev → main
 """
 import json
 import re
@@ -20,6 +20,8 @@ import subprocess
 import sys
 import time
 from typing import Any, Optional
+
+SKIP_CI = "[skip ci]"
 
 
 class Colors:
@@ -34,8 +36,6 @@ class Colors:
 
 
 GITHUB_ORG = "Team-Deepiri"
-HEAD_BRANCH = "dev"
-BASE_BRANCH = "main"
 
 
 # ---------------------------------------------------------------------------
@@ -54,6 +54,7 @@ def gh_api(path: str) -> tuple[int, Any]:
         data = {}
     return result.returncode, data
 
+
 def get_org_repos() -> list[str]:
     result = gh(
         "api",
@@ -65,6 +66,7 @@ def get_org_repos() -> list[str]:
         print(f"{Colors.RED}Failed to fetch repos: {result.stderr}{Colors.NC}")
         return []
     return [r for r in result.stdout.strip().split("\n") if r]
+
 
 def check_gh_auth() -> bool:
     return gh("auth", "status").returncode == 0
@@ -104,12 +106,19 @@ def pr_exists(repo_name: str, head_branch: str, base_branch: str) -> Optional[st
     return None
 
 
-def create_pr(repo_name: str, title: str, body: str, draft: bool = False) -> tuple[bool, str]:
+def create_pr(
+    repo_name: str,
+    head_branch: str,
+    base_branch: str,
+    title: str,
+    body: str,
+    draft: bool = False,
+) -> tuple[bool, str]:
     args = [
         "pr", "create",
         "--repo", repo_slug(repo_name),
-        "--head", HEAD_BRANCH,
-        "--base", BASE_BRANCH,
+        "--head", head_branch,
+        "--base", base_branch,
         "--title", title,
         "--body", body,
     ]
@@ -204,23 +213,141 @@ def enable_auto_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
     }
     """
 
+    graphql_result = gh(
+        "api",
+        "graphql",
+        "-f",
+        f"query={graphql_query}",
+        "-f",
+        f"pullRequestId={pull_request_id}",
+    )
+    if graphql_result.returncode != 0:
+        return False, (graphql_result.stderr or graphql_result.stdout).strip()
+
+    try:
+        payload = json.loads(graphql_result.stdout or "{}")
+    except json.JSONDecodeError:
+        return False, "Failed to parse GraphQL response while enabling auto-merge"
+
+    errors = payload.get("errors")
+    if errors:
+        return False, json.dumps(errors)
+
+    enabled_at = (
+        payload.get("data", {})
+        .get("enablePullRequestAutoMerge", {})
+        .get("pullRequest", {})
+        .get("autoMergeRequest", {})
+        .get("enabledAt")
+    )
+    if enabled_at:
+        return True, "Auto-merge enabled"
+
+    return False, "Auto-merge was not enabled"
+
+def merge_commit_message(head_branch: str, base_branch: str) -> str:
+    return f"Merge {head_branch} into {base_branch} {SKIP_CI}"
+
+
+def direct_merge(
+    repo_name: str,
+    base_branch: str,
+    head_branch: str,
+) -> tuple[bool, str, Optional[str]]:
+    """Merge branches via API — no PR opened, so pull_request workflows never fire."""
     result = subprocess.run(
         [
-            "gh", "api", "graphql",
-            "-f", f"query={graphql_query}",
-            "-f", f"pullRequestId={pull_request_id}",
+            "gh", "api", f"repos/{repo_slug(repo_name)}/merges",
+            "-X", "POST",
+            "-f", f"base={base_branch}",
+            "-f", f"head={head_branch}",
+            "-f", f"commit_message={merge_commit_message(head_branch, base_branch)}",
         ],
         capture_output=True,
         text=True,
     )
     if result.returncode == 0:
-        return True, "Auto-merge enabled"
+        try:
+            data = json.loads(result.stdout)
+            sha = (data.get("sha") or "")[:7]
+            url = data.get("html_url") or ""
+            return True, f"Direct merge {SKIP_CI} ({sha})", url
+        except json.JSONDecodeError:
+            return True, f"Direct merge {SKIP_CI}", None
+
+    err = (result.stderr or result.stdout).strip()
+    if "409" in err or "Merge conflict" in err or "not mergeable" in err.lower():
+        return False, "Merge conflict", None
+    return False, err, None
+
+
+def get_pr_number(pr_url: str) -> Optional[str]:
+    match = re.search(r"(?:/pull/|#)(\d+)$", pr_url)
+    return match.group(1) if match else None
+
+
+def get_mergeable(repo_name: str, pr_url: str) -> Optional[bool]:
+    """Return mergeability: True, False, or None while GitHub is still computing."""
+    pr_number = get_pr_number(pr_url)
+    if not pr_number:
+        return None
+    code, data = gh_api(f"repos/{repo_slug(repo_name)}/pulls/{pr_number}")
+    if code != 0 or not isinstance(data, dict):
+        return None
+    return data.get("mergeable")
+
+
+def wait_for_mergeable(
+    repo_name: str,
+    pr_url: str,
+    max_attempts: int = 15,
+    delay_seconds: float = 2.0,
+) -> Optional[bool]:
+    """Poll until mergeability is known or attempts are exhausted."""
+    for _ in range(max_attempts):
+        mergeable = get_mergeable(repo_name, pr_url)
+        if mergeable is not None:
+            return mergeable
+        time.sleep(delay_seconds)
+    return None
+
+
+def admin_merge(
+    repo_name: str,
+    pr_url: str,
+    head_branch: str,
+    base_branch: str,
+) -> tuple[bool, str]:
+    """Force-merge a PR using --admin. Commit message includes [skip ci]."""
+    result = gh(
+        "pr", "merge", pr_url,
+        "--repo", repo_slug(repo_name),
+        "--squash",
+        "--admin",
+        "--delete-branch=false",
+        "--subject", merge_commit_message(head_branch, base_branch),
+    )
+    if result.returncode == 0:
+        return True, f"Merged with --admin {SKIP_CI}"
     return False, (result.stderr or result.stdout).strip()
 
-# Dynamically list all Deepiri repos
+
+def merge_pr(
+    repo_name: str,
+    pr_url: str,
+    head_branch: str,
+    base_branch: str,
+) -> tuple[bool, str]:
+    """Admin-merge an existing PR with [skip ci] on the squash commit."""
+    print(f"  {Colors.GRAY}Admin merge {SKIP_CI}...{Colors.NC}")
+    print(f"  {Colors.GRAY}Checking mergeability...{Colors.NC}")
+    mergeable = wait_for_mergeable(repo_name, pr_url, max_attempts=10)
+    if mergeable is False:
+        return False, "PR has merge conflicts"
+    return admin_merge(repo_name, pr_url, head_branch, base_branch)
+
 
 def get_all_repos() -> list[str]:
-    # Logic to make sure this still works over 100 repos
     repos = []
     page = 1
 
@@ -235,17 +362,18 @@ def get_all_repos() -> list[str]:
     return repos
 
 
-
 # ---------------------------------------------------------------------------
 # Display helpers
 # ---------------------------------------------------------------------------
 
-def print_banner(num_repos: int):
-    direction = f"{HEAD_BRANCH} → {BASE_BRANCH}"
+def print_banner(num_repos: int, direction: str, backwards: bool = False):
+    title = "Dev ↔ Main PR Creator (Deepiri)" if backwards else "Dev → Main PR Creator (Deepiri)"
     print(f"{Colors.CYAN}")
     print(f"╔{'═'*60}╗")
-    print(f"║{'  Dev → Main PR Creator (Deepiri)  ':^60}║")
+    print(f"║{title:^60}║")
     print(f"║{f'  {num_repos} repos · {direction} · GitHub API  ':^60}║")
+    if backwards:
+        print(f"║{'  backwards: main→dev, then dev→main (all [skip ci])  ':^60}║")
     print(f"╚{'═'*60}╝{Colors.NC}")
     print()
 
@@ -257,31 +385,43 @@ def print_repo_header(name: str, index: int, total: int):
     print(f"{Colors.CYAN}╚{'─'*58}╝{Colors.NC}")
 
 
+def print_direction_header(head_branch: str, base_branch: str):
+    print(f"  {Colors.CYAN}→ {head_branch} → {base_branch} ({SKIP_CI}){Colors.NC}")
+
+
 # ---------------------------------------------------------------------------
 # Per-repo handler
 # ---------------------------------------------------------------------------
 
-def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bool) -> dict:
-    print_repo_header(repo_name, index, total)
+def merge_direction(
+    repo_name: str,
+    head_branch: str,
+    base_branch: str,
+    draft: bool,
+    dry_run: bool,
+) -> dict:
+    """Merge one branch direction with [skip ci]. Direct merge first, PR fallback."""
+    print_direction_header(head_branch, base_branch)
 
-    # Check branches exist
-    print(f"  {Colors.GRAY}Checking branches...{Colors.NC}", end="", flush=True)
-    if not branch_exists(repo_name, HEAD_BRANCH):
-        print(f"\n  {Colors.YELLOW}Branch '{HEAD_BRANCH}' not found, skipping.{Colors.NC}")
-        return {"repo": repo_name, "status": "skipped", "reason": f"no '{HEAD_BRANCH}' branch"}
-    if not branch_exists(repo_name, BASE_BRANCH):
-        print(f"\n  {Colors.YELLOW}Branch '{BASE_BRANCH}' not found, skipping.{Colors.NC}")
-        return {"repo": repo_name, "status": "skipped", "reason": f"no '{BASE_BRANCH}' branch"}
-    print(f" {Colors.GREEN}{HEAD_BRANCH}{Colors.NC} → {Colors.BLUE}{BASE_BRANCH}{Colors.NC}")
+    if not branch_exists(repo_name, head_branch):
+        print(f"  {Colors.YELLOW}Branch '{head_branch}' not found, skipping.{Colors.NC}")
+        return {"status": "skipped", "reason": f"no '{head_branch}' branch"}
+    if not branch_exists(repo_name, base_branch):
+        print(f"  {Colors.YELLOW}Branch '{base_branch}' not found, skipping.{Colors.NC}")
+        return {"status": "skipped", "reason": f"no '{base_branch}' branch"}
 
-    # Check existing PR
-    existing = pr_exists(repo_name, HEAD_BRANCH, BASE_BRANCH)
+    existing = pr_exists(repo_name, head_branch, base_branch)
     if existing:
-        print(f"  {Colors.GRAY}PR exists, enabling auto-merge...{Colors.NC}")
-        ok, msg = enable_auto_merge(repo_name, existing)
-        if ok:
-            print(f"  {Colors.GREEN}Auto-merge enabled on existing PR: {existing}{Colors.NC}")
-            return {"repo": repo_name, "status": "auto_merged", "url": existing}
+        print(f"  {Colors.GRAY}Open PR exists: {existing}{Colors.NC}")
+        if dry_run:
+            print(f"  {Colors.YELLOW}[DRY RUN] Would admin-merge existing PR {SKIP_CI}{Colors.NC}")
+            return {"status": "dry_run", "url": existing}
+        ok_adm, msg_adm = merge_pr(repo_name, existing, head_branch, base_branch)
+        if ok_adm:
+            print(f"  {Colors.GREEN}{msg_adm}: {existing}{Colors.NC}")
+            return {"status": "merged", "url": existing}
+        if msg_adm == "PR has merge conflicts":
+            print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
         else:
             print(f"  {Colors.YELLOW}Auto-merge failed: {msg}. Trying admin fallback...{Colors.NC}")
             ok_adm, msg_adm = merge_with_admin_fallback(repo_name, existing)
@@ -294,17 +434,16 @@ def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bo
                 print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
             return {"repo": repo_name, "status": "exists", "url": existing, "auto_merge_error": msg_adm}
 
-    # Compare branches
-    print(f"  {Colors.GRAY}Comparing {HEAD_BRANCH}...{BASE_BRANCH}...{Colors.NC}", end="", flush=True)
-    compare = get_compare(repo_name, BASE_BRANCH, HEAD_BRANCH)
+    print(f"  {Colors.GRAY}Comparing {head_branch}...{base_branch}...{Colors.NC}", end="", flush=True)
+    compare = get_compare(repo_name, base_branch, head_branch)
     ahead_by = compare.get("ahead_by", 0)
     commits = compare.get("commits", [])
     files = compare.get("files", [])
     print(f" {ahead_by} commit(s) ahead")
 
     if ahead_by == 0:
-        print(f"  {Colors.YELLOW}Nothing to merge — {HEAD_BRANCH} is even with {BASE_BRANCH}, skipping.{Colors.NC}")
-        return {"repo": repo_name, "status": "skipped", "reason": "no commits ahead"}
+        print(f"  {Colors.YELLOW}Nothing to merge — even with {base_branch}, skipping.{Colors.NC}")
+        return {"status": "skipped", "reason": "no commits ahead"}
 
     if commits:
         print(f"  {Colors.CYAN}Recent commits:{Colors.NC}")
@@ -320,13 +459,12 @@ def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bo
         deletions = sum(f.get("deletions", 0) for f in files)
         print(f"  {Colors.CYAN}Files changed: {len(files)}  +{additions} -{deletions}{Colors.NC}")
 
-    # Auto-generate title and body
-    title = f"Merge {HEAD_BRANCH} into {BASE_BRANCH}"
+    title = merge_commit_message(head_branch, base_branch)
     body = "## Summary\n\n"
     for c in commits[:10]:
         msg = c.get("commit", {}).get("message", "").split("\n")[0]
         body += f"- {msg}\n"
-    body += "\nCreated with dev-to-main-pr.py"
+    body += f"\nCreated with dev-to-main-pr.py\n\n{SKIP_CI}"
 
     if dry_run:
         print(f"  {Colors.YELLOW}[DRY RUN] Would create PR and auto-merge: '{title}'{Colors.NC}")
@@ -355,7 +493,54 @@ def handle_repo(repo_name: str, index: int, total: int, draft: bool, dry_run: bo
             return {"repo": repo_name, "status": "created", "url": url_or_err, "auto_merge_error": msg_adm}
     else:
         print(f"  {Colors.RED}Failed: {url_or_err}{Colors.NC}")
-        return {"repo": repo_name, "status": "failed", "error": url_or_err}
+        return {"status": "failed", "error": url_or_err}
+
+    print(f"  {Colors.GREEN}PR created: {url_or_err}{Colors.NC}")
+    ok_adm, msg_adm = merge_pr(repo_name, url_or_err, head_branch, base_branch)
+    if ok_adm:
+        print(f"  {Colors.GREEN}{msg_adm}: {url_or_err}{Colors.NC}")
+        return {"status": "merged", "url": url_or_err}
+
+    if msg_adm == "PR has merge conflicts":
+        print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
+    else:
+        print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
+    return {"status": "created", "url": url_or_err, "error": msg_adm}
+
+
+def handle_repo(
+    repo_name: str,
+    index: int,
+    total: int,
+    draft: bool,
+    dry_run: bool,
+    backwards: bool = False,
+) -> dict:
+    print_repo_header(repo_name, index, total)
+
+    if backwards:
+        main_to_dev = merge_direction(repo_name, "main", "dev", draft, dry_run)
+        dev_to_main = merge_direction(repo_name, "dev", "main", draft, dry_run)
+        statuses = {main_to_dev["status"], dev_to_main["status"]}
+        if "merged" in statuses:
+            overall = "merged"
+        elif "created" in statuses or "exists" in statuses:
+            overall = "partial"
+        elif "failed" in statuses:
+            overall = "failed"
+        elif statuses == {"skipped"}:
+            overall = "skipped"
+        else:
+            overall = "skipped"
+        return {
+            "repo": repo_name,
+            "status": overall,
+            "main_to_dev": main_to_dev,
+            "dev_to_main": dev_to_main,
+        }
+
+    result = merge_direction(repo_name, "dev", "main", draft, dry_run)
+    return {"repo": repo_name, **result}
 
 
 # ---------------------------------------------------------------------------
@@ -367,15 +552,10 @@ def main():
     draft = "--draft" in sys.argv or "-d" in sys.argv
     backwards = "--backwards" in sys.argv
 
-    # Allow swapping the global HEAD/BASE branches when running backwards
-    global HEAD_BRANCH, BASE_BRANCH
-    if backwards:
-        HEAD_BRANCH, BASE_BRANCH = BASE_BRANCH, HEAD_BRANCH
-
     all_repos = get_all_repos()
-    selected = list(all_repos)
-    print_banner(len(all_repos))
-    
+    direction = "main → dev, then dev → main" if backwards else "dev → main"
+    print_banner(len(all_repos), direction, backwards=backwards)
+
     if not check_gh_auth():
         print(f"{Colors.RED}Error: GitHub CLI not authenticated. Run 'gh auth login' first.{Colors.NC}")
         sys.exit(1)
@@ -384,6 +564,10 @@ def main():
         print(f"{Colors.YELLOW}[DRY RUN MODE — no PRs will be created]{Colors.NC}\n")
     if draft:
         print(f"{Colors.YELLOW}[DRAFT mode — PRs will be created as drafts]{Colors.NC}\n")
+    if backwards:
+        print(f"{Colors.YELLOW}[BACKWARDS — main→dev then dev→main, all merges {SKIP_CI}]{Colors.NC}\n")
+    else:
+        print(f"{Colors.YELLOW}[All merges use {SKIP_CI} — direct merge when possible]{Colors.NC}\n")
 
     print(f"{Colors.CYAN}Fetching repositories from org...{Colors.NC}")
     repos = get_org_repos()
@@ -391,9 +575,8 @@ def main():
         print(f"{Colors.RED}No repositories found or failed to fetch.{Colors.NC}")
         sys.exit(1)
     print(f"{Colors.CYAN}Targeting org: {Colors.BOLD}{GITHUB_ORG}{Colors.NC}")
-    print(f"{Colors.CYAN}Repos: {len(all_repos)} · {HEAD_BRANCH} → {BASE_BRANCH}{Colors.NC}\n")
+    print(f"{Colors.CYAN}Repos: {len(all_repos)} · {direction}{Colors.NC}\n")
 
-    # Scope selection
     print(f"{Colors.CYAN}Process all {len(all_repos)} repos? [Y/n/select]: {Colors.NC}", end="")
     scope = input().strip().lower()
 
@@ -416,32 +599,48 @@ def main():
 
     print()
 
-    # Process each repo
     results = []
     for i, repo_name in enumerate(selected, 1):
-        result = handle_repo(repo_name=repo_name, index=i, total=len(selected), draft=draft, dry_run=dry_run)
+        result = handle_repo(
+            repo_name=repo_name,
+            index=i,
+            total=len(selected),
+            draft=draft,
+            dry_run=dry_run,
+            backwards=backwards,
+        )
         results.append(result)
 
-    # Summary
     groups = {
-        "auto_merged": (Colors.GREEN, "Auto-merged"),
-        "created": (Colors.GREEN,  "Created"),
-        "exists":  (Colors.YELLOW, "Already exists"),
+        "merged": (Colors.GREEN, "Merged"),
+        "partial": (Colors.YELLOW, "Partial (PR open)"),
         "dry_run": (Colors.YELLOW, "Dry-run"),
         "skipped": (Colors.YELLOW, "Skipped"),
-        "failed":  (Colors.RED,    "Failed"),
+        "failed": (Colors.RED, "Failed"),
+        "created": (Colors.GREEN, "Created (unmerged)"),
+        "exists": (Colors.YELLOW, "Already exists"),
     }
 
     print(f"\n{Colors.CYAN}{'='*60}{Colors.NC}")
     print(f"{Colors.BOLD}Summary{Colors.NC}")
     print(f"{Colors.CYAN}{'='*60}{Colors.NC}")
     for key, (color, label) in groups.items():
-        items = [r for r in results if r["status"] == key]
+        items = [r for r in results if r.get("status") == key]
         if not items:
             continue
         print(f"  {color}{label} ({len(items)}):{Colors.NC}")
         for r in items:
-            detail = r.get("url") or r.get("title") or r.get("reason") or r.get("error") or ""
+            if backwards and "main_to_dev" in r:
+                m = r["main_to_dev"]
+                d = r["dev_to_main"]
+                detail = (
+                    f"main→dev: {m.get('status')}"
+                    f"{(' ' + m['url']) if m.get('url') else ''}"
+                    f" | dev→main: {d.get('status')}"
+                    f"{(' ' + d['url']) if d.get('url') else ''}"
+                )
+            else:
+                detail = r.get("url") or r.get("title") or r.get("reason") or r.get("error") or ""
             print(f"    {Colors.GRAY}{r['repo']}{': ' + detail if detail else ''}{Colors.NC}")
     print(f"{Colors.CYAN}{'='*60}{Colors.NC}")
 

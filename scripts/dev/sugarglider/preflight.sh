@@ -289,13 +289,12 @@ check_endpoints() {
     else
         service_is_running "synapse" && synapse_required=true
         service_is_running "realtime-gateway" && gateway_required=true
-        service_is_running "synapse-sugar-glider" && sugar_glider_required=true
-        service_is_running "synapse-sidecar" && sugar_glider_required=true
+        service_is_running "sugar-glider" && sugar_glider_required=true
     fi
 
     check_endpoint "synapse" "http://localhost:8002/health" "${synapse_required}"
     check_endpoint "realtime-gateway" "http://localhost:5008/health" "${gateway_required}"
-    check_endpoint "synapse-sugar-glider" "http://localhost:8081/readyz" "${sugar_glider_required}"
+    check_endpoint "sugar-glider" "http://localhost:8081/readyz" "${sugar_glider_required}"
 }
 
 main() {

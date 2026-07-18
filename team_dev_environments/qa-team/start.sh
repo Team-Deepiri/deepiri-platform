@@ -13,13 +13,13 @@ cd "$PROJECT_ROOT"
 SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
   postgres-auth postgres-core postgres-intelligence redis influxdb kafka
-  synapse synapse-sugar-glider
+  synapse sugar-glider
   api-gateway auth-service workflow-orchestrator
   incentive-engine decision-intelligence
   communications-hub external-bridge-service
   adaptive-experience-engine realtime-gateway
   language-intelligence-service messaging-service
-  frontend-dev synapse synapse-sugar-glider adminer
+  frontend-dev synapse sugar-glider adminer
   messaging-service frontend-dev adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
@@ -38,7 +38,7 @@ echo ""
 
 # Start infrastructure services first (without --no-deps to ensure proper startup order)
 echo "📦 Starting infrastructure services..."
-docker compose -f docker-compose.dev.yml up -d --no-build postgres-auth postgres-core postgres-intelligence redis influxdb synapse synapse-sugar-glider
+docker compose -f docker-compose.dev.yml up -d --no-build postgres-auth postgres-core postgres-intelligence redis influxdb synapse sugar-glider
 
 # Wait a moment for infrastructure to be ready
 echo "⏳ Waiting for infrastructure to be ready..."
