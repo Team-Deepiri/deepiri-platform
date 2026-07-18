@@ -13,13 +13,6 @@
       "skill": "fingerprint",
       "publish_stream": "inference-events",
       "publish_event_type": "bedd.document.vectorize.seen"
-    },
-    {
-      "stream": "inbox",
-      "event_type": "*",
-      "skill": "echo",
-      "publish_stream": "outbox",
-      "publish_event_type": "bedd.strike.result"
     }
   ]
 }
