@@ -1182,8 +1182,8 @@ services:
       SIDECAR_REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/0
       SIDECAR_LISTEN_ADDR: tcp://0.0.0.0:8081
       SIDECAR_GRPC_ADDR: tcp://0.0.0.0:50051
-      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events
-      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events
+      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
+      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
       SIDECAR_MAX_STREAM_LEN: "10000"
       SIDECAR_WAL_DIR: /data/synapse-wal
       SIDECAR_WAL_REPLAY_BATCH: "100"
