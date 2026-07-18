@@ -1,18 +1,423 @@
+# Platform CI: selective Docker builds + compose validation.
+#
+# GitHub Actions secrets (see ops/ci/GITHUB_SECRETS.md):
+#   REQUIRED: PLATFORM_ACCESS_TOKEN — PAT with read access to private submodule repos
+#              (from secrets.7z on Discord, or fine-grained PAT). GITHUB_TOKEN is automatic.
+#   NOT NEEDED FOR CI: OAuth/OpenAI/ML keys — workflow uses dummy compose env vars.
+#
 name: Platform Build and Test
 
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      full_build:
+        description: Build all platform services (ignore change detection)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: platform-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Compose interpolations without defaults — CI placeholders (not production secrets).
+  GOOGLE_CLIENT_ID: ci-google-client-id-not-used
+  GOOGLE_CLIENT_SECRET: ci-google-client-secret-not-used
+  AUTH_SERVICE_URL: http://auth-service:5001
+  EXTERNAL_BRIDGE_BASE_URL: http://external-bridge-service:5006
+  OPENAI_API_KEY: ci-openai-key-not-used
+  WANDB_API_KEY: ci-wandb-key-not-used
+  PINECONE_API_KEY: ci-pinecone-key-not-used
+  WEAVIATE_URL: http://localhost:8080
+  INFLUXDB_TOKEN: ci-influxdb-token-minimum-48-characters-for-validation-xx
+  REDIS_PASSWORD: password
 
 jobs:
-  platform-ci:
+  detect:
+    name: Detect affected services
     runs-on: ubuntu-latest
-
+    outputs:
+      services: ${{ steps.plan.outputs.services }}
+      needs_shared_utils: ${{ steps.plan.outputs.build_shared_utils }}
+      needs_suite: ${{ steps.plan.outputs.build_shared_utils }}
+      skip_docker: ${{ steps.plan.outputs.skip_docker }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
 
-      - name: Validate CI workflow
-        run: echo "Platform CI workflow validated"
+      - name: Plan selective builds
+        id: plan
+        env:
+          FULL_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.full_build }}
+        run: |
+          set -euo pipefail
+
+          ALL_SERVICES=(
+            api-gateway auth-service workflow-orchestrator incentive-engine
+            decision-intelligence external-bridge-service adaptive-experience-engine
+            language-intelligence-service communications-hub messaging-service
+            realtime-gateway synapse sugar-glider
+          )
+          NODE_SERVICES=(
+            api-gateway auth-service workflow-orchestrator incentive-engine
+            decision-intelligence external-bridge-service adaptive-experience-engine
+            language-intelligence-service communications-hub messaging-service
+            realtime-gateway
+          )
+
+          declare -A SELECTED=()
+          build_shared_utils=false
+          docker_relevant=false
+
+          mark_node_services() {
+            for svc in "${NODE_SERVICES[@]}"; do
+              SELECTED["$svc"]=1
+            done
+            build_shared_utils=true
+          }
+
+          mark_service() {
+            SELECTED["$1"]=1
+            docker_relevant=true
+          }
+
+          mark_node_service() {
+            mark_service "$1"
+            build_shared_utils=true
+          }
+
+          if [ "${FULL_BUILD}" = "true" ]; then
+            for svc in "${ALL_SERVICES[@]}"; do SELECTED["$svc"]=1; done
+            build_shared_utils=true
+            docker_relevant=true
+          else
+            BASE=""
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              # Do not shallow-fetch the base: merge-base needs its ancestry to
+              # compare an older feature branch with the current target branch.
+              git fetch origin "${{ github.base_ref }}"
+              BASE="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
+            elif [ "${{ github.event_name }}" = "push" ] \
+              && [ -n "${{ github.event.before }}" ] \
+              && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+              BASE="${{ github.event.before }}"
+            fi
+
+            if [ -z "$BASE" ]; then
+              echo "No diff base; building all platform services."
+              for svc in "${ALL_SERVICES[@]}"; do SELECTED["$svc"]=1; done
+              build_shared_utils=true
+              docker_relevant=true
+            else
+              echo "Diff base: $BASE"
+              while IFS= read -r path; do
+                [ -z "$path" ] && continue
+                case "$path" in
+                  platform-services/shared/deepiri-shared-utils/*|platform-services/shared/deepiri-shared-utils)
+                    mark_node_services
+                    ;;
+                  deepiri-suite/*|deepiri-suite)
+                    mark_node_services
+                    ;;
+                  platform-services/backend/deepiri-api-gateway/*|platform-services/backend/deepiri-api-gateway)
+                    mark_node_service api-gateway ;;
+                  platform-services/backend/deepiri-auth-service/*|platform-services/backend/deepiri-auth-service)
+                    mark_node_service auth-service ;;
+                  platform-services/backend/deepiri-workflow-orchestrator/*|platform-services/backend/deepiri-workflow-orchestrator)
+                    mark_node_service workflow-orchestrator ;;
+                  platform-services/backend/deepiri-incentive-engine/*|platform-services/backend/deepiri-incentive-engine)
+                    mark_node_service incentive-engine ;;
+                  platform-services/backend/deepiri-decision-intelligence/*|platform-services/backend/deepiri-decision-intelligence)
+                    mark_node_service decision-intelligence ;;
+                  platform-services/backend/deepiri-communications-hub/*|platform-services/backend/deepiri-communications-hub)
+                    mark_node_service communications-hub ;;
+                  platform-services/backend/deepiri-external-bridge-service/*|platform-services/backend/deepiri-external-bridge-service)
+                    mark_node_service external-bridge-service ;;
+                  platform-services/backend/deepiri-adaptive-experience-engine/*|platform-services/backend/deepiri-adaptive-experience-engine)
+                    mark_node_service adaptive-experience-engine ;;
+                  platform-services/backend/deepiri-language-intelligence-service/*|platform-services/backend/deepiri-language-intelligence-service)
+                    mark_node_service language-intelligence-service ;;
+                  platform-services/backend/deepiri-messaging-service/*|platform-services/backend/deepiri-messaging-service)
+                    mark_node_service messaging-service ;;
+                  platform-services/backend/deepiri-realtime-gateway/*|platform-services/backend/deepiri-realtime-gateway)
+                    mark_node_service realtime-gateway ;;
+                  platform-services/shared/deepiri-synapse/*|platform-services/shared/deepiri-synapse)
+                    mark_service synapse ;;
+                  platform-services/shared/deepiri-sugar-glider/*|platform-services/shared/deepiri-sugar-glider)
+                    mark_service sugar-glider ;;
+                  docker-compose.dev.yml|docker-compose.yml|.github/workflows/platform-build-and-test.yml)
+                    mark_service sugar-glider
+                    ;;
+                  ops/k8s/*)
+                    : # config-only; validate compose, no docker build
+                    ;;
+                  *)
+                    : # docs, unrelated paths
+                    ;;
+                esac
+              done < <(git diff --name-only "$BASE" HEAD)
+            fi
+          fi
+
+          services_json="["
+          first=true
+          for svc in "${ALL_SERVICES[@]}"; do
+            if [ -n "${SELECTED[$svc]:-}" ]; then
+              $first || services_json+=","
+              first=false
+              services_json+="\"$svc\""
+            fi
+          done
+          services_json+="]"
+
+          skip_docker=true
+          if [ "$docker_relevant" = true ] && [ "$services_json" != "[]" ]; then
+            skip_docker=false
+          fi
+
+          echo "services=$services_json" >>"$GITHUB_OUTPUT"
+          echo "build_shared_utils=$build_shared_utils" >>"$GITHUB_OUTPUT"
+          echo "skip_docker=$skip_docker" >>"$GITHUB_OUTPUT"
+
+          echo "Planned services: $services_json"
+          echo "build_shared_utils=$build_shared_utils skip_docker=$skip_docker"
+
+  validate:
+    name: Validate compose
+    runs-on: ubuntu-latest
+    needs: detect
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Bootstrap CI secrets
+        run: |
+          set -euo pipefail
+          SECRETS_DIR=ops/k8s/secrets
+          mkdir -p "$SECRETS_DIR"
+          write_secret() {
+            local svc="$1"
+            {
+              echo "apiVersion: v1"
+              echo "kind: Secret"
+              echo "metadata:"
+              echo "  name: ${svc}-secret"
+              echo "  namespace: default"
+              echo "type: Opaque"
+              echo "stringData:"
+              echo "  JWT_SECRET: \"ci-jwt-secret-minimum-32-characters-long\""
+              echo "  INTERNAL_SERVICE_SECRET: \"ci-internal-service-secret\""
+              echo "  REDIS_PASSWORD: \"${REDIS_PASSWORD}\""
+              echo "  INFLUXDB_TOKEN: \"${INFLUXDB_TOKEN}\""
+            } >"$SECRETS_DIR/${svc}-secret.yaml"
+          }
+          for svc in \
+            api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence \
+            external-bridge-service adaptive-experience-engine language-intelligence-service \
+            communications-hub messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
+            write_secret "$svc"
+          done
+
+      - name: Validate compose file
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.dev.yml config --quiet
+          services="$(docker compose -f docker-compose.dev.yml config --services)"
+          echo "$services"
+          echo "$services" | grep -Fxq sugar-glider
+          docker compose -f docker-compose.dev.yml config | grep -Fq 'deepiri-dev-sugar-glider:latest'
+
+  prepare:
+    name: Prepare build inputs
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.skip_docker != 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Init submodules (private repos)
+        env:
+          TOKEN: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Verify submodules checked out
+        run: |
+          set -euo pipefail
+          test -f platform-services/backend/deepiri-api-gateway/package.json
+          test -f platform-services/shared/deepiri-shared-utils/package.json
+          test -f platform-services/shared/deepiri-sugar-glider/go.mod
+          test -f deepiri-suite/Dockerfile
+
+      - name: Set up Node.js
+        if: needs.detect.outputs.needs_shared_utils == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: platform-services/shared/deepiri-shared-utils/package-lock.json
+
+      - name: Build shared-utils
+        if: needs.detect.outputs.needs_shared_utils == 'true'
+        run: |
+          npm ci --legacy-peer-deps --prefix platform-services/shared/deepiri-shared-utils
+          npm run build --prefix platform-services/shared/deepiri-shared-utils
+
+      - name: Upload shared-utils dist
+        if: needs.detect.outputs.needs_shared_utils == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shared-utils-dist
+          path: |
+            platform-services/shared/deepiri-shared-utils/dist
+            platform-services/shared/deepiri-shared-utils/node_modules
+          retention-days: 1
+
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: [detect, prepare]
+    if: needs.detect.outputs.skip_docker != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.detect.outputs.services) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: recursive
+          token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Init submodules (private repos)
+        env:
+          TOKEN: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Download shared-utils dist
+        if: needs.detect.outputs.needs_shared_utils == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: shared-utils-dist
+          path: platform-services/shared/deepiri-shared-utils
+
+      - name: Log in to GitHub Container Registry
+        if: matrix.service != 'synapse' && matrix.service != 'sugar-glider'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Bootstrap CI secrets
+        run: |
+          set -euo pipefail
+          SECRETS_DIR=ops/k8s/secrets
+          mkdir -p "$SECRETS_DIR"
+          write_secret() {
+            local svc="$1"
+            {
+              echo "apiVersion: v1"
+              echo "kind: Secret"
+              echo "metadata:"
+              echo "  name: ${svc}-secret"
+              echo "  namespace: default"
+              echo "type: Opaque"
+              echo "stringData:"
+              echo "  JWT_SECRET: \"ci-jwt-secret-minimum-32-characters-long\""
+              echo "  INTERNAL_SERVICE_SECRET: \"ci-internal-service-secret\""
+              echo "  REDIS_PASSWORD: \"${REDIS_PASSWORD}\""
+              echo "  INFLUXDB_TOKEN: \"${INFLUXDB_TOKEN}\""
+            } >"$SECRETS_DIR/${svc}-secret.yaml"
+          }
+          for svc in \
+            api-gateway auth-service workflow-orchestrator incentive-engine decision-intelligence \
+            external-bridge-service adaptive-experience-engine language-intelligence-service \
+            communications-hub messaging-service realtime-gateway synapse sugar-glider frontend-dev cyrex; do
+            write_secret "$svc"
+          done
+
+      - name: Ensure deepiri-suite base images
+        if: matrix.service != 'synapse' && matrix.service != 'sugar-glider'
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          set -euo pipefail
+          ensure_suite_image() {
+            local tag="$1"
+            local base="$2"
+            local img="ghcr.io/team-deepiri/deepiri-suite:${tag}"
+            if docker image inspect "$img" >/dev/null 2>&1; then
+              return 0
+            fi
+            if docker pull "$img" 2>/dev/null; then
+              return 0
+            fi
+            docker build --build-arg "BASE_IMAGE=${base}" -t "$img" ./deepiri-suite
+          }
+          ensure_suite_image "18-alpine" "node:18-alpine"
+          ensure_suite_image "18-slim" "node:18-slim"
+          ensure_suite_image "20-alpine" "node:20-alpine"
+
+      - name: Build shared-utils for Node service
+        if: >-
+          needs.detect.outputs.needs_shared_utils != 'true' &&
+          matrix.service != 'synapse' && matrix.service != 'sugar-glider'
+        run: |
+          npm ci --legacy-peer-deps --prefix platform-services/shared/deepiri-shared-utils
+          npm run build --prefix platform-services/shared/deepiri-shared-utils
+
+      - name: Build Docker image
+        env:
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+        run: docker compose -f docker-compose.dev.yml build "${{ matrix.service }}"
+
+      - name: Smoke test sugar-glider
+        if: matrix.service == 'sugar-glider'
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.dev.yml up -d redis
+          docker compose -f docker-compose.dev.yml up -d --no-build sugar-glider
+          for _ in $(seq 1 30); do
+            if docker compose -f docker-compose.dev.yml exec -T sugar-glider /app/sidecar healthcheck; then
+              docker compose -f docker-compose.dev.yml down
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f docker-compose.dev.yml logs sugar-glider
+          docker compose -f docker-compose.dev.yml down
+          exit 1
