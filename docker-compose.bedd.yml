@@ -1,0 +1,41 @@
+# Optional Bedd skill worker — overlay on docker-compose.dev.yml
+# Usage:
+#   docker compose -f docker-compose.dev.yml -f docker-compose.bedd.yml up -d deepiri-bedd
+#
+# Bedd is portable: routes + skills are host-supplied. This overlay wires it to
+# Sugar Glider for optional document.* / inbox skill processing — it does NOT
+# replace Cyrex, Helox, or LIS ownership of the buses.
+
+services:
+  deepiri-bedd:
+    build:
+      context: https://github.com/Team-Deepiri/deepiri-bedd.git#main
+      dockerfile: Dockerfile
+    image: deepiri-bedd:local
+    pull_policy: never
+    container_name: deepiri-bedd-dev
+    restart: unless-stopped
+    ports:
+      - "9108:9108"
+    environment:
+      BEDD_BUS_URL: http://synapse-sidecar:8081
+      BEDD_SENDER: bedd
+      BEDD_CONSUMER_GROUP: bedd-workers
+      BEDD_CONSUMER_NAME: bedd-1
+      BEDD_TINDER: /etc/bedd/tinder.json
+      BEDD_SKILLS_DIR: /opt/bedd/skills
+      BEDD_DLQ_STREAM: pipeline.dead-letter
+      BEDD_ADMIN_PORT: "9108"
+      BEDD_DRY_RUN: ${BEDD_DRY_RUN:-0}
+      BEDD_LOG_LEVEL: info
+    volumes:
+      - ./deploy/bedd/tinder.document-bus.json:/etc/bedd/tinder.json:ro
+    depends_on:
+      - synapse-sugar-glider
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9108/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - deepiri-dev-network

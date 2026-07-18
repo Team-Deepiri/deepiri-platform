@@ -1,0 +1,25 @@
+{
+  "routes": [
+    {
+      "stream": "document.artifacts",
+      "event_type": "*",
+      "skill": "redact",
+      "publish_stream": "inference-events",
+      "publish_event_type": "bedd.document.artifacts.processed"
+    },
+    {
+      "stream": "document.vectorize",
+      "event_type": "*",
+      "skill": "fingerprint",
+      "publish_stream": "inference-events",
+      "publish_event_type": "bedd.document.vectorize.seen"
+    },
+    {
+      "stream": "inbox",
+      "event_type": "*",
+      "skill": "echo",
+      "publish_stream": "outbox",
+      "publish_event_type": "bedd.strike.result"
+    }
+  ]
+}
