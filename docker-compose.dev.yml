@@ -694,6 +694,9 @@ services:
       STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       CYREX_BASE_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      # Prefer Sugar Glider for document.* publishes (same bus as Cyrex/Helox).
+      SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
+      SYNAPSE_SUGAR_GLIDER_URL: ${SYNAPSE_SUGAR_GLIDER_URL:-http://synapse-sidecar:8081}
       # AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-}  # Optional - set to enable auth
       K8S_SERVICE_NAME: language-intelligence-service
     volumes:
