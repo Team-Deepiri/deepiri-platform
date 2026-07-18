@@ -1,6 +1,13 @@
 FROM ghcr.io/team-deepiri/deepiri-suite:18-slim
 
 # Prisma binary compatibility (service-specific)
+
+# Bedd runtime (Bun-style) — glibc binary
+ARG BEDD_IMAGE=ghcr.io/team-deepiri/bedd:0.6
+COPY --from=${BEDD_IMAGE} /usr/local/bin/bedd /usr/local/bin/bedd
+COPY --from=${BEDD_IMAGE} /opt/bedd/skills /opt/bedd/skills
+ENV BEDD_SKILLS_DIR=/opt/bedd/skills
+
 RUN mkdir -p /lib64 \
  && ln -sf /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 \
            /lib64/ld-linux-x86-64.so.2

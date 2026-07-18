@@ -1,35 +1,57 @@
-# Bedd integration (runtime, not a service)
+# Bedd bus integration + performance
 
-Base: `bao_t/feature/kafka-redis-streams-integration` (platform PR #184).
+Bedd is embedded **into worker images** (Bun-style), not a Compose sidecar.
 
-## Model (like Bun)
+## Embed
 
-| Bun | Bedd |
-|-----|------|
-| `oven/bun` image / install script | `ghcr.io/team-deepiri/bedd` / `install.sh` |
-| `COPY --from=bun` into app Dockerfile | `COPY --from=bedd /usr/local/bin/bedd` into **worker** Dockerfile |
-| `bun run` / `bun test` | `bedd serve` / `bedd eval` / `bedd bench` |
-| Not a Redis-side microservice | Not a Sugar Glider-side microservice |
+Install/embed recipes live in [deepiri-bedd docs/INSTALL.md](https://github.com/Team-Deepiri/deepiri-bedd/blob/main/docs/INSTALL.md) (`install.sh` + image Dockerfile). Platform only `COPY --from` that image.
 
-LIS owns document.* routing ([LIS PR #64](https://github.com/Team-Deepiri/deepiri-language-intelligence-service/pull/64)). Cyrex/Helox own their consumers. Bedd is optional tooling **inside** a worker image that needs portable skills.
+Images that include `/usr/local/bin/bedd`:
 
-## Install into a worker
+| Image | libc |
+|-------|------|
+| deepiri-suite (alpine + slim) | musl or gnu (auto) |
+| diri-cyrex (+cpu, cyrex-agi) | gnu |
+| deepiri-modelkit | gnu |
+| LIS, RTG, messaging, decision-intelligence, external-bridge, adaptive-experience, communications-hub, api-gateway | musl (suite alpine) |
+| workflow-orchestrator | gnu (node:18-slim) |
+| prismpipe, synapse | gnu |
 
-See [`deploy/bedd/Dockerfile.snippet.md`](../deploy/bedd/Dockerfile.snippet.md). Example routes: [`deploy/bedd/tinder.document-bus.json`](../deploy/bedd/tinder.document-bus.json).
+Sugar Glider is transport-only — **not** embedded.
 
-## Perf
+## Env (host / compose)
 
-Mock matrix (Bedd 0.6, local): 0% errors, ~1.5–2.5k strikes/s, p95 ≤1ms on mock bus.
-
-```bash
-# from a deepiri-bedd checkout
-./scripts/perf-matrix.sh
+```yaml
+BEDD_BUS_URL: ${BEDD_BUS_URL:-redis://redis:6379}
+BEDD_DLQ_STREAM: ${BEDD_DLQ_STREAM:-bedd.dlq}
+BEDD_SKILLS_DIR: /opt/bedd/skills
 ```
 
-Host A/B (optional): measure SG publish/read/ack alone vs same path with a worker that runs `bedd serve` after installing Bedd into that worker image.
+## Perf matrix (mock Redis)
 
-## Verdict
+Run from [deepiri-bedd](https://github.com/Team-Deepiri/deepiri-bedd):
 
-**Use Bedd** when a worker needs a portable skill runtime on the bus (redact/fingerprint/WASM).  
-**Do not** invent a separate compose service for it — that fights the Bun model and adds hop inventory without ownership clarity.  
-**Final:** better *as installed runtime in the right worker*; worse *as a freestanding platform service on every hop*.
+```bash
+./scripts/perf-matrix.sh
+# or: zig build && zig-out/bin/bedd bench --scenario mix --n 200 --mock-redis
+```
+
+### Results (2026-07-18, ReleaseSafe baseline, mock Redis)
+
+| run | n | err% | thr/s | p95 |
+|-----|---|------|-------|-----|
+| echo_50 | 50 | 0 | ~2500 | 1ms |
+| mix_50 | 50 | 0 | ~2500 | 1ms |
+| mix_200 | 200 | 0 | ~1740 | 1ms |
+| redact_100 | 100 | 0 | ~1667 | 1ms |
+
+**Verdict:** Better with Bedd when a **specific worker** needs portable stream skills (`echo` / `passthrough` / `redact` / `fingerprint` / `schema_gate`) on Redis Streams. Worse as a freestanding Compose sidecar on every hop — do not add `docker-compose.bedd.yml`.
+
+## A/B host check (optional)
+
+With stack up and Bedd in a worker image:
+
+```bash
+docker compose exec <worker> bedd help
+docker compose exec <worker> bedd bench --scenario mix --n 50 --mock-redis
+```
