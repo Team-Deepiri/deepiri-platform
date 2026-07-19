@@ -34,59 +34,36 @@ app.get('/health', (req: Request, res: Response) => {
     service: 'deepiri-truss',
     capabilities: [
       'workflow-orchestration',
-      'task-lifecycle',
-      'task-versioning',
-      'dependency-graphs',
-      'workflow-definition',
-      'fastapi-available'
+      'truss-definitions',
+      'truss-runs',
+      'job-step',
+      'condition-step',
+      'wait-event-step'
     ],
-    fastapi_endpoint: '/fastapi',
     timestamp: new Date().toISOString()
   });
 });
 
 app.use('/api/truss', routes);
-app.use('/tasks', routes);
 app.use('/', routes);
-
-app.get('/fastapi', (req: Request, res: Response) => {
-  res.json({
-    service: 'deepiri-truss',
-    fastapi_available: true,
-    docs: '/docs (when uvicorn running)',
-    modules: [
-      'task-lifecycle',
-      'task-versioning',
-      'dependency-graphs',
-      'workflow-definition'
-    ]
-  });
-});
 
 app.get('/capabilities', (req: Request, res: Response) => {
   res.json({
     service: 'deepiri-truss',
     version: '2.0.0',
     capabilities: {
-      task: {
-        description: 'Task lifecycle management',
-        endpoints: ['/task/*']
-      },
-      versioning: {
-        description: 'Task versioning history',
-        endpoints: ['/task/*/version']
-      },
-      dependency: {
-        description: 'DAG-based dependency tracking',
-        endpoints: ['/task/*/graph']
-      },
       workflow: {
-        description: 'Multi-stage workflow orchestration',
-        endpoints: ['/workflow/*']
-      },
-      fastapi: {
-        description: 'Async FastAPI module available',
-        endpoints: ['GET /fastapi']
+        description: 'DB-backed Truss workflow orchestration',
+        endpoints: [
+          'GET /api/truss/definitions',
+          'POST /api/truss/definitions',
+          'POST /api/truss/definitions/:id/runs',
+          'POST /api/truss/templates/ml.train-publish',
+          'GET /api/truss/runs',
+          'GET /api/truss/runs/:id',
+          'GET /api/truss/runs/:id/steps',
+          'POST /api/truss/runs/:id/cancel'
+        ]
       }
     }
   });

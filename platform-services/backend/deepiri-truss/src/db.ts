@@ -2,7 +2,7 @@
 import { PrismaClient } from '@prisma/client';
 import { createLogger, secureLog } from '@team-deepiri/shared-utils';
 
-const logger = createLogger('workflow-orchestrator');
+const logger = createLogger('truss');
 
 // Prisma Client singleton
 const prisma = new PrismaClient({
@@ -24,9 +24,9 @@ if (process.env.NODE_ENV === 'development') {
 export async function connectDatabase() {
   try {
     await prisma.$connect();
-    secureLog('info', 'Task Orchestrator: Connected to PostgreSQL via Prisma');
+    secureLog('info', 'Truss: Connected to PostgreSQL via Prisma');
   } catch (error) {
-    secureLog('error', 'Task Orchestrator: PostgreSQL connection error', error);
+    secureLog('error', 'Truss: PostgreSQL connection error', error);
     throw error;
   }
 }
@@ -34,7 +34,7 @@ export async function connectDatabase() {
 // Disconnect from database
 export async function disconnectDatabase() {
   await prisma.$disconnect();
-  secureLog('info', 'Task Orchestrator: Disconnected from PostgreSQL');
+  secureLog('info', 'Truss: Disconnected from PostgreSQL');
 }
 
 // Graceful shutdown

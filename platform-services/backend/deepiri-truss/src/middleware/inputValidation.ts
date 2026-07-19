@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 import { createLogger } from '@team-deepiri/shared-utils';
 
-const logger = createLogger('workflow-orchestrator');
+const logger = createLogger('truss');
 
 const MAX_BODY_KEYS = 50;
 const MAX_STRING_VALUE_LENGTH = 10000;

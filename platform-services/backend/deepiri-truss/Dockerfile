@@ -27,6 +27,7 @@ RUN cd /shared/deepiri-shared-utils \
  && npm cache clean --force
 
 COPY backend/deepiri-truss/src ./src
+COPY backend/deepiri-truss/templates ./templates
 
 RUN npx prisma generate \
  && npm run build \
