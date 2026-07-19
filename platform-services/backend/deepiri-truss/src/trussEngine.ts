@@ -243,7 +243,7 @@ export async function advanceRun(runId: string): Promise<void> {
       const status = mapJobStatus(job);
       const completedAt = TERMINAL_STATUSES.includes(status) ? new Date() : null;
 
-      stepRun = await prisma.trussStepRun.update({
+      await prisma.trussStepRun.update({
         where: { id: stepRun.id },
         data: {
           status,
