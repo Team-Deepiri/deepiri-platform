@@ -81,5 +81,8 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.53.3"
+  },
+  "resolutions": {
+    "vite": "^8.0.0"
   }
 }
