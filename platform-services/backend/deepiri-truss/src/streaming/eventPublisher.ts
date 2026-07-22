@@ -1,158 +1,75 @@
-/**
- * Event Publisher for Task Orchestrator Service
- * Publishes platform-events for task lifecycle
- */
 import { StreamingClient, StreamTopics, StreamEvent } from '@team-deepiri/shared-utils';
 import { secureLog } from '@team-deepiri/shared-utils';
 
 let streamingClient: StreamingClient | null = null;
 
-/**
- * Initialize streaming client
- */
+type TrussEventPayload = Record<string, unknown>;
+
 export async function initializeEventPublisher(): Promise<void> {
+  if (streamingClient) {
+    return;
+  }
+
   try {
     streamingClient = new StreamingClient(
       process.env.REDIS_HOST || 'redis',
-      parseInt(process.env.REDIS_PORT || '6379'),
+      parseInt(process.env.REDIS_PORT || '6379', 10),
       process.env.REDIS_PASSWORD || 'redispassword'
     );
 
     await streamingClient.connect();
-    secureLog('info', '[Task Orchestrator] Connected to Redis Streams');
+    secureLog('info', '[Truss] Connected to Redis Streams');
   } catch (error) {
-    secureLog('error', '[Task Orchestrator] Failed to initialize event publisher:', error);
+    secureLog('error', '[Truss] Failed to initialize event publisher:', error);
     throw error;
   }
 }
 
-/**
- * Publish task created event
- */
-export async function publishTaskCreated(
-  taskId: string,
-  userId: string,
-  taskData: any
-): Promise<void> {
-  if (!streamingClient) {
-    await initializeEventPublisher();
-  }
-
-  const event: StreamEvent = {
-    event: 'task-created',
-    timestamp: new Date().toISOString(),
-    source: 'task-orchestrator',
-    service: 'task-orchestrator',
-    user_id: userId,
-    action: 'task-created',
-    data: {
-      task_id: taskId,
-      ...taskData
-    }
-  };
-
+async function publishTrussEvent(eventType: string, data: TrussEventPayload): Promise<void> {
   try {
+    if (!streamingClient) {
+      await initializeEventPublisher();
+    }
+
+    const event: StreamEvent = {
+      event: eventType,
+      event_type: eventType,
+      timestamp: new Date().toISOString(),
+      source: 'deepiri-truss',
+      service: 'deepiri-truss',
+      action: eventType,
+      data,
+    };
+
     await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    secureLog('info', `[Task Orchestrator] Published task-created event: ${taskId}`);
+    secureLog('info', `[Truss] Published ${eventType}`, data);
   } catch (error) {
-    secureLog('error', '[Task Orchestrator] Failed to publish task-created event:', error);
+    // State changes are already committed in Postgres; event publishing should
+    // not roll back or break the workflow engine.
+    secureLog('error', `[Truss] Failed to publish ${eventType}:`, error);
   }
 }
 
-/**
- * Publish task started event
- */
-export async function publishTaskStarted(
-  taskId: string,
-  userId: string
+export async function publishTrussRunEvent(
+  status: string,
+  runId: string,
+  data: TrussEventPayload = {}
 ): Promise<void> {
-  if (!streamingClient) {
-    await initializeEventPublisher();
-  }
-
-  const event: StreamEvent = {
-    event: 'task-started',
-    timestamp: new Date().toISOString(),
-    source: 'task-orchestrator',
-    service: 'task-orchestrator',
-    user_id: userId,
-    action: 'task-started',
-    data: {
-      task_id: taskId
-    }
-  };
-
-  try {
-    await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    secureLog('info', `[Task Orchestrator] Published task-started event: ${taskId}`);
-  } catch (error) {
-    secureLog('error', '[Task Orchestrator] Failed to publish task-started event:', error);
-  }
+  await publishTrussEvent(`truss.run.${status}`, {
+    runId,
+    ...data,
+  });
 }
 
-/**
- * Publish task completed event
- */
-export async function publishTaskCompleted(
-  taskId: string,
-  userId: string,
-  result?: any
+export async function publishTrussStepEvent(
+  status: string,
+  runId: string,
+  stepId: string,
+  data: TrussEventPayload = {}
 ): Promise<void> {
-  if (!streamingClient) {
-    await initializeEventPublisher();
-  }
-
-  const event: StreamEvent = {
-    event: 'task-completed',
-    timestamp: new Date().toISOString(),
-    source: 'task-orchestrator',
-    service: 'task-orchestrator',
-    user_id: userId,
-    action: 'task-completed',
-    data: {
-      task_id: taskId,
-      result
-    }
-  };
-
-  try {
-    await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    secureLog('info', `[Task Orchestrator] Published task-completed event: ${taskId}`);
-  } catch (error) {
-    secureLog('error', '[Task Orchestrator] Failed to publish task-completed event:', error);
-  }
+  await publishTrussEvent(`truss.step.${status}`, {
+    runId,
+    stepId,
+    ...data,
+  });
 }
-
-/**
- * Publish task failed event
- */
-export async function publishTaskFailed(
-  taskId: string,
-  userId: string,
-  error: string
-): Promise<void> {
-  if (!streamingClient) {
-    await initializeEventPublisher();
-  }
-
-  const event: StreamEvent = {
-    event: 'task-failed',
-    timestamp: new Date().toISOString(),
-    source: 'task-orchestrator',
-    service: 'task-orchestrator',
-    user_id: userId,
-    action: 'task-failed',
-    data: {
-      task_id: taskId,
-      error
-    }
-  };
-
-  try {
-    await streamingClient!.publish(StreamTopics.PLATFORM_EVENTS, event);
-    secureLog('info', `[Task Orchestrator] Published task-failed event: ${taskId}`);
-  } catch (error) {
-    secureLog('error', '[Task Orchestrator] Failed to publish task-failed event:', error);
-  }
-}
-

@@ -77,7 +77,6 @@ app.use(errorHandler);
 
 app.listen(PORT, () => {
   secureLog('info', `Truss running on port ${PORT}`);
-  secureLog('info', `FastAPI module available at src/fastapi_app.py`);
 });
 
 export default app;

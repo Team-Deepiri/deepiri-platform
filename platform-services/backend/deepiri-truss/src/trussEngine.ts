@@ -1,5 +1,6 @@
 import prisma from './db';
 import { createJob, getJob, JobRecord } from './services/jobsClient';
+import { publishTrussRunEvent, publishTrussStepEvent } from './streaming/eventPublisher';
 
 type StepStatus = 'queued' | 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled';
 
@@ -108,6 +109,8 @@ async function failRunAtStep(runId: string, stepRunId: string, stepId: string, e
       completedAt: now,
     },
   });
+  await publishTrussStepEvent('failed', runId, stepId, { error });
+
   await prisma.trussRun.update({
     where: { id: runId },
     data: {
@@ -117,6 +120,7 @@ async function failRunAtStep(runId: string, stepRunId: string, stepId: string, e
       completedAt: now,
     },
   });
+  await publishTrussRunEvent('failed', runId, { currentStep: stepId, error });
 }
 
 async function executeJobStep(runId: string, step: TrussStep, context: RunContext): Promise<{
@@ -194,6 +198,7 @@ export async function startRun(runId: string): Promise<void> {
       startedAt: new Date(),
     },
   });
+  await publishTrussRunEvent('started', runId);
 
   await advanceRun(runId);
 }
@@ -272,7 +277,21 @@ export async function advanceRun(runId: string): Promise<void> {
             completedAt: new Date(),
           },
         });
+        await publishTrussStepEvent(status, run.id, step.id, {
+          externalRef: job.id,
+          error: job.error ?? undefined,
+        });
+        await publishTrussRunEvent(status, run.id, {
+          currentStep: step.id,
+          error: job.error ?? `Job ${status}`,
+        });
         return;
+      }
+
+      if (status === 'completed') {
+        await publishTrussStepEvent('completed', run.id, step.id, {
+          externalRef: job.id,
+        });
       }
 
       continue;
@@ -288,6 +307,7 @@ export async function advanceRun(runId: string): Promise<void> {
         startedAt: new Date(),
       },
     });
+    await publishTrussStepEvent('started', run.id, step.id, { kind: step.kind });
 
     await prisma.trussRun.update({
       where: { id: run.id },
@@ -323,8 +343,22 @@ export async function advanceRun(runId: string): Promise<void> {
           where: { id: run.id },
           data: { status: result.status, currentStep: step.id },
         });
+        if (result.status === 'failed' || result.status === 'cancelled') {
+          await publishTrussStepEvent(result.status, run.id, step.id, {
+            externalRef: result.job.id,
+            error: result.job.error ?? undefined,
+          });
+          await publishTrussRunEvent(result.status, run.id, {
+            currentStep: step.id,
+            error: result.job.error ?? `Job ${result.status}`,
+          });
+        }
         return;
       }
+
+      await publishTrussStepEvent('completed', run.id, step.id, {
+        externalRef: result.job.id,
+      });
 
       continue;
     }
@@ -342,6 +376,10 @@ export async function advanceRun(runId: string): Promise<void> {
         },
       });
       setStepContext(context, step.id, result.status, result.output);
+      await publishTrussStepEvent(result.status, run.id, step.id, {
+        error: result.error,
+        output: result.output,
+      });
 
       if (result.status === 'failed') {
         await prisma.trussRun.update({
@@ -352,6 +390,10 @@ export async function advanceRun(runId: string): Promise<void> {
             currentStep: step.id,
             completedAt: new Date(),
           },
+        });
+        await publishTrussRunEvent('failed', run.id, {
+          currentStep: step.id,
+          error: result.error,
         });
         return;
       }
@@ -370,11 +412,15 @@ export async function advanceRun(runId: string): Promise<void> {
         },
       });
       setStepContext(context, step.id, result.status, result.output);
+      await publishTrussStepEvent('waiting', run.id, step.id, {
+        output: result.output,
+      });
 
       await prisma.trussRun.update({
         where: { id: run.id },
         data: { status: 'waiting', currentStep: step.id },
       });
+      await publishTrussRunEvent('waiting', run.id, { currentStep: step.id });
       return;
     }
 
@@ -386,6 +432,9 @@ export async function advanceRun(runId: string): Promise<void> {
         completedAt: new Date(),
       },
     });
+    await publishTrussStepEvent('failed', run.id, step.id, {
+      error: `Unsupported step kind: ${step.kind}`,
+    });
 
     await prisma.trussRun.update({
       where: { id: run.id },
@@ -395,6 +444,10 @@ export async function advanceRun(runId: string): Promise<void> {
         currentStep: step.id,
         completedAt: new Date(),
       },
+    });
+    await publishTrussRunEvent('failed', run.id, {
+      currentStep: step.id,
+      error: `Unsupported step kind: ${step.kind}`,
     });
     return;
   }
@@ -407,6 +460,7 @@ export async function advanceRun(runId: string): Promise<void> {
       completedAt: new Date(),
     },
   });
+  await publishTrussRunEvent('completed', run.id);
 }
 
 export async function reconcileRun(runId: string): Promise<void> {

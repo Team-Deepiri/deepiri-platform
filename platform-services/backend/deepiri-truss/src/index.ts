@@ -4,6 +4,7 @@ import path from 'path';
 import { parse } from 'yaml';
 import prisma from './db';
 import { startRun, reconcileRun } from './trussEngine';
+import { publishTrussRunEvent, publishTrussStepEvent } from './streaming/eventPublisher';
 
 const router: Router = express.Router();
 
@@ -257,6 +258,13 @@ router.post('/runs/:id/cancel', async (req: Request, res: Response) => {
     return;
   }
 
+  const activeSteps = await prisma.trussStepRun.findMany({
+    where: {
+      runId: req.params.id,
+      status: { in: ['queued', 'running', 'waiting'] },
+    },
+  });
+
   const updated = await prisma.trussRun.update({
     where: { id: req.params.id },
     data: {
@@ -274,6 +282,13 @@ router.post('/runs/:id/cancel', async (req: Request, res: Response) => {
       status: 'cancelled',
       completedAt: new Date(),
     },
+  });
+
+  await Promise.all(
+    activeSteps.map((step) => publishTrussStepEvent('cancelled', req.params.id, step.stepId))
+  );
+  await publishTrussRunEvent('cancelled', req.params.id, {
+    cancelledSteps: activeSteps.length,
   });
 
   res.json(updated);
