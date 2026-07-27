@@ -28,6 +28,24 @@ runner_module = load_runner_module()
 
 
 class CyrexMigrationTests(unittest.TestCase):
+    def test_sql_literal_escapes_quotes(self) -> None:
+        self.assertEqual(runner_module.sql_literal("a'b"), "'a''b'")
+
+    def test_schema_meta_owns_extensions(self) -> None:
+        schema_meta = (MIGRATION_DIRECTORY / "001_schema_meta.sql").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"', schema_meta)
+        self.assertIn('CREATE EXTENSION IF NOT EXISTS "pg_trgm"', schema_meta)
+
+    def test_pressure_and_reckoning_use_uuid_document_ids(self) -> None:
+        reckoning = (MIGRATION_DIRECTORY / "070_reckoning.sql").read_text(encoding="utf-8")
+        pressure = (MIGRATION_DIRECTORY / "080_pressure.sql").read_text(encoding="utf-8")
+        self.assertIn("document_id UUID NOT NULL", reckoning)
+        self.assertIn("document_id UUID NOT NULL", pressure)
+        self.assertIn("section_id TEXT NOT NULL", pressure)
+        self.assertIn("artifact_id UUID", pressure)
+
     def test_runner_orders_records_and_skips_migrations(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
@@ -36,26 +54,38 @@ class CyrexMigrationTests(unittest.TestCase):
 
             applied: dict[int, tuple[str, str]] = {}
             executed_files: list[str] = []
+            transactional_applies: list[tuple[str, bool]] = []
 
-            def execute(*, sql=None, file=None):
+            def execute(*, sql=None, file=None, single_transaction=False):
                 if file is not None:
                     executed_files.append(file.name)
+                    transactional_applies.append((file.name, single_transaction))
+                    if sql and "INSERT INTO cyrex.schema_migrations" in sql:
+                        # file + ledger share one transactional call
+                        version = int(
+                            sql.split("VALUES ", 1)[1].split(",", 1)[0].strip().lstrip("(")
+                        )
+                        # VALUES (1, 'first', 'abc...');
+                        rest = sql.split("VALUES ", 1)[1].strip().rstrip(";").strip("()")
+                        parts = rest.split(",", 2)
+                        name = parts[1].strip().strip("'")
+                        checksum = parts[2].strip().strip("'")
+                        applied[version] = (name, checksum)
                     return ""
                 if sql and sql.startswith("SELECT version"):
                     return "\n".join(
                         f"{version}|{name}|{checksum}"
                         for version, (name, checksum) in sorted(applied.items())
                     )
-                if sql and sql.startswith("INSERT INTO"):
-                    version = int(sql.split("VALUES ", 1)[1].split(",", 1)[0].strip("("))
-                    name = sql.split("VALUES ", 1)[1].split(", '", 1)[1].split("'", 1)[0]
-                    checksum = sql.rsplit("'", 2)[1]
-                    applied[version] = (name, checksum)
                 return ""
 
             migration_runner = runner_module.MigrationRunner(directory, execute)
             self.assertEqual(migration_runner.run(), [1, 20])
             self.assertEqual(executed_files, ["001_first.sql", "020_second.sql"])
+            self.assertEqual(
+                transactional_applies,
+                [("001_first.sql", True), ("020_second.sql", True)],
+            )
             self.assertEqual(migration_runner.run(), [])
             self.assertEqual(executed_files, ["001_first.sql", "020_second.sql"])
 
@@ -74,6 +104,28 @@ class CyrexMigrationTests(unittest.TestCase):
                 (120, "helox_bridge"),
             ],
         )
+
+    def test_runner_rejects_checksum_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            path = directory / "001_first.sql"
+            path.write_text("SELECT 1;", encoding="utf-8")
+
+            applied: dict[int, tuple[str, str]] = {
+                1: ("first", "deadbeef"),
+            }
+
+            def execute(*, sql=None, file=None, single_transaction=False):
+                if sql and sql.startswith("SELECT version"):
+                    return "\n".join(
+                        f"{version}|{name}|{checksum}"
+                        for version, (name, checksum) in sorted(applied.items())
+                    )
+                return ""
+
+            migration_runner = runner_module.MigrationRunner(directory, execute)
+            with self.assertRaises(RuntimeError):
+                migration_runner.run()
 
     @unittest.skipUnless(
         os.getenv("CYREX_MIGRATION_SMOKE_TEST") == "1",

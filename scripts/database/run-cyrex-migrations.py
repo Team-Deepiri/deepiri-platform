@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Apply numbered Cyrex PostgreSQL migrations in order.
 
-The script deliberately uses the PostgreSQL ``psql`` client rather than adding
-another Python database dependency to the platform repository. It is intended
-to run from the host or from a container that has ``psql`` installed.
+Production rules:
+- Migrations are hand-written, immutable after apply (checksum-enforced).
+- Each pending migration runs in a single transaction with its ledger insert.
+- Schema/extensions live in SQL (001); the runner only ensures the ledger
+  table exists so it can query applied versions on a fresh database.
+- Uses ``psql`` so the platform repo does not take a Python DB dependency.
 """
 
 from __future__ import annotations
@@ -57,8 +60,13 @@ def discover_migrations(directory: Path) -> list[Migration]:
     return sorted(migrations, key=lambda migration: migration.version)
 
 
-def _psql_command(args: argparse.Namespace) -> list[str]:
-    command = [
+def sql_literal(value: str) -> str:
+    """Escape a string as a PostgreSQL string literal."""
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _psql_base(args: argparse.Namespace) -> list[str]:
+    return [
         args.psql,
         "--no-psqlrc",
         "--set",
@@ -74,9 +82,6 @@ def _psql_command(args: argparse.Namespace) -> list[str]:
         "--tuples-only",
         "--no-align",
     ]
-    if args.single_transaction:
-        command.append("--single-transaction")
-    return command
 
 
 def build_executor(args: argparse.Namespace) -> Callable[..., str]:
@@ -84,9 +89,18 @@ def build_executor(args: argparse.Namespace) -> Callable[..., str]:
     if args.password:
         environment["PGPASSWORD"] = args.password
 
-    def execute(*, sql: str | None = None, file: Path | None = None) -> str:
-        command = _psql_command(args)
-        if sql is not None:
+    def execute(
+        *,
+        sql: str | None = None,
+        file: Path | None = None,
+        single_transaction: bool = False,
+    ) -> str:
+        command = _psql_base(args)
+        if single_transaction:
+            command.append("--single-transaction")
+        if file is not None and sql is not None:
+            command.extend(["--file", str(file), "--command", sql])
+        elif sql is not None:
             command.extend(["--command", sql])
         elif file is not None:
             command.extend(["--file", str(file)])
@@ -115,10 +129,14 @@ class MigrationRunner:
         self.execute = execute
 
     def bootstrap_tracking(self) -> None:
+        """Ensure the ledger exists so applied versions can be queried.
+
+        Extensions and full schema ownership live in ``001_schema_meta.sql``.
+        This bootstrap is only a safety net for fresh databases.
+        """
         self.execute(
             sql="""
             CREATE SCHEMA IF NOT EXISTS cyrex;
-            CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
             CREATE TABLE IF NOT EXISTS cyrex.schema_migrations (
                 version INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -159,13 +177,18 @@ class MigrationRunner:
                     )
                 continue
 
-            self.execute(file=migration.path)
+            ledger_insert = (
+                "INSERT INTO cyrex.schema_migrations "
+                "(version, name, checksum) VALUES "
+                f"({migration.version}, {sql_literal(migration.name)}, "
+                f"{sql_literal(migration.checksum)});"
+            )
+            # File + ledger insert share one transaction so a crash cannot
+            # leave DDL applied without a ledger row (or the reverse).
             self.execute(
-                sql=(
-                    "INSERT INTO cyrex.schema_migrations "
-                    "(version, name, checksum) VALUES "
-                    f"({migration.version}, '{migration.name}', '{migration.checksum}');"
-                )
+                file=migration.path,
+                sql=ledger_insert,
+                single_transaction=True,
             )
             newly_applied.append(migration.version)
 
@@ -177,11 +200,26 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--directory", type=Path, default=DEFAULT_DIRECTORY)
     parser.add_argument("--psql", default="psql")
     parser.add_argument("--host", default=os.getenv("POSTGRES_HOST", "localhost"))
-    parser.add_argument("--port", type=int, default=int(os.getenv("POSTGRES_PORT", "5432")))
-    parser.add_argument("--database", default=os.getenv("POSTGRES_DB", "cyrex_db"))
-    parser.add_argument("--user", default=os.getenv("POSTGRES_USER", "deepiri_cyrex"))
-    parser.add_argument("--password", default=os.getenv("POSTGRES_PASSWORD", ""))
-    parser.add_argument("--single-transaction", action="store_true")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("POSTGRES_PORT", os.getenv("POSTGRES_CYREX_PORT", "5432"))),
+    )
+    parser.add_argument(
+        "--database",
+        default=os.getenv("POSTGRES_DB", os.getenv("POSTGRES_CYREX_DB", "cyrex_db")),
+    )
+    parser.add_argument(
+        "--user",
+        default=os.getenv("POSTGRES_USER", os.getenv("POSTGRES_CYREX_USER", "deepiri_cyrex")),
+    )
+    parser.add_argument(
+        "--password",
+        default=os.getenv(
+            "POSTGRES_PASSWORD",
+            os.getenv("POSTGRES_CYREX_PASSWORD", ""),
+        ),
+    )
     return parser.parse_args(argv)
 
 

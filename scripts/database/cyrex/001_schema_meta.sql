@@ -1,6 +1,9 @@
--- Cyrex migration 001: migration and producer metadata.
--- The runner creates schema_migrations before applying this file so that
--- existing databases initialized by postgres-init-cyrex.sql are supported.
+-- Cyrex migration 001: extensions, migration ledger, and producer metadata.
+-- All schema prerequisites live here so SQL can be applied without runner
+-- side effects beyond the ledger safety-net bootstrap.
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 CREATE SCHEMA IF NOT EXISTS cyrex;
 
