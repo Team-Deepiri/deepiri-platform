@@ -41,7 +41,7 @@ services:
     networks:
       - deepiri-dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-deepiri_auth}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-deepiri_auth} -d ${POSTGRES_AUTH_DB:-auth_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,7 +65,7 @@ services:
     networks:
       - deepiri-dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CORE_USER:-deepiri}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CORE_USER:-deepiri} -d ${POSTGRES_CORE_DB:-deepiri}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -89,7 +89,7 @@ services:
     networks:
       - deepiri-dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CYREX_USER:-deepiri_cyrex}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CYREX_USER:-deepiri_cyrex} -d ${POSTGRES_CYREX_DB:-cyrex_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -115,7 +115,7 @@ services:
     depends_on:
       - postgres-auth
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_INTELLIGENCE_USER:-deepiri_intel} -d ${POSTGRES_INTELLIGENCE_DB:-intelligence_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
