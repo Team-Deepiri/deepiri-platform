@@ -6,6 +6,17 @@ Bedd is embedded **into worker images** (Bun-style), not a Compose sidecar.
 
 Install/embed recipes live in [deepiri-bedd docs/INSTALL.md](https://github.com/Team-Deepiri/deepiri-bedd/blob/main/docs/INSTALL.md) (`install.sh` + image Dockerfile). Platform only `COPY --from` that image.
 
+**Published image (required):** `ghcr.io/team-deepiri/bedd:0.8`
+
+Compose pin (do not use a local retag as the GHCR name):
+
+```yaml
+# docker-compose.dev.yml — x-bedd-build-args
+BEDD_IMAGE: ${BEDD_IMAGE:-ghcr.io/team-deepiri/bedd:0.8}
+```
+
+Override only for true offline emergency (`BEDD_IMAGE=deepiri-bedd:local`). Never `docker tag … ghcr.io/team-deepiri/bedd:0.8` — that shadows real pulls.
+
 Images that include `/usr/local/bin/bedd`:
 
 | Image | libc |
