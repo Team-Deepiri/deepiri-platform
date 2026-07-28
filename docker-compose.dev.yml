@@ -1321,11 +1321,13 @@ services:
       PORT: 5011
       HOST: 0.0.0.0
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/2
+      # /2 = PrismPipe organism/hot state. Bedd bus uses DB 0 below (separate namespace).
       AUTH_SERVICE_URL: http://auth-service:5001
       LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5003
       # Leave empty when cyrex isn't in the slice — avoids multi-second DNS on cold path.
       CYREX_URL: ${CYREX_URL:-}
       BEDD_SKILLS_DIR: /opt/bedd/skills
+      # Bedd stream bus (DB 0) — not the same Redis logical DB as REDIS_URL above.
       BEDD_BUS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
       BEDD_DLQ_STREAM: bedd.dlq
       # ComputationGraph is in-process; multi-worker splits the dedup cache.
