@@ -897,6 +897,13 @@ services:
       OLLAMA_KEEP_ALIVE: "24h"
       OLLAMA_NUM_PARALLEL: "4"
       OLLAMA_MAX_LOADED_MODELS: "2"
+    healthcheck:
+      # Stock ollama/ollama has no curl; CLI proves the daemon is up (same as exovra-platform).
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
     networks:
       - deepiri-dev-network
 
