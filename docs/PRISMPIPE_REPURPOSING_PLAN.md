@@ -153,16 +153,37 @@ Each phase ends with something observable. No phase depends on a later one.
 
 **Verification:** Cyrex boots with the import; `poetry.lock` regenerated; CI green.
 
-### Phase 2 — Postgres-backed ComputationGraph on the real schema
+### Phase 2 — Postgres-backed ComputationGraph on the real schema ✅ *shipped*
 
-1. New store implementing lookup/record against `pipeline_stage_inputs.input_hash`
-   and `pipeline_stage_outputs.artifact_id` instead of Redis blobs
-2. Content-addressed keys — no TTL; invalidation by producer/schema version
-3. Keep Redis single-flight for concurrent identical stage execution
+`prismpipe/cyrex_stage_store.py` — `CyrexStageStore.lookup(stage_name, input_hash)`
+joins `pipeline_stage_inputs` → `pipeline_stage_outputs` → `artifacts`, filtered to
+completed stages and non-deleted artifacts, so a stage whose inputs are unchanged
+reuses prior artifacts instead of re-running. Keys are content-addressed and carry
+`producer_version`, so entries never expire and invalidation is a version bump
+rather than a TTL — which removes the staleness class fixed in Phase 0 entirely.
 
-**Verification:** re-running an unchanged document skips every stage; a document
-with one changed section re-runs only the affected stages. Assert against
-`pipeline_run_stages.status` counts.
+**Verified** by `tests/integration/test_cyrex_stage_store.py` against a live
+`cyrex_db` (6 tests, skip cleanly without `CYREX_TEST_DSN`): miss → record → hit;
+cross-document reuse on the same input hash; changed input does not hit; bumped
+producer version recomputes; failed/incomplete stages are not reusable;
+soft-deleted artifacts are never served; `record` is idempotent.
+
+**Migration 031 was required.** The shipped PK on `pipeline_stage_inputs` is
+`(run_id, stage_name, input_ref)`, which cannot serve a lookup by
+`(stage_name, input_hash)` — the memo predicate does not know `run_id`. Measured
+at 50,006 rows:
+
+| | p50 | p95 | plan |
+|---|---|---|---|
+| with `idx_pipeline_stage_inputs_memo` | 0.196ms | 0.260ms | index scan (cost 31.7) |
+| without | 4.545ms | 5.065ms | seq scan (cost 1682.4) |
+
+**22.8×**, and the gap widens with corpus size because the unindexed plan is a
+sequential scan — the memo would get slower exactly as the corpus that makes it
+valuable grows. Benchmark: `scripts/dev/benchmarks/stage_memo_bench.py`.
+
+Still open in this phase: wire Redis single-flight in front of the lookup so
+concurrent identical stage executions coalesce to one.
 
 ### Phase 3 — producer-registry-backed router
 

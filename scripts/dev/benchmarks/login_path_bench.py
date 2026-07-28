@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Login-path benchmark: what does a JWT cost to mint?
 
-auth-service awaits prewarmPrismSession() on register/login/refresh, so every
-minted token pays a synchronous PrismPipe round trip. This measures that tax
-end-to-end so removing it can be proven rather than asserted.
+auth-service used to await prewarmPrismSession() on register/login/refresh, so
+every minted token paid a synchronous PrismPipe round trip. This measured that
+tax end-to-end so removing it could be proven rather than asserted, and stays
+as the regression guard on token-mint cost.
+
+Note when comparing runs: register's INSERT slows as the users table grows, so
+a long benchmark session inflates its own baseline. refresh does no DB write
+and is the cleanest signal.
 
 Run before and after the change with identical flags:
     python3 scripts/dev/benchmarks/login_path_bench.py --n 40 --label before
