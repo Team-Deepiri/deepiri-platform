@@ -347,7 +347,8 @@ if (-not $SkipSubmodules) {
                             "platform-services/backend/deepiri-api-gateway",
                             "platform-services/backend/deepiri-language-intelligence-service",
                             "deepiri-web-frontend",
-                            "deepiri-ollama-utils"
+                            "deepiri-ollama-utils",
+                            "deepiri-suite"
                         ) }
     }
 
