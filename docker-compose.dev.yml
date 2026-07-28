@@ -1152,6 +1152,8 @@ services:
     build:
       context: ./platform-services/shared/deepiri-synapse
       dockerfile: Dockerfile
+      args:
+        <<: *bedd-build-args
     container_name: deepiri-synapse-dev
     restart: unless-stopped
     logging: *minimal-logging
@@ -1334,6 +1336,11 @@ services:
       WEB_CONCURRENCY: ${PRISMPIPE_WEB_CONCURRENCY:-2}
       GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
       COMPUTATION_CACHE_TTL_S: ${COMPUTATION_CACHE_TTL_S:-30}
+      COMPUTATION_NEGATIVE_TTL_S: ${COMPUTATION_NEGATIVE_TTL_S:-3}
+      COMPUTATION_TTL_SESSION_S: ${COMPUTATION_TTL_SESSION_S:-15}
+      COMPUTATION_TTL_HEALTH_S: ${COMPUTATION_TTL_HEALTH_S:-30}
+      DEEPIRI_HTTP_MAX_CONNECTIONS: ${DEEPIRI_HTTP_MAX_CONNECTIONS:-32}
+      DEEPIRI_HTTP_MAX_KEEPALIVE: ${DEEPIRI_HTTP_MAX_KEEPALIVE:-16}
     depends_on:
       redis:
         condition: service_started
