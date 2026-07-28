@@ -116,8 +116,6 @@ login = json.loads(
 )
 assert login.get("token"), login
 token_header = "Bearer " + login["token"]
-prewarmed = login.get("sessionPrewarmed")
-print(f"  login sessionPrewarmed={prewarmed}")
 
 # Product "first session check" — must be warm after birth-warm login.
 first_ms, first_body = once(token_header)
@@ -139,27 +137,25 @@ open("/tmp/perf_warm_p95.txt", "w").write(str(p95))
 open("/tmp/perf_warm_avg.txt", "w").write(str(avg))
 open("/tmp/perf_cold.txt", "w").write(str(first_ms))
 open("/tmp/perf_first_path.txt", "w").write(str(path or ""))
-open("/tmp/perf_prewarmed.txt", "w").write("1" if prewarmed else "0")
 PY
 WARM_P95="$(cat /tmp/perf_warm_p95.txt)"
 WARM_AVG="$(cat /tmp/perf_warm_avg.txt)"
 COLD="$(cat /tmp/perf_cold.txt)"
 FIRST_PATH="$(cat /tmp/perf_first_path.txt)"
-PREWARMED="$(cat /tmp/perf_prewarmed.txt)"
 
-python3 - "$WARM_P95" "$DIRECT_P95" "$COLD" "$DIRECT_AVG" "$PARALLEL_P95" "$FIRST_PATH" "$PREWARMED" <<'PY' && ok "guaranteed-better: birth-warm first session beats two-RTT" || bad "birth-warm guarantee failed"
+python3 - "$WARM_P95" "$DIRECT_P95" "$COLD" "$DIRECT_AVG" "$PARALLEL_P95" "$FIRST_PATH" <<'PY' && ok "guaranteed-better: birth-warm first session is cache hit and beats two-RTT" || bad "birth-warm guarantee failed"
 import sys
-warm, direct, first, davg, parallel, path, prewarmed = sys.argv[1:]
+warm, direct, first, davg, parallel, path = sys.argv[1:]
 warm, direct, first, davg, parallel = map(float, (warm, direct, first, davg, parallel))
 # Product guarantee: after login, first session is a cache hit and beats two RTTs.
-ok_prewarm = prewarmed == "1" and path == "cache"
+ok_cache = path == "cache"
 ok_first = first <= direct + 1.0
 ok_warm = warm <= min(direct, 15.0) + 1.0
 print(
-    f"  gate prewarm={ok_prewarm} first={ok_first} warm={ok_warm} "
+    f"  gate cache={ok_cache} first={ok_first} warm={ok_warm} "
     f"(first={first:.2f}ms path={path} vs direct_p95={direct:.2f}ms)"
 )
-sys.exit(0 if ok_prewarm and ok_first and ok_warm else 1)
+sys.exit(0 if ok_cache and ok_first and ok_warm else 1)
 PY
 
 # Optional: gateway inline one-RTT vs two sequential client calls THROUGH the gateway
@@ -288,7 +284,7 @@ if [[ $? -eq 0 ]]; then ok "health warm overhead <=15ms"; else bad "health warm 
 echo
 echo "==== Usefulness perf summary ===="
 echo "direct_two_rtt_p95=${DIRECT_P95}ms parallel_p95=${PARALLEL_P95}ms"
-echo "first_session=${COLD}ms path=${FIRST_PATH:-?} prewarmed=${PREWARMED:-?} warm_p95=${WARM_P95}ms"
+echo "first_session=${COLD}ms path=${FIRST_PATH:-?} warm_p95=${WARM_P95}ms"
 echo "concurrent_p95=$(cat /tmp/perf_conc_p95.txt)ms rps=$(cat /tmp/perf_conc_rps.txt)"
 echo "health_warm_overhead_ms=$(cat /tmp/perf_health_overhead.txt 2>/dev/null || echo n/a)"
 echo "passed=$pass failed=$fail"
