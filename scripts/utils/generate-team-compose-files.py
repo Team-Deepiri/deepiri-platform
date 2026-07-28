@@ -12,25 +12,25 @@ from pathlib import Path
 TEAM_SERVICES = {
     'ai-team': [
         'influxdb', 'redis', 'etcd', 'minio', 'milvus',
-        'cyrex', 'jupyter', 'mlflow', 'adaptive-experience-engine'
+        'cyrex', 'jupyter', 'mlflow', 'jobs'
     ],
     'ml-team': [
         'influxdb', 'redis',
-        'cyrex', 'jupyter', 'mlflow', 'decision-intelligence'
+        'cyrex', 'jupyter', 'mlflow', 'telemetry'
     ],
     'backend-team': [
         'redis', 'influxdb',
-        'api-gateway', 'auth-service', 'workflow-orchestrator',
-        'incentive-engine', 'decision-intelligence',
-        'communications-hub', 'external-bridge-service',
-        'adaptive-experience-engine', 'realtime-gateway'
+        'api-gateway', 'auth-service', 'truss',
+        'registry', 'telemetry',
+ 'external-bridge-service',
+        'jobs', 'realtime-gateway'
     ],
     'frontend-team': [
         'redis', 'influxdb',
-        'api-gateway', 'auth-service', 'workflow-orchestrator',
-        'incentive-engine', 'decision-intelligence',
-        'communications-hub', 'external-bridge-service',
-        'adaptive-experience-engine', 'realtime-gateway', 'frontend-dev'
+        'api-gateway', 'auth-service', 'truss',
+        'registry', 'telemetry',
+ 'external-bridge-service',
+        'jobs', 'realtime-gateway', 'frontend-dev'
     ],
     'infrastructure-team': None,  # All services
     'platform-engineers': None,  # All services

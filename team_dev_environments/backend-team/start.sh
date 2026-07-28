@@ -10,10 +10,10 @@ cd "$PROJECT_ROOT"
 # Backend team services
 SERVICES=(
   postgres-auth postgres-core postgres-intelligence redis influxdb
-  api-gateway auth-service workflow-orchestrator
-  incentive-engine decision-intelligence
-  communications-hub external-bridge-service
-  adaptive-experience-engine realtime-gateway
+  api-gateway auth-service truss
+  registry telemetry
+   external-bridge-service
+  jobs realtime-gateway
   language-intelligence-service messaging-service
   frontend-dev synapse sugar-glider adminer
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
@@ -37,10 +37,9 @@ echo "  Frontend & Services:"
 echo "  - Frontend (Vite HMR):     http://localhost:5173"
 echo "  - API Gateway:             http://localhost:${API_GATEWAY_PORT:-5100}"
 echo "  - Auth Service:            http://localhost:5001"
-echo "  - Workflow Orchestrator:   http://localhost:5002"
-echo "  - Incentive Engine:        http://localhost:5003"
-echo "  - Decision Intelligence:   http://localhost:5004"
-echo "  - Communications Hub:      http://localhost:5005"
+echo "  - Truss:   http://localhost:5002"
+echo "  - Registry:        http://localhost:5003"
+echo "  - Telemetry:   http://localhost:5004"
 echo "  - External Bridge:         http://localhost:5006"
 echo "  - Adaptive Experience:    http://localhost:5007"
 echo "  - Realtime Gateway:        http://localhost:5008"

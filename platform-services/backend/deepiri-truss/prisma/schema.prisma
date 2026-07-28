@@ -1,0 +1,82 @@
+// Prisma Schema for Task Orchestrator Service
+// PostgreSQL database schema
+
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["debian-openssl-3.0.x", "linux-musl", "linux-arm64-openssl-3.0.x"]
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
+}
+
+model TrussDefinition {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  version     Int      @default(1)
+  steps       Json     @default("[]")
+  metadata    Json     @default("{}")
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  runs TrussRun[]
+
+  @@unique([name, version])
+  @@index([enabled])
+  @@index([name])
+  @@schema("public")
+  @@map("truss_definitions")
+}
+
+model TrussRun {
+  id           String    @id @default(uuid()) @db.Uuid
+  definitionId String    @map("definition_id") @db.Uuid
+  status       String    @default("queued") @db.VarChar(32)
+  input        Json      @default("{}")
+  output       Json?
+  error        String?   @db.Text
+  currentStep  String?   @map("current_step") @db.VarChar(255)
+  startedAt    DateTime? @map("started_at") @db.Timestamp
+  completedAt  DateTime? @map("completed_at") @db.Timestamp
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  definition TrussDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  stepRuns   TrussStepRun[]
+
+  @@index([definitionId])
+  @@index([status])
+  @@schema("public")
+  @@map("truss_runs")
+}
+
+model TrussStepRun {
+  id          String    @id @default(uuid()) @db.Uuid
+  runId       String    @map("run_id") @db.Uuid
+  stepId      String    @map("step_id") @db.VarChar(255)
+  kind        String    @db.VarChar(64)
+  status      String    @default("queued") @db.VarChar(32)
+  input       Json      @default("{}")
+  output      Json?
+  error       String?   @db.Text
+  externalRef String?   @map("external_ref") @db.VarChar(255)
+  startedAt   DateTime? @map("started_at") @db.Timestamp
+  completedAt DateTime? @map("completed_at") @db.Timestamp
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamp
+
+  run TrussRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, stepId])
+  @@index([runId])
+  @@index([status])
+  @@index([externalRef])
+  @@schema("public")
+  @@map("truss_step_runs")
+}
+
