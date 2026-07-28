@@ -363,8 +363,6 @@ services:
       MESSAGING_SERVICE_URL: http://messaging-service:5009
       LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5003
       SYNAPSE_URL: http://synapse:8002
-      PRISMPIPE_URL: http://deepiri-prismpipe:5011
-      PRISMPIPE_ENABLED: ${PRISMPIPE_ENABLED:-true}
       JWT_SECRET: ${JWT_SECRET:-deepiri-local-dev-jwt-key-for-dev-only-x9z}
       K8S_SERVICE_NAME: api-gateway  # Filter to only load this service's configmap
     volumes:
@@ -391,7 +389,6 @@ services:
       - language-intelligence-service
       - messaging-service
       - synapse
-      - deepiri-prismpipe
       # cyrex dependency removed - only needed by AI/ML team
       # external-bridge-service dependency removed - only needed by Backend Team
     networks:
@@ -419,10 +416,6 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       JWT_SECRET: ${JWT_SECRET:-deepiri-local-dev-jwt-key-for-dev-only-x9z}
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-deepiri-local-dev-internal-key-for-dev-x9z}
-      # Birth-warm session cache at login/register/refresh (awaited, best-effort).
-      # Soft dependency — login still works if PrismPipe is down.
-      PRISMPIPE_URL: ${PRISMPIPE_URL:-http://deepiri-prismpipe:5011}
-      PRISMPIPE_PREWARM_TIMEOUT_MS: ${PRISMPIPE_PREWARM_TIMEOUT_MS:-800}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
@@ -1313,58 +1306,6 @@ services:
     depends_on:
       - synapse
       # api-gateway dependency removed - frontend can work without it
-    networks:
-      - deepiri-dev-network
-
-  # PrismPipe - Capability-Routed API Pipeline
-  deepiri-prismpipe:
-    build:
-      context: ./platform-services/shared/deepiri-prismpipe
-      dockerfile: Dockerfile
-      args:
-        <<: *bedd-build-args
-    image: deepiri-dev-prismpipe:latest
-    pull_policy: never
-    container_name: deepiri-prismpipe-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "5011:5011"
-    environment:
-      PORT: 5011
-      HOST: 0.0.0.0
-      REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/2
-      # /2 = PrismPipe organism/hot state. Bedd bus uses DB 0 below (separate namespace).
-      AUTH_SERVICE_URL: http://auth-service:5001
-      LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5003
-      # Sentinel "off" skips cyrex (empty also works — DeepiriCyrexHealthNode treats both as skip).
-      CYREX_URL: ${CYREX_URL:-off}
-      BEDD_SKILLS_DIR: /opt/bedd/skills
-      # Bedd stream bus (DB 0) — not the same Redis logical DB as REDIS_URL above.
-      BEDD_BUS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      BEDD_DLQ_STREAM: bedd.dlq
-      # ComputationGraph is Redis-backed (same REDIS_URL); multi-worker safe.
-      WEB_CONCURRENCY: ${PRISMPIPE_WEB_CONCURRENCY:-2}
-      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
-      COMPUTATION_CACHE_TTL_S: ${COMPUTATION_CACHE_TTL_S:-30}
-      COMPUTATION_NEGATIVE_TTL_S: ${COMPUTATION_NEGATIVE_TTL_S:-3}
-      COMPUTATION_TTL_SESSION_S: ${COMPUTATION_TTL_SESSION_S:-15}
-      COMPUTATION_TTL_HEALTH_S: ${COMPUTATION_TTL_HEALTH_S:-30}
-      DEEPIRI_HTTP_MAX_CONNECTIONS: ${DEEPIRI_HTTP_MAX_CONNECTIONS:-32}
-      DEEPIRI_HTTP_MAX_KEEPALIVE: ${DEEPIRI_HTTP_MAX_KEEPALIVE:-16}
-    depends_on:
-      redis:
-        condition: service_started
-      auth-service:
-        condition: service_started
-      language-intelligence-service:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5011/health')"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
     networks:
       - deepiri-dev-network
 
