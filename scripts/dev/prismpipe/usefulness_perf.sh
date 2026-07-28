@@ -13,6 +13,11 @@ LIS_URL="${LIS_URL:-http://127.0.0.1:5009}"
 N="${N:-40}"
 CONC="${CONC:-16}"
 
+# Simulated client↔cluster RTT (ms). Real browsers/apps are rarely on localhost.
+# Guaranteed-better claim: one PrismPipe call beats two sequential service calls
+# once each client RTT is counted (cold + RTT < two_rtt + 2*RTT).
+CLIENT_RTT_MS="${CLIENT_RTT_MS:-15}"
+
 EMAIL="${PERF_EMAIL:-prism-perf-$(date +%s)@deepiri.local}"
 PASS="${PERF_PASS:-PrismPerf123!x9z}"
 
@@ -31,68 +36,130 @@ TOKEN="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("token",
 [[ -n "$TOKEN" ]] && ok "token minted" || { bad "token mint failed: $login"; exit 1; }
 AUTHZ="Bearer $TOKEN"
 
-note "1) baseline: direct auth verify + LIS health (two RTTs)"
+note "1) baseline: direct auth verify + LIS health (seq + parallel)"
 python3 - "$AUTH_URL" "$LIS_URL" "$AUTHZ" "$N" <<'PY'
 import json, sys, time, urllib.request
+from concurrent.futures import ThreadPoolExecutor
 auth, lis, authz, n = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
 
-def timed(req):
-    t0 = time.perf_counter()
+def verify():
+    req = urllib.request.Request(
+        auth.rstrip("/") + "/auth/verify", headers={"Authorization": authz}
+    )
     with urllib.request.urlopen(req, timeout=5) as r:
-        body = r.read()
-    return (time.perf_counter() - t0) * 1000.0, body
+        r.read()
+
+def lis_health():
+    with urllib.request.urlopen(lis.rstrip("/") + "/health", timeout=5) as r:
+        r.read()
 
 direct = []
+parallel = []
 for _ in range(n):
     t0 = time.perf_counter()
-    req1 = urllib.request.Request(auth.rstrip("/") + "/auth/verify", headers={"Authorization": authz})
-    with urllib.request.urlopen(req1, timeout=5) as r:
-        r.read()
-    req2 = urllib.request.Request(lis.rstrip("/") + "/health")
-    with urllib.request.urlopen(req2, timeout=5) as r:
-        r.read()
+    verify()
+    lis_health()
     direct.append((time.perf_counter() - t0) * 1000.0)
+    t0 = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a = pool.submit(verify)
+        b = pool.submit(lis_health)
+        a.result()
+        b.result()
+    parallel.append((time.perf_counter() - t0) * 1000.0)
 direct.sort()
+parallel.sort()
 p95 = direct[int(round(0.95 * (len(direct) - 1)))]
 avg = sum(direct) / len(direct)
-print(f"  direct_two_rtt avg={avg:.3f}ms p95={p95:.3f}ms")
+pp95 = parallel[int(round(0.95 * (len(parallel) - 1)))]
+print(f"  direct_two_rtt avg={avg:.3f}ms p95={p95:.3f}ms parallel_p95={pp95:.3f}ms")
 open("/tmp/perf_direct_p95.txt", "w").write(str(p95))
 open("/tmp/perf_direct_avg.txt", "w").write(str(avg))
+open("/tmp/perf_parallel_p95.txt", "w").write(str(pp95))
 PY
 DIRECT_P95="$(cat /tmp/perf_direct_p95.txt)"
 DIRECT_AVG="$(cat /tmp/perf_direct_avg.txt)"
+PARALLEL_P95="$(cat /tmp/perf_parallel_p95.txt)"
 ok "direct two-RTT baseline"
 
-note "2) PrismPipe session cold + warm"
-python3 - "$PRISM_URL" "$AUTHZ" "$N" <<'PY'
+note "2) PrismPipe session cold + warm (ignite process, then new-token cold)"
+python3 - "$PRISM_URL" "$AUTH_URL" "$AUTHZ" "$N" <<'PY'
 import json, sys, time, urllib.request
-prism, authz, n = sys.argv[1], sys.argv[2], int(sys.argv[3])
+prism, auth, authz, n = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
 url = prism.rstrip("/") + "/pipelines/deepiri/session"
-payload = json.dumps({"authorization": authz, "use_computation_sharing": True}).encode()
 
-def once():
-    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+def once(token_header: str):
+    payload = json.dumps(
+        {"authorization": token_header, "use_computation_sharing": True}
+    ).encode()
+    req = urllib.request.Request(
+        url, data=payload, headers={"Content-Type": "application/json"}, method="POST"
+    )
     t0 = time.perf_counter()
     with urllib.request.urlopen(req, timeout=15) as r:
         body = json.loads(r.read())
     return (time.perf_counter() - t0) * 1000.0, body
 
-cold_ms, cold_body = once()
+def mint():
+    email = f"gate-cold-{time.time_ns()}@deepiri.local"
+    try:
+        urllib.request.urlopen(
+            urllib.request.Request(
+                auth.rstrip("/") + "/auth/register",
+                data=json.dumps(
+                    {
+                        "email": email,
+                        "password": "PrismPerf123!x9z",
+                        "username": "gatecold",
+                    }
+                ).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            ),
+            timeout=10,
+        ).read()
+    except Exception:
+        pass
+    login = json.loads(
+        urllib.request.urlopen(
+            urllib.request.Request(
+                auth.rstrip("/") + "/auth/login",
+                data=json.dumps(
+                    {"email": email, "password": "PrismPerf123!x9z"}
+                ).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            ),
+            timeout=10,
+        ).read()
+    )
+    return "Bearer " + login["token"]
+
+# Process ignition — discard (connection pools / first-worker tax).
+ign_ms, ign = once(authz)
+assert ign.get("useful") is True, ign
+
+# True product cold: first check for a never-seen token on a warm process.
+cold_token = mint()
+cold_ms, cold_body = once(cold_token)
 assert cold_body.get("useful") is True, cold_body
+
 warm = []
 for _ in range(n):
-    ms, body = once()
+    ms, body = once(cold_token)
     assert body.get("useful") is True
     warm.append(ms)
 warm.sort()
 p95 = warm[int(round(0.95 * (len(warm) - 1)))]
 avg = sum(warm) / len(warm)
-print(f"  session cold={cold_ms:.3f}ms warm_avg={avg:.3f}ms warm_p95={p95:.3f}ms")
+print(
+    f"  ignition={ign_ms:.3f}ms path={ign.get('path')} | "
+    f"session cold={cold_ms:.3f}ms path={cold_body.get('path')} "
+    f"warm_avg={avg:.3f}ms warm_p95={p95:.3f}ms"
+)
 print(f"  productivity={cold_body.get('session',{}).get('productivity')}")
 metrics = json.loads(urllib.request.urlopen(prism.rstrip("/") + "/metrics", timeout=5).read())
-print(f"  metrics hit_ratio={metrics.get('hit_ratio')} redis={metrics.get('redis_enabled') if False else metrics}")
-# metrics endpoint may not include redis flags at top-level — print dedup fields
-print(f"  hits={metrics.get('hits')} misses={metrics.get('misses')}")
+print(f"  metrics hit_ratio={metrics.get('hit_ratio')} hits={metrics.get('hits')} misses={metrics.get('misses')}")
 open("/tmp/perf_warm_p95.txt", "w").write(str(p95))
 open("/tmp/perf_warm_avg.txt", "w").write(str(avg))
 open("/tmp/perf_cold.txt", "w").write(str(cold_ms))
@@ -101,14 +168,22 @@ WARM_P95="$(cat /tmp/perf_warm_p95.txt)"
 WARM_AVG="$(cat /tmp/perf_warm_avg.txt)"
 COLD="$(cat /tmp/perf_cold.txt)"
 
-python3 - "$WARM_P95" "$DIRECT_P95" "$COLD" "$DIRECT_AVG" <<'PY' && ok "warm session faster/equal vs two direct RTTs; cold not worse than ~1.5x direct" || bad "session not a productivity win"
+python3 - "$WARM_P95" "$DIRECT_P95" "$COLD" "$DIRECT_AVG" "$PARALLEL_P95" "$CLIENT_RTT_MS" <<'PY' && ok "guaranteed-better: warm local + cold WAN RTT + cold overhead budget" || bad "session not guaranteed better"
 import sys
-warm, direct, cold, davg = map(float, sys.argv[1:])
-# Warm must beat (or match within 2ms) the two-RTT direct path — that's the boost.
-# Absolute warm budget also stays tiny (<=15ms) so we don't tax the hot path.
-ok_warm = warm <= max(direct, 15.0) + 2.0
-ok_cold = cold <= max(direct * 1.8, davg * 2.5, 80.0)
-sys.exit(0 if ok_warm and ok_cold else 1)
+warm, direct, cold, davg, parallel, client_rtt = map(float, sys.argv[1:])
+# 1) Warm path must crush two local RTTs (cache hit).
+ok_warm = warm <= min(direct, 15.0) + 1.0
+# 2) Cold local tax vs ideal parallel fan-out from same host (Prism adds one hop).
+ok_overhead = cold <= parallel + 6.0
+# 3) Product guarantee: with a real client RTT, one call beats two sequential calls.
+prism_wan = cold + client_rtt
+direct_wan = direct + (2.0 * client_rtt)
+ok_wan = prism_wan < direct_wan
+print(
+    f"  gate warm={ok_warm} overhead={ok_overhead} wan={ok_wan} "
+    f"(prism_wan={prism_wan:.1f}ms vs direct_wan={direct_wan:.1f}ms @ RTT={client_rtt:.0f}ms)"
+)
+sys.exit(0 if ok_warm and ok_overhead and ok_wan else 1)
 PY
 
 note "3) concurrent identical session checks (single-flight / shared cache)"
@@ -171,7 +246,7 @@ if [[ $? -eq 0 ]]; then ok "health warm overhead <=15ms"; else bad "health warm 
 
 echo
 echo "==== Usefulness perf summary ===="
-echo "direct_two_rtt_p95=${DIRECT_P95}ms"
+echo "direct_two_rtt_p95=${DIRECT_P95}ms parallel_p95=${PARALLEL_P95}ms client_rtt=${CLIENT_RTT_MS}ms"
 echo "session_cold=${COLD}ms session_warm_p95=${WARM_P95}ms"
 echo "concurrent_p95=$(cat /tmp/perf_conc_p95.txt)ms rps=$(cat /tmp/perf_conc_rps.txt)"
 echo "health_warm_overhead_ms=$(cat /tmp/perf_health_overhead.txt 2>/dev/null || echo n/a)"
@@ -180,5 +255,5 @@ if [[ "$fail" -gt 0 ]]; then
   echo "VERDICT: NO-GO — PrismPipe not yet a net productivity win"
   exit 1
 fi
-echo "VERDICT: GO — session pipeline saves a client RTT; warm path near zero overhead"
+echo "VERDICT: GO — warm crushes local two-RTT; cold wins once client RTT is counted"
 exit 0
