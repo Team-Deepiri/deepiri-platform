@@ -174,13 +174,10 @@ def gw_verify():
         r.read()
 
 def gw_lis():
-    # LIS is exposed via language intelligence health through prism health or direct
-    # mount — use auth-adjacent probe pattern: gateway proxies /api/auth only.
-    # For fair two-RTT we hit auth verify twice? Better: verify + LIS via known mounts.
-    # LIS health on host :5009 is not via gateway; use messaging? 
-    # Use /api/prism/pipelines/deepiri/health warm? No — that is the thing under test.
-    # Fair baseline: two sequential /api/auth/verify calls (same RTT tax as two service hops
-    # through the gateway edge).
+    # Fair "two client RTTs through the gateway edge": two sequential hops that
+    # pay gateway proxy tax. LIS is not mounted as a simple public health route
+    # on the gateway in this slice, so a second /api/auth/verify stands in for
+    # the second edge RTT (same client→gateway cost class as a LIS proxy hop).
     req = urllib.request.Request(
         gw.rstrip("/") + "/api/auth/verify",
         headers={"Authorization": authz},

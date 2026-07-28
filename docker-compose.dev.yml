@@ -422,7 +422,7 @@ services:
       # Birth-warm session cache at login/register/refresh (awaited, best-effort).
       # Soft dependency — login still works if PrismPipe is down.
       PRISMPIPE_URL: ${PRISMPIPE_URL:-http://deepiri-prismpipe:5011}
-      PRISMPIPE_PREWARM_TIMEOUT_MS: ${PRISMPIPE_PREWARM_TIMEOUT_MS:-2000}
+      PRISMPIPE_PREWARM_TIMEOUT_MS: ${PRISMPIPE_PREWARM_TIMEOUT_MS:-800}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
@@ -1330,8 +1330,8 @@ services:
       # /2 = PrismPipe organism/hot state. Bedd bus uses DB 0 below (separate namespace).
       AUTH_SERVICE_URL: http://auth-service:5001
       LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5003
-      # Leave empty when cyrex isn't in the slice — avoids multi-second DNS on cold path.
-      CYREX_URL: ${CYREX_URL:-}
+      # Sentinel "off" skips cyrex (empty also works — DeepiriCyrexHealthNode treats both as skip).
+      CYREX_URL: ${CYREX_URL:-off}
       BEDD_SKILLS_DIR: /opt/bedd/skills
       # Bedd stream bus (DB 0) — not the same Redis logical DB as REDIS_URL above.
       BEDD_BUS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
