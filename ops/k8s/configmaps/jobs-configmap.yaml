@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobs-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Jobs (async work / training triggers) service"
+data:
+  NODE_ENV: "development"
+  PORT: "5007"
+  SYNAPSE_URL: "http://synapse:8002"
+  HELOX_URL: "http://cyrex:8000"
+  CYREX_URL: "http://cyrex:8000"

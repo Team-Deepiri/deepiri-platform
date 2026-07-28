@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telemetry-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Telemetry (time-series analytics) service"
+data:
+  NODE_ENV: "development"
+  PORT: "5004"
+  INFLUXDB_URL: "http://influxdb:8086"
+  INFLUXDB_ORG: "deepiri"
+  INFLUXDB_BUCKET: "analytics"
+  SYNAPSE_URL: "http://synapse:8002"

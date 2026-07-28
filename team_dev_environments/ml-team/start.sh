@@ -11,7 +11,7 @@ echo "🚀 Starting ML Team services..."
 
 # Start services that exist (skip submodules if not initialized)
 SERVICES=()
-for service in synapse synapse-sugar-glider; do
+for service in synapse sugar-glider; do
   case $service in
     synapse)
       if [ -f "platform-services/shared/deepiri-synapse/Dockerfile" ]; then
@@ -20,7 +20,7 @@ for service in synapse synapse-sugar-glider; do
         echo "⚠️  Skipping $service (not found)"
       fi
       ;;
-    synapse-sugar-glider)
+    sugar-glider)
       if [ -f "platform-services/shared/deepiri-sugar-glider/Dockerfile" ]; then
         SERVICES+=("$service")
       else
