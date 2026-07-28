@@ -114,10 +114,6 @@ echo ""
 update_submodule "deepiri-modelkit" "deepiri-modelkit (Shared Contracts & Utilities)"
 echo ""
 
-# Update deepiri-prismpipe
-update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
-echo ""
-
 # Update deepiri-synapse
 update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
 echo ""
@@ -131,7 +127,6 @@ echo "🔄 Syncing submodule references..."
 git submodule update --remote diri-cyrex 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/dev/null || true
 git submodule update --remote deepiri-modelkit 2>/dev/null || true
-git submodule update --remote platform-services/shared/deepiri-prismpipe 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-sugar-glider 2>/dev/null || true
 echo ""
@@ -142,7 +137,6 @@ echo ""
 git submodule status diri-cyrex
 git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status deepiri-modelkit 2>/dev/null || echo "  ⚠️  deepiri-modelkit (not initialized)"
-git submodule status platform-services/shared/deepiri-prismpipe 2>/dev/null || echo "  ⚠️  deepiri-prismpipe (not initialized)"
 git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
 git submodule status platform-services/shared/deepiri-sugar-glider 2>/dev/null || echo "  ⚠️  deepiri-sugar-glider (not initialized)"
 echo ""
@@ -153,7 +147,6 @@ echo "📋 Updated Submodules:"
 echo "  ✅ diri-cyrex"
 echo "  ✅ deepiri-api-gateway"
 echo "  ✅ deepiri-modelkit"
-echo "  ✅ deepiri-prismpipe (PrismPipe)"
 echo "  ✅ deepiri-synapse"
 echo "  ✅ deepiri-sugar-glider"
 echo ""

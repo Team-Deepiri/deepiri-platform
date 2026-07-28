@@ -183,18 +183,6 @@ fi
 echo "    ✅ web-frontend initialized at: $(pwd)/deepiri-web-frontend"
 echo ""
 
-# deepiri-prismpipe
-echo "  📦 deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline - Team-Deepiri/deepiri-prismpipe)..."
-cleanup_invalid_submodule "platform-services/shared/deepiri-prismpipe"
-git submodule update --init --recursive platform-services/shared/deepiri-prismpipe 2>&1 || true
-if ! check_submodule "platform-services/shared/deepiri-prismpipe"; then
-    echo "    ❌ ERROR: deepiri-prismpipe not cloned correctly!"
-    echo "    💡 Try: git submodule update --init --recursive platform-services/shared/deepiri-prismpipe"
-    exit 1
-fi
-echo "    ✅ prismpipe initialized at: $(pwd)/platform-services/shared/deepiri-prismpipe"
-echo ""
-
 # deepiri-shared-utils
 echo "  📦 deepiri-shared-utils (Shared Utilities - Team-Deepiri/deepiri-shared-utils)..."
 cleanup_invalid_submodule "platform-services/shared/deepiri-shared-utils"
@@ -243,8 +231,6 @@ git submodule update --remote platform-services/backend/deepiri-language-intelli
 ensure_submodule_on_main "platform-services/backend/deepiri-language-intelligence-service"
 git submodule update --remote deepiri-web-frontend
 ensure_submodule_on_main "deepiri-web-frontend"
-git submodule update --remote platform-services/shared/deepiri-prismpipe
-ensure_submodule_on_main "platform-services/shared/deepiri-prismpipe"
 git submodule update --remote platform-services/shared/deepiri-shared-utils
 ensure_submodule_on_main "platform-services/shared/deepiri-shared-utils"
 git submodule update --remote platform-services/shared/deepiri-synapse
@@ -262,7 +248,6 @@ git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
 git submodule status platform-services/backend/deepiri-language-intelligence-service
 git submodule status deepiri-web-frontend
-git submodule status platform-services/shared/deepiri-prismpipe
 git submodule status platform-services/shared/deepiri-shared-utils
 git submodule status platform-services/shared/deepiri-synapse
 git submodule status platform-services/shared/deepiri-sugar-glider
@@ -276,7 +261,6 @@ echo "  ✅ Team-Deepiri/deepiri-auth-service"
 echo "  ✅ Team-Deepiri/deepiri-external-bridge-service"
 echo "  ✅ Team-Deepiri/deepiri-language-intelligence-service"
 echo "  ✅ Team-Deepiri/deepiri-web-frontend"
-echo "  ✅ Team-Deepiri/deepiri-prismpipe"
 echo "  ✅ Team-Deepiri/deepiri-synapse"
 echo "  ✅ Team-Deepiri/deepiri-sugar-glider"
 echo ""
@@ -288,7 +272,6 @@ echo "  - Work in Auth Service: cd platform-services/backend/deepiri-auth-servic
 echo "  - Work in External Bridge: cd platform-services/backend/deepiri-external-bridge-service"
 echo "  - Work in Language Intelligence: cd platform-services/backend/deepiri-language-intelligence-service"
 echo "  - Work in Frontend: cd deepiri-web-frontend"
-echo "  - Work in PrismPipe: cd platform-services/shared/deepiri-prismpipe"
 echo "  - Work in Synapse: cd platform-services/shared/deepiri-synapse"
 echo "  - Work in Sugar Glider: cd platform-services/shared/deepiri-sugar-glider"
 echo ""

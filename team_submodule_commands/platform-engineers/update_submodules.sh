@@ -123,10 +123,6 @@ echo ""
 update_submodule "deepiri-modelkit" "deepiri-modelkit (Shared Contracts & Utilities)"
 echo ""
 
-# Update deepiri-prismpipe
-update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
-echo ""
-
 # Update deepiri-synapse
 update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
 echo ""
@@ -156,7 +152,6 @@ echo "  ✅ deepiri-external-bridge-service"
 echo "  ✅ deepiri-web-frontend"
 echo "  ✅ diri-helox"
 echo "  ✅ deepiri-modelkit"
-echo "  ✅ deepiri-prismpipe (PrismPipe)"
 echo "  ✅ deepiri-synapse"
 echo "  ✅ deepiri-sugar-glider"
 echo "  ✅ All nested submodules (recursive)"

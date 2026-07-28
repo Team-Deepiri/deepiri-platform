@@ -161,10 +161,6 @@ echo ""
 update_submodule "platform-services/backend/deepiri-language-intelligence-service" "deepiri-language-intelligence-service (Language Intelligence)"
 echo ""
 
-# Update deepiri-prismpipe
-update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
-echo ""
-
 # Update deepiri-shared-utils
 update_submodule "platform-services/shared/deepiri-shared-utils" "deepiri-shared-utils (Shared Utilities)"
 echo ""
@@ -193,7 +189,6 @@ git submodule status platform-services/backend/deepiri-auth-service
 git submodule status diri-helox
 git submodule status deepiri-modelkit
 git submodule status platform-services/backend/deepiri-language-intelligence-service
-git submodule status platform-services/shared/deepiri-prismpipe
 git submodule status platform-services/shared/deepiri-shared-utils
 git submodule status platform-services/shared/deepiri-synapse
 git submodule status platform-services/shared/deepiri-sugar-glider
@@ -210,7 +205,6 @@ echo "  ✅ deepiri-auth-service"
 echo "  ✅ diri-helox"
 echo "  ✅ deepiri-modelkit"
 echo "  ✅ deepiri-language-intelligence-service"
-echo "  ✅ deepiri-prismpipe (PrismPipe)"
 echo "  ✅ deepiri-shared-utils"
 echo "  ✅ deepiri-synapse"
 echo "  ✅ deepiri-sugar-glider"

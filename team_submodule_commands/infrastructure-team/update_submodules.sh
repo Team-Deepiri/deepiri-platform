@@ -115,10 +115,6 @@ echo ""
 update_submodule "platform-services/backend/deepiri-language-intelligence-service" "deepiri-language-intelligence-service (Language Intelligence)"
 echo ""
 
-# Update deepiri-prismpipe
-update_submodule "platform-services/shared/deepiri-prismpipe" "deepiri-prismpipe (PrismPipe - Capability-Routed API Pipeline)"
-echo ""
-
 # Update deepiri-synapse
 update_submodule "platform-services/shared/deepiri-synapse" "deepiri-synapse (Matrix server)"
 echo ""
@@ -134,7 +130,6 @@ git submodule update --remote platform-services/backend/deepiri-api-gateway 2>/d
 git submodule update --remote platform-services/backend/deepiri-auth-service 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-external-bridge-service 2>/dev/null || true
 git submodule update --remote platform-services/backend/deepiri-language-intelligence-service 2>/dev/null || true
-git submodule update --remote platform-services/shared/deepiri-prismpipe 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-synapse 2>/dev/null || true
 git submodule update --remote platform-services/shared/deepiri-sugar-glider 2>/dev/null || true
 echo ""
@@ -147,7 +142,6 @@ git submodule status platform-services/backend/deepiri-api-gateway
 git submodule status platform-services/backend/deepiri-auth-service
 git submodule status platform-services/backend/deepiri-external-bridge-service
 git submodule status platform-services/backend/deepiri-language-intelligence-service
-git submodule status platform-services/shared/deepiri-prismpipe 2>/dev/null || echo "  ⚠️  deepiri-prismpipe (not initialized)"
 git submodule status platform-services/shared/deepiri-synapse 2>/dev/null || echo "  ⚠️  deepiri-synapse (not initialized)"
 git submodule status platform-services/shared/deepiri-sugar-glider 2>/dev/null || echo "  ⚠️  deepiri-sugar-glider (not initialized)"
 echo ""
@@ -160,7 +154,6 @@ echo "  ✅ deepiri-api-gateway"
 echo "  ✅ deepiri-auth-service"
 echo "  ✅ deepiri-external-bridge-service"
 echo "  ✅ deepiri-language-intelligence-service"
-echo "  ✅ deepiri-prismpipe (PrismPipe)"
 echo "  ✅ deepiri-synapse"
 echo "  ✅ deepiri-sugar-glider"
 echo ""

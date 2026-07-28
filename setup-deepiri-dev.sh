@@ -536,7 +536,6 @@ pull_submodules() {
     init_submodule "deepiri-suite"
 
     local SHARED=(
-        "platform-services/shared/deepiri-prismpipe"
         "platform-services/shared/deepiri-shared-utils"
         "platform-services/shared/deepiri-synapse"
         "platform-services/shared/deepiri-sugar-glider"
@@ -551,6 +550,7 @@ pull_submodules() {
     local SUBS=()
     case "$TEAM_KEY" in
         cyrex)          SUBS=("diri-cyrex" "deepiri-modelkit" "${SHARED[@]}") ;;
+        # PrismPipe is a Poetry git dep on diri-cyrex (deepiri-prismpipe@v0.2.1), not a platform submodule.
         ai)             SUBS=("diri-cyrex" "deepiri-ollama-utils" "deepiri-modelkit" "platform-services/backend/deepiri-api-gateway" "${SHARED[@]}") ;;
         ml)             SUBS=("diri-helox" "deepiri-modelkit" "deepiri-ollama-utils" "${SHARED[@]}") ;;
         backend)        SUBS=("${BACKEND[@]}" "${SHARED[@]}") ;;
@@ -561,7 +561,6 @@ pull_submodules() {
                             "platform-services/shared/deepiri-synapse"
                             "platform-services/shared/deepiri-sugar-glider"
                             "platform-services/shared/deepiri-shared-utils"
-                            "platform-services/shared/deepiri-prismpipe"
                             "platform-services/backend/deepiri-auth-service"
                             "platform-services/backend/deepiri-external-bridge-service"
                             "platform-services/backend/deepiri-api-gateway"
