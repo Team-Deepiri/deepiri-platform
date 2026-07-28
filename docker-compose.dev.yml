@@ -1330,10 +1330,10 @@ services:
       # Bedd stream bus (DB 0) — not the same Redis logical DB as REDIS_URL above.
       BEDD_BUS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
       BEDD_DLQ_STREAM: bedd.dlq
-      # ComputationGraph is in-process; multi-worker splits the dedup cache.
-      # Keep 1 worker until Redis-backed computation sharing exists.
-      WEB_CONCURRENCY: 1
+      # ComputationGraph is Redis-backed (same REDIS_URL); multi-worker safe.
+      WEB_CONCURRENCY: ${PRISMPIPE_WEB_CONCURRENCY:-2}
       GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+      COMPUTATION_CACHE_TTL_S: ${COMPUTATION_CACHE_TTL_S:-30}
     depends_on:
       redis:
         condition: service_started

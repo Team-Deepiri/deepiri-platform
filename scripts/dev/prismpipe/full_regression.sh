@@ -43,6 +43,10 @@ echo "======== 3b) Service impact (auth/LIS help vs hurt) ========"
 chmod +x scripts/dev/prismpipe/service_impact_integration.sh
 ./scripts/dev/prismpipe/service_impact_integration.sh && ok "service-impact" || bad "service-impact"
 
+echo "======== 3c) Usefulness perf (session vs two RTTs) ========"
+chmod +x scripts/dev/prismpipe/usefulness_perf.sh
+./scripts/dev/prismpipe/usefulness_perf.sh && ok "usefulness-perf" || bad "usefulness-perf"
+
 echo "======== 4) Latency A/B (direct vs PrismPipe warm) ========"
 chmod +x scripts/dev/prismpipe/latency_ab_gate.sh
 ./scripts/dev/prismpipe/latency_ab_gate.sh && ok "latency" || bad "latency"
