@@ -1,11 +1,15 @@
+# Embed Bedd via multi-stage FROM published image (BuildKit-safe).
+ARG BEDD_IMAGE=ghcr.io/team-deepiri/bedd:0.8
+FROM ${BEDD_IMAGE} AS bedd
+
 FROM ghcr.io/team-deepiri/deepiri-suite:18-alpine
 
-
 # Bedd runtime (Bun-style) — musl binary for Alpine
-ARG BEDD_IMAGE=ghcr.io/team-deepiri/bedd:0.6
-COPY --from=${BEDD_IMAGE} /opt/bedd/bedd-musl /usr/local/bin/bedd
-COPY --from=${BEDD_IMAGE} /opt/bedd/skills /opt/bedd/skills
+COPY --from=bedd /opt/bedd/bedd-musl /usr/local/bin/bedd
+COPY --from=bedd /opt/bedd/skills /opt/bedd/skills
 ENV BEDD_SKILLS_DIR=/opt/bedd/skills
+ENV BEDD_BUS_URL=redis://redis:6379
+ENV BEDD_DLQ_STREAM=bedd.dlq
 
 COPY shared/deepiri-shared-utils/package.json /shared/deepiri-shared-utils/
 COPY shared/deepiri-shared-utils/package-lock.json /shared/deepiri-shared-utils/
