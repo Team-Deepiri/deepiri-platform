@@ -419,6 +419,10 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       JWT_SECRET: ${JWT_SECRET:-deepiri-local-dev-jwt-key-for-dev-only-x9z}
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-deepiri-local-dev-internal-key-for-dev-x9z}
+      # Birth-warm session cache at login/register/refresh (awaited, best-effort).
+      # Soft dependency — login still works if PrismPipe is down.
+      PRISMPIPE_URL: ${PRISMPIPE_URL:-http://deepiri-prismpipe:5011}
+      PRISMPIPE_PREWARM_TIMEOUT_MS: ${PRISMPIPE_PREWARM_TIMEOUT_MS:-2000}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
