@@ -1207,6 +1207,9 @@ services:
   #     - deepiri-dev-network
 
   # Frontend with Vite HMR (consolidated Dockerfile — target: dev)
+  # Primary way to run deepiri-web-frontend in normal platform workflow:
+  #   docker compose -f docker-compose.dev.yml up -d auth-service api-gateway realtime-gateway frontend-dev
+  # Linked to frontend PR: https://github.com/Team-Deepiri/deepiri-web-frontend/pull/111
   frontend-dev:
     build:
       context: ./deepiri-web-frontend
@@ -1223,6 +1226,9 @@ services:
     environment:
       # Override or add docker-specific variables here if needed
       VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
+      VITE_API_GATEWAY_URL: http://localhost:${API_GATEWAY_PORT:-5100}
+      VITE_REGISTRY_URL: ${VITE_REGISTRY_URL:-http://localhost:5003}
+      VITE_REALTIME_GATEWAY_URL: http://localhost:5008
       VITE_SYNAPSE_URL: http://localhost:8002
       VITE_MLFLOW_URL: http://localhost:5500
       K8S_SERVICE_NAME: frontend-dev  # Filter to only load this service's configmap
@@ -1243,10 +1249,17 @@ services:
       retries: 5
       start_period: 60s
     depends_on:
-      - synapse
-      # api-gateway dependency removed - frontend can work without it
+      auth-service:
+        condition: service_healthy
+      api-gateway:
+        condition: service_healthy
+      realtime-gateway:
+        condition: service_started
+      synapse:
+        condition: service_started
     networks:
       - deepiri-dev-network
+
 
   # PrismPipe - Capability-Routed API Pipeline
   deepiri-prismpipe:
