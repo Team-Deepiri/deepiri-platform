@@ -5,7 +5,11 @@
 # Automates the steps documented in deepiri-environment-setup.md:
 #
 #   1. Asks which team you're on (AI / Backend / Frontend / Infrastructure /
-#      ML / Platform / QA).
+#      ML / Platform / QA). QA also picks a tier (1–3) that mirrors another
+#      eng team's env:
+#        Tier 1 → frontend-team services (lighter machines)
+#        Tier 2 → backend-team services (includes frontend)
+#        Tier 3 → ai-team services (full ML/AI stack; can run any tier)
 #   2. Verifies prerequisites (git, docker, docker compose, python3, node, npm,
 #      ssh) and installs anything missing. WSL2/Linux must be Debian — the
 #      script refuses to continue otherwise.
@@ -101,6 +105,38 @@ require_debian_on_wsl_or_linux() {
 TEAMS_DISPLAY=("AI" "Backend" "Frontend" "Infrastructure" "ML" "Platform" "QA")
 TEAMS_FOLDER=("ai-team" "backend-team" "frontend-team" "infrastructure-team" "ml-team" "platform-engineers" "qa-team")
 
+# QA tiers reuse the matching eng team's submodule + compose env.
+# Tier 1 = frontend stack, Tier 2 = backend stack, Tier 3 = AI stack.
+QA_TIER=""
+QA_TIER_LABELS=("Frontend stack" "Backend stack" "AI stack")
+QA_TIER_FOLDERS=("frontend-team" "backend-team" "ai-team")
+
+select_qa_tier() {
+    step "Which QA tier are you?"
+    info "QA tiers match machine capacity to the same services eng teams run."
+    echo
+    printf "    1) Tier 1 — Frontend stack\n"
+    printf "       Same services as Frontend engineers (lighter machines).\n"
+    printf "    2) Tier 2 — Backend stack\n"
+    printf "       Same services as Backend engineers (includes frontend).\n"
+    printf "    3) Tier 3 — AI stack\n"
+    printf "       Same services as AI engineers; can also run Tier 1 or 2.\n"
+    echo
+    local choice
+    while :; do
+        read -r -p "  ?? Enter a number [1-3]: " choice || choice=""
+        if [[ "$choice" =~ ^[123]$ ]]; then
+            QA_TIER="$choice"
+            TEAM_FOLDER="${QA_TIER_FOLDERS[$((choice - 1))]}"
+            TEAM_DISPLAY="QA Tier ${QA_TIER} (${QA_TIER_LABELS[$((choice - 1))]})"
+            ok "Selected: $TEAM_DISPLAY → team_dev_environments/$TEAM_FOLDER"
+            info "Submodules + build/start will use $TEAM_FOLDER (same as that eng team)."
+            return
+        fi
+        warn "Invalid selection. Enter 1, 2, or 3."
+    done
+}
+
 select_team() {
     step "Which team are you on?"
     local i
@@ -114,7 +150,11 @@ select_team() {
            && (( choice >= 1 && choice <= ${#TEAMS_DISPLAY[@]} )); then
             TEAM_DISPLAY="${TEAMS_DISPLAY[$((choice - 1))]}"
             TEAM_FOLDER="${TEAMS_FOLDER[$((choice - 1))]}"
-            ok "Selected: $TEAM_DISPLAY ($TEAM_FOLDER)"
+            if [[ "$TEAM_DISPLAY" == "QA" ]]; then
+                select_qa_tier
+            else
+                ok "Selected: $TEAM_DISPLAY ($TEAM_FOLDER)"
+            fi
             return
         fi
         warn "Invalid selection. Try again."
@@ -446,15 +486,31 @@ seed_databases() {
 # ---------- summary -------------------------------------------------------
 print_summary() {
     step "All done!"
+    local qa_note=""
+    if [[ -n "$QA_TIER" ]]; then
+        qa_note="
+  ${C_BOLD}QA tier:${C_RESET}         $QA_TIER → using $TEAM_FOLDER env (mirrors that eng team)
+"
+        if [[ "$QA_TIER" == "3" ]]; then
+            qa_note+="  ${C_CYAN}Tip:${C_RESET} Tier 3 can also run frontend-team or backend-team envs if needed.
+"
+        fi
+    fi
     cat <<EOF
   ${C_BOLD}Team:${C_RESET}            $TEAM_DISPLAY
-  ${C_BOLD}Project root:${C_RESET}    $PROJECT_ROOT
+  ${C_BOLD}Env folder:${C_RESET}       team_dev_environments/$TEAM_FOLDER
+${qa_note}  ${C_BOLD}Project root:${C_RESET}    $PROJECT_ROOT
   ${C_BOLD}Platform repo:${C_RESET}   $PLATFORM_REPO_DIR
 
   Useful commands (run from $PLATFORM_REPO_DIR):
     docker ps
     docker compose -f docker-compose.dev.yml logs -f api-gateway
     cd team_dev_environments/$TEAM_FOLDER && ./stop.sh
+
+  ${C_YELLOW}Speech engine:${C_RESET} livekit + speech (Poetry STT/TTS worker).
+    Docs: docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
+    AI / Platform / QA / Infra start scripts append these when listed in compose.
+    Media = WebRTC via LiveKit — not Socket.IO / realtime-gateway.
 
   ${C_YELLOW}Reminder:${C_RESET} drop your /secrets folder into
     $PLATFORM_REPO_DIR/ops/k8s/secrets
