@@ -3,7 +3,7 @@
 # Deepiri Platform - Dev environment (onboard + day-to-day team ops)
 # ----------------------------------------------------------------------------
 # Single entrypoint. Team services/submodules live in teams/<team>.yml
-# (engine: teams/team_ctl.py). Catalogs: teams/all-services.yml,
+# (pure bash YAML parser in this script). Catalogs: teams/all-services.yml,
 # teams/all-submodules.yml. Audit: teams/TEAM_INVENTORY_AUDIT.md
 #
 # Onboard (no args):
@@ -306,12 +306,7 @@ ensure_prereqs() {
 
     ensure_docker
 
-    info "Ensuring pyyaml is available (needed by team_dev_environments/run.py)"
-    if ! python3 -c "import yaml" >/dev/null 2>&1; then
-        if command -v pip3 >/dev/null 2>&1; then
-            pip3 install --user --quiet pyyaml || warn "pip install pyyaml failed (non-fatal)"
-        fi
-    fi
+    info "Optional: team_dev_environments/run.py may need PyYAML (pip3 install --user pyyaml)"
 }
 
 # ---------- SSH key + GitHub --------------------------------------------
@@ -413,33 +408,728 @@ clone_platform_repo() {
     fi
 }
 
-# ---------- team ops (YAML via teams/team_ctl.py) --------------------------
+# ---------- team ops (pure bash, teams/*.yml) ------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEAM_COMPOSE_FILE="docker-compose.dev.yml"
 
-team_ctl() {
-    # team_ctl <command> <team> — prefers PLATFORM_REPO_DIR when set (post-clone)
-    local root="${PLATFORM_REPO_DIR:-$SCRIPT_DIR}"
-    local ctl="$root/teams/team_ctl.py"
-    [[ -f "$ctl" ]] || fatal "teams/team_ctl.py not found at $ctl"
-    if ! python3 -c "import yaml" >/dev/null 2>&1; then
-        warn "PyYAML missing -- installing"
-        pip3 install --user --quiet pyyaml || fatal "Need PyYAML: pip3 install --user pyyaml"
+declare -A TEAM_DOCKERFILE_HINTS=(
+    [api-gateway]="platform-services/backend/deepiri-api-gateway/Dockerfile"
+    [auth-service]="platform-services/backend/deepiri-auth-service/Dockerfile"
+    [external-bridge-service]="platform-services/backend/deepiri-external-bridge-service/Dockerfile"
+    [language-intelligence-service]="platform-services/backend/deepiri-language-intelligence-service/Dockerfile"
+    [synapse]="platform-services/shared/deepiri-synapse/Dockerfile"
+    [synapse-sugar-glider]="platform-services/shared/deepiri-sugar-glider/Dockerfile"
+    [frontend-dev]="deepiri-web-frontend/Dockerfile"
+    [cyrex]="diri-cyrex/Dockerfile"
+    [speech]="platform-services/backend/deepiri-speech/Dockerfile"
+    [deepiri-prismpipe]="platform-services/shared/deepiri-prismpipe/Dockerfile"
+)
+
+team_repo_root() { echo "${PLATFORM_REPO_DIR:-$SCRIPT_DIR}"; }
+team_teams_dir() { echo "$(team_repo_root)/teams"; }
+
+team_run() {
+    local check=1 rc
+    if [[ "${1:-}" == "--no-check" ]]; then check=0; shift; fi
+    printf '+ %s\n' "$*"
+    ( cd "$(team_repo_root)" && "$@" )
+    rc=$?
+    if (( check )) && (( rc != 0 )); then exit "$rc"; fi
+    return "$rc"
+}
+
+team_yaml_strip() {
+    local v="$1"
+    v="${v#"${v%%[![:space:]]*}"}"
+    v="${v%"${v##*[![:space:]]}"}"
+    v="${v%%#*}"
+    v="${v#"${v%%[![:space:]]*}"}"
+    v="${v%"${v##*[![:space:]]}"}"
+    if [[ "$v" =~ ^\"(.*)\"$ ]]; then v="${BASH_REMATCH[1]}"; fi
+    if [[ "$v" =~ ^\'(.*)\'$ ]]; then v="${BASH_REMATCH[1]}"; fi
+    echo "$v"
+}
+
+team_yaml_bool() {
+    case "$(team_yaml_strip "${1:-false}")" in
+        true|True|yes|Yes|1) echo "true" ;;
+        *) echo "false" ;;
+    esac
+}
+
+team_yaml_reset() {
+    TEAM_YAML_ID=""
+    TEAM_YAML_DISPLAY=""
+    TEAM_YAML_SERVICES_MODE="list"
+    TEAM_YAML_SERVICES=()
+    TEAM_YAML_SUBMODULES_MODE="list"
+    TEAM_YAML_SUBMODULES=()
+    TEAM_YAML_DISABLED_SERVICES=()
+    TEAM_YAML_URLS=()
+    TEAM_BUILD_BUILDKIT="false"
+    TEAM_BUILD_SEQUENTIAL="false"
+    TEAM_BUILD_ENSURE_SUITE="true"
+    TEAM_BUILD_ENSURE_SHARED="true"
+    TEAM_BUILD_DOCKER_PULL=()
+    TEAM_BUILD_OPTIONAL=()
+    TEAM_BUILD_PULL_ONLY=()
+    TEAM_BUILD_HAS_PULL_ONLY="false"
+    TEAM_START_NO_DEPS="true"
+    TEAM_START_EXCLUDE_MPS=()
+    TEAM_START_REQUIRE_DF=()
+    TEAM_START_OPTIONAL=()
+    TEAM_START_PHASE_WAIT=0
+    TEAM_START_PHASE_COUNT=0
+    TEAM_PULL_RECURSIVE="true"
+    TEAM_PULL_CHECKOUT_MAIN="true"
+    TEAM_PULL_SETUP_HOOKS="true"
+    TEAM_PULL_ALL_RECURSIVE="false"
+    TEAM_PULL_OPTIONAL=()
+}
+
+team_yaml_append_list() {
+    local key="$1" val="$2"
+    val="$(team_yaml_strip "$val")"
+    [[ -z "$val" || "$val" == \#* ]] && return 0
+    if [[ "$val" =~ ^path:[[:space:]]*(.+)$ ]]; then
+        val="$(team_yaml_strip "${BASH_REMATCH[1]}")"
     fi
-    ( cd "$root" && python3 "$ctl" "$@" )
+    case "$key" in
+        services) TEAM_YAML_SERVICES+=("$val") ;;
+        submodules) TEAM_YAML_SUBMODULES+=("$val") ;;
+        disabled_services) TEAM_YAML_DISABLED_SERVICES+=("$val") ;;
+        urls) TEAM_YAML_URLS+=("$val") ;;
+        build_docker_pull) TEAM_BUILD_DOCKER_PULL+=("$val") ;;
+        build_optional) TEAM_BUILD_OPTIONAL+=("$val") ;;
+        build_pull_only) TEAM_BUILD_PULL_ONLY+=("$val"); TEAM_BUILD_HAS_PULL_ONLY="true" ;;
+        start_exclude_mps) TEAM_START_EXCLUDE_MPS+=("$val") ;;
+        start_require_df) TEAM_START_REQUIRE_DF+=("$val") ;;
+        start_optional) TEAM_START_OPTIONAL+=("$val") ;;
+        pull_optional) TEAM_PULL_OPTIONAL+=("$val") ;;
+    esac
+}
+
+team_yaml_parse_phase_line() {
+    local item="$1"
+    [[ "$item" =~ ^\[(.*)\]$ ]] || return 1
+    local inner="${BASH_REMATCH[1]}" csv part
+    local -a parts=()
+    IFS=',' read -ra parts <<< "$inner"
+    local -a phase_items=()
+    for part in "${parts[@]}"; do
+        part="$(team_yaml_strip "$part")"
+        [[ -n "$part" ]] && phase_items+=("$part")
+    done
+    local idx="$TEAM_START_PHASE_COUNT"
+    eval "TEAM_START_PHASE_${idx}=()"
+    local -n _p="TEAM_START_PHASE_${idx}"
+    _p=("${phase_items[@]}")
+    TEAM_START_PHASE_COUNT=$((idx + 1))
+}
+
+team_yaml_load() {
+    local file="$1"
+    local section="" list_key="" in_phases=0
+    team_yaml_reset
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+
+        if [[ ! "$line" =~ ^[[:space:]]+- ]] \
+           && [[ "$line" =~ ^([a-z_]+):[[:space:]]*(.*)$ ]]; then
+            local key="${BASH_REMATCH[1]}" rest="${BASH_REMATCH[2]}"
+            rest="$(team_yaml_strip "$rest")"
+            list_key=""
+            in_phases=0
+            case "$key" in
+                build|start|pull) section="$key"; continue ;;
+                id) TEAM_YAML_ID="$rest"; section="top"; continue ;;
+                display) TEAM_YAML_DISPLAY="$rest"; section="top"; continue ;;
+                services)
+                    if [[ "$rest" == "all" ]]; then TEAM_YAML_SERVICES_MODE="all"
+                    else list_key="services"; fi
+                    section="top"; continue ;;
+                submodules)
+                    if [[ "$rest" == "all" ]]; then TEAM_YAML_SUBMODULES_MODE="all"
+                    else list_key="submodules"; fi
+                    section="top"; continue ;;
+                disabled_services) list_key="disabled_services"; section="top"; continue ;;
+                urls) list_key="urls"; section="top"; continue ;;
+                *) section="top"; continue ;;
+            esac
+        fi
+
+        if [[ -n "$section" && "$section" != "top" ]] \
+           && [[ ! "$line" =~ ^[[:space:]]+- ]] \
+           && [[ "$line" =~ ^[[:space:]]+([a-z_]+):[[:space:]]*(.*)$ ]]; then
+            local nkey="${BASH_REMATCH[1]}" nval="${BASH_REMATCH[2]}"
+            nval="$(team_yaml_strip "$nval")"
+            case "$section:$nkey" in
+                build:buildkit) TEAM_BUILD_BUILDKIT="$(team_yaml_bool "$nval")" ;;
+                build:sequential) TEAM_BUILD_SEQUENTIAL="$(team_yaml_bool "$nval")" ;;
+                build:ensure_suite_images) TEAM_BUILD_ENSURE_SUITE="$(team_yaml_bool "$nval")" ;;
+                build:ensure_shared_utils) TEAM_BUILD_ENSURE_SHARED="$(team_yaml_bool "$nval")" ;;
+                build:docker_pull) list_key="build_docker_pull"; in_phases=0 ;;
+                build:optional) list_key="build_optional"; in_phases=0 ;;
+                build:pull_only) list_key="build_pull_only"; in_phases=0 ;;
+                start:no_deps) TEAM_START_NO_DEPS="$(team_yaml_bool "$nval")" ;;
+                start:exclude_on_mps) list_key="start_exclude_mps"; in_phases=0 ;;
+                start:require_dockerfile) list_key="start_require_df"; in_phases=0 ;;
+                start:optional) list_key="start_optional"; in_phases=0 ;;
+                start:phase_wait_seconds) TEAM_START_PHASE_WAIT="${nval:-0}" ;;
+                start:phases) list_key=""; in_phases=1 ;;
+                pull:recursive) TEAM_PULL_RECURSIVE="$(team_yaml_bool "$nval")" ;;
+                pull:checkout_main) TEAM_PULL_CHECKOUT_MAIN="$(team_yaml_bool "$nval")" ;;
+                pull:setup_hooks) TEAM_PULL_SETUP_HOOKS="$(team_yaml_bool "$nval")" ;;
+                pull:all_recursive) TEAM_PULL_ALL_RECURSIVE="$(team_yaml_bool "$nval")" ;;
+                pull:optional) list_key="pull_optional"; in_phases=0 ;;
+            esac
+            continue
+        fi
+
+        if [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.*)$ ]]; then
+            local item="${BASH_REMATCH[1]}"
+            item="${item%%#*}"
+            item="$(team_yaml_strip "$item")"
+            [[ -z "$item" ]] && continue
+            if (( in_phases )); then
+                team_yaml_parse_phase_line "$item" || true
+                continue
+            fi
+            [[ -n "$list_key" ]] && team_yaml_append_list "$list_key" "$item"
+        fi
+    done < "$file"
+}
+
+team_catalog_list() {
+    local catalog="$1" list_key="$2"
+    local in_list=0 item
+    local -a out=()
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+        if [[ "$line" =~ ^${list_key}:[[:space:]]*$ ]]; then
+            in_list=1; continue
+        fi
+        if (( in_list )) && [[ "$line" =~ ^[a-zA-Z0-9_-]+: ]]; then break; fi
+        if (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+path:[[:space:]]*(.+)$ ]]; then
+            out+=("$(team_yaml_strip "${BASH_REMATCH[1]}")")
+        elif (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+([^[:space:]]+)$ ]]; then
+            item="$(team_yaml_strip "${BASH_REMATCH[1]}")"
+            [[ "$item" != path:* ]] && out+=("$item")
+        fi
+    done < "$catalog"
+    printf '%s\n' "${out[@]}"
+}
+
+team_resolve_alias() {
+    case "$1" in
+        ai) echo "ai-team" ;;
+        backend) echo "backend-team" ;;
+        frontend) echo "frontend-team" ;;
+        infrastructure|infra) echo "infrastructure-team" ;;
+        ml) echo "ml-team" ;;
+        platform|platform-engineers|all) echo "platform-engineers" ;;
+        qa) echo "qa-team" ;;
+        qa-tier-1|qa:1|qa1) echo "frontend-team" ;;
+        qa-tier-2|qa:2|qa2) echo "backend-team" ;;
+        qa-tier-3|qa:3|qa3) echo "ai-team" ;;
+        *) echo "$1" ;;
+    esac
+}
+
+team_list_ids() {
+    local f base skip="all-services all-submodules"
+    for f in "$(team_teams_dir)"/*.yml; do
+        [[ -f "$f" ]] || continue
+        base="$(basename "$f" .yml)"
+        [[ " $skip " == *" $base "* ]] && continue
+        echo "$base"
+    done | sort
+}
+
+team_known_names() {
+    team_list_ids
+    printf '%s\n' ai backend frontend infrastructure infra ml platform platform-engineers qa all \
+        qa-tier-1 qa-tier-2 qa-tier-3 qa:1 qa:2 qa:3 qa1 qa2 qa3
+}
+
+team_resolve_yml() {
+    local team resolved path
+    team="$1"
+    resolved="$(team_resolve_alias "$team")"
+    path="$(team_teams_dir)/${resolved}.yml"
+    if [[ ! -f "$path" ]]; then
+        err "Unknown team '$team'. Known: $(team_known_names | sort -u | paste -sd, -)"
+        return 1
+    fi
+    echo "$path"
+}
+
+team_resolve_services() {
+    local -a services=() disabled=() s d
+    if [[ "$TEAM_YAML_SERVICES_MODE" == "all" ]]; then
+        mapfile -t services < <(team_catalog_list "$(team_teams_dir)/all-services.yml" "services")
+    else
+        services=("${TEAM_YAML_SERVICES[@]}")
+    fi
+    disabled=("${TEAM_YAML_DISABLED_SERVICES[@]}")
+    for s in "${services[@]}"; do
+        [[ "$s" == \#* ]] && continue
+        local skip=0
+        for d in "${disabled[@]}"; do
+            [[ "$s" == "$d" ]] && skip=1 && break
+        done
+        (( skip )) || echo "$s"
+    done
+}
+
+team_resolve_submodules() {
+    if [[ "$TEAM_YAML_SUBMODULES_MODE" == "all" ]]; then
+        team_catalog_list "$(team_teams_dir)/all-submodules.yml" "submodules"
+    else
+        printf '%s\n' "${TEAM_YAML_SUBMODULES[@]}"
+    fi
+}
+
+team_pull_only_set() {
+    local -a pull_only=()
+    if [[ "$TEAM_BUILD_HAS_PULL_ONLY" == "true" ]]; then
+        pull_only=("${TEAM_BUILD_PULL_ONLY[@]}")
+    else
+        mapfile -t pull_only < <(team_catalog_list "$(team_teams_dir)/all-services.yml" "pull_only")
+    fi
+    printf '%s\n' "${pull_only[@]}"
+}
+
+team_in_list() {
+    local needle="$1"; shift
+    local x
+    for x in "$@"; do [[ "$x" == "$needle" ]] && return 0; done
+    return 1
+}
+
+team_shared_utils_path() { echo "$(team_repo_root)/platform-services/shared/deepiri-shared-utils"; }
+
+team_dockerfiles_need_shared_utils() {
+    local backend="$(team_repo_root)/platform-services/backend" df
+    [[ -d "$backend" ]] || return 0
+    for df in "$backend"/*/Dockerfile; do
+        [[ -f "$df" ]] || continue
+        if grep -qE 'shared-utils/dist|shared-utils/node_modules' "$df" 2>/dev/null; then
+            echo "$df"
+        fi
+    done
+}
+
+team_ensure_shared_utils() {
+    local force="${1:-0}" needing pkg dist_index node_modules su
+    su="$(team_shared_utils_path)"
+    mapfile -t needing < <(team_dockerfiles_need_shared_utils)
+    if (( force == 0 )) && ((${#needing[@]} == 0)); then
+        echo "shared-utils: Dockerfiles build it in-image — no host prep needed"
+        return 0
+    fi
+    if ((${#needing[@]} > 0)); then
+        echo "shared-utils fallback: host dist required by:"
+        local p root; root="$(team_repo_root)"
+        for p in "${needing[@]}"; do echo "   - ${p#"$root"/}"; done
+    fi
+    pkg="$su/package.json"
+    [[ -f "$pkg" ]] || fatal "shared-utils package.json missing — pull platform-services/shared/deepiri-shared-utils first"
+    dist_index="$su/dist/index.js"
+    node_modules="$su/node_modules"
+    if [[ -f "$dist_index" && -d "$node_modules" ]]; then
+        echo "shared-utils host fallback ready (platform-services/shared/deepiri-shared-utils/dist/index.js)"
+        return 0
+    fi
+    echo "Preparing deepiri-shared-utils on host (npm install + build)…"
+    command -v npm >/dev/null 2>&1 || fatal "npm is required for shared-utils host fallback"
+    ( cd "$su" && npm install --legacy-peer-deps --workspaces=false ) \
+        || fatal "Failed: npm install in platform-services/shared/deepiri-shared-utils"
+    ( cd "$su" && npm run build ) \
+        || fatal "Failed: npm run build in platform-services/shared/deepiri-shared-utils"
+    [[ -f "$dist_index" ]] || fatal "shared-utils build did not produce $dist_index"
+    echo "shared-utils host dist + node_modules ready"
+}
+
+team_ensure_suite_images() {
+    local suite_dir="${DEEPIRI_SUITE_CONTEXT:-$(team_repo_root)/deepiri-suite}"
+    local base tag img all_ok=1
+    echo "Ensuring deepiri-suite base images..."
+    for entry in "node:18-alpine|18-alpine" "node:18-slim|18-slim" "node:20-alpine|20-alpine"; do
+        base="${entry%%|*}"
+        tag="${entry##*|}"
+        img="ghcr.io/team-deepiri/deepiri-suite:${tag}"
+        if docker image inspect "$img" >/dev/null 2>&1; then
+            echo "   ok $img (cached)"
+            continue
+        fi
+        echo "   Pulling $img from GHCR..."
+        if docker pull "$img" >/dev/null 2>&1; then
+            echo "   ok $img (pulled)"
+            continue
+        fi
+        echo "   GHCR pull failed -- building locally (BASE_IMAGE=$base)"
+        if [[ ! -f "$suite_dir/Dockerfile" ]]; then
+            echo "   deepiri-suite not found at $suite_dir"
+            echo "      Run: ./setup-deepiri-dev.sh pull <team>"
+            all_ok=0
+            continue
+        fi
+        if team_run --no-check docker build --build-arg "BASE_IMAGE=$base" -t "$img" "$suite_dir"; then
+            echo "   ok $img (built locally)"
+        else
+            echo "   Failed to build $img locally"
+            all_ok=0
+        fi
+    done
+    (( all_ok )) || exit 1
+}
+
+team_detect_backend() {
+    if command -v nvidia-smi >/dev/null 2>&1; then echo "cuda"
+    elif [[ "$(uname -s)" == "Darwin" ]]; then echo "mps"
+    else echo "other"; fi
+}
+
+team_check_submodule() {
+    local rel="$1" path
+    path="$(team_repo_root)/$rel"
+    [[ -d "$path" ]] || return 1
+    [[ -e "$path/.git" ]] || return 1
+    ( cd "$path" && git rev-parse --git-dir >/dev/null 2>&1 )
+}
+
+team_cleanup_invalid_submodule() {
+    local rel="$1" path
+    path="$(team_repo_root)/$rel"
+    if [[ -d "$path" ]] && ! team_check_submodule "$rel"; then
+        echo "    Directory exists but is not a valid submodule. Cleaning $rel..."
+        rm -rf "$path"
+    fi
+}
+
+team_ensure_submodule_on_main() {
+    local rel="$1" path branch has_main has_master detached cur
+    path="$(team_repo_root)/$rel"
+    [[ -d "$path" ]] || return 0
+    ( cd "$path" && git fetch origin >/dev/null 2>&1 ) || true
+    branch="main"
+    has_main=1 has_master=1
+    ( cd "$path" && git show-ref --verify --quiet refs/remotes/origin/main ) || has_main=0
+    ( cd "$path" && git show-ref --verify --quiet refs/remotes/origin/master ) || has_master=0
+    if (( !has_main && has_master )); then branch="master"
+    elif (( !has_main && !has_master )); then
+        echo "    No main/master for $rel, skipping checkout"; return 0
+    fi
+    if ( cd "$path" && ! git symbolic-ref -q HEAD >/dev/null 2>&1 ); then
+        ( cd "$path" && git checkout -B "$branch" "origin/$branch" >/dev/null 2>&1 ) || true
+    else
+        cur="$(cd "$path" && git symbolic-ref --short HEAD 2>/dev/null || true)"
+        if [[ "$cur" != "$branch" ]]; then
+            ( cd "$path" && git checkout "$branch" >/dev/null 2>&1 ) || true
+        fi
+    fi
+    ( cd "$path" && git branch "--set-upstream-to=origin/$branch" "$branch" >/dev/null 2>&1 ) || true
+    ( cd "$path" && git pull origin "$branch" >/dev/null 2>&1 ) || true
+}
+
+team_cmd_pull() {
+    local team_id="$1" display="${TEAM_YAML_DISPLAY:-$team_id}" sm root hooks team_hooks
+    root="$(team_repo_root)"
+    echo "$display — pulling submodules"
+    [[ -d "$root/.git" ]] || fatal "Not a git repo: $root"
+    team_run --no-check git pull origin main
+    local -a subs=() optional=()
+    mapfile -t subs < <(team_resolve_submodules)
+    mapfile -t optional < <(printf '%s\n' "${TEAM_PULL_OPTIONAL[@]}")
+    if [[ "$TEAM_YAML_SUBMODULES_MODE" == "all" || "$TEAM_PULL_ALL_RECURSIVE" == "true" ]]; then
+        team_run git submodule update --init --recursive
+        for sm in "${subs[@]}"; do echo "  ready: $sm"; done
+    else
+        for sm in "${subs[@]}"; do
+            echo "  Initializing $sm..."
+            team_cleanup_invalid_submodule "$sm"
+            mkdir -p "$(dirname "$root/$sm")"
+            local -a init_cmd=(git submodule update --init)
+            [[ "$TEAM_PULL_RECURSIVE" == "true" ]] && init_cmd+=(--recursive)
+            init_cmd+=("$sm")
+            local rc=0
+            team_run --no-check "${init_cmd[@]}" || rc=$?
+            if team_check_submodule "$sm"; then
+                if (( rc != 0 )); then
+                    echo "    ok $sm (already present; submodule update skipped — local changes or pin unavailable)"
+                else
+                    if [[ "$TEAM_PULL_CHECKOUT_MAIN" == "true" ]]; then
+                        team_run --no-check git submodule update --remote "$sm"
+                        team_ensure_submodule_on_main "$sm"
+                    fi
+                    echo "    ok $sm"
+                fi
+                continue
+            fi
+            if team_in_list "$sm" "${optional[@]}"; then
+                echo "    Failed to init $sm (optional)"
+            else
+                echo "    Failed to init $sm"
+                exit 1
+            fi
+        done
+    fi
+    if [[ "$TEAM_PULL_SETUP_HOOKS" == "true" ]]; then
+        hooks="$root/setup-hooks.sh"
+        [[ -f "$hooks" ]] && team_run --no-check bash "$hooks"
+        team_hooks="$root/team_submodule_commands/${TEAM_YAML_ID:-$team_id}/setup-hooks.sh"
+        [[ -f "$team_hooks" ]] && team_run --no-check bash "$team_hooks"
+    fi
+    echo "Submodules ready for $display"
+}
+
+team_image_exists_for_service() {
+    local service="$1" base aliases img
+    declare -A aliases=([frontend-dev]=frontend [deepiri-prismpipe]=prismpipe)
+    base="${aliases[$service]:-$service}"
+    for img in "deepiri-dev-${base}:latest" "deepiri-dev-${base}" \
+               "deepiri-dev-${service}:latest" "deepiri-dev-${service}"; do
+        docker image inspect "$img" >/dev/null 2>&1 && return 0
+    done
+    return 1
+}
+
+team_build_one_service() {
+    local s="$1"
+    local -n _failed="$2"
+    local -n _optional_build="$3"
+    echo "-- Building $s --"
+    if team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" build "$s"; then return 0; fi
+    if team_in_list "$s" "${_optional_build[@]}"; then
+        echo "OPTIONAL FAIL $s (continuing)"
+        return 0
+    fi
+    _failed+=("$s")
+    echo "FAILED $s"
+    return 1
+}
+
+team_cmd_build() {
+    local team_id="$1" display="${TEAM_YAML_DISPLAY:-$team_id}"
+    local -a services=() pull_only=() buildable=() failed=() optional_build=() img svc
+    mapfile -t services < <(team_resolve_services)
+    mapfile -t pull_only < <(team_pull_only_set)
+    mapfile -t optional_build < <(printf '%s\n' "${TEAM_BUILD_OPTIONAL[@]}")
+    export DOCKER_BUILDKIT="$([[ "$TEAM_BUILD_BUILDKIT" == "true" ]] && echo 1 || echo 0)"
+    export COMPOSE_DOCKER_CLI_BUILD="$DOCKER_BUILDKIT"
+    [[ "$TEAM_BUILD_ENSURE_SUITE" == "true" ]] && team_ensure_suite_images
+    [[ "$TEAM_BUILD_ENSURE_SHARED" == "true" ]] && team_ensure_shared_utils
+    echo "Building $display services..."
+    ((${#services[@]} == 0)) && { echo "No services listed"; return 0; }
+    for img in "${TEAM_BUILD_DOCKER_PULL[@]}"; do
+        echo "Pulling $img..."
+        team_run --no-check docker pull "$img"
+    done
+    for svc in "${services[@]}"; do
+        team_in_list "$svc" "${pull_only[@]}" || buildable+=("$svc")
+    done
+    if ((${#buildable[@]} == 0)) && [[ "$TEAM_YAML_SERVICES_MODE" != "all" ]]; then
+        echo "Nothing to build (all services are pull-only)"
+        return 0
+    fi
+    if [[ "$TEAM_YAML_SERVICES_MODE" == "all" ]]; then
+        mapfile -t buildable < <(
+            docker compose -f "$TEAM_COMPOSE_FILE" config --services \
+            | while read -r s; do team_in_list "$s" "${pull_only[@]}" || echo "$s"; done
+        )
+    fi
+    if [[ "$TEAM_BUILD_SEQUENTIAL" == "true" ]]; then
+        for svc in "${buildable[@]}"; do team_build_one_service "$svc" failed optional_build || true; done
+    elif ((${#buildable[@]} > 0)); then
+        if ! team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" build "${buildable[@]}"; then
+            for svc in "${buildable[@]}"; do team_build_one_service "$svc" failed optional_build || true; done
+        fi
+    fi
+    if ((${#failed[@]} > 0)); then
+        echo "Failed services: ${failed[*]}"
+        exit 1
+    fi
+    echo "$display services built successfully"
+}
+
+team_filter_start_services() {
+    local -a services=("$@") out=() filtered=() final=() pull_only=() optional=()
+    local backend svc hint root
+    root="$(team_repo_root)"
+    mapfile -t pull_only < <(team_pull_only_set)
+    mapfile -t optional < <(printf '%s\n' "${TEAM_START_OPTIONAL[@]}")
+    backend="$(team_detect_backend)"
+    echo "Detected backend: $backend"
+    out=("${services[@]}")
+    if [[ "$backend" == "mps" && ${#TEAM_START_EXCLUDE_MPS[@]} -gt 0 ]]; then
+        echo "MPS — excluding: $(IFS=,; echo "${TEAM_START_EXCLUDE_MPS[*]}")"
+        for svc in "${out[@]}"; do
+            team_in_list "$svc" "${TEAM_START_EXCLUDE_MPS[@]}" || filtered+=("$svc")
+        done
+        out=("${filtered[@]}")
+        filtered=()
+    fi
+    for svc in "${out[@]}"; do
+        if team_in_list "$svc" "${TEAM_START_REQUIRE_DF[@]}"; then
+            hint="${TEAM_DOCKERFILE_HINTS[$svc]:-}"
+            if [[ -n "$hint" && ! -f "$root/$hint" ]]; then
+                echo "Skipping $svc (Dockerfile missing: $hint)"
+                continue
+            fi
+        fi
+        filtered+=("$svc")
+    done
+    for svc in "${filtered[@]}"; do
+        if team_in_list "$svc" "${pull_only[@]}"; then final+=("$svc"); continue; fi
+        if team_in_list "$svc" "${optional[@]}" && ! team_image_exists_for_service "$svc"; then
+            echo "Skipping optional $svc (image not found)"; continue
+        fi
+        if ! team_image_exists_for_service "$svc"; then
+            echo "Skipping $svc (image not found — run build first)"; continue
+        fi
+        final+=("$svc")
+    done
+    printf '%s\n' "${final[@]}"
+}
+
+team_expand_url() {
+    local line="$1"
+    line="${line//\$\{API_GATEWAY_PORT:-5100\}/${API_GATEWAY_PORT:-5100}}"
+    eval "echo \"$line\""
+}
+
+team_cmd_start() {
+    local team_id="$1" display="${TEAM_YAML_DISPLAY:-$team_id}"
+    local -a services=() phase_names=() rest=() phased=()
+    local pidx pi p_args wait line
+    if [[ "$TEAM_YAML_SERVICES_MODE" == "all" ]]; then
+        echo "Starting $display (all compose services)..."
+        team_run docker compose -f "$TEAM_COMPOSE_FILE" up -d --no-build
+    else
+        mapfile -t services < <(team_resolve_services)
+        mapfile -t services < <(team_filter_start_services "${services[@]}")
+        ((${#services[@]} == 0)) && fatal "No services to start"
+        echo "Starting $display: ${services[*]}"
+        if (( TEAM_START_PHASE_COUNT > 0 )); then
+            for ((pidx=0; pidx<TEAM_START_PHASE_COUNT; pidx++)); do
+                local -n _phase="TEAM_START_PHASE_${pidx}"
+                phase_names=()
+                for pi in "${_phase[@]}"; do
+                    team_in_list "$pi" "${services[@]}" && phase_names+=("$pi")
+                done
+                ((${#phase_names[@]} == 0)) && continue
+                echo "Phase: ${phase_names[*]}"
+                p_args=(docker compose -f "$TEAM_COMPOSE_FILE" up -d --no-build)
+                if [[ "$TEAM_START_NO_DEPS" == "true" && $pidx -gt 0 ]]; then
+                    p_args+=(--no-deps)
+                fi
+                team_run "${p_args[@]}" "${phase_names[@]}"
+                wait="${TEAM_START_PHASE_WAIT:-0}"
+                if (( pidx == 0 && wait > 0 )); then
+                    echo "Waiting ${wait}s for infrastructure..."
+                    sleep "$wait"
+                fi
+            done
+            for pi in "${services[@]}"; do
+                local found=0 p j
+                for ((pidx=0; pidx<TEAM_START_PHASE_COUNT; pidx++)); do
+                    local -n _ph="TEAM_START_PHASE_${pidx}"
+                    for p in "${_ph[@]}"; do [[ "$p" == "$pi" ]] && found=1 && break; done
+                    (( found )) && break
+                done
+                (( found )) || rest+=("$pi")
+            done
+            if ((${#rest[@]} > 0)); then
+                p_args=(docker compose -f "$TEAM_COMPOSE_FILE" up -d --no-build)
+                [[ "$TEAM_START_NO_DEPS" == "true" ]] && p_args+=(--no-deps)
+                team_run "${p_args[@]}" "${rest[@]}"
+            fi
+        else
+            local -a args=(docker compose -f "$TEAM_COMPOSE_FILE" up -d --no-build)
+            [[ "$TEAM_START_NO_DEPS" == "true" ]] && args+=(--no-deps)
+            team_run "${args[@]}" "${services[@]}"
+        fi
+    fi
+    echo "$display services started"
+    for line in "${TEAM_YAML_URLS[@]}"; do team_expand_url "$line"; done
+}
+
+team_cmd_stop() {
+    local team_id="$1" remove="${2:-0}"
+    local display="${TEAM_YAML_DISPLAY:-$team_id}"
+    local -a services=()
+    mapfile -t services < <(team_resolve_services)
+    echo "Stopping $display..."
+    if [[ "$TEAM_YAML_SERVICES_MODE" == "all" ]]; then
+        team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" stop
+        (( remove )) && team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" rm -f
+    elif ((${#services[@]} > 0)); then
+        team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" stop "${services[@]}"
+        (( remove )) && team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" rm -f "${services[@]}"
+    fi
+    if (( remove )); then echo "$display services stopped and removed"
+    else echo "$display services stopped"; fi
+}
+
+team_cmd_restart() {
+    team_cmd_stop "$1" 0
+    team_cmd_start "$1"
+}
+
+team_cmd_show() {
+    local team_id="$1" display="${TEAM_YAML_DISPLAY:-$team_id}"
+    local -a services=() subs=()
+    mapfile -t services < <(team_resolve_services)
+    mapfile -t subs < <(team_resolve_submodules)
+    echo "id: ${TEAM_YAML_ID:-$team_id}"
+    echo "display: $display"
+    echo "services (${#services[@]}):"
+    local s; for s in "${services[@]}"; do echo "  - $s"; done
+    echo "submodules (${#subs[@]}):"
+    local sm; for sm in "${subs[@]}"; do echo "  - $sm"; done
+}
+
+team_cmd_list_teams() { team_list_ids; }
+
+team_ops() {
+    local cmd="${1:-}" team="${2:-}" yml team_id root
+    root="$(team_repo_root)"
+    case "$cmd" in
+        list-teams) team_cmd_list_teams; return 0 ;;
+        pull|build|start|stop|stop-rm|restart|show) ;;
+        *) fatal "Unknown team_ops command: $cmd" ;;
+    esac
+    [[ -n "$team" ]] || { print_ops_usage; fatal "Missing team argument"; }
+    yml="$(team_resolve_yml "$team")" || exit 1
+    team_yaml_load "$yml"
+    team_id="${TEAM_YAML_ID:-$(basename "$yml" .yml)}"
+    cd "$root" || fatal "Cannot cd to $root"
+    case "$cmd" in
+        pull) team_cmd_pull "$team_id" ;;
+        build) team_cmd_build "$team_id" ;;
+        start) team_cmd_start "$team_id" ;;
+        stop) team_cmd_stop "$team_id" 0 ;;
+        stop-rm) team_cmd_stop "$team_id" 1 ;;
+        restart) team_cmd_restart "$team_id" ;;
+        show) team_cmd_show "$team_id" ;;
+    esac
 }
 
 pull_submodules() {
     step "Pulling team submodules ($TEAM_DISPLAY) via teams/$TEAM_FOLDER.yml"
-    team_ctl pull "$TEAM_FOLDER"
+    team_ops pull "$TEAM_FOLDER"
     ok "Submodules pulled for $TEAM_DISPLAY"
 }
 
 build_and_start_team_env() {
     step "Building & starting $TEAM_DISPLAY (teams/$TEAM_FOLDER.yml)"
     info "build (may take a while)"
-    team_ctl build "$TEAM_FOLDER"
+    team_ops build "$TEAM_FOLDER"
     info "start"
-    team_ctl start "$TEAM_FOLDER"
+    team_ops start "$TEAM_FOLDER"
     ok "Containers are starting"
     info "docker ps -- currently running containers:"
     docker ps --format "    {{.Names}}\t{{.Status}}\t{{.Ports}}" | head -40
@@ -566,18 +1256,20 @@ run_ops_command() {
             ;;
         list-teams)
             PLATFORM_REPO_DIR="${PLATFORM_REPO_DIR:-$SCRIPT_DIR}"
-            team_ctl list-teams
+            team_ops list-teams
             exit 0
             ;;
         pull|build|start|stop|stop-rm|restart|show)
             local team="${1:-}"
             [[ -n "$team" ]] || { print_ops_usage; fatal "Missing team argument"; }
-            if [[ -f "$SCRIPT_DIR/teams/team_ctl.py" ]]; then
+            if [[ -f "$SCRIPT_DIR/teams/all-services.yml" ]]; then
                 PLATFORM_REPO_DIR="$SCRIPT_DIR"
-            elif [[ -f "$SCRIPT_DIR/../teams/team_ctl.py" ]]; then
+            elif [[ -f "$SCRIPT_DIR/../teams/all-services.yml" ]]; then
                 PLATFORM_REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+            else
+                PLATFORM_REPO_DIR="${PLATFORM_REPO_DIR:-$SCRIPT_DIR}"
             fi
-            team_ctl "$cmd" "$team"
+            team_ops "$cmd" "$team"
             exit $?
             ;;
         *)
