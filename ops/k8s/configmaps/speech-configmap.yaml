@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: speech-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for deepiri-speech (STT/TTS + LiveKit agent) — public/non-secret config"
+data:
+  SERVICE_NAME: "deepiri-speech"
+  PORT: "5020"
+  LOG_LEVEL: "INFO"
+
+  SPEECH_DEVICE: "auto"
+  STT_PROVIDER: "mock"
+  TTS_PROVIDER: "mock"
+  STT_MODEL: "small.en"
+  TTS_VOICE: "af_heart"
+  ENABLE_SILERO_VAD: "1"
+  PIPECAT_ENABLED: "1"
+  PIPECAT_AUTO_REPLY: "1"
+
+  KOKORO_MODEL_DIR: "/models/kokoro"
+  KOKORO_AUTO_DOWNLOAD: "0"
+
+  CYREX_URL: "http://cyrex:8000"
+  # Batch Jobs/Truss path (workflow-orchestrator removed — Truss owns SPEECH_URL proxies)
+  JOBS_URL: "http://truss:5002"
+  TRUSS_URL: "http://truss:5002"
+
+  LIVEKIT_URL: "ws://livekit:7880"
+  LIVEKIT_PUBLIC_URL: "ws://localhost:7880"
+  LIVEKIT_WORKER_ENABLED: "1"
+  LIVEKIT_DEFAULT_ROOM: "deepiri-voice"
+  LIVEKIT_AGENT_IDENTITY: "deepiri-speech-agent"
+  LIVEKIT_ROOM_EMPTY_TIMEOUT: "300"
+  LIVEKIT_ROOM_MAX_PARTICIPANTS: "20"
+
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  SPEECH_STREAM: "speech-events"
+  SPEECH_CHANNEL_PREFIX: "speech"
+  SYNAPSE_TRANSPORT: "sidecar"
+  SYNAPSE_SIDECAR_URL: "http://synapse-sidecar:8081"

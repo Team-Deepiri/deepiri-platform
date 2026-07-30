@@ -455,7 +455,7 @@ MESSAGING_SERVICE_URL: http://messaging-service:5010
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-SPEECH_URL: ${SPEECH_URL:-http://speech:5020}
+      SPEECH_URL: ${SPEECH_URL:-http://speech:5020}
       K8S_SERVICE_NAME: truss  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -845,7 +845,9 @@ SPEECH_URL: ${SPEECH_URL:-http://speech:5020}
     logging: *minimal-logging
     ports:
       - "5020:5020"
+    # Variables auto-loaded from ops/k8s/configmaps when entrypoint wraps uvicorn
     environment:
+      K8S_SERVICE_NAME: speech
       PORT: 5020
       SPEECH_DEVICE: ${SPEECH_DEVICE:-auto}
       STT_PROVIDER: ${SPEECH_STT_PROVIDER:-mock}
@@ -874,9 +876,12 @@ SPEECH_URL: ${SPEECH_URL:-http://speech:5020}
       SPEECH_CHANNEL_PREFIX: speech
       SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
       SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
-      JOBS_URL: ${JOBS_URL:-http://workflow-orchestrator:5002}
-      TRUSS_URL: ${TRUSS_URL:-http://workflow-orchestrator:5002}
+      JOBS_URL: ${JOBS_URL:-http://truss:5002}
+      TRUSS_URL: ${TRUSS_URL:-http://truss:5002}
     volumes:
+      - ./ops/k8s/configmaps:/k8s-configmaps:ro
+      - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
+      - ./ops/k8s/secrets:/k8s-secrets:ro
       - ./platform-services/backend/deepiri-speech/app:/app/app
       - speech_kokoro_models:/models/kokoro
     command: uvicorn app.main:app --host 0.0.0.0 --port 5020 --reload

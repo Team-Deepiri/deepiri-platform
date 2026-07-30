@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     LIVEKIT_ROOM_EMPTY_TIMEOUT: int = 300
     LIVEKIT_ROOM_MAX_PARTICIPANTS: int = 20
 
-    JOBS_URL: str = "http://workflow-orchestrator:5002"
-    TRUSS_URL: str = "http://workflow-orchestrator:5002"
+    JOBS_URL: str = "http://truss:5002"
+    TRUSS_URL: str = "http://truss:5002"
 
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379

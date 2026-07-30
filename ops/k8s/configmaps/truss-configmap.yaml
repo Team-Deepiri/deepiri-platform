@@ -9,3 +9,4 @@ data:
   NODE_ENV: "development"
   PORT: "5002"
   SYNAPSE_URL: "http://synapse:8002"
+  SPEECH_URL: "http://speech:5020"
