@@ -17,34 +17,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics
 import time
-import urllib.error
-import urllib.request
 
-AUTH = "http://127.0.0.1:5001"
-PASSWORD = "BenchUser123!x9z"
+from utils import http_req
 
-
-def req(method: str, url: str, body=None, headers=None):
-    h = dict(headers or {})
-    data = json.dumps(body).encode() if body is not None else None
-    if data:
-        h.setdefault("Content-Type", "application/json")
-    r = urllib.request.Request(url, data=data, headers=h, method=method)
-    t0 = time.perf_counter()
-    try:
-        with urllib.request.urlopen(r, timeout=20) as resp:
-            raw = resp.read()
-            code = resp.status
-    except urllib.error.HTTPError as e:
-        raw, code = e.read(), e.code
-    ms = (time.perf_counter() - t0) * 1000.0
-    try:
-        parsed = json.loads(raw or b"{}")
-    except Exception:
-        parsed = {}
-    return ms, code, parsed
+AUTH = os.getenv("AUTH_URL", "http://127.0.0.1:5001")
+PASSWORD = os.getenv("AUTH_PASSWORD", "BenchUser123!x9z")
 
 
 def pct(vals, q):
@@ -78,22 +58,22 @@ def main():
         keep = i >= args.warmup
         email = f"bench-{args.label}-{int(time.time()*1000000)}-{i}@deepiri.local"
 
-        ms, code, _ = req("POST", f"{AUTH}/auth/register",
-                          {"email": email, "password": PASSWORD, "username": "bench"})
+        ms, code, _ = http_req("POST", f"{AUTH}/auth/register",
+                               {"email": email, "password": PASSWORD, "username": "bench"})
         if keep:
             reg_ms.append(ms)
             reg_codes.append(code)
 
-        ms, code, body = req("POST", f"{AUTH}/auth/login",
-                             {"email": email, "password": PASSWORD})
+        ms, code, body = http_req("POST", f"{AUTH}/auth/login",
+                                  {"email": email, "password": PASSWORD})
         if keep:
             log_ms.append(ms)
             log_codes.append(code)
 
-        token = body.get("token")
+        token = body.get("token") if isinstance(body, dict) else None
         if token:
-            ms, code, _ = req("POST", f"{AUTH}/auth/refresh", {},
-                              {"Authorization": f"Bearer {token}"})
+            ms, code, _ = http_req("POST", f"{AUTH}/auth/refresh", {},
+                                   {"Authorization": f"Bearer {token}"})
             if keep:
                 ref_ms.append(ms)
                 ref_codes.append(code)
