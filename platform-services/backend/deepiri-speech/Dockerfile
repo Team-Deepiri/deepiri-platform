@@ -11,14 +11,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir poetry==2.1.3 \
  && poetry config virtualenvs.create false
 
-COPY pyproject.toml README.md ./
-# Install base deps only in image; -E speech pulls faster-whisper at build when SPEECH_EXTRAS=1
+COPY pyproject.toml poetry.lock README.md ./
+
+# SPEECH_EXTRAS: 0=base | 1|speech=stt+tts+vad+pipecat | full=+livekit+apple
 ARG SPEECH_EXTRAS=0
-RUN if [ "$SPEECH_EXTRAS" = "1" ]; then \
-      poetry install --no-ansi --no-interaction --extras speech --no-root; \
-    else \
-      poetry install --no-ansi --no-interaction --no-root; \
-    fi
+RUN set -e; \
+    case "$SPEECH_EXTRAS" in \
+      1|speech) poetry install --no-ansi --no-interaction --extras speech --no-root ;; \
+      full) poetry install --no-ansi --no-interaction --extras full --no-root ;; \
+      *) poetry install --no-ansi --no-interaction --no-root ;; \
+    esac
 
 COPY app ./app
 

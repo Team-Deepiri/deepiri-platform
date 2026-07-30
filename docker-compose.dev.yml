@@ -835,14 +835,15 @@ services:
       - deepiri-dev-network
 
   # ════════════════════════════════════════════════════════════════════════
-  # Speech stack — LiveKit (WebRTC) + deepiri-speech (Poetry STT/TTS worker)
+  # Speech — deepiri-speech (Poetry FastAPI). Pipecat is in-process, not a service.
+  # Primary duplex: WebSocket. LiveKit is OPTIONAL (WebRTC rooms/phone only).
   # Docs: docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
-  # Media path is WebRTC — not Socket.IO / realtime-gateway.
   # ════════════════════════════════════════════════════════════════════════
   livekit:
     image: livekit/livekit-server:v1.8.4
     container_name: deepiri-livekit-dev
     restart: unless-stopped
+    profiles: ["webrtc", "full"]
     logging: *minimal-logging
     command: ["--config", "/etc/livekit.yaml"]
     ports:
@@ -882,14 +883,18 @@ services:
       - "5020:5020"
     environment:
       PORT: 5020
+      SPEECH_DEVICE: ${SPEECH_DEVICE:-auto}
       STT_PROVIDER: ${SPEECH_STT_PROVIDER:-mock}
       TTS_PROVIDER: ${SPEECH_TTS_PROVIDER:-mock}
       STT_MODEL: ${SPEECH_STT_MODEL:-small.en}
-      TTS_VOICE: ${SPEECH_TTS_VOICE:-default}
+      TTS_VOICE: ${SPEECH_TTS_VOICE:-af_heart}
       ENABLE_SILERO_VAD: ${SPEECH_ENABLE_SILERO_VAD:-1}
+      PIPECAT_ENABLED: ${PIPECAT_ENABLED:-1}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CYREX_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      KOKORO_MODEL_DIR: ${KOKORO_MODEL_DIR:-/models/kokoro}
+      KOKORO_AUTO_DOWNLOAD: ${KOKORO_AUTO_DOWNLOAD:-0}
       LIVEKIT_URL: ws://livekit:7880
       LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-APIdeepirispeechdev}
@@ -906,6 +911,7 @@ services:
       TRUSS_URL: ${TRUSS_URL:-http://workflow-orchestrator:5002}
     volumes:
       - ./platform-services/backend/deepiri-speech/app:/app/app
+      - speech_kokoro_models:/models/kokoro
     command: uvicorn app.main:app --host 0.0.0.0 --port 5020 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5020/health"]
@@ -916,11 +922,9 @@ services:
     depends_on:
       redis:
         condition: service_started
-      livekit:
-        condition: service_healthy
     networks:
       - deepiri-dev-network
-    # GPU optional — uncomment when host has NVIDIA Container Toolkit
+    # GPU: set SPEECH_DEVICE=cuda and uncomment when NVIDIA Container Toolkit is present
     # deploy:
     #   resources:
     #     reservations:
@@ -1422,6 +1426,8 @@ volumes:
   pgadmin_dev_data:
     driver: local
   redis_dev_data:
+    driver: local
+  speech_kokoro_models:
     driver: local
   mlflow_dev_data:
     driver: local

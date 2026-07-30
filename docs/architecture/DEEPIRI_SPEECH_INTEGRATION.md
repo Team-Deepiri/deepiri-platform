@@ -1,90 +1,79 @@
 # deepiri-speech — Platform Integration
 
-Self-hosted realtime STT/TTS (LiveKit + Python voice worker) as a **new** platform
-service family. Not colocated in realtime-gateway. Encore is not used.
+Self-hosted realtime STT/TTS as a **Poetry FastAPI** service (`speech`).  
+**Pipecat is in-process** (optional Poetry extra) — **not** a separate container.  
+**LiveKit is optional** (WebRTC rooms/phone only).
 
 ## Containers
 
 | Compose service | Port | Role |
 |-----------------|------|------|
-| `livekit` | 7880 | WebRTC media gateway (Opus, rooms, reconnect) |
-| `speech` | 5020 | Poetry/FastAPI **voice worker**: STT/TTS; duplex WS; LiveKit tokens |
+| `speech` | 5020 | Voice worker: providers + WS duplex + optional Pipecat |
+| `livekit` | 7880 | Optional SFU — profile `webrtc` / `full` |
 
 Code: `platform-services/backend/deepiri-speech/`
 
-## How it fits the platform
+## Architecture
 
 ```text
-Browser / cyrex-interface / web-frontend
+Browser / Jobs / Truss
         │
-        ├─ WebRTC ──────────────► livekit ──► speech (VAD/STT/TTS)
-        │                              │
-        │                              └─► Cyrex (LLM / agents) when agent voice
+        ├─ WebSocket ──────────► speech (/v1/session/ws)
+        │                           │
+        │                           ├─ providers (faster-whisper / Kokoro / VAD)
+        │                           ├─ pipeline: native OR Pipecat (in-process)
+        │                           └─ Redis speech-events
         │
-        ├─ Socket.IO ───────────► realtime-gateway   (product events / signaling only)
-        │                              ▲
-        │                              │ speech-events (lifecycle, not PCM)
-        │                         sugar-glider / redis streams
+        ├─ HTTP batch ─────────► speech (/v1/stt, /v1/tts) ◄── Jobs/Truss
         │
-        └─ HTTP batch ──────────► jobs / truss ──► speech REST
+        └─ WebRTC (optional) ──► livekit ──► speech worker (rooms/phone only)
 ```
 
-| Platform piece | Relationship to speech |
-|----------------|------------------------|
-| **speech** | Owns live duplex + STT/TTS inference |
-| **livekit** | Owns WebRTC media path (not Socket.IO) |
-| **Cyrex** | LLM/agents; called by speech worker or Truss |
-| **Jobs** | Batch: transcribe file / TTS document → POST speech |
-| **Truss** | Workflows: jobStep(STT) → Cyrex → jobStep(TTS) → notify |
-| **messaging** | Text chat rooms; may store transcript text |
-| **realtime-gateway** | Socket.IO fan-out only (`speech-events` → UI toasts). **Not** PCM |
-| **api-gateway** | Auth/session for speech control APIs if exposed publicly |
-| **synapse / sugar-glider** | Bus for `speech-events` control plane |
-| **Redis** | Pub/sub `speech:{session_id}` for partials across workers |
+| Piece | Role |
+|-------|------|
+| **speech** | Product boundary — FastAPI + providers |
+| **Pipecat** | Optional orchestration **inside** speech — not a service |
+| **livekit** | Optional WebRTC SFU |
+| **Jobs / Truss** | Batch via REST |
+| **realtime-gateway** | Product events only — **not** PCM |
 
-## Defaults (engines)
+## Engines (2026 defaults)
 
-- STT: **mock** in slim image; **faster-whisper** when `SPEECH_EXTRAS=1` + `SPEECH_STT_PROVIDER=faster_whisper`
-- VAD: **Silero** when extras+torch available (`SPEECH_ENABLE_SILERO_VAD=1`); else passthrough
-- TTS: **mock** → Kokoro/Piper later (prefer Apache/MIT; avoid XTTS CPML for product)
-- LiveKit worker: `LIVEKIT_WORKER_ENABLED=1` (stub until `livekit-agents` installed)
-- LLM: Cyrex + Ollama (not a separate vLLM box in v1)
+| Layer | Default | Notes |
+|-------|---------|-------|
+| STT | faster-whisper | CUDA/CPU; `whisper_cpp` extra for Apple/edge |
+| TTS | Kokoro-82M (kokoro-onnx) | Apache/MIT — **avoid XTTS CPML** |
+| VAD | Silero (torch) | passthrough if extras missing |
+| Device | `SPEECH_DEVICE=auto` | cuda → mps → cpu |
+| Orchestration | native WS pipeline | Pipecat when `-E pipecat` + `PIPECAT_ENABLED=1` |
 
-## Jobs / Truss → speech
+## Poetry
 
-Workflow orchestrator (Jobs/Truss stand-in on this branch) calls:
+```bash
+poetry install                 # always works (mock)
+poetry install -E speech       # production engines + Pipecat
+poetry install -E livekit      # WebRTC only when needed
+```
 
-| Orchestrator route | Speech route |
-|--------------------|--------------|
-| `GET /speech/health` | `GET /health` |
-| `POST /speech/transcribe` | `POST /v1/stt` |
-| `POST /speech/synthesize` | `POST /v1/tts` |
-
-Client: `deepiri-workflow-orchestrator/src/speechClient.ts` (`SPEECH_URL=http://speech:5020`).
-
-## Health checks
+## Health
 
 | Service | Probe |
 |---------|-------|
-| `livekit` | `wget` `http://127.0.0.1:7880/` |
 | `speech` | `curl -f http://localhost:5020/health` |
+| `livekit` | optional; `wget http://127.0.0.1:7880/` |
 
-`speech` waits for `livekit` healthy before starting.
+Speech does **not** depend on LiveKit healthy.
 
 ## Dev bring-up
 
-Speech is listed directly in:
+```bash
+docker compose -f docker-compose.dev.yml up -d --build redis speech
+# optional WebRTC:
+docker compose -f docker-compose.dev.yml --profile webrtc up -d livekit
+```
 
-1. **AI team** `team_dev_environments/ai-team/{start,stop,build}.sh` (`SERVICES` includes `livekit` `speech`)
-2. **Full / platform** stacks once services exist in `docker-compose.dev.yml`
-   (`platform-engineers` uses `config --services` and picks them up automatically)
-3. **`setup-deepiri-dev.sh`** — runs the team's `build.sh` + `start.sh` (no separate service list)
-4. **`diri-cyrex/setup.sh --run`** — includes `livekit` `speech`  
-   (`--run --headless` stays engine-only without LiveKit/speech)
-
-Compose must define `livekit` and `speech` before those names will start successfully.
+AI team `start.sh` lists `livekit speech` (explicit service names enable the livekit profile).
 
 ## Out of scope for RTG
 
-Do not put LiveKit, Whisper, or TTS inside `deepiri-realtime-gateway`.
-Media path ≠ Socket.IO product event path.
+Do not put LiveKit, Whisper, TTS, or Pipecat inside `deepiri-realtime-gateway`.

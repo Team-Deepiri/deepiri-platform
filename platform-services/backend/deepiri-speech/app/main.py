@@ -1,4 +1,8 @@
-"""FastAPI entry — deepiri-speech."""
+"""FastAPI entry — deepiri-speech.
+
+Primary duplex transport: WebSocket `/v1/session/ws` (Pipecat pipeline on providers).
+LiveKit is optional for WebRTC rooms/phone only.
+"""
 from __future__ import annotations
 
 import logging
@@ -10,7 +14,11 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from .bus import get_bus
+from .device import resolve_device
 from .livekit_worker import get_worker_state, start_worker_if_enabled, stop_worker
+from .pipecat_bridge import is_available as pipecat_available
+from .pipecat_bridge import status_dict as pipecat_status
+from .pipeline import run_ws_session
 from .providers import get_stt, get_tts
 from .settings import settings
 from .vad import get_vad
@@ -22,12 +30,14 @@ logger = logging.getLogger("deepiri-speech")
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     bus = await get_bus()
+    device = resolve_device()
     logger.info(
-        "deepiri-speech starting stt=%s tts=%s vad=%s livekit=%s worker=%s",
+        "deepiri-speech starting stt=%s tts=%s vad=%s device=%s pipecat=%s livekit_worker=%s",
         settings.STT_PROVIDER,
         settings.TTS_PROVIDER,
         "silero" if settings.ENABLE_SILERO_VAD else "off",
-        settings.LIVEKIT_URL,
+        device.kind,
+        pipecat_available(),
         settings.LIVEKIT_WORKER_ENABLED,
     )
     await start_worker_if_enabled()
@@ -38,8 +48,11 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="Deepiri Speech",
-    version="0.1.0",
-    description="Self-hosted STT/TTS voice worker (LiveKit media path)",
+    version="0.2.0",
+    description=(
+        "Self-hosted STT/TTS — Poetry FastAPI, Pipecat pipeline over providers, "
+        "WebSocket transport (LiveKit optional for WebRTC rooms)"
+    ),
     lifespan=lifespan,
 )
 
@@ -65,12 +78,17 @@ class LiveKitTokenRequest(BaseModel):
 async def health():
     worker = get_worker_state()
     vad = get_vad()
+    device = resolve_device()
     return {
         "status": "healthy",
         "service": settings.SERVICE_NAME,
         "stt_provider": settings.STT_PROVIDER,
         "tts_provider": settings.TTS_PROVIDER,
         "vad": getattr(vad, "name", "unknown"),
+        "device": device.to_dict(),
+        "pipeline": "pipecat" if pipecat_available() else "native",
+        "transport": "websocket",
+        "livekit_optional": True,
         "livekit_url": settings.LIVEKIT_PUBLIC_URL,
         "speech_stream": settings.SPEECH_STREAM,
         "worker": worker.to_dict(),
@@ -80,6 +98,7 @@ async def health():
 @app.get("/providers")
 async def providers():
     vad = get_vad()
+    device = resolve_device()
     return {
         "stt": settings.STT_PROVIDER,
         "tts": settings.TTS_PROVIDER,
@@ -87,13 +106,36 @@ async def providers():
         "tts_voice": settings.TTS_VOICE,
         "vad": getattr(vad, "name", "unknown"),
         "silero_enabled": settings.ENABLE_SILERO_VAD,
+        "pipecat_enabled": settings.PIPECAT_ENABLED,
+        "pipecat_available": pipecat_available(),
         "worker_enabled": settings.LIVEKIT_WORKER_ENABLED,
+        "device": device.to_dict(),
+        "engines": {
+            "stt_default": "faster_whisper",
+            "stt_apple_edge": "whisper_cpp",
+            "tts_default": "kokoro",
+            "tts_avoid": "xtts_v2 (CPML)",
+        },
     }
 
 
 @app.get("/v1/worker/status")
 async def worker_status():
     return get_worker_state().to_dict()
+
+
+@app.get("/v1/pipeline/status")
+async def pipeline_status():
+    return {
+        "transport": "websocket",
+        "endpoint": "/v1/session/ws",
+        "pipecat": pipecat_status(),
+        "livekit_required": False,
+        "note": (
+            "Pipecat is in-process (not a separate service). "
+            "LiveKit only for WebRTC rooms/phone — not used for default duplex."
+        ),
+    }
 
 
 @app.post("/v1/stt")
@@ -154,22 +196,24 @@ async def create_session(body: SessionCreate):
     return {
         "session_id": session_id,
         "room_name": room,
-        "livekit_url": settings.LIVEKIT_PUBLIC_URL,
+        "ws_url": f"ws://localhost:{settings.PORT}/v1/session/ws?session_id={session_id}",
+        "transport": "websocket",
+        "livekit_url": settings.LIVEKIT_PUBLIC_URL if settings.LIVEKIT_WORKER_ENABLED else None,
     }
 
 
 @app.post("/v1/livekit/token")
 async def livekit_token(body: LiveKitTokenRequest):
-    """Mint a LiveKit access token when livekit-api is installed."""
+    """Optional — only when you need real WebRTC rooms/phone."""
     try:
         from livekit.api import AccessToken, VideoGrants
     except ImportError:
         return {
-            "error": "livekit-api not installed; poetry install -E speech",
+            "error": "livekit-api not installed; poetry install -E livekit",
             "room_name": body.room_name,
             "identity": body.identity,
             "livekit_url": settings.LIVEKIT_PUBLIC_URL,
-            "dev_hint": "Use LiveKit dashboard or install extras for token minting",
+            "dev_hint": "WS duplex does not need LiveKit; install extras only for WebRTC rooms",
         }
 
     token = (
@@ -196,51 +240,13 @@ async def livekit_token(body: LiveKitTokenRequest):
 
 @app.websocket("/v1/session/ws")
 async def duplex_ws(websocket: WebSocket):
-    """
-    Control duplex over WS (typed JSON). Audio media prefers LiveKit tracks;
-    this socket is for session control / mock STT of uploaded base64 chunks.
-    """
+    """Primary media/control duplex — Pipecat pipeline on providers over WebSocket."""
     await websocket.accept()
     session_id = websocket.query_params.get("session_id") or "anon"
     bus = await get_bus()
     await bus.session_started(session_id)
-    await websocket.send_json({"type": "session_ready", "session_id": session_id})
-
-    stt = get_stt()
-    tts = get_tts()
     try:
-        while True:
-            msg = await websocket.receive_json()
-            mtype = msg.get("type")
-            if mtype == "audio_end" or mtype == "stt":
-                import base64
-
-                raw = base64.b64decode(msg.get("audio_b64") or "")
-                result = await stt.transcribe(raw, mime_type=msg.get("mime_type", "audio/wav"))
-                await bus.stt_final(session_id, result.text, provider=result.provider)
-                await bus.publish_partial(
-                    session_id, {"type": "stt_final", "text": result.text}
-                )
-                await websocket.send_json(
-                    {"type": "stt_final", "text": result.text, "provider": result.provider}
-                )
-            elif mtype == "speak":
-                text = msg.get("text") or ""
-                result = await tts.synthesize(text, voice=msg.get("voice"))
-                import base64
-
-                await websocket.send_json(
-                    {
-                        "type": "tts_chunk",
-                        "audio_b64": base64.b64encode(result.audio).decode("ascii"),
-                        "mime_type": result.mime_type,
-                        "is_final": True,
-                    }
-                )
-            elif mtype == "ping":
-                await websocket.send_json({"type": "pong"})
-            elif mtype == "close":
-                break
+        await run_ws_session(websocket, session_id, bus)
     except WebSocketDisconnect:
         logger.info("ws disconnected session=%s", session_id)
     except Exception as exc:

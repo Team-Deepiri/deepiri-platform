@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "deepiri-speech"
 version = "0.1.0"
-description = "Deepiri self-hosted speech engine — VAD, STT, TTS, LiveKit voice worker"
+description = "Deepiri self-hosted speech — Poetry FastAPI, Pipecat pipeline, WS transport, CUDA/MPS/CPU"
 readme = "README.md"
 license = "Apache-2.0"
 packages = [{ include = "app" }]
@@ -21,15 +21,44 @@ redis = { version = ">=5.0.0", extras = ["hiredis"] }
 python-multipart = ">=0.0.9"
 numpy = ">=1.24.0"
 
-# Optional heavy engines (poetry install -E speech / SPEECH_EXTRAS=1)
+# Optional engines — poetry install -E speech | -E full
 faster-whisper = { version = ">=1.1.0", optional = true }
+kokoro-onnx = { version = ">=0.4.0", optional = true }
+soundfile = { version = ">=0.12.0", optional = true }
+onnxruntime = { version = ">=1.17.0", optional = true }
+torch = { version = ">=2.2.0", optional = true }
+pipecat-ai = { version = ">=0.0.57", optional = true }
 livekit-api = { version = ">=0.7.0", optional = true }
 livekit-agents = { version = ">=0.12.0", optional = true }
-torch = { version = ">=2.2.0", optional = true }
+pywhispercpp = { version = ">=1.2.0", optional = true }
 
 [tool.poetry.extras]
-speech = ["faster-whisper", "livekit-api", "livekit-agents", "torch"]
-full = ["speech"]
+# Production STT (NVIDIA CUDA or CPU via CTranslate2)
+stt = ["faster-whisper"]
+# Default commercial-safe TTS (Apache 2.0 model + MIT onnx wrapper)
+tts = ["kokoro-onnx", "soundfile", "onnxruntime"]
+# Silero VAD
+vad = ["torch"]
+# Pipecat orchestration (WS transport stays ours — not a second SFU)
+pipecat = ["pipecat-ai"]
+# LiveKit only for real WebRTC rooms / phone
+livekit = ["livekit-api", "livekit-agents"]
+# Apple Silicon / edge whisper.cpp
+apple = ["pywhispercpp"]
+# Typical GPU/CPU speech stack without LiveKit
+speech = ["faster-whisper", "kokoro-onnx", "soundfile", "onnxruntime", "torch", "pipecat-ai"]
+# Everything including LiveKit + whisper.cpp
+full = [
+  "faster-whisper",
+  "kokoro-onnx",
+  "soundfile",
+  "onnxruntime",
+  "torch",
+  "pipecat-ai",
+  "livekit-api",
+  "livekit-agents",
+  "pywhispercpp",
+]
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0.0"

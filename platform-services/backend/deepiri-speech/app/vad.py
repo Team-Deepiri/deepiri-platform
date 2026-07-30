@@ -72,7 +72,16 @@ class SileroVAD:
 
         import torch
 
+        from .device import resolve_device
+
         waveform = torch.from_numpy(pcm)
+        device = resolve_device().torch_device
+        if device != "cpu":
+            try:
+                waveform = waveform.to(device)
+                self._model = self._model.to(device)
+            except Exception:
+                pass
         timestamps = get_speech_timestamps(
             waveform,
             self._model,
