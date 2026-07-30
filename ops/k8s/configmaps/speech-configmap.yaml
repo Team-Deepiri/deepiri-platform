@@ -23,8 +23,8 @@ data:
   KOKORO_AUTO_DOWNLOAD: "0"
 
   CYREX_URL: "http://cyrex:8000"
-  # Batch Jobs/Truss path (workflow-orchestrator removed — Truss owns SPEECH_URL proxies)
-  JOBS_URL: "http://truss:5002"
+  # Jobs = async work (5007); Truss = workflows + /speech/* proxies (5002)
+  JOBS_URL: "http://jobs:5007"
   TRUSS_URL: "http://truss:5002"
 
   LIVEKIT_URL: "ws://livekit:7880"

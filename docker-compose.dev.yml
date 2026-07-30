@@ -876,7 +876,7 @@ services:
       SPEECH_CHANNEL_PREFIX: speech
       SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
       SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
-      JOBS_URL: ${JOBS_URL:-http://truss:5002}
+      JOBS_URL: ${JOBS_URL:-http://jobs:5007}
       TRUSS_URL: ${TRUSS_URL:-http://truss:5002}
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro

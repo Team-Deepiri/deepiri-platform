@@ -63,8 +63,8 @@ class SpeechHttpClient:
 
 
 async def notify_orchestrator(event: str, payload: dict[str, Any]) -> None:
-    """Best-effort notify Jobs/Truss (workflow-orchestrator) of speech lifecycle."""
-    url = (settings.JOBS_URL or settings.TRUSS_URL or "").rstrip("/")
+    """Best-effort notify Truss of speech lifecycle (/speech/events lives on Truss)."""
+    url = (settings.TRUSS_URL or settings.JOBS_URL or "").rstrip("/")
     if not url:
         return
     try:
