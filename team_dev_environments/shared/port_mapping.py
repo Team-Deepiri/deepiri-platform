@@ -17,12 +17,11 @@ TEAM_PORT_OFFSETS = {
 # Base ports for services
 BASE_PORTS = {
     "auth-service": 5001,
-    "workflow-orchestrator": 5002,
-    "incentive-engine": 5003,
-    "decision-intelligence": 5004,
-    "communications-hub": 5005,
+    "truss": 5002,
+    "registry": 5003,
+    "telemetry": 5004,
     "external-bridge-service": 5006,
-    "adaptive-experience-engine": 5007,
+    "jobs": 5007,
     "realtime-gateway": 5008,
     "messaging-service": 5009,
     "api-gateway": 5100,

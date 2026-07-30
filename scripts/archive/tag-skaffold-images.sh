@@ -15,12 +15,11 @@ TAG_MAPPINGS=(
     "deepiri-frontend:deepiri-dev-frontend:latest"
     "deepiri-api-gateway:deepiri-dev-api-gateway:latest"
     "deepiri-auth-service:deepiri-dev-auth-service:latest"
-    "deepiri-workflow-orchestrator:deepiri-dev-workflow-orchestrator:latest"
-    "deepiri-adaptive-experience-engine:deepiri-dev-adaptive-experience-engine:latest"
-    "deepiri-incentive-engine:deepiri-dev-incentive-engine:latest"
-    "deepiri-decision-intelligence:deepiri-dev-decision-intelligence:latest"
+    "deepiri-truss:deepiri-dev-truss:latest"
+    "deepiri-jobs:deepiri-dev-jobs:latest"
+    "deepiri-registry:deepiri-dev-registry:latest"
+    "deepiri-telemetry:deepiri-dev-telemetry:latest"
     "deepiri-external-bridge-service:deepiri-dev-external-bridge-service:latest"
-    "deepiri-communications-hub:deepiri-dev-communications-hub:latest"
     "deepiri-realtime-gateway:deepiri-dev-realtime-gateway:latest"
 )
 

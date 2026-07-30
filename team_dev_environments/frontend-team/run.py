@@ -7,8 +7,8 @@ Starts ONLY the services needed by the frontend:
   - frontend-dev: React frontend application
   - api-gateway: Routes REST API calls from frontend
   - realtime-gateway: WebSocket for real-time features
-  - auth-service, workflow-orchestrator, incentive-engine, decision-intelligence,
-    communications-hub, adaptive-experience-engine: Dependencies of api-gateway
+  - auth-service, truss, registry, telemetry,
+    jobs: Dependencies of api-gateway
   - Infrastructure: postgres, redis, influxdb, pgadmin, adminer
 
 Services NOT started (not needed by frontend):

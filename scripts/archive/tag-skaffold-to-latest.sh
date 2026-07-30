@@ -15,12 +15,11 @@ IMAGES=(
     "deepiri-dev-frontend"
     "deepiri-dev-api-gateway"
     "deepiri-dev-auth-service"
-    "deepiri-dev-workflow-orchestrator"
-    "deepiri-dev-adaptive-experience-engine"
-    "deepiri-dev-incentive-engine"
-    "deepiri-dev-decision-intelligence"
+    "deepiri-dev-truss"
+    "deepiri-dev-jobs"
+    "deepiri-dev-registry"
+    "deepiri-dev-telemetry"
     "deepiri-dev-external-bridge-service"
-    "deepiri-dev-communications-hub"
     "deepiri-dev-realtime-gateway"
 )
 

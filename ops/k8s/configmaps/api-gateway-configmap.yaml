@@ -9,17 +9,17 @@ data:
   # Server Configuration
   NODE_ENV: "development"
   PORT: "5000"
-  
+
   # Service URLs (internal Docker/K8s service names)
   AUTH_SERVICE_URL: "http://auth-service:5001"
-  WORKFLOW_ORCHESTRATOR_URL: "http://workflow-orchestrator:5002"
-  INCENTIVE_ENGINE_URL: "http://incentive-engine:5003"
-  DECISION_INTELLIGENCE_URL: "http://decision-intelligence:5004"
-  COMMUNICATIONS_HUB_URL: "http://communications-hub:5005"
+  TRUSS_URL: "http://truss:5002"
+  REGISTRY_URL: "http://registry:5003"
+  TELEMETRY_URL: "http://telemetry:5004"
+  MESSAGING_SERVICE_URL: "http://messaging-service:5009"
   EXTERNAL_BRIDGE_SERVICE_URL: "http://external-bridge-service:5006"
-  ADAPTIVE_EXPERIENCE_ENGINE_URL: "http://adaptive-experience-engine:5007"
+  JOBS_URL: "http://jobs:5007"
   REALTIME_GATEWAY_URL: "http://realtime-gateway:5008"
+  LANGUAGE_INTELLIGENCE_SERVICE_URL: "http://language-intelligence-service:5010"
   CYREX_URL: "http://cyrex:8000"
   SYNAPSE_URL: "http://synapse:8002"
   MLFLOW_URL: "http://mlflow:5000"
-

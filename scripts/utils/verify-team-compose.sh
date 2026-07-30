@@ -4,8 +4,8 @@
 echo "Verifying team compose files match docker-compose.dev.yml..."
 
 # Check if services in team files match what's expected
-echo "✅ AI Team: influxdb, redis, etcd, minio, milvus, cyrex, jupyter, mlflow, adaptive-experience-engine"
-echo "✅ ML Team: influxdb, redis, cyrex, jupyter, mlflow, decision-intelligence"
+echo "✅ AI Team: influxdb, redis, etcd, minio, milvus, cyrex, jupyter, mlflow, jobs"
+echo "✅ ML Team: influxdb, redis, cyrex, jupyter, mlflow, telemetry"
 echo "✅ Backend Team: redis, influxdb + all backend microservices"
 echo "✅ Frontend Team: redis, influxdb + all backend + frontend-dev"
 echo "✅ Infrastructure/Platform/QA: ALL SERVICES"

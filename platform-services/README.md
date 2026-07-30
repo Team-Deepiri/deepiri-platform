@@ -9,12 +9,11 @@ platform-services/
 ├── backend/              # Backend microservices (Node.js)
 │   ├── deepiri-api-gateway/
 │   ├── deepiri-auth-service/
-│   ├── deepiri-workflow-orchestrator/
-│   ├── deepiri-adaptive-experience-engine/
-│   ├── deepiri-incentive-engine/
-│   ├── deepiri-decision-intelligence/
+│   ├── deepiri-truss/
+│   ├── deepiri-jobs/
+│   ├── deepiri-registry/
+│   ├── deepiri-telemetry/
 │   ├── deepiri-external-bridge-service/
-│   ├── deepiri-communications-hub/
 │   └── deepiri-realtime-gateway/
 │
 ├── shared/              # Shared libraries and utilities

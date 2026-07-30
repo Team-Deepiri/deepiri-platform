@@ -1,0 +1,26 @@
+# deepiri.yaml — repo platform manifest (Tier 0+)
+# Place at repo root; registry polls /health and this file for discovery.
+
+name: example-service
+tier: 1  # 0=standalone, 1=signals, 2=data consumer, 3=full platform
+version: "0.1.0"
+
+health:
+  path: /health
+  interval_seconds: 60
+
+platform:
+  optional: true
+  consumes:
+    - registry
+    - messaging
+  emits:
+    - telemetry.*
+
+synapse:
+  streams:
+    - platform-events
+
+repository:
+  org: Team-Deepiri
+  name: example-service

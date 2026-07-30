@@ -5,7 +5,7 @@
 eval $(minikube docker-env)
 
 # Tag all images with :latest
-for img in deepiri-dev-cyrex deepiri-dev-frontend deepiri-dev-api-gateway deepiri-dev-auth-service deepiri-dev-workflow-orchestrator deepiri-dev-adaptive-experience-engine deepiri-dev-incentive-engine deepiri-dev-decision-intelligence deepiri-dev-external-bridge-service deepiri-dev-communications-hub deepiri-dev-realtime-gateway; do
+for img in deepiri-dev-cyrex deepiri-dev-frontend deepiri-dev-api-gateway deepiri-dev-auth-service deepiri-dev-truss deepiri-dev-jobs deepiri-dev-registry deepiri-dev-telemetry deepiri-dev-external-bridge-service deepiri-dev-realtime-gateway; do
     # Find the source image (any tag except :latest)
     SOURCE=$(docker images --format "{{.Repository}}:{{.Tag}}" "$img" 2>/dev/null | grep -v ":latest$" | head -1)
     

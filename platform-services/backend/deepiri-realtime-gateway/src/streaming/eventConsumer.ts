@@ -1096,9 +1096,10 @@ async function startStreamLoop(
 
       const dispatchStartNs = nowHrTimeNs();
       const laneDecision = resolveRuntimeLaneDecision(event);
+      const socketEvent = resolveRepurposeSocketEvent(event, spec.socketEvent);
       if (event.user_id) {
         const emitStartNs = nowHrTimeNs();
-        io.to(`user_${event.user_id}`).emit(spec.socketEvent, event);
+        io.to(`user_${event.user_id}`).emit(socketEvent, event);
         const emitNs = elapsedNs(emitStartNs);
         recordRuntimeBreakthroughDecision(laneDecision, false);
         return {
@@ -1109,7 +1110,7 @@ async function startStreamLoop(
 
       const emission = resolveBroadcastEmission(event, laneDecision);
       const emitStartNs = nowHrTimeNs();
-      io.emit(spec.socketEvent, emission.data);
+      io.emit(socketEvent, emission.data);
       const emitNs = elapsedNs(emitStartNs);
       recordRuntimeBreakthroughDecision(laneDecision, emission.directBroadcast);
       return {
@@ -1191,6 +1192,17 @@ function normalizeGrpcEvent(event: GrpcEvent): StreamEvent {
 function resolveSocketEventName(streamName: string): string {
   const spec = STREAM_SPECS.find((entry) => entry.stream === streamName);
   return spec?.socketEvent || 'unknown-event';
+}
+
+function resolveRepurposeSocketEvent(event: StreamEvent, defaultEvent: string): string {
+  const type = String(event.event_type || event.event || '');
+  if (type.startsWith('registry.')) return 'registry-event';
+  if (type.startsWith('truss.')) return 'truss-event';
+  if (type.startsWith('jobs.')) return 'jobs-event';
+  if (type.startsWith('telemetry.')) return 'telemetry-event';
+  if (type.startsWith('training.')) return 'training-event';
+  if (type.startsWith('notification.') || type.startsWith('messaging.')) return 'notification-event';
+  return defaultEvent;
 }
 
 function decodeGrpcPayload(payload: Buffer | Uint8Array): unknown {
