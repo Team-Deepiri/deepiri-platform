@@ -1050,6 +1050,12 @@ services:
       SYNAPSE_URL: http://synapse:8002
       # Messaging callback path (compose messaging listens on 5010)
       MESSAGING_SERVICE_URL: ${MESSAGING_SERVICE_URL:-http://messaging-service:5010}
+      # deepiri-speech (platform speech engine)
+      SPEECH_ENABLED: ${SPEECH_ENABLED:-1}
+      SPEECH_URL: ${SPEECH_URL:-http://speech:5020}
+      SPEECH_PUBLIC_URL: ${SPEECH_PUBLIC_URL:-http://localhost:5020}
+      LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
+      SPEECH_TTS_VOICE: ${SPEECH_TTS_VOICE:-af_heart}
       # Synapse transport (redis|sidecar). Default to sidecar in dev.
       SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
       SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
@@ -1130,6 +1136,8 @@ services:
       VITE_CYREX_BASE_URL: http://localhost:8000
       VITE_SYNAPSE_URL: http://localhost:8002
       VITE_MESSAGING_SERVICE_URL: http://localhost:5010
+      VITE_SPEECH_URL: http://localhost:5020
+      VITE_LIVEKIT_URL: ws://localhost:7880
       VITE_REALTIME_GATEWAY_URL: http://localhost:5008
       VITE_PORT: 5175
     ports:
