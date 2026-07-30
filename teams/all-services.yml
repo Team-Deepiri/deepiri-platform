@@ -80,3 +80,4 @@ pull_only:
   - milvus
   - ollama
   - livekit
+  - cyrex-interface   # node:20-alpine runtime image; deps install at container start
