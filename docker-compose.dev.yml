@@ -1228,7 +1228,7 @@ services:
       VITE_API_URL: http://localhost:${API_GATEWAY_PORT:-5100}/api
       VITE_API_GATEWAY_URL: http://localhost:${API_GATEWAY_PORT:-5100}
       VITE_REGISTRY_URL: ${VITE_REGISTRY_URL:-http://localhost:5003}
-      VITE_REALTIME_GATEWAY_URL: http://localhost:5008
+      VITE_REALTIME_GATEWAY_URL: http://localhost:${REALTIME_GATEWAY_PORT:-5008}
       VITE_SYNAPSE_URL: http://localhost:8002
       VITE_MLFLOW_URL: http://localhost:5500
       K8S_SERVICE_NAME: frontend-dev  # Filter to only load this service's configmap
