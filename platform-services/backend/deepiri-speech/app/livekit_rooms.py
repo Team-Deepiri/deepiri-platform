@@ -75,10 +75,11 @@ async def create_room(
     from livekit import api
 
     room_name = name or settings.LIVEKIT_DEFAULT_ROOM
-    lkapi = api.LiveKitAPI(
-        _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
-    )
+    lkapi = None
     try:
+        lkapi = api.LiveKitAPI(
+            _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
+        )
         room = await lkapi.room.create_room(
             api.CreateRoomRequest(
                 name=room_name,
@@ -96,16 +97,18 @@ async def create_room(
             "livekit_url": settings.LIVEKIT_PUBLIC_URL,
         }
     finally:
-        await lkapi.aclose()
+        if lkapi is not None:
+            await lkapi.aclose()
 
 
 async def list_rooms() -> list[dict[str, Any]]:
     from livekit import api
 
-    lkapi = api.LiveKitAPI(
-        _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
-    )
+    lkapi = None
     try:
+        lkapi = api.LiveKitAPI(
+            _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
+        )
         resp = await lkapi.room.list_rooms(api.ListRoomsRequest())
         rooms = []
         for room in resp.rooms or []:
@@ -120,20 +123,23 @@ async def list_rooms() -> list[dict[str, Any]]:
             )
         return rooms
     finally:
-        await lkapi.aclose()
+        if lkapi is not None:
+            await lkapi.aclose()
 
 
 async def delete_room(name: str) -> dict[str, Any]:
     from livekit import api
 
-    lkapi = api.LiveKitAPI(
-        _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
-    )
+    lkapi = None
     try:
+        lkapi = api.LiveKitAPI(
+            _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
+        )
         await lkapi.room.delete_room(api.DeleteRoomRequest(room=name))
         return {"deleted": name}
     finally:
-        await lkapi.aclose()
+        if lkapi is not None:
+            await lkapi.aclose()
 
 
 async def ensure_default_room() -> dict[str, Any]:
