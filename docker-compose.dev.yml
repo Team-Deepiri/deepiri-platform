@@ -1032,9 +1032,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
-      # PostgreSQL Configuration
+      # PostgreSQL Configuration — talk to postgres-cyrex on the *container* port
       POSTGRES_HOST: postgres-cyrex
-      POSTGRES_PORT: 5434
+      POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
       POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
       POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}

@@ -102,7 +102,66 @@ CREATE INDEX IF NOT EXISTS idx_events_created ON cyrex.events(created_at);
 CREATE INDEX IF NOT EXISTS idx_events_severity ON cyrex.events(severity);
 
 -- Comments
-COMMENT ON SCHEMA cyrex IS 'AI/Agent System: workflows, agents, memories, events';
+COMMENT ON SCHEMA cyrex IS 'AI/Agent System: workflows, agents, memories, events, AGI artifacts';
+
+-- ===========================
+-- AGI artifact graph (Track A/C)
+-- ===========================
+CREATE TABLE IF NOT EXISTS cyrex.artifacts (
+    artifact_id      TEXT PRIMARY KEY,
+    document_id      TEXT    NOT NULL,
+    version          INTEGER NOT NULL DEFAULT 1,
+    artifact_type    TEXT    NOT NULL,
+    source_doc_hash  TEXT    NOT NULL,
+    confidence       DOUBLE PRECISION NOT NULL,
+    payload_json     JSONB   NOT NULL DEFAULT '{}'::jsonb,
+    provenance_json  JSONB   NOT NULL DEFAULT '{}'::jsonb,
+    is_deleted       BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_cyrex_artifacts_doc ON cyrex.artifacts(document_id);
+CREATE INDEX IF NOT EXISTS idx_cyrex_artifacts_doc_type ON cyrex.artifacts(document_id, artifact_type);
+
+CREATE TABLE IF NOT EXISTS cyrex.artifact_refs (
+    from_artifact TEXT NOT NULL,
+    to_artifact   TEXT NOT NULL,
+    ref_type      TEXT NOT NULL,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (from_artifact, to_artifact, ref_type)
+);
+CREATE INDEX IF NOT EXISTS idx_cyrex_refs_from ON cyrex.artifact_refs(from_artifact);
+CREATE INDEX IF NOT EXISTS idx_cyrex_refs_to ON cyrex.artifact_refs(to_artifact);
+
+CREATE TABLE IF NOT EXISTS cyrex.citations (
+    citation_id      TEXT PRIMARY KEY,
+    artifact_id      TEXT NOT NULL REFERENCES cyrex.artifacts(artifact_id) ON DELETE CASCADE,
+    document_id      TEXT NOT NULL,
+    source_doc_hash  TEXT NOT NULL,
+    locator_type     TEXT NOT NULL,
+    char_start       INTEGER,
+    char_end         INTEGER,
+    page_start       INTEGER,
+    page_end         INTEGER,
+    element_id       TEXT,
+    quote            TEXT NOT NULL,
+    confidence       DOUBLE PRECISION NOT NULL,
+    extraction_pass  INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_cyrex_citations_doc_span
+    ON cyrex.citations(document_id, char_start, char_end);
+
+CREATE TABLE IF NOT EXISTS cyrex.learning_artifacts (
+    artifact_id      TEXT PRIMARY KEY,
+    document_id      TEXT NOT NULL,
+    field_name       TEXT NOT NULL,
+    original_value   JSONB,
+    corrected_value  JSONB NOT NULL,
+    citation_json    JSONB NOT NULL,
+    actor_id         TEXT NOT NULL,
+    timestamp        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    exported         BOOLEAN NOT NULL DEFAULT FALSE
+);
+CREATE INDEX IF NOT EXISTS idx_cyrex_learning_exported ON cyrex.learning_artifacts(exported);
 
 -- Success message
 DO $$
