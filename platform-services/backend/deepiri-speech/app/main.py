@@ -240,8 +240,13 @@ async def create_session(body: SessionCreate):
 async def livekit_rooms_list():
     try:
         return {"rooms": await list_rooms(), "url": settings.LIVEKIT_PUBLIC_URL}
-    except Exception as exc:
-        return {"rooms": [], "error": str(exc), "url": settings.LIVEKIT_PUBLIC_URL}
+    except Exception:
+        logger.exception("Failed to list LiveKit rooms")
+        return {
+            "rooms": [],
+            "error": "Unable to list rooms at this time",
+            "url": settings.LIVEKIT_PUBLIC_URL,
+        }
 
 
 @app.post("/v1/livekit/rooms")
