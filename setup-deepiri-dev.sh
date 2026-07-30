@@ -21,6 +21,23 @@
 #      after the auto-init schema scripts have run via
 #      /docker-entrypoint-initdb.d.
 #
+# SPEECH ENGINE (deepiri-speech) — REQUIRED WHEN WIRING COMPOSE
+# ----------------------------------------------------------------------------
+# Self-hosted realtime STT/TTS is a NEW compose pair (not inside RTG):
+#   - livekit  — WebRTC media gateway
+#   - speech   — Poetry voice worker (Silero VAD + faster-whisper + TTS)
+#
+# Integration: docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
+#
+# Must be included when starting:
+#   • AI team (+ QA Tier 3 which reuses ai-team) — voice for Cyrex agents
+#     → livekit + speech listed in team_dev_environments/ai-team/{start,build,stop}.sh
+#   • Platform / full stacks — once services exist in docker-compose.dev.yml
+#     (platform-engineers uses `config --services` and picks them up)
+#
+# setup-deepiri-dev.sh only runs that team's build.sh then start.sh —
+# it does not maintain its own service list. Frontend-only tiers skip speech.
+#
 # Usage: bash setup-deepiri-dev.sh
 # ============================================================================
 
@@ -155,6 +172,15 @@ select_team() {
             else
                 ok "Selected: $TEAM_DISPLAY ($TEAM_FOLDER)"
             fi
+            # Speech: AI stack (and QA Tier 3) must start livekit + speech when in compose.
+            case "$TEAM_FOLDER" in
+                ai-team)
+                    info "Speech: ai-team SERVICES lists livekit + speech (compose must define them)"
+                    ;;
+                platform-engineers|infrastructure-team)
+                    info "Speech: included once livekit + speech exist in docker-compose.dev.yml"
+                    ;;
+            esac
             return
         fi
         warn "Invalid selection. Try again."
@@ -507,9 +533,8 @@ ${qa_note}  ${C_BOLD}Project root:${C_RESET}    $PROJECT_ROOT
     docker compose -f docker-compose.dev.yml logs -f api-gateway
     cd team_dev_environments/$TEAM_FOLDER && ./stop.sh
 
-  ${C_YELLOW}Speech engine:${C_RESET} livekit + speech (Poetry STT/TTS worker).
+  ${C_YELLOW}Speech engine:${C_RESET} livekit + speech listed in AI team start/build/stop.
     Docs: docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
-    AI / Platform / QA / Infra start scripts append these when listed in compose.
     Media = WebRTC via LiveKit — not Socket.IO / realtime-gateway.
 
   ${C_YELLOW}Reminder:${C_RESET} drop your /secrets folder into

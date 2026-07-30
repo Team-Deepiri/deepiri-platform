@@ -55,6 +55,8 @@ SERVICES=(
   # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
   challenge-service api-gateway messaging-service realtime-gateway
   ollama synapse synapse-sugar-glider
+  # Speech engine — see docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
+  livekit speech
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
@@ -68,7 +70,16 @@ echo "📥 Pulling Ollama Docker image..."
 docker pull ollama/ollama:latest || echo "⚠️  Failed to pull Ollama image, will try again during start"
 echo ""
 
-# Build services using docker-compose.dev.yml
-docker compose -f docker-compose.dev.yml build "${SERVICES[@]}"
+# Build only services that have Dockerfiles in this compose project
+BUILD_SERVICES=()
+for s in "${SERVICES[@]}"; do
+  case "$s" in
+    postgres|redis|influxdb|etcd|minio|milvus|ollama|livekit) ;;
+    *) BUILD_SERVICES+=("$s") ;;
+  esac
+done
+if [[ ${#BUILD_SERVICES[@]} -gt 0 ]]; then
+  docker compose -f docker-compose.dev.yml build "${BUILD_SERVICES[@]}"
+fi
 
 echo "✅ AI Team services built successfully!"

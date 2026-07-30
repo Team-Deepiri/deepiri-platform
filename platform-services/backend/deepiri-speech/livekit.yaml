@@ -1,0 +1,15 @@
+# LiveKit server config for deepiri-dev
+port: 7880
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+  use_external_ip: false
+redis:
+  address: redis:6379
+  password: password
+keys:
+  # Dev-only keys — must match LIVEKIT_API_KEY / LIVEKIT_API_SECRET on speech service
+  APIdeepirispeechdev: deepiri-speech-dev-secret-change-me
+logging:
+  level: info

@@ -16,6 +16,8 @@ SERVICES=(
   # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
   challenge-service api-gateway messaging-service realtime-gateway
   ollama synapse synapse-sugar-glider
+  # Speech engine — see docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
+  livekit speech
   # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
 )
 
