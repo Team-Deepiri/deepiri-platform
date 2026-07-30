@@ -279,8 +279,9 @@ async def livekit_token(body: LiveKitTokenRequest):
             room_create=True,
         )
     except Exception as exc:
+        logger.exception("Failed to mint LiveKit token for room '%s' and identity '%s'", room, body.identity)
         return {
-            "error": str(exc),
+            "error": "Failed to mint LiveKit token.",
             "room_name": room,
             "identity": body.identity,
             "livekit_url": settings.LIVEKIT_PUBLIC_URL,
