@@ -1,43 +1,8 @@
-#!/bin/bash
-# AI Team - Stop and Remove script
-# Stops services, and if already stopped, removes the containers
-
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
-cd "$PROJECT_ROOT"
-
-# AI team services
-SERVICES=(
-  postgres redis influxdb etcd minio milvus
-  cyrex cyrex-interface mlflow
-  # jupyter  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
-  challenge-service api-gateway messaging-service realtime-gateway
-  ollama synapse synapse-sugar-glider
-  # Speech engine — see docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
-  livekit speech
-  # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
-)
-
-echo "🛑 Stopping and removing AI Team services..."
-echo "   (Using docker-compose.dev.yml with service selection)"
-echo "   Services: ${SERVICES[*]}"
-echo ""
-
-# First, try to stop services (this will succeed even if already stopped)
-echo "Step 1: Stopping services..."
-docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}" 2>/dev/null || true
-
-echo ""
-echo "Step 2: Removing containers..."
-# Remove containers (force remove, ignore if already removed)
-docker compose -f docker-compose.dev.yml rm -f "${SERVICES[@]}" 2>/dev/null || true
-
-echo ""
-echo "✅ AI Team services stopped and containers removed!"
-echo ""
-echo "Note: Volumes and networks are preserved."
-echo "To remove volumes as well: docker compose -f docker-compose.dev.yml down -v"
+#!/usr/bin/env bash
+# Compatibility wrapper — logic lives in teams/*.yml + setup-deepiri-dev.sh
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+TEAM="$(basename "$(cd "$(dirname "$0")" && pwd)")"
+CMD="stop-rm"
+exec bash "$REPO_ROOT/setup-deepiri-dev.sh" "$CMD" "$TEAM"
 

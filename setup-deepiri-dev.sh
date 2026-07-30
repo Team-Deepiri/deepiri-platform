@@ -1,44 +1,29 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Deepiri Platform - Automated Development Environment Setup
+# Deepiri Platform - Dev environment (onboard + day-to-day team ops)
 # ----------------------------------------------------------------------------
-# Automates the steps documented in deepiri-environment-setup.md:
+# Single entrypoint. Team services/submodules live in teams/<team>.yml
+# (engine: teams/team_ctl.py). Catalogs: teams/all-services.yml,
+# teams/all-submodules.yml. Audit: teams/TEAM_INVENTORY_AUDIT.md
 #
-#   1. Asks which team you're on (AI / Backend / Frontend / Infrastructure /
-#      ML / Platform / QA). QA also picks a tier (1–3) that mirrors another
-#      eng team's env:
-#        Tier 1 → frontend-team services (lighter machines)
-#        Tier 2 → backend-team services (includes frontend)
-#        Tier 3 → ai-team services (full ML/AI stack; can run any tier)
-#   2. Verifies prerequisites (git, docker, docker compose, python3, node, npm,
-#      ssh) and installs anything missing. WSL2/Linux must be Debian — the
-#      script refuses to continue otherwise.
-#   3. Asks where you want the Deepiri project folder to live (default ~).
-#   4. Clones deepiri-platform (if not already cloned), runs the team's
-#      pull_submodules.sh, then build.sh + start.sh in
-#      team_dev_environments/<team>/.
-#   5. Seeds the Postgres core DB with scripts/database/postgres-seed.sql
-#      after the auto-init schema scripts have run via
-#      /docker-entrypoint-initdb.d.
+# Onboard (no args):
+#   1. Pick team (QA tiers 1–3 mirror frontend / backend / ai)
+#   2. Prereqs (git, docker, compose, python3, node, npm, ssh); Debian on WSL/Linux
+#   3. Clone (or reuse) deepiri-platform
+#   4. pull → build → start from teams/<team>.yml, then seed postgres-core
 #
-# SPEECH ENGINE (deepiri-speech) — REQUIRED WHEN WIRING COMPOSE
-# ----------------------------------------------------------------------------
-# Self-hosted realtime STT/TTS is a NEW compose pair (not inside RTG):
-#   - livekit  — WebRTC media gateway
-#   - speech   — Poetry voice worker (Silero VAD + faster-whisper + TTS)
+# Day-to-day (same script):
+#   ./setup-deepiri-dev.sh pull   ai-team
+#   ./setup-deepiri-dev.sh build  ai-team
+#   ./setup-deepiri-dev.sh start  ai-team
+#   ./setup-deepiri-dev.sh stop   ai-team
+#   ./setup-deepiri-dev.sh stop-rm ai-team
+#   ./setup-deepiri-dev.sh restart ai-team
+#   ./setup-deepiri-dev.sh show   ai-team
+#   ./setup-deepiri-dev.sh list-teams
 #
-# Integration: docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
-#
-# Must be included when starting:
-#   • AI team (+ QA Tier 3 which reuses ai-team) — voice for Cyrex agents
-#     → livekit + speech listed in team_dev_environments/ai-team/{start,build,stop}.sh
-#   • Platform / full stacks — once services exist in docker-compose.dev.yml
-#     (platform-engineers uses `config --services` and picks them up)
-#
-# setup-deepiri-dev.sh only runs that team's build.sh then start.sh —
-# it does not maintain its own service list. Frontend-only tiers skip speech.
-#
-# Usage: bash setup-deepiri-dev.sh
+# Speech (livekit + speech): listed in teams/ai-team.yml; see
+# docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
 # ============================================================================
 
 set -u
@@ -146,8 +131,8 @@ select_qa_tier() {
             QA_TIER="$choice"
             TEAM_FOLDER="${QA_TIER_FOLDERS[$((choice - 1))]}"
             TEAM_DISPLAY="QA Tier ${QA_TIER} (${QA_TIER_LABELS[$((choice - 1))]})"
-            ok "Selected: $TEAM_DISPLAY → team_dev_environments/$TEAM_FOLDER"
-            info "Submodules + build/start will use $TEAM_FOLDER (same as that eng team)."
+            ok "Selected: $TEAM_DISPLAY → teams/$TEAM_FOLDER.yml"
+            info "Submodules + build/start use $TEAM_FOLDER (same as that eng team)."
             return
         fi
         warn "Invalid selection. Enter 1, 2, or 3."
@@ -428,33 +413,55 @@ clone_platform_repo() {
     fi
 }
 
-# ---------- submodules + build/start --------------------------------------
+# ---------- team ops (YAML via teams/team_ctl.py) --------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+team_ctl() {
+    # team_ctl <command> <team> — prefers PLATFORM_REPO_DIR when set (post-clone)
+    local root="${PLATFORM_REPO_DIR:-$SCRIPT_DIR}"
+    local ctl="$root/teams/team_ctl.py"
+    [[ -f "$ctl" ]] || fatal "teams/team_ctl.py not found at $ctl"
+    if ! python3 -c "import yaml" >/dev/null 2>&1; then
+        warn "PyYAML missing -- installing"
+        pip3 install --user --quiet pyyaml || fatal "Need PyYAML: pip3 install --user pyyaml"
+    fi
+    ( cd "$root" && python3 "$ctl" "$@" )
+}
+
 pull_submodules() {
-    step "Pulling team submodules ($TEAM_DISPLAY)"
-    local script="$PLATFORM_REPO_DIR/team_submodule_commands/$TEAM_FOLDER/pull_submodules.sh"
-    [[ -f "$script" ]] || fatal "pull_submodules.sh not found at $script"
-    chmod +x "$script"
-    ( cd "$PLATFORM_REPO_DIR" && bash "$script" )
+    step "Pulling team submodules ($TEAM_DISPLAY) via teams/$TEAM_FOLDER.yml"
+    team_ctl pull "$TEAM_FOLDER"
     ok "Submodules pulled for $TEAM_DISPLAY"
 }
 
 build_and_start_team_env() {
-    step "Building & starting $TEAM_DISPLAY dev environment"
-    local team_env_dir="$PLATFORM_REPO_DIR/team_dev_environments/$TEAM_FOLDER"
-    [[ -d "$team_env_dir" ]] || fatal "Team env folder missing: $team_env_dir"
-
-    chmod +x "$team_env_dir/build.sh" "$team_env_dir/start.sh" "$team_env_dir/stop.sh"
-    ok "Made build.sh / start.sh / stop.sh executable"
-
-    info "Running build.sh (this can take a while -- legacy Docker builder is used)"
-    ( cd "$team_env_dir" && ./build.sh )
-
-    info "Running start.sh"
-    ( cd "$team_env_dir" && ./start.sh )
-
+    step "Building & starting $TEAM_DISPLAY (teams/$TEAM_FOLDER.yml)"
+    info "build (may take a while)"
+    team_ctl build "$TEAM_FOLDER"
+    info "start"
+    team_ctl start "$TEAM_FOLDER"
     ok "Containers are starting"
     info "docker ps -- currently running containers:"
     docker ps --format "    {{.Names}}\t{{.Status}}\t{{.Ports}}" | head -40
+}
+
+print_ops_usage() {
+    cat <<EOF
+Usage:
+  $0                          Interactive onboard (clone, pull, build, start, seed)
+  $0 pull|build|start|stop|stop-rm|restart|show <team>
+  $0 list-teams
+
+Teams (see teams/*.yml):
+  ai-team  backend-team  frontend-team  infrastructure-team
+  ml-team  platform-engineers  qa-team
+  Short aliases: ai backend frontend infra ml platform qa all
+
+QA tiers (PR #301) — preferred for QA; mirrors eng team YAMLs:
+  qa-tier-1 / qa:1  →  frontend-team
+  qa-tier-2 / qa:2  →  backend-team
+  qa-tier-3 / qa:3  →  ai-team
+EOF
 }
 
 # ---------- DB seeding ----------------------------------------------------
@@ -515,7 +522,7 @@ print_summary() {
     local qa_note=""
     if [[ -n "$QA_TIER" ]]; then
         qa_note="
-  ${C_BOLD}QA tier:${C_RESET}         $QA_TIER → using $TEAM_FOLDER env (mirrors that eng team)
+  ${C_BOLD}QA tier:${C_RESET}         $QA_TIER → teams/$TEAM_FOLDER.yml (mirrors that eng team)
 "
         if [[ "$QA_TIER" == "3" ]]; then
             qa_note+="  ${C_CYAN}Tip:${C_RESET} Tier 3 can also run frontend-team or backend-team envs if needed.
@@ -524,16 +531,17 @@ print_summary() {
     fi
     cat <<EOF
   ${C_BOLD}Team:${C_RESET}            $TEAM_DISPLAY
-  ${C_BOLD}Env folder:${C_RESET}       team_dev_environments/$TEAM_FOLDER
+  ${C_BOLD}Team config:${C_RESET}      teams/$TEAM_FOLDER.yml
 ${qa_note}  ${C_BOLD}Project root:${C_RESET}    $PROJECT_ROOT
   ${C_BOLD}Platform repo:${C_RESET}   $PLATFORM_REPO_DIR
 
   Useful commands (run from $PLATFORM_REPO_DIR):
     docker ps
     docker compose -f docker-compose.dev.yml logs -f api-gateway
-    cd team_dev_environments/$TEAM_FOLDER && ./stop.sh
+    ./setup-deepiri-dev.sh stop $TEAM_FOLDER
+    ./setup-deepiri-dev.sh show $TEAM_FOLDER
 
-  ${C_YELLOW}Speech engine:${C_RESET} livekit + speech listed in AI team start/build/stop.
+  ${C_YELLOW}Speech engine:${C_RESET} livekit + speech in teams/ai-team.yml (QA Tier 3).
     Docs: docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
     Media = WebRTC via LiveKit — not Socket.IO / realtime-gateway.
 
@@ -546,7 +554,39 @@ EOF
 }
 
 # ---------- main ----------------------------------------------------------
-main() {
+OPS_COMMANDS="pull|build|start|stop|stop-rm|restart|show|list-teams|help|-h|--help"
+
+run_ops_command() {
+    local cmd="$1"
+    shift || true
+    case "$cmd" in
+        help|-h|--help)
+            print_ops_usage
+            exit 0
+            ;;
+        list-teams)
+            PLATFORM_REPO_DIR="${PLATFORM_REPO_DIR:-$SCRIPT_DIR}"
+            team_ctl list-teams
+            exit 0
+            ;;
+        pull|build|start|stop|stop-rm|restart|show)
+            local team="${1:-}"
+            [[ -n "$team" ]] || { print_ops_usage; fatal "Missing team argument"; }
+            if [[ -f "$SCRIPT_DIR/teams/team_ctl.py" ]]; then
+                PLATFORM_REPO_DIR="$SCRIPT_DIR"
+            elif [[ -f "$SCRIPT_DIR/../teams/team_ctl.py" ]]; then
+                PLATFORM_REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+            fi
+            team_ctl "$cmd" "$team"
+            exit $?
+            ;;
+        *)
+            fatal "Unknown command: $cmd"
+            ;;
+    esac
+}
+
+main_onboard() {
     step "Deepiri Platform :: dev environment setup"
     detect_platform
     info "OS: $OS_KIND  distro: ${DISTRO_ID:-n/a}  pkg: ${PKG_MANAGER:-n/a}"
@@ -556,6 +596,10 @@ main() {
 
     detect_existing_clone
     select_team
+    # QA tiers (PR #301): TEAM_FOLDER is already remapped to frontend/backend/ai
+    if [[ -n "$QA_TIER" ]]; then
+        info "QA Tier $QA_TIER → teams/$TEAM_FOLDER.yml (same as that eng team)"
+    fi
     ensure_prereqs
     ensure_ssh_key_for_github
     choose_project_dir
@@ -564,6 +608,18 @@ main() {
     build_and_start_team_env
     seed_databases
     print_summary
+}
+
+main() {
+    if [[ $# -gt 0 ]]; then
+        if [[ "$1" =~ ^($OPS_COMMANDS)$ ]]; then
+            run_ops_command "$@"
+        else
+            print_ops_usage
+            fatal "Unknown argument: $1 (onboard takes no args; use pull|build|start|…)"
+        fi
+    fi
+    main_onboard
 }
 
 main "$@"

@@ -1,35 +1,7 @@
-#!/bin/bash
-# Frontend Team - Build script (No Cache)
-# Builds frontend team services using docker-compose.dev.yml with service selection (no cache)
-
-set -e
-
-cd "$(dirname "$0")/../.." || exit 1
-
-# Force legacy builder for consistency with the normal team build flow.
-export DOCKER_BUILDKIT=0
-export COMPOSE_DOCKER_CLI_BUILD=0
-
-# Frontend team services - only what frontend engineers need
-SERVICES=(
-  frontend-dev
-  api-gateway
-  auth-service
-  communications-hub
-  messaging-service
-  realtime-gateway
-  postgres-auth
-  postgres-core
-  postgres-intelligence
-)
-
-echo "🔨 Building Frontend Team services (No Cache)..."
-echo "   (Using docker-compose.dev.yml with service selection)"
-echo "   Services: ${SERVICES[*]}"
-echo ""
-
-# Build services using docker-compose.dev.yml with --no-cache
-docker compose -f docker-compose.dev.yml build --no-cache "${SERVICES[@]}"
-
-echo "✅ Frontend Team services built successfully!"
-echo "   Built services: ${SERVICES[*]}"
+#!/usr/bin/env bash
+# Compatibility wrapper — no-cache builds use the same YAML path as build for now.
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+TEAM="$(basename "$(cd "$(dirname "$0")" && pwd)")"
+export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
+exec bash "$REPO_ROOT/setup-deepiri-dev.sh" build "$TEAM"

@@ -1,0 +1,42 @@
+# Frontend Team
+id: frontend-team
+display: Frontend Team
+
+services:
+  - frontend-dev
+  - api-gateway
+  - auth-service
+  - communications-hub
+  - messaging-service
+  - realtime-gateway
+  - postgres-auth
+  - postgres-core
+  - postgres-intelligence
+
+submodules:
+  - deepiri-logger
+  - deepiri-suite
+  - deepiri-web-frontend
+  - platform-services/backend/deepiri-auth-service
+  - platform-services/backend/deepiri-api-gateway
+  - platform-services/shared/deepiri-shared-utils
+  - platform-services/shared/deepiri-synapse
+  - platform-services/shared/deepiri-sugar-glider
+
+build:
+  buildkit: false
+  sequential: true
+  ensure_suite_images: true
+
+start:
+  no_deps: true
+
+pull:
+  recursive: true
+  checkout_main: true
+  setup_hooks: true
+
+urls:
+  - "Frontend: http://localhost:5173"
+  - "API Gateway: http://localhost:5100"
+  - "Auth Service: http://localhost:5001"

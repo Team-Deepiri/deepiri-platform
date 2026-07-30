@@ -1,44 +1,7 @@
-#!/bin/bash
-# Infrastructure Team - Build script (No Cache)
-# Builds infrastructure team services using docker-compose.dev.yml with service selection (no cache)
-#
-# Note: Currently matches backend team setup. Infrastructure team will work on cloud
-# infrastructure and data infrastructure services in the future (e.g., cloud storage,
-# data pipelines, monitoring infrastructure, etc.)
-
-set -e
-
-cd "$(dirname "$0")/../.." || exit 1
-
-# Force legacy builder for consistency with the normal team build flow.
-export DOCKER_BUILDKIT=0
-export COMPOSE_DOCKER_CLI_BUILD=0
-
-# Infrastructure team services (currently same as backend team)
-# Future: Will include cloud infrastructure and data infrastructure services
-SERVICES=(
-  postgres-auth postgres-core postgres-intelligence redis influxdb
-  api-gateway auth-service workflow-orchestrator
-  incentive-engine decision-intelligence
-  communications-hub external-bridge-service
-  adaptive-experience-engine realtime-gateway
-  language-intelligence-service messaging-service
-  synapse synapse-sugar-glider frontend-dev adminer
-  # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
-)
-
-echo "🔨 Building Infrastructure Team services (No Cache)..."
-echo "   (Using docker-compose.dev.yml with service selection)"
-echo "   Services: ${SERVICES[*]}"
-echo ""
-
-# Build services using docker-compose.dev.yml with --no-cache
-docker compose -f docker-compose.dev.yml build --no-cache "${SERVICES[@]}"
-
-echo ""
-echo "✅ Infrastructure Team services built successfully!"
-echo ""
-echo "Services built:"
-for service in "${SERVICES[@]}"; do
-  echo "  ✓ $service"
-done
+#!/usr/bin/env bash
+# Compatibility wrapper — no-cache builds use the same YAML path as build for now.
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+TEAM="$(basename "$(cd "$(dirname "$0")" && pwd)")"
+export DOCKER_BUILDKIT="${DOCKER_BUILDKIT:-0}"
+exec bash "$REPO_ROOT/setup-deepiri-dev.sh" build "$TEAM"

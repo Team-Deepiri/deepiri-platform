@@ -1,38 +1,8 @@
-#!/bin/bash
-# QA Team - Stop script
-# Stops backend team services using docker-compose.dev.yml with service selection
+#!/usr/bin/env bash
+# Compatibility wrapper — logic lives in teams/*.yml + setup-deepiri-dev.sh
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+TEAM="$(basename "$(cd "$(dirname "$0")" && pwd)")"
+CMD="stop"
+exec bash "$REPO_ROOT/setup-deepiri-dev.sh" "$CMD" "$TEAM"
 
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-
-cd "$PROJECT_ROOT"
-
-# QA team services
-SERVICES=(
-  postgres-auth postgres-core postgres-intelligence redis influxdb
-  api-gateway auth-service workflow-orchestrator
-  incentive-engine decision-intelligence
-  communications-hub external-bridge-service
-  adaptive-experience-engine realtime-gateway
-  language-intelligence-service messaging-service
-  synapse synapse-sugar-glider adminer
-  # deepiri-prismpipe  # PrismPipe - Capability-Routed API Pipeline (Coming Soon)
-)
-
-echo "🛑 Stopping QA Team services..."
-echo "   (Using docker-compose.dev.yml with service selection)"
-echo "   Services: ${SERVICES[*]}"
-echo ""
-
-# Stop selected services
-docker compose -f docker-compose.dev.yml stop "${SERVICES[@]}"
-
-echo ""
-echo "✅ QA Team services stopped!"
-echo ""
-echo "Note: Containers are stopped but not removed."
-echo "To remove containers: docker compose -f docker-compose.dev.yml rm -f ${SERVICES[*]}"
-echo "To remove volumes as well: docker compose -f docker-compose.dev.yml down -v"
-echo ""

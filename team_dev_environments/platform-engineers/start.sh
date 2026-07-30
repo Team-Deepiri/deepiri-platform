@@ -1,27 +1,8 @@
-#!/bin/bash
-# Platform Engineers - Start script
-# Services from SERVICE_COMMUNICATION_AND_TEAMS.md:
-# - All Services for platform tooling development
-
-set -e
-
-cd "$(dirname "$0")/../.." || exit 1
-
-echo "🚀 Starting Platform Engineers services..."
-echo "Services: ALL SERVICES (complete stack)"
-
-# Use --no-build to prevent automatic building (images should already be built)
-docker compose -f docker-compose.dev.yml up -d --no-build
-
-echo "✅ Platform Engineers services started!"
-echo ""
-API_GATEWAY_PORT=${API_GATEWAY_PORT:-5100}
-echo "🌐 API Gateway: http://localhost:${API_GATEWAY_PORT}"
-echo "🎨 Frontend: http://localhost:5173"
-echo "🤖 Cyrex: http://localhost:8000"
-echo "📡 Synapse: http://localhost:8002"
-echo "📊 MLflow: http://localhost:5500"
-echo "📓 Jupyter: http://localhost:8888"
-echo "🗄️  pgAdmin: http://localhost:5050"
-echo "🔍 Adminer: http://localhost:8080"
+#!/usr/bin/env bash
+# Compatibility wrapper — logic lives in teams/*.yml + setup-deepiri-dev.sh
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+TEAM="$(basename "$(cd "$(dirname "$0")" && pwd)")"
+CMD="start"
+exec bash "$REPO_ROOT/setup-deepiri-dev.sh" "$CMD" "$TEAM"
 

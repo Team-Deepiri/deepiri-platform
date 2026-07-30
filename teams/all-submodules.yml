@@ -1,0 +1,59 @@
+# Catalog of every git submodule in .gitmodules.
+# Used as the platform-engineers / "all" submodule set.
+# Source: .gitmodules
+# Audit: teams/TEAM_INVENTORY_AUDIT.md
+
+submodules:
+  - path: diri-cyrex
+    url: git@github.com:Team-Deepiri/diri-cyrex.git
+
+  - path: diri-helox
+    url: git@github.com:Team-Deepiri/diri-helox.git
+
+  - path: deepiri-modelkit
+    url: git@github.com:Team-Deepiri/deepiri-modelkit.git
+
+  - path: deepiri-ollama-utils
+    url: git@github.com:Team-Deepiri/deepiri-ollama-utils.git
+
+  - path: deepiri-suite
+    url: git@github.com:Team-Deepiri/deepiri-suite.git
+
+  - path: deepiri-web-frontend
+    url: git@github.com:Team-Deepiri/deepiri-web-frontend.git
+
+  - path: deepiri-logger
+    url: git@github.com:Team-Deepiri/deepiri-logger.git
+    notes: Included in every teams/*.yml submodule list (and platform/all).
+
+  - path: platform-services/backend/deepiri-api-gateway
+    url: git@github.com:Team-Deepiri/deepiri-api-gateway.git
+
+  - path: platform-services/backend/deepiri-auth-service
+    url: git@github.com:Team-Deepiri/deepiri-auth-service.git
+
+  - path: platform-services/backend/deepiri-external-bridge-service
+    url: git@github.com:Team-Deepiri/deepiri-external-bridge-service.git
+
+  - path: platform-services/backend/deepiri-language-intelligence-service
+    url: git@github.com:Team-Deepiri/deepiri-language-intelligence-service.git
+
+  - path: platform-services/shared/deepiri-prismpipe
+    url: git@github.com:Team-Deepiri/deepiri-prismpipe.git
+
+  - path: platform-services/shared/deepiri-shared-utils
+    url: git@github.com:Team-Deepiri/deepiri-shared-utils.git
+
+  - path: platform-services/shared/deepiri-synapse
+    url: git@github.com:Team-Deepiri/deepiri-synapse.git
+    branch: dev
+
+  - path: platform-services/shared/deepiri-sugar-glider
+    url: git@github.com:Team-Deepiri/deepiri-sugar-glider.git
+    branch: dev
+
+# Local / compose-backed trees that are NOT git submodules today:
+not_submodules:
+  - path: platform-services/backend/deepiri-speech
+    compose_service: speech
+    notes: Required by ai-team livekit+speech stack; local tree, not in .gitmodules.

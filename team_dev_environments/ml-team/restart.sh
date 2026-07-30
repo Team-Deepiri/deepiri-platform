@@ -1,22 +1,8 @@
-#!/bin/bash
-# ML Team - Restart script
-# Restarts ML services by stopping then starting them
-
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-echo "🔄 Restarting ML Team services..."
-echo ""
-
-# Stop services first
-echo "Step 1: Stopping services..."
-"$SCRIPT_DIR/stop.sh"
-
-echo ""
-echo "Step 2: Starting services..."
-"$SCRIPT_DIR/start.sh"
-
-echo ""
-echo "✅ ML Team services restarted!"
+#!/usr/bin/env bash
+# Compatibility wrapper — logic lives in teams/*.yml + setup-deepiri-dev.sh
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+TEAM="$(basename "$(cd "$(dirname "$0")" && pwd)")"
+CMD="restart"
+exec bash "$REPO_ROOT/setup-deepiri-dev.sh" "$CMD" "$TEAM"
 
