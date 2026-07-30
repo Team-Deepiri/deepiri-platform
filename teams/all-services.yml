@@ -25,14 +25,13 @@ services:
   # --- backend microservices ---
   - api-gateway
   - auth-service
-  - workflow-orchestrator
-  - incentive-engine
-  - decision-intelligence
-  - communications-hub
-  - external-bridge-service
-  - adaptive-experience-engine
-  - language-intelligence-service
+  - truss
+  - registry
+  - telemetry
   - messaging-service
+  - external-bridge-service
+  - jobs
+  - language-intelligence-service
   - realtime-gateway
 
   # --- speech engine ---
@@ -61,6 +60,11 @@ stale_script_names:
   - challenge-service
   - platform-analytics-service
   - task-orchestrator
+  - workflow-orchestrator
+  - incentive-engine
+  - decision-intelligence
+  - adaptive-experience-engine
+  - communications-hub
   - engagement-service
   - notification-service
 

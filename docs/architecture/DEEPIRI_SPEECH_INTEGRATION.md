@@ -17,10 +17,12 @@ Clients
   ├─ JSON WS ──────────► /v1/session/ws     (Pipecat oneshot STT/TTS)
   ├─ Pipecat media WS ─► /v1/pipecat/ws     (FastAPIWebsocketTransport Pipeline)
   ├─ WebRTC ───────────► livekit ◄── speech agent (Pipecat LiveKitTransport)
-  └─ HTTP batch ───────► /v1/stt /v1/tts    (Jobs/Truss)
+  └─ HTTP batch ───────► /v1/stt /v1/tts    (via Truss proxies; Jobs is separate :5007)
 ```
 
 Pipecat is **not** a separate service. LiveKit is the SFU; the agent runs inside `speech`.
+
+**URL map:** `TRUSS_URL=http://truss:5002` (workflows + `/speech/*`), `JOBS_URL=http://jobs:5007` (async work). Do not point both at the same host.
 
 ## Always-on defaults
 

@@ -455,6 +455,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
+      JOBS_URL: ${JOBS_URL:-http://jobs:5007}
       SPEECH_URL: ${SPEECH_URL:-http://speech:5020}
       K8S_SERVICE_NAME: truss  # Filter to only load this service's configmap
     volumes:
@@ -468,6 +469,8 @@ services:
       postgres-core:
         condition: service_healthy
       synapse:
+        condition: service_started
+      jobs:
         condition: service_started
     networks:
       - deepiri-dev-network
@@ -530,6 +533,7 @@ services:
       PORT: 5004
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
+      JOBS_URL: ${JOBS_URL:-http://jobs:5007}
       K8S_SERVICE_NAME: telemetry  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro

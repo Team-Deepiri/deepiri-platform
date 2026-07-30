@@ -19,15 +19,14 @@ services:
   - kafka
   - api-gateway
   - auth-service
-  - workflow-orchestrator
-  - incentive-engine
-  - decision-intelligence
-  - communications-hub
+  - truss
+  - registry
+  - telemetry
+  - messaging-service
   - external-bridge-service
-  - adaptive-experience-engine
+  - jobs
   - realtime-gateway
   - language-intelligence-service
-  - messaging-service
   - synapse
   - synapse-sugar-glider
   - frontend-dev
@@ -58,7 +57,7 @@ start:
     - language-intelligence-service
   phases:
     - [postgres-auth, postgres-core, postgres-intelligence, redis, influxdb, kafka, synapse, synapse-sugar-glider]
-    - [api-gateway, auth-service, workflow-orchestrator, incentive-engine, decision-intelligence, communications-hub, external-bridge-service, adaptive-experience-engine, realtime-gateway, adminer]
+    - [api-gateway, auth-service, truss, registry, telemetry, messaging-service, external-bridge-service, jobs, realtime-gateway, adminer]
   phase_wait_seconds: 3
 
 pull:

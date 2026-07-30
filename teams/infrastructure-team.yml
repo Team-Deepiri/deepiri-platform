@@ -10,15 +10,14 @@ services:
   - influxdb
   - api-gateway
   - auth-service
-  - workflow-orchestrator
-  - incentive-engine
-  - decision-intelligence
-  - communications-hub
+  - truss
+  - registry
+  - telemetry
+  - messaging-service
   - external-bridge-service
-  - adaptive-experience-engine
+  - jobs
   - realtime-gateway
   - language-intelligence-service
-  - messaging-service
   - frontend-dev
   - synapse
   - synapse-sugar-glider

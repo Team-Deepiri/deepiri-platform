@@ -1,4 +1,4 @@
-"""HTTP helpers for Jobs / Truss / workflow-orchestrator calling speech."""
+"""HTTP helpers for Jobs/Truss callers into speech, and speech → Truss notify."""
 from __future__ import annotations
 
 import logging
@@ -63,8 +63,8 @@ class SpeechHttpClient:
 
 
 async def notify_orchestrator(event: str, payload: dict[str, Any]) -> None:
-    """Best-effort notify Truss of speech lifecycle (/speech/events lives on Truss)."""
-    url = (settings.TRUSS_URL or settings.JOBS_URL or "").rstrip("/")
+    """Best-effort notify Truss of speech lifecycle (`/speech/events` on Truss :5002)."""
+    url = (settings.TRUSS_URL or "").rstrip("/")
     if not url:
         return
     try:
