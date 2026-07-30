@@ -18,7 +18,8 @@ def test_pipecat_status_shape():
     s = status_dict()
     assert s["separate_service"] is False
     assert s["in_process"] is True
-    assert s["transport"] == "websocket"
+    assert s["auto_enabled"] is True
+    assert "transports" in s
     assert "available" in s
 
 
@@ -26,9 +27,9 @@ def test_pipeline_status_endpoint(client):
     r = client.get("/v1/pipeline/status")
     assert r.status_code == 200
     data = r.json()
-    assert data["transport"] == "websocket"
-    assert data["livekit_required"] is False
+    assert "pipecat" in data
     assert data["pipecat"]["separate_service"] is False
+    assert "endpoints" in data
 
 
 def test_health_includes_device(client):
@@ -36,7 +37,8 @@ def test_health_includes_device(client):
     assert r.status_code == 200
     data = r.json()
     assert "device" in data
-    assert data["transport"] == "websocket"
+    assert "livekit" in data
+    assert "pipecat" in data
 
 
 async def test_voice_pipeline_mock_turn():

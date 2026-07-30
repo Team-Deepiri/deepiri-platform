@@ -835,15 +835,13 @@ services:
       - deepiri-dev-network
 
   # ════════════════════════════════════════════════════════════════════════
-  # Speech — deepiri-speech (Poetry FastAPI). Pipecat is in-process, not a service.
-  # Primary duplex: WebSocket. LiveKit is OPTIONAL (WebRTC rooms/phone only).
+  # Speech — Pipecat (in-process, always-on) + LiveKit WebRTC SFU
   # Docs: docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md
   # ════════════════════════════════════════════════════════════════════════
   livekit:
     image: livekit/livekit-server:v1.8.4
     container_name: deepiri-livekit-dev
     restart: unless-stopped
-    profiles: ["webrtc", "full"]
     logging: *minimal-logging
     command: ["--config", "/etc/livekit.yaml"]
     ports:
@@ -873,6 +871,7 @@ services:
       context: ./platform-services/backend/deepiri-speech
       dockerfile: Dockerfile
       args:
+        # default installs Pipecat+LiveKit (core). engines|speech|full add whisper/kokoro
         SPEECH_EXTRAS: ${SPEECH_EXTRAS:-0}
     image: deepiri-dev-speech:latest
     pull_policy: never
@@ -890,6 +889,7 @@ services:
       TTS_VOICE: ${SPEECH_TTS_VOICE:-af_heart}
       ENABLE_SILERO_VAD: ${SPEECH_ENABLE_SILERO_VAD:-1}
       PIPECAT_ENABLED: ${PIPECAT_ENABLED:-1}
+      PIPECAT_AUTO_REPLY: ${PIPECAT_AUTO_REPLY:-1}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CYREX_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
@@ -899,7 +899,9 @@ services:
       LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-APIdeepirispeechdev}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-deepiri-speech-dev-secret-change-me}
-      LIVEKIT_WORKER_ENABLED: ${LIVEKIT_WORKER_ENABLED:-0}
+      LIVEKIT_WORKER_ENABLED: ${LIVEKIT_WORKER_ENABLED:-1}
+      LIVEKIT_DEFAULT_ROOM: ${LIVEKIT_DEFAULT_ROOM:-deepiri-voice}
+      LIVEKIT_AGENT_IDENTITY: ${LIVEKIT_AGENT_IDENTITY:-deepiri-speech-agent}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
@@ -918,13 +920,15 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 45s
     depends_on:
       redis:
         condition: service_started
+      livekit:
+        condition: service_healthy
     networks:
       - deepiri-dev-network
-    # GPU: set SPEECH_DEVICE=cuda and uncomment when NVIDIA Container Toolkit is present
+    # GPU: SPEECH_DEVICE=cuda + NVIDIA Container Toolkit
     # deploy:
     #   resources:
     #     reservations:

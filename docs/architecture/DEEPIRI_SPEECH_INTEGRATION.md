@@ -1,79 +1,56 @@
 # deepiri-speech — Platform Integration
 
-Self-hosted realtime STT/TTS as a **Poetry FastAPI** service (`speech`).  
-**Pipecat is in-process** (optional Poetry extra) — **not** a separate container.  
-**LiveKit is optional** (WebRTC rooms/phone only).
+Poetry FastAPI **`speech`** service with **Pipecat always-on** (in-process) and
+**LiveKit** as the WebRTC SFU + agent path.
 
 ## Containers
 
-| Compose service | Port | Role |
-|-----------------|------|------|
-| `speech` | 5020 | Voice worker: providers + WS duplex + optional Pipecat |
-| `livekit` | 7880 | Optional SFU — profile `webrtc` / `full` |
-
-Code: `platform-services/backend/deepiri-speech/`
+| Service | Port | Role |
+|---------|------|------|
+| `speech` | 5020 | Providers + Pipecat pipelines + LiveKit agent worker |
+| `livekit` | 7880 | WebRTC SFU (always started with speech) |
 
 ## Architecture
 
 ```text
-Browser / Jobs / Truss
-        │
-        ├─ WebSocket ──────────► speech (/v1/session/ws)
-        │                           │
-        │                           ├─ providers (faster-whisper / Kokoro / VAD)
-        │                           ├─ pipeline: native OR Pipecat (in-process)
-        │                           └─ Redis speech-events
-        │
-        ├─ HTTP batch ─────────► speech (/v1/stt, /v1/tts) ◄── Jobs/Truss
-        │
-        └─ WebRTC (optional) ──► livekit ──► speech worker (rooms/phone only)
+Clients
+  ├─ JSON WS ──────────► /v1/session/ws     (Pipecat oneshot STT/TTS)
+  ├─ Pipecat media WS ─► /v1/pipecat/ws     (FastAPIWebsocketTransport Pipeline)
+  ├─ WebRTC ───────────► livekit ◄── speech agent (Pipecat LiveKitTransport)
+  └─ HTTP batch ───────► /v1/stt /v1/tts    (Jobs/Truss)
 ```
 
-| Piece | Role |
-|-------|------|
-| **speech** | Product boundary — FastAPI + providers |
-| **Pipecat** | Optional orchestration **inside** speech — not a service |
-| **livekit** | Optional WebRTC SFU |
-| **Jobs / Truss** | Batch via REST |
-| **realtime-gateway** | Product events only — **not** PCM |
+Pipecat is **not** a separate service. LiveKit is the SFU; the agent runs inside `speech`.
 
-## Engines (2026 defaults)
+## Always-on defaults
 
-| Layer | Default | Notes |
-|-------|---------|-------|
-| STT | faster-whisper | CUDA/CPU; `whisper_cpp` extra for Apple/edge |
-| TTS | Kokoro-82M (kokoro-onnx) | Apache/MIT — **avoid XTTS CPML** |
-| VAD | Silero (torch) | passthrough if extras missing |
-| Device | `SPEECH_DEVICE=auto` | cuda → mps → cpu |
-| Orchestration | native WS pipeline | Pipecat when `-E pipecat` + `PIPECAT_ENABLED=1` |
+| Setting | Default |
+|---------|---------|
+| `PIPECAT_ENABLED` | `1` |
+| `LIVEKIT_WORKER_ENABLED` | `1` |
+| Core Poetry deps | `pipecat-ai[websocket,livekit]`, `livekit-api`, `livekit` |
+| Engines | mock until `SPEECH_EXTRAS=engines` |
 
-## Poetry
+## LiveKit capabilities wired
+
+- Room auto-create (`livekit.yaml` + `POST /v1/livekit/rooms`)
+- Full access tokens (publish/subscribe/data/metadata/admin/agent)
+- Default room `deepiri-voice` ensured on startup
+- Agent worker: **Pipecat LiveKitTransport** → livekit-agents fallback
+- Redis `speech-events` on session/STT
+
+## Pipecat capabilities wired
+
+- Provider STT/TTS/VAD as FrameProcessors
+- Cyrex (or echo) LLM turn
+- Interruptible Pipeline (`allow_interruptions=True`)
+- FastAPI WebSocket transport + LiveKit transport
+
+## Dev
 
 ```bash
-poetry install                 # always works (mock)
-poetry install -E speech       # production engines + Pipecat
-poetry install -E livekit      # WebRTC only when needed
+docker compose -f docker-compose.dev.yml up -d --build redis livekit speech
+curl -s localhost:5020/health | jq .pipecat,.livekit
+curl -s localhost:5020/v1/pipeline/status | jq
+curl -s localhost:5020/v1/livekit/rooms | jq
 ```
-
-## Health
-
-| Service | Probe |
-|---------|-------|
-| `speech` | `curl -f http://localhost:5020/health` |
-| `livekit` | optional; `wget http://127.0.0.1:7880/` |
-
-Speech does **not** depend on LiveKit healthy.
-
-## Dev bring-up
-
-```bash
-docker compose -f docker-compose.dev.yml up -d --build redis speech
-# optional WebRTC:
-docker compose -f docker-compose.dev.yml --profile webrtc up -d livekit
-```
-
-AI team `start.sh` lists `livekit speech` (explicit service names enable the livekit profile).
-
-## Out of scope for RTG
-
-Do not put LiveKit, Whisper, TTS, or Pipecat inside `deepiri-realtime-gateway`.

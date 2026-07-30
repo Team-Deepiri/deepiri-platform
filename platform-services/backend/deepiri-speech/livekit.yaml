@@ -1,15 +1,22 @@
-# LiveKit server config for deepiri-dev
+# LiveKit server — full WebRTC SFU for deepiri-speech
 port: 7880
 rtc:
   tcp_port: 7881
   port_range_start: 50000
   port_range_end: 50100
   use_external_ip: false
+  allow_tcp_fallback: true
 redis:
   address: redis:6379
   password: password
+room:
+  auto_create: true
+  empty_timeout: 300
+  departure_timeout: 20
+  max_participants: 20
+  enable_remote_unmute: true
 keys:
-  # Dev-only keys — must match LIVEKIT_API_KEY / LIVEKIT_API_SECRET on speech service
+  # Dev-only — must match LIVEKIT_API_KEY / LIVEKIT_API_SECRET on speech
   APIdeepirispeechdev: deepiri-speech-dev-secret-change-me
 logging:
   level: info

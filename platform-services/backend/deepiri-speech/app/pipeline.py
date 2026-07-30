@@ -1,9 +1,4 @@
-"""Voice pipeline on deepiri-speech providers — WS transport primary.
-
-Pipecat is an optional in-process orchestrator (not a separate service).
-Without it, the same VAD→STT→TTS path runs natively on all OS.
-LiveKit is NOT used here.
-"""
+"""Voice pipeline — Pipecat-first on WS; native JSON fallback."""
 from __future__ import annotations
 
 import base64
@@ -14,8 +9,13 @@ from typing import Any, Optional
 from fastapi import WebSocket
 
 from .bus import SpeechBus
-from .pipecat_bridge import is_available as pipecat_available
-from .pipecat_bridge import note_pipecat_ready, process_turn_with_pipecat, status_dict
+from .pipecat_bridge import (
+    is_available as pipecat_available,
+    note_pipecat_ready,
+    process_turn_with_pipecat,
+    run_fastapi_pipecat_pipeline,
+    status_dict,
+)
 from .providers import get_stt, get_tts
 from .settings import settings
 from .vad import get_vad
@@ -37,8 +37,6 @@ class PipelineTurn:
 
 
 class VoicePipeline:
-    """Provider-backed voice agent pipeline (native or Pipecat-orchestrated)."""
-
     def __init__(self, session_id: str, bus: Optional[SpeechBus] = None):
         self.session_id = session_id
         self.bus = bus
@@ -56,22 +54,19 @@ class VoicePipeline:
         speak_transcript: bool = False,
     ) -> PipelineTurn:
         turn = PipelineTurn(vad_provider=getattr(self.vad, "name", "unknown"))
-
         if pipecat_available():
             segment, _, meta = await process_turn_with_pipecat(
                 audio, mime_type=mime_type, language=language
             )
             turn.orchestrator = "pipecat"
             turn.meta = meta
-            turn.vad_provider = meta.get("vad", turn.vad_provider)
             turn.transcript = segment.text
             turn.stt_provider = segment.provider
             if meta.get("skipped") == "no_speech":
                 return turn
         else:
             turn.orchestrator = "native"
-            vad_result = self.vad.analyze(audio)
-            if not vad_result.has_speech and settings.VAD_SKIP_EMPTY:
+            if settings.VAD_SKIP_EMPTY and not self.vad.analyze(audio).has_speech:
                 turn.meta["skipped"] = "no_speech"
                 return turn
             result = await self.stt.transcribe(
@@ -82,9 +77,7 @@ class VoicePipeline:
 
         if self.bus and turn.transcript:
             await self.bus.stt_final(
-                self.session_id,
-                turn.transcript,
-                provider=turn.stt_provider,
+                self.session_id, turn.transcript, provider=turn.stt_provider
             )
             await self.bus.publish_partial(
                 self.session_id, {"type": "stt_final", "text": turn.transcript}
@@ -92,7 +85,7 @@ class VoicePipeline:
 
         speak_text: Optional[str] = None
         if auto_reply and turn.transcript.strip():
-            speak_text = await self._cyrex_reply(turn.transcript)
+            speak_text = f"I heard: {turn.transcript}"
             turn.reply_text = speak_text
         elif speak_transcript and turn.transcript.strip():
             speak_text = turn.transcript
@@ -102,7 +95,6 @@ class VoicePipeline:
             turn.tts_audio_b64 = base64.b64encode(synth.audio).decode("ascii")
             turn.tts_mime = synth.mime_type
             turn.tts_provider = synth.provider
-
         return turn
 
     async def speak(self, text: str, *, voice: Optional[str] = None) -> PipelineTurn:
@@ -115,50 +107,38 @@ class VoicePipeline:
             orchestrator="pipecat" if pipecat_available() else "native",
         )
 
-    async def _cyrex_reply(self, user_text: str) -> str:
-        try:
-            import httpx
-
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                r = await client.post(
-                    f"{settings.CYREX_URL.rstrip('/')}/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {settings.CYREX_API_KEY}"},
-                    json={
-                        "model": "default",
-                        "messages": [{"role": "user", "content": user_text}],
-                    },
-                )
-                if r.status_code < 300:
-                    data = r.json()
-                    choices = data.get("choices") or []
-                    if choices:
-                        return (
-                            choices[0].get("message", {}).get("content")
-                            or choices[0].get("text")
-                            or user_text
-                        )
-        except Exception as exc:
-            logger.debug("cyrex reply skipped: %s", exc)
-        return f"I heard: {user_text}"
-
 
 async def run_ws_session(websocket: WebSocket, session_id: str, bus: SpeechBus) -> None:
-    """Primary duplex transport: FastAPI WebSocket JSON protocol."""
-    pipeline = VoicePipeline(session_id, bus=bus)
-    ready = {
-        "type": "session_ready",
-        "session_id": session_id,
-        "transport": "websocket",
-        "pipeline": "pipecat" if pipecat_available() else "native",
-        "pipecat": status_dict(),
-        "stt": getattr(pipeline.stt, "name", settings.STT_PROVIDER),
-        "tts": getattr(pipeline.tts, "name", settings.TTS_PROVIDER),
-        "vad": getattr(pipeline.vad, "name", "passthrough"),
-    }
-    await websocket.send_json(ready)
+    """
+    Duplex WS entry.
 
-    if pipecat_available():
+    - protocol=json|auto (default): JSON control — Pipecat orchestrates oneshot turns
+    - protocol=pipecat: hand off to FastAPIWebsocketTransport (no JSON preamble)
+    Pure Pipecat media also on /v1/pipecat/ws.
+    """
+    protocol = (websocket.query_params.get("protocol") or "json").lower()
+
+    if protocol == "pipecat" and pipecat_available():
         note_pipecat_ready(session_id)
+        await run_fastapi_pipecat_pipeline(websocket)
+        return
+
+    pipeline = VoicePipeline(session_id, bus=bus)
+    await websocket.send_json(
+        {
+            "type": "session_ready",
+            "session_id": session_id,
+            "transport": "websocket",
+            "pipeline": "pipecat" if pipecat_available() else "native",
+            "protocol": "json",
+            "pipecat": status_dict(),
+            "stt": getattr(pipeline.stt, "name", settings.STT_PROVIDER),
+            "tts": getattr(pipeline.tts, "name", settings.TTS_PROVIDER),
+            "vad": getattr(pipeline.vad, "name", "passthrough"),
+            "livekit_room": settings.LIVEKIT_DEFAULT_ROOM,
+            "livekit_url": settings.LIVEKIT_PUBLIC_URL,
+        }
+    )
 
     while True:
         msg = await websocket.receive_json()

@@ -1,7 +1,7 @@
 """FastAPI entry — deepiri-speech.
 
-Primary duplex transport: WebSocket `/v1/session/ws` (Pipecat pipeline on providers).
-LiveKit is optional for WebRTC rooms/phone only.
+Pipecat + LiveKit always-on (in-process). WS JSON duplex + Pipecat media WS +
+LiveKit WebRTC rooms with agent worker.
 """
 from __future__ import annotations
 
@@ -15,8 +15,10 @@ from pydantic import BaseModel, Field
 
 from .bus import get_bus
 from .device import resolve_device
+from .livekit_rooms import create_room, delete_room, ensure_default_room, list_rooms, mint_token
 from .livekit_worker import get_worker_state, start_worker_if_enabled, stop_worker
 from .pipecat_bridge import is_available as pipecat_available
+from .pipecat_bridge import run_fastapi_pipecat_pipeline
 from .pipecat_bridge import status_dict as pipecat_status
 from .pipeline import run_ws_session
 from .providers import get_stt, get_tts
@@ -32,14 +34,18 @@ async def lifespan(_app: FastAPI):
     bus = await get_bus()
     device = resolve_device()
     logger.info(
-        "deepiri-speech starting stt=%s tts=%s vad=%s device=%s pipecat=%s livekit_worker=%s",
+        "deepiri-speech starting stt=%s tts=%s device=%s pipecat=%s livekit_worker=%s",
         settings.STT_PROVIDER,
         settings.TTS_PROVIDER,
-        "silero" if settings.ENABLE_SILERO_VAD else "off",
         device.kind,
         pipecat_available(),
         settings.LIVEKIT_WORKER_ENABLED,
     )
+    try:
+        room = await ensure_default_room()
+        logger.info("LiveKit default room: %s", room)
+    except Exception as exc:
+        logger.warning("LiveKit room ensure skipped: %s", exc)
     await start_worker_if_enabled()
     yield
     await stop_worker()
@@ -48,10 +54,10 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="Deepiri Speech",
-    version="0.2.0",
+    version="0.3.0",
     description=(
-        "Self-hosted STT/TTS — Poetry FastAPI, Pipecat pipeline over providers, "
-        "WebSocket transport (LiveKit optional for WebRTC rooms)"
+        "Poetry FastAPI speech worker — Pipecat (always-on) + LiveKit WebRTC "
+        "(rooms/agent) over deepiri providers"
     ),
     lifespan=lifespan,
 )
@@ -69,9 +75,17 @@ class SessionCreate(BaseModel):
 
 
 class LiveKitTokenRequest(BaseModel):
-    room_name: str
+    room_name: Optional[str] = None
     identity: str
     name: Optional[str] = None
+    agent: bool = False
+    room_admin: bool = False
+
+
+class LiveKitRoomCreate(BaseModel):
+    name: Optional[str] = None
+    empty_timeout: Optional[int] = None
+    max_participants: Optional[int] = None
 
 
 @app.get("/health")
@@ -87,11 +101,15 @@ async def health():
         "vad": getattr(vad, "name", "unknown"),
         "device": device.to_dict(),
         "pipeline": "pipecat" if pipecat_available() else "native",
-        "transport": "websocket",
-        "livekit_optional": True,
-        "livekit_url": settings.LIVEKIT_PUBLIC_URL,
+        "pipecat": pipecat_status(),
+        "transport": "websocket+livekit",
+        "livekit": {
+            "url": settings.LIVEKIT_PUBLIC_URL,
+            "worker_enabled": settings.LIVEKIT_WORKER_ENABLED,
+            "default_room": settings.LIVEKIT_DEFAULT_ROOM,
+            "worker": worker.to_dict(),
+        },
         "speech_stream": settings.SPEECH_STREAM,
-        "worker": worker.to_dict(),
     }
 
 
@@ -106,8 +124,7 @@ async def providers():
         "tts_voice": settings.TTS_VOICE,
         "vad": getattr(vad, "name", "unknown"),
         "silero_enabled": settings.ENABLE_SILERO_VAD,
-        "pipecat_enabled": settings.PIPECAT_ENABLED,
-        "pipecat_available": pipecat_available(),
+        "pipecat": pipecat_status(),
         "worker_enabled": settings.LIVEKIT_WORKER_ENABLED,
         "device": device.to_dict(),
         "engines": {
@@ -115,6 +132,8 @@ async def providers():
             "stt_apple_edge": "whisper_cpp",
             "tts_default": "kokoro",
             "tts_avoid": "xtts_v2 (CPML)",
+            "orchestration": "pipecat (auto)",
+            "webrtc": "livekit",
         },
     }
 
@@ -127,13 +146,17 @@ async def worker_status():
 @app.get("/v1/pipeline/status")
 async def pipeline_status():
     return {
-        "transport": "websocket",
-        "endpoint": "/v1/session/ws",
         "pipecat": pipecat_status(),
-        "livekit_required": False,
+        "endpoints": {
+            "json_ws": "/v1/session/ws",
+            "pipecat_ws": "/v1/pipecat/ws",
+            "livekit_token": "/v1/livekit/token",
+            "livekit_rooms": "/v1/livekit/rooms",
+        },
+        "livekit_worker": get_worker_state().to_dict(),
         "note": (
-            "Pipecat is in-process (not a separate service). "
-            "LiveKit only for WebRTC rooms/phone — not used for default duplex."
+            "Pipecat is always-on in-process. LiveKit is the WebRTC SFU; "
+            "the agent joins via Pipecat LiveKitTransport (agents fallback)."
         ),
     }
 
@@ -190,57 +213,93 @@ async def create_session(body: SessionCreate):
     import uuid
 
     session_id = str(uuid.uuid4())
-    room = body.room_name or f"speech-{session_id[:8]}"
+    room = body.room_name or settings.LIVEKIT_DEFAULT_ROOM
     bus = await get_bus()
     await bus.session_started(session_id, user_id=body.user_id, room=room)
+    user_token = None
+    try:
+        user_token = mint_token(
+            room_name=room,
+            identity=body.user_id or f"user-{session_id[:8]}",
+            name=body.user_id,
+        )
+    except Exception as exc:
+        logger.debug("token mint skipped: %s", exc)
     return {
         "session_id": session_id,
         "room_name": room,
         "ws_url": f"ws://localhost:{settings.PORT}/v1/session/ws?session_id={session_id}",
-        "transport": "websocket",
-        "livekit_url": settings.LIVEKIT_PUBLIC_URL if settings.LIVEKIT_WORKER_ENABLED else None,
+        "pipecat_ws_url": f"ws://localhost:{settings.PORT}/v1/pipecat/ws?session_id={session_id}",
+        "transport": "websocket+livekit",
+        "livekit_url": settings.LIVEKIT_PUBLIC_URL,
+        "livekit_token": user_token,
     }
+
+
+@app.get("/v1/livekit/rooms")
+async def livekit_rooms_list():
+    try:
+        return {"rooms": await list_rooms(), "url": settings.LIVEKIT_PUBLIC_URL}
+    except Exception as exc:
+        return {"rooms": [], "error": str(exc), "url": settings.LIVEKIT_PUBLIC_URL}
+
+
+@app.post("/v1/livekit/rooms")
+async def livekit_rooms_create(body: LiveKitRoomCreate):
+    return await create_room(
+        body.name,
+        empty_timeout=body.empty_timeout,
+        max_participants=body.max_participants,
+    )
+
+
+@app.delete("/v1/livekit/rooms/{name}")
+async def livekit_rooms_delete(name: str):
+    return await delete_room(name)
 
 
 @app.post("/v1/livekit/token")
 async def livekit_token(body: LiveKitTokenRequest):
-    """Optional — only when you need real WebRTC rooms/phone."""
+    """Mint a full-capability LiveKit access token for rooms/phone."""
+    room = body.room_name or settings.LIVEKIT_DEFAULT_ROOM
     try:
-        from livekit.api import AccessToken, VideoGrants
-    except ImportError:
+        token = mint_token(
+            room_name=room,
+            identity=body.identity,
+            name=body.name,
+            agent=body.agent,
+            room_admin=body.room_admin or body.agent,
+            can_publish=True,
+            can_subscribe=True,
+            room_create=True,
+        )
+    except Exception as exc:
         return {
-            "error": "livekit-api not installed; poetry install -E livekit",
-            "room_name": body.room_name,
+            "error": str(exc),
+            "room_name": room,
             "identity": body.identity,
             "livekit_url": settings.LIVEKIT_PUBLIC_URL,
-            "dev_hint": "WS duplex does not need LiveKit; install extras only for WebRTC rooms",
         }
-
-    token = (
-        AccessToken(settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET)
-        .with_identity(body.identity)
-        .with_name(body.name or body.identity)
-        .with_grants(
-            VideoGrants(
-                room_join=True,
-                room=body.room_name,
-                can_publish=True,
-                can_subscribe=True,
-            )
-        )
-        .to_jwt()
-    )
     return {
         "token": token,
         "url": settings.LIVEKIT_PUBLIC_URL,
-        "room_name": body.room_name,
+        "room_name": room,
         "identity": body.identity,
+        "agent": body.agent,
+        "grants": [
+            "room_join",
+            "can_publish",
+            "can_subscribe",
+            "can_publish_data",
+            "can_update_own_metadata",
+            "room_create",
+        ],
     }
 
 
 @app.websocket("/v1/session/ws")
 async def duplex_ws(websocket: WebSocket):
-    """Primary media/control duplex — Pipecat pipeline on providers over WebSocket."""
+    """JSON duplex (default). Pass protocol=pipecat for FastAPIWebsocketTransport."""
     await websocket.accept()
     session_id = websocket.query_params.get("session_id") or "anon"
     bus = await get_bus()
@@ -255,3 +314,24 @@ async def duplex_ws(websocket: WebSocket):
             await websocket.send_json({"type": "error", "error": str(exc)})
         except Exception:
             pass
+
+
+@app.websocket("/v1/pipecat/ws")
+async def pipecat_media_ws(websocket: WebSocket):
+    """Full Pipecat FastAPIWebsocketTransport media duplex."""
+    await websocket.accept()
+    session_id = websocket.query_params.get("session_id") or "pipecat"
+    bus = await get_bus()
+    await bus.session_started(session_id, transport="pipecat-ws")
+    if not pipecat_available():
+        await websocket.send_json(
+            {"type": "error", "error": "pipecat-ai not installed (should be a core dep)"}
+        )
+        await websocket.close()
+        return
+    try:
+        await run_fastapi_pipecat_pipeline(websocket)
+    except WebSocketDisconnect:
+        logger.info("pipecat ws disconnected session=%s", session_id)
+    except Exception as exc:
+        logger.exception("pipecat ws error: %s", exc)
