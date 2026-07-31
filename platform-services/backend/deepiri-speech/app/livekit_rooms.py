@@ -75,11 +75,9 @@ async def create_room(
     from livekit import api
 
     room_name = name or settings.LIVEKIT_DEFAULT_ROOM
-    lkapi = None
-    try:
-        lkapi = api.LiveKitAPI(
-            _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
-        )
+    async with api.LiveKitAPI(
+        _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
+    ) as lkapi:
         room = await lkapi.room.create_room(
             api.CreateRoomRequest(
                 name=room_name,
@@ -96,19 +94,14 @@ async def create_room(
             "num_participants": getattr(room, "num_participants", 0),
             "livekit_url": settings.LIVEKIT_PUBLIC_URL,
         }
-    finally:
-        if lkapi is not None:
-            await lkapi.aclose()
 
 
 async def list_rooms() -> list[dict[str, Any]]:
     from livekit import api
 
-    lkapi = None
-    try:
-        lkapi = api.LiveKitAPI(
-            _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
-        )
+    async with api.LiveKitAPI(
+        _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
+    ) as lkapi:
         resp = await lkapi.room.list_rooms(api.ListRoomsRequest())
         rooms = []
         for room in resp.rooms or []:
@@ -122,24 +115,16 @@ async def list_rooms() -> list[dict[str, Any]]:
                 }
             )
         return rooms
-    finally:
-        if lkapi is not None:
-            await lkapi.aclose()
 
 
 async def delete_room(name: str) -> dict[str, Any]:
     from livekit import api
 
-    lkapi = None
-    try:
-        lkapi = api.LiveKitAPI(
-            _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
-        )
+    async with api.LiveKitAPI(
+        _http_url(), settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET
+    ) as lkapi:
         await lkapi.room.delete_room(api.DeleteRoomRequest(room=name))
         return {"deleted": name}
-    finally:
-        if lkapi is not None:
-            await lkapi.aclose()
 
 
 async def ensure_default_room() -> dict[str, Any]:
@@ -155,5 +140,5 @@ async def ensure_default_room() -> dict[str, Any]:
             "name": settings.LIVEKIT_DEFAULT_ROOM,
             "livekit_url": settings.LIVEKIT_PUBLIC_URL,
             "ensured": False,
-            "error": str(exc),
+            "error": "Unable to ensure default room at this time",
         }

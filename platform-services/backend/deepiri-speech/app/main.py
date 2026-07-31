@@ -278,8 +278,12 @@ async def livekit_token(body: LiveKitTokenRequest):
             can_subscribe=True,
             room_create=True,
         )
-    except Exception as exc:
-        logger.exception("Failed to mint LiveKit token for room '%s' and identity '%s'", room, body.identity)
+    except Exception:
+        logger.exception(
+            "Failed to mint LiveKit token for room '%s' and identity '%s'",
+            room,
+            body.identity,
+        )
         return {
             "error": "Failed to mint LiveKit token.",
             "room_name": room,
@@ -314,10 +318,12 @@ async def duplex_ws(websocket: WebSocket):
         await run_ws_session(websocket, session_id, bus)
     except WebSocketDisconnect:
         logger.info("ws disconnected session=%s", session_id)
-    except Exception as exc:
-        logger.exception("ws error: %s", exc)
+    except Exception:
+        logger.exception("ws error session=%s", session_id)
         try:
-            await websocket.send_json({"type": "error", "error": str(exc)})
+            await websocket.send_json(
+                {"type": "error", "error": "Session error; see server logs"}
+            )
         except Exception:
             pass
 
@@ -339,5 +345,5 @@ async def pipecat_media_ws(websocket: WebSocket):
         await run_fastapi_pipecat_pipeline(websocket)
     except WebSocketDisconnect:
         logger.info("pipecat ws disconnected session=%s", session_id)
-    except Exception as exc:
-        logger.exception("pipecat ws error: %s", exc)
+    except Exception:
+        logger.exception("pipecat ws error session=%s", session_id)
