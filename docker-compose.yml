@@ -1,38 +1,100 @@
 name: deepiri
 
-version: '3.8'
+# Cloud / prod one-box compose.
+# Target: cheap 8 GB VPS, non-AI platform services only.
+#
+# Secrets/env files are expected to live directly in:
+#   ./ops/k8s/secrets/.env
+#
+# Heavy/off-by-default services are intentionally commented out per infra preference:
+#   cyrex, cyrex-interface, ollama, mlflow, milvus, etcd, minio, kafka,
+#   influxdb, pgadmin, adminer, deepiri-prismpipe.
 
-# IMPORTANT: Set DOCKER_BUILDKIT=1 before building to enable layer caching
-# This prevents 50GB+ of dangling images on every build
-
-x-build-args: &build-args
-  # Use BuildKit for better caching and no dangling images
-  DOCKER_BUILDKIT: 1
-  BUILDKIT_PROGRESS: plain
-
-# Minimal logging - logs are automatically cleared and not saved on restart
-# max-size: 1MB, max-file: 1 (no rotation), no compression
 x-logging: &minimal-logging
   driver: "local"
   options:
-    max-size: "1m"      # Only 1MB per file
-    max-file: "1"       # Only 1 file (no rotation backup)
-    compress: "false"   # No compression (faster cleanup)
+    max-size: "1m"
+    max-file: "1"
+    compress: "false"
 
 x-env: &default-env
   env_file:
     - ./ops/k8s/secrets/.env
 
 services:
-  # Redis Cache
+  # Data
+  postgres-auth:
+    <<: *default-env
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-auth
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_AUTH_USER:-${POSTGRES_USER:-deepiri_auth}}
+      POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
+      POSTGRES_DB: ${POSTGRES_AUTH_DB:-auth_db}
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-auth.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-${POSTGRES_USER:-deepiri_auth}}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - deepiri-network
+
+  postgres-core:
+    <<: *default-env
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-core
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}
+      POSTGRES_PASSWORD: ${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
+      POSTGRES_DB: ${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+    volumes:
+      - postgres_core_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-core.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - deepiri-network
+
+  postgres-intelligence:
+    <<: *default-env
+    image: postgres:16-alpine
+    container_name: deepiri-postgres-intelligence
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_INTELLIGENCE_USER:-${POSTGRES_USER:-deepiri_intel}}
+      POSTGRES_PASSWORD: ${POSTGRES_INTELLIGENCE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
+      POSTGRES_DB: ${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
+    volumes:
+      - postgres_intelligence_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-intelligence.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_INTELLIGENCE_USER:-${POSTGRES_USER:-deepiri_intel}}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - deepiri-network
+
   redis:
     <<: *default-env
     image: redis:7.2-alpine
     container_name: deepiri-redis
     restart: unless-stopped
     logging: *minimal-logging
-    ports:
-      - "6381:6379"
     command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
@@ -45,295 +107,65 @@ services:
     networks:
       - deepiri-network
 
-  # Milvus Vector Database for RAG
-  etcd:
-    <<: *default-env
-    image: quay.io/coreos/etcd:v3.5.5
-    container_name: deepiri-milvus-etcd
-    restart: unless-stopped
-    logging: *minimal-logging
-    environment:
-      ETCD_AUTO_COMPACTION_MODE: revision
-      ETCD_AUTO_COMPACTION_RETENTION: 1000
-      ETCD_QUOTA_BACKEND_BYTES: 4294967296
-      ETCD_SNAPSHOT_COUNT: 50000
-    volumes:
-      - etcd_data:/etcd
-    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
-    healthcheck:
-      test: ["CMD", "etcdctl", "endpoint", "health", "--endpoints=http://127.0.0.1:2379"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-    networks:
-      - deepiri-network
-
-  minio:
-    <<: *default-env
-    image: minio/minio:latest
-    container_name: deepiri-milvus-minio
-    restart: unless-stopped
-    logging: *minimal-logging
-    environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set}
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
-    volumes:
-      - minio_data:/data
-    command: minio server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-      start_period: 40s
-    ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console
-    networks:
-      - deepiri-network
-
-  milvus:
-    <<: *default-env
-    image: milvusdb/milvus:v2.3.0
-    container_name: deepiri-milvus
-    restart: unless-stopped
-    logging: *minimal-logging
-    command: ["milvus", "run", "standalone"]
-    ports:
-      - "19530:19530"
-      - "9091:9091"
-    environment:
-      ETCD_ENDPOINTS: etcd:2379
-      MINIO_ADDRESS: minio:9000
-    volumes:
-      - milvus_data:/var/lib/milvus
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9091/healthz || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    depends_on:
-      - etcd
-      - minio
-    networks:
-      - deepiri-network
-
-  # Backend API
-  backend:
+  # Edge / portal
+  api-gateway:
     <<: *default-env
     build:
-      context: ./deepiri-core-api
-      dockerfile: Dockerfile
-    container_name: deepiri-core-api
+      context: ./platform-services
+      dockerfile: backend/deepiri-api-gateway/Dockerfile
+    image: deepiri-api-gateway:prod
+    container_name: deepiri-api-gateway
     restart: unless-stopped
     logging: *minimal-logging
-    ports:
-      - "5000:5000"
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: production
       PORT: 5000
-      
-      # Redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      DB_HOST: postgres-core
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      DB_USER: ${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}
+      DB_PASSWORD: ${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
-      
-      # JWT
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (minimum 32 characters)}
-      
-      # External APIs
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
-      EVENTBRITE_API_KEY: ${EVENTBRITE_API_KEY}
-      YELP_API_KEY: ${YELP_API_KEY}
-      
-      # Firebase
-      FIREBASE_SERVICE_ACCOUNT_PATH: /app/config/firebase-adminsdk.json
-      FIREBASE_DATABASE_URL: ${FIREBASE_DATABASE_URL}
-      
-      # OAuth 2.0
-      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI:-http://localhost:5000/oauth/callback}
-      
-      # Integration API Keys
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      NOTION_CLIENT_ID: ${NOTION_CLIENT_ID}
-      NOTION_CLIENT_SECRET: ${NOTION_CLIENT_SECRET}
-      TRELLO_API_KEY: ${TRELLO_API_KEY}
-      TRELLO_API_SECRET: ${TRELLO_API_SECRET}
-      
-      # Webhook Secrets
-      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
-      NOTION_WEBHOOK_SECRET: ${NOTION_WEBHOOK_SECRET}
-      TRELLO_WEBHOOK_SECRET: ${TRELLO_WEBHOOK_SECRET}
-      
-      # Push Notifications
-      FCM_SERVER_KEY: ${FCM_SERVER_KEY}
-      APNS_KEY_ID: ${APNS_KEY_ID}
-      APNS_TEAM_ID: ${APNS_TEAM_ID}
-      
-      # InfluxDB
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
-      
-      # Frontend URL
-      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
-    
-    volumes:
-      - ./deepiri-core-api/config:/app/config:ro
-      - ./deepiri-core-api/logs:/app/logs
+      AUTH_SERVICE_URL: http://auth-service:5001
+      TRUSS_URL: http://truss:5002
+      REGISTRY_URL: http://registry:5003
+      TELEMETRY_URL: http://telemetry:5004
+      EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
+      JOBS_URL: http://jobs:5007
+      REALTIME_GATEWAY_URL: http://realtime-gateway:5008
+      MESSAGING_SERVICE_URL: http://messaging-service:5009
+      LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5003
+      CYREX_URL: ${CYREX_URL:-http://disabled-cyrex:8000}
+      SYNAPSE_URL: http://synapse:8002
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?INTERNAL_SERVICE_SECRET must be set}
     depends_on:
-      - redis
-      - influxdb
-    networks:
-      - deepiri-network
+      auth-service:
+        condition: service_started
+      truss:
+        condition: service_started
+      registry:
+        condition: service_started
+      telemetry:
+        condition: service_started
+      jobs:
+        condition: service_started
+      messaging-service:
+        condition: service_started
+      realtime-gateway:
+        condition: service_started
+      language-intelligence-service:
+        condition: service_started
+      synapse:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Python Agent API (AI Service)
-  cyrex:
-    <<: *default-env
-    build:
-      context: .
-      dockerfile: ./diri-cyrex/Dockerfile
-      args:
-        BUILD_TYPE: prebuilt
-        BASE_IMAGE: python:3.11-slim
-        PYTORCH_VERSION: 2.9.1
-        PYTHON_VERSION: 3.11
-    container_name: deepiri-cyrex
-    restart: unless-stopped
-    logging: *minimal-logging
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
-      NODE_BACKEND_URL: http://backend:5000
-      CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
-      # AI Training Configuration
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
-      WANDB_API_KEY: ${WANDB_API_KEY}
-      # Model Registry Configuration (for modelkit integration)
-      MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
-      MODEL_REGISTRY_PATH: /app/model_registry
-      MODEL_CACHE_DIR: /app/models/cache
-      S3_ENDPOINT_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set}
-      S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
-      STAGING_MODEL_PATH: /app/models/staging
-      PRODUCTION_MODEL_PATH: /app/models/production
-      
-      # Vector Database (Optional)
-      PINECONE_API_KEY: ${PINECONE_API_KEY}
-      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT:-us-east1-gcp}
-      PINECONE_INDEX: ${PINECONE_INDEX:-deepiri}
-      WEAVIATE_URL: ${WEAVIATE_URL}
-      
-      # InfluxDB
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
-      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
-      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
-      
-      # Milvus Vector Database Configuration
-      MILVUS_HOST: milvus
-      MILVUS_PORT: 19530
-      
-      # Redis Configuration
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
-      # Synapse transport (redis|sidecar). Keep redis by default.
-      SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-redis}
-      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://sugar-glider:8081}
-      SYNAPSE_SIDECAR_TIMEOUT_SEC: ${SYNAPSE_SIDECAR_TIMEOUT_SEC:-5}
-      SYNAPSE_SIDECAR_SENDER: ${SYNAPSE_SIDECAR_SENDER:-cyrex}
-      SYNAPSE_CONSUMER_NAME: ${SYNAPSE_CONSUMER_NAME:-cyrex-1}
-      SYNAPSE_MODEL_EVENTS_GROUP: ${SYNAPSE_MODEL_EVENTS_GROUP:-cyrex-runtime}
-      SYNAPSE_SIDECAR_SUBSCRIBER_GROUP_SUFFIX: ${SYNAPSE_SIDECAR_SUBSCRIBER_GROUP_SUFFIX:-subscribers}
-
-      # Local LLM Configuration
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      LOCAL_LLM_BACKEND: ${LOCAL_LLM_BACKEND:-ollama}
-      LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-llama3:8b}
-      HF_HOME: /app/.cache/huggingface
-      SENTENCE_TRANSFORMERS_HOME: /app/.cache/sentence_transformers
-      
-      # PostgreSQL Configuration
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
-      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./diri-cyrex/app:/app/app
-      - ./diri-cyrex/train:/app/train
-      - ./diri-cyrex/inference:/app/inference
-      - ./diri-cyrex/tests:/app/tests
-      - cyrex_cache:/app/.cache
-    depends_on:
-      - backend
-      - ollama
-      - postgres
-      - milvus
-      - redis
-      - influxdb
-    networks:
-      - deepiri-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    # Uncomment for GPU support (requires nvidia-docker)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
-  # Cyrex Interface (Frontend)
-  cyrex-interface:
-    <<: *default-env
-    image: node:20-alpine
-    container_name: deepiri-cyrex-interface
-    restart: unless-stopped
-    logging: *minimal-logging
-    working_dir: /app
-    environment:
-      VITE_CYREX_BASE_URL: http://cyrex:8000
-      VITE_PORT: 5175
-    ports:
-      - "5175:5175"
-    volumes:
-      - ./diri-cyrex/cyrex-interface:/app
-      - /app/node_modules
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port ${VITE_PORT:-5175}"
-    depends_on:
-      - cyrex
+      start_period: 30s
     networks:
       - deepiri-network
 
-  # Frontend
   frontend:
     <<: *default-env
     build:
@@ -341,156 +173,23 @@ services:
       dockerfile: Dockerfile
       target: prod
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
-        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
-        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
-        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
-        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET}
-        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
-        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
-        VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID}
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL must be set}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
+        VITE_FIREBASE_MEASUREMENT_ID: ${VITE_FIREBASE_MEASUREMENT_ID:-}
+    image: deepiri-frontend:prod
     container_name: deepiri-frontend
     restart: unless-stopped
     logging: *minimal-logging
-    ports:
-      - "3000:80"
     depends_on:
-      - backend
+      - api-gateway
     networks:
       - deepiri-network
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: deepiri-prometheus
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    networks:
-      - deepiri-network
-    depends_on:
-      - backend
-      - cyrex
-
-  grafana:
-    <<: *default-env
-    image: grafana/grafana:latest
-    container_name: deepiri-grafana
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "3001:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set}
-    networks:
-      - deepiri-network
-    depends_on:
-      - prometheus
-
-  # InfluxDB for Time-Series Analytics
-  influxdb:
-    <<: *default-env
-    image: influxdb:2.7
-    container_name: deepiri-influxdb
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "8086:8086"
-    environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USER:?INFLUXDB_USER must be set}
-      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:?INFLUXDB_PASSWORD must be set}
-      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:?INFLUXDB_ORG must be set}
-      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:?INFLUXDB_BUCKET must be set}
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:?INFLUXDB_TOKEN must be set}
-    volumes:
-      - influxdb_data:/var/lib/influxdb2
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-    networks:
-      - deepiri-network
-
-  # MLflow for AI Experiment Tracking (Optional)
-  mlflow:
-    <<: *default-env
-    build:
-      context: ./ops/docker/mlflow
-      dockerfile: Dockerfile
-    image: deepiri-mlflow:latest
-    container_name: deepiri-mlflow
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "5001:5000"
-    environment:
-      # Backend Store (PostgreSQL)
-      BACKEND_STORE_URI: postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB must be set}
-      # Artifact Store (MinIO/S3)
-      DEFAULT_ARTIFACT_ROOT: s3://mlflow-artifacts/
-      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set}
-      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
-      # MLflow Tracking URI (for modelkit integration)
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-      # ModelKit Integration
-      MODELKIT_ENABLED: "true"
-      MODELKIT_TRACKING_URI: http://mlflow:5000
-    command: >
-      mlflow server
-      --host 0.0.0.0
-      --port 5000
-      --backend-store-uri postgresql://${POSTGRES_USER:?POSTGRES_USER must be set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB must be set}
-      --default-artifact-root s3://mlflow-artifacts/
-    depends_on:
-      - postgres
-      - minio
-    networks:
-      - deepiri-network
-    profiles:
-      - ai-training
-
-  # Jupyter Notebook for AI Research (Optional)
-  # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
-  # jupyter:
-  #   build:
-  #     context: .
-  #     dockerfile: ./deepiri-modelkit/Dockerfile.jupyter
-  #     args:
-  #       BUILD_TYPE: prebuilt
-  #       BASE_IMAGE: python:3.11-slim
-  #       PYTORCH_VERSION: 2.9.1
-  #       PYTHON_VERSION: 3.11
-  #   container_name: deepiri-jupyter
-  #   restart: unless-stopped
-  #   logging: *minimal-logging
-  #   command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.runtime_dir=/tmp/jupyter_runtime --NotebookApp.notebook_dir=/app/notebooks
-  #   ports:
-  #     - "8889:8888"
-  #   volumes:
-  #     - ./diri-cyrex/train/notebooks:/app/notebooks
-  #     - ./diri-cyrex/train/data:/app/data
-  #   environment:
-  #     OPENAI_API_KEY: ${OPENAI_API_KEY}
-  #     JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
-  #     # Model Registry Configuration (for modelkit integration)
-  #     MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
-  #     MODEL_REGISTRY_TYPE: ${MODEL_REGISTRY_TYPE:-mlflow}
-  #     S3_ENDPOINT_URL: http://minio:9000
-  #     MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-  #     MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-  #     S3_BUCKET: ${S3_BUCKET:-mlflow-artifacts}
-  #   networks:
-  #     - deepiri-network
-  #   profiles:
-  #     - ai-training
-
-  # NGINX Reverse Proxy (Optional for production)
   nginx:
     <<: *default-env
     image: nginx:alpine
@@ -501,102 +200,379 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./ops/nginx/cloud-prod.conf:/etc/nginx/nginx.conf:ro
+      - ./ops/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - frontend
-      - backend
+      - api-gateway
+      - realtime-gateway
     networks:
       - deepiri-network
-    profiles:
-      - production
 
-  # ════════════════════════════════════════════════════════════════════════
-  # Ollama - Automatic GPU/CPU Detection
-  # ════════════════════════════════════════════════════════════════════════
-  # Usage: docker compose up -d ollama
-  #
-  # GPU is automatically used if NVIDIA Container Toolkit is installed.
-  # If GPU not available, automatically falls back to CPU - no errors!
-  #
-  # One-time host setup for automatic GPU (recommended):
-  #   sudo nvidia-ctk runtime configure --runtime=docker --set-as-default
-  #   sudo systemctl restart docker
-  # After this, ALL containers automatically get GPU access!
-  # ════════════════════════════════════════════════════════════════════════
-  ollama:
+  # Platform domain services
+  auth-service:
     <<: *default-env
-    image: ollama/ollama:latest
-    container_name: deepiri-ollama
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-auth-service/Dockerfile
+    image: deepiri-auth-service:prod
+    container_name: deepiri-auth-service
     restart: unless-stopped
     logging: *minimal-logging
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
     environment:
-      OLLAMA_HOST: 0.0.0.0
-    networks:
-      - deepiri-network
-    # GPU support - automatically used if NVIDIA runtime available
-    # Gracefully ignored if GPU not available (runs in CPU mode)
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+      NODE_ENV: production
+      PORT: 5001
+      DATABASE_URL: postgresql://${POSTGRES_AUTH_USER:-${POSTGRES_USER:-deepiri_auth}}:${POSTGRES_AUTH_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-auth:5432/${POSTGRES_AUTH_DB:-auth_db}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?INTERNAL_SERVICE_SECRET must be set}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      SYNAPSE_URL: http://synapse:8002
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-
-  # PostgreSQL Database for Agent System
-  postgres:
-    <<: *default-env
-    image: postgres:16-alpine
-    container_name: deepiri-postgres
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
-      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - deepiri-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER must be set}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
+  truss:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-truss/Dockerfile
+    image: deepiri-truss:prod
+    container_name: deepiri-truss
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5002
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      JOBS_URL: http://jobs:5007
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      SYNAPSE_URL: http://synapse:8002
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+      jobs:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
+  registry:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-registry/Dockerfile
+    image: deepiri-registry:prod
+    container_name: deepiri-registry
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5003
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      SYNAPSE_URL: http://synapse:8002
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
+  telemetry:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-telemetry/Dockerfile
+    image: deepiri-telemetry:prod
+    container_name: deepiri-telemetry
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5004
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      JOBS_URL: http://jobs:5007
+      REGISTRY_URL: http://registry:5003
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      SYNAPSE_URL: http://synapse:8002
+      INFLUXDB_URL: ${INFLUXDB_URL:-}
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN:-}
+      INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
+      INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+      jobs:
+        condition: service_started
+      registry:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
+  external-bridge-service:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-external-bridge-service/Dockerfile
+    image: deepiri-external-bridge-service:prod
+    container_name: deepiri-external-bridge-service
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5006
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      AUTH_SERVICE_URL: http://auth-service:5001
+      EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      NOTION_WEBHOOK_SECRET: ${NOTION_WEBHOOK_SECRET:-}
+      TRELLO_WEBHOOK_SECRET: ${TRELLO_WEBHOOK_SECRET:-}
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-}
+      SYNAPSE_URL: http://synapse:8002
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - deepiri-network
+
+  jobs:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-jobs/Dockerfile
+    image: deepiri-jobs:prod
+    container_name: deepiri-jobs
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5007
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      HELOX_URL: ${HELOX_URL:-}
+      HELOX_API_KEY: ${HELOX_API_KEY:-}
+      SYNAPSE_URL: http://synapse:8002
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
+  language-intelligence-service:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-language-intelligence-service/Dockerfile
+    image: deepiri-language-intelligence-service:prod
+    container_name: deepiri-language-intelligence-service
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5003
+      DATABASE_URL: postgresql://${POSTGRES_INTELLIGENCE_USER:-${POSTGRES_USER:-deepiri_intel}}:${POSTGRES_INTELLIGENCE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-intelligence:5432/${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-disabled}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-language-intelligence-documents}
+      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-}
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-}
+      CYREX_BASE_URL: ${CYREX_BASE_URL:-http://disabled-cyrex:8000}
+      CYREX_API_KEY: ${CYREX_API_KEY:-}
+      AUTH_ENABLED: ${LANGUAGE_INTELLIGENCE_AUTH_ENABLED:-false}
+      SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
+      SYNAPSE_SUGAR_GLIDER_URL: http://sugar-glider:8081
+    depends_on:
+      postgres-intelligence:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      sugar-glider:
+        condition: service_started
+    networks:
+      - deepiri-network
+
+  messaging-service:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-messaging-service/Dockerfile
+    image: deepiri-messaging-service:prod
+    container_name: deepiri-messaging-service
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5009
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      CYREX_URL: ${CYREX_URL:-http://disabled-cyrex:8000}
+      CYREX_API_KEY: ${CYREX_API_KEY:-}
+      REALTIME_GATEWAY_URL: http://realtime-gateway:5008
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:notifications@example.com}
+    depends_on:
+      postgres-core:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      realtime-gateway:
+        condition: service_started
+      auth-service:
+        condition: service_started
+    networks:
+      - deepiri-network
+
+  realtime-gateway:
+    <<: *default-env
+    build:
+      context: ./platform-services
+      dockerfile: backend/deepiri-realtime-gateway/Dockerfile
+    image: deepiri-realtime-gateway:prod
+    container_name: deepiri-realtime-gateway
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      NODE_ENV: production
+      PORT: 5008
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      SYNAPSE_URL: http://synapse:8002
+      SYNAPSE_SUGAR_GLIDER_URL: http://sugar-glider:8081
+      SYNAPSE_SIDECAR_URL: http://sugar-glider:8081
+      SYNAPSE_GRPC_ADDR: sugar-glider:50051
+      STREAM_TRANSPORT: ${STREAM_TRANSPORT:-sugar-glider-grpc}
+      STREAM_CONSUMER_GROUP: ${STREAM_CONSUMER_GROUP:-realtime-gateway}
+      STREAM_CONSUMER_NAME: ${STREAM_CONSUMER_NAME:-realtime-1}
+    depends_on:
+      redis:
+        condition: service_healthy
+      synapse:
+        condition: service_started
+      sugar-glider:
+        condition: service_started
+    networks:
+      - deepiri-network
+
+  synapse:
+    <<: *default-env
+    build:
+      context: ./platform-services/shared/deepiri-synapse
+      dockerfile: Dockerfile
+    image: deepiri-synapse:prod
+    container_name: deepiri-synapse
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
+  sugar-glider:
+    <<: *default-env
+    build:
+      context: ./platform-services/shared/deepiri-sugar-glider
+      dockerfile: Dockerfile
+    image: deepiri-sugar-glider:prod
+    container_name: deepiri-sugar-glider
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      SIDECAR_SERVICE_NAME: deepiri-platform
+      SIDECAR_REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
+      SIDECAR_LISTEN_ADDR: tcp://0.0.0.0:8081
+      SIDECAR_GRPC_ADDR: tcp://0.0.0.0:50051
+      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
+      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
+      SIDECAR_MAX_STREAM_LEN: "10000"
+      SIDECAR_WAL_DIR: /data/synapse-wal
+    volumes:
+      - sugar_glider_wal:/data/synapse-wal
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
+  # Commented out for cheap one-box platform deploy:
+  #
+  # etcd:
+  # minio:
+  # milvus:
+  # cyrex:
+  # cyrex-interface:
+  # prometheus:
+  # grafana:
+  # influxdb:
+  # mlflow:
+  # ollama:
+  # kafka:
+  # pgadmin:
+  # adminer:
+  # deepiri-prismpipe:
 
 volumes:
+  postgres_auth_data:
+  postgres_core_data:
+  postgres_intelligence_data:
   redis_data:
-    driver: local
-  mlflow_data:
-    driver: local
-  influxdb_data:
-    driver: local
-  etcd_data:
-    driver: local
-  minio_data:
-    driver: local
-  milvus_data:
-    driver: local
-  ollama_data:
-    driver: local
-  postgres_data:
-    driver: local
-  cyrex_cache:
-    driver: local
+  sugar_glider_wal:
+  # Commented out disabled-service volumes:
+  # mlflow_data:
+  # influxdb_data:
+  # etcd_data:
+  # minio_data:
+  # milvus_data:
+  # ollama_data:
+  # postgres_cyrex_data:
+  # cyrex_cache:
 
 networks:
   deepiri-network:
