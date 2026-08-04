@@ -40,7 +40,7 @@ This protects `main`, `master`, and branches containing `team-dev` from accident
 This builds:
 - `cyrex`
 - `jupyter`
-- `decision-intelligence`
+- `telemetry`
 
 ### Start Services
 
@@ -56,7 +56,7 @@ This starts all required infrastructure and services.
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
   postgres influxdb redis \
-  cyrex jupyter mlflow decision-intelligence
+  cyrex jupyter mlflow telemetry
 ```
 
 ### Rebuild After Code Changes
@@ -126,7 +126,7 @@ docker compose -f docker-compose.dev.yml logs -f
 ```bash
 docker compose -f docker-compose.dev.yml logs -f cyrex
 docker compose -f docker-compose.dev.yml logs -f jupyter
-docker compose -f docker-compose.dev.yml logs -f decision-intelligence
+docker compose -f docker-compose.dev.yml logs -f telemetry
 # ... etc for all services
 ```
 
@@ -134,7 +134,7 @@ docker compose -f docker-compose.dev.yml logs -f decision-intelligence
 
 - `diri-cyrex/app/services/` - ML model implementations
 - `diri-cyrex/train/` - Training pipelines
-- `platform-services/backend/deepiri-decision-intelligence/` - Analytics features
+- `platform-services/backend/deepiri-telemetry/` - Analytics features
 
 ## Service URLs
 

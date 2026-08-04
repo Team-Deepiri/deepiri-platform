@@ -1,6 +1,6 @@
 {
   "name": "deepiri-messaging-service",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Deepiri Messaging Service - Chat, Agent Communication, and Group Messaging",
   "main": "dist/index.js",
   "scripts": {
@@ -22,7 +22,7 @@
   "author": "Deepiri",
   "license": "MIT",
   "dependencies": {
-    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
+    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#d4122237e0afa27d6999838b909cd2d76272cca1",
     "@prisma/client": "^5.7.0",
     "axios": "^1.16.0",
     "cors": "^2.8.5",
@@ -31,6 +31,7 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
     "uuid": "^14.0.0",
+    "web-push": "^3.6.6",
     "winston": "^3.11.0"
   },
   "devDependencies": {
@@ -38,6 +39,7 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.5",
     "@types/uuid": "^9.0.7",
+    "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "prisma": "^5.7.0",

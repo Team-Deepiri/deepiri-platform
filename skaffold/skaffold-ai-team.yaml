@@ -34,10 +34,10 @@ build:
           PYTHON_VERSION: 3.11
     
     # Adaptive Experience Engine (for AI integration testing)
-    - image: deepiri-dev-adaptive-experience-engine
+    - image: deepiri-dev-jobs
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
+        dockerfile: backend/deepiri-jobs/Dockerfile
 
 deploy:
   kubectl:

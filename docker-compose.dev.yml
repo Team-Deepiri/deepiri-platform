@@ -347,15 +347,14 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      WORKFLOW_ORCHESTRATOR_URL: http://workflow-orchestrator:5002
-      INCENTIVE_ENGINE_URL: http://incentive-engine:5003
-      DECISION_INTELLIGENCE_URL: http://decision-intelligence:5004
-      COMMUNICATIONS_HUB_URL: http://communications-hub:5005
-      ADAPTIVE_EXPERIENCE_ENGINE_URL: http://adaptive-experience-engine:5007
+      TRUSS_URL: http://truss:5002
+      REGISTRY_URL: http://registry:5003
+      TELEMETRY_URL: http://telemetry:5004
+      MESSAGING_SERVICE_URL: http://messaging-service:5009
+      JOBS_URL: http://jobs:5007
       EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
-      MESSAGING_SERVICE_URL: http://messaging-service:5009
-      LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5003
+      LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5010
       SYNAPSE_URL: http://synapse:8002
       K8S_SERVICE_NAME: api-gateway  # Filter to only load this service's configmap
     volumes:
@@ -373,11 +372,10 @@ services:
       start_period: 20s
     depends_on:
       - auth-service
-      - workflow-orchestrator
-      - incentive-engine
-      - decision-intelligence
-      - communications-hub
-      - adaptive-experience-engine
+      - truss
+      - registry
+      - telemetry
+      - jobs
       - realtime-gateway
       - language-intelligence-service
       - messaging-service
@@ -435,13 +433,13 @@ services:
       - deepiri-dev-network
 
   # Workflow Orchestrator Service
-  workflow-orchestrator:
+  truss:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
-    image: deepiri-dev-workflow-orchestrator:latest
+      dockerfile: backend/deepiri-truss/Dockerfile
+    image: deepiri-dev-truss:latest
     pull_policy: never
-    container_name: deepiri-workflow-orchestrator-dev
+    container_name: deepiri-truss-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -457,13 +455,13 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      K8S_SERVICE_NAME: workflow-orchestrator  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: truss  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-workflow-orchestrator/src:/app/src
-      - ./platform-services/backend/deepiri-workflow-orchestrator/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-truss/src:/app/src
+      - ./platform-services/backend/deepiri-truss/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       postgres-core:
@@ -474,13 +472,13 @@ services:
       - deepiri-dev-network
 
   # Incentive Engine Service
-  incentive-engine:
+  registry:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-incentive-engine/Dockerfile
-    image: deepiri-dev-incentive-engine:latest
+      dockerfile: backend/deepiri-registry/Dockerfile
+    image: deepiri-dev-registry:latest
     pull_policy: never
-    container_name: deepiri-incentive-engine-dev
+    container_name: deepiri-registry-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -495,13 +493,13 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
-      K8S_SERVICE_NAME: incentive-engine  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: registry  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-incentive-engine/src:/app/src
-      - ./platform-services/backend/deepiri-incentive-engine/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-registry/src:/app/src
+      - ./platform-services/backend/deepiri-registry/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       postgres-core:
@@ -514,13 +512,13 @@ services:
       - deepiri-dev-network
 
   # Decision Intelligence Service
-  decision-intelligence:
+  telemetry:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-decision-intelligence/Dockerfile
-    image: deepiri-dev-decision-intelligence:latest
+      dockerfile: backend/deepiri-telemetry/Dockerfile
+    image: deepiri-dev-telemetry:latest
     pull_policy: never
-    container_name: deepiri-decision-intelligence-dev
+    container_name: deepiri-telemetry-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -531,54 +529,18 @@ services:
       PORT: 5004
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: decision-intelligence  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: telemetry  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-decision-intelligence/src:/app/src
-      - ./platform-services/backend/deepiri-decision-intelligence/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-telemetry/src:/app/src
+      - ./platform-services/backend/deepiri-telemetry/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       - postgres-core
       - influxdb
       - synapse
-    networks:
-      - deepiri-dev-network
-
-  # Communications Hub Service
-  communications-hub:
-    build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-communications-hub/Dockerfile
-    image: deepiri-dev-communications-hub:latest
-    pull_policy: never
-    container_name: deepiri-communications-hub-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "5005:5005"
-    # Variables auto-loaded from ops/k8s/configmaps and secrets via entrypoint
-    environment:
-      # Override or add docker-specific variables here if needed
-      PORT: 5005
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
-      SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: communications-hub  # Filter to only load this service's configmap
-    volumes:
-      - ./ops/k8s/configmaps:/k8s-configmaps:ro
-      - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
-      - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-communications-hub/src:/app/src
-      - ./platform-services/backend/deepiri-communications-hub/tsconfig.json:/app/tsconfig.json
-    command: node dist/server.js
-    depends_on:
-      postgres-core:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      synapse:
-        condition: service_started
     networks:
       - deepiri-dev-network
 
@@ -633,13 +595,13 @@ services:
       - deepiri-dev-network
 
   # Adaptive Experience Engine Service
-  adaptive-experience-engine:
+  jobs:
     build:
       context: ./platform-services
-      dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
-    image: deepiri-dev-adaptive-experience-engine:latest
+      dockerfile: backend/deepiri-jobs/Dockerfile
+    image: deepiri-dev-jobs:latest
     pull_policy: never
-    container_name: deepiri-adaptive-experience-engine-dev
+    container_name: deepiri-jobs-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -650,13 +612,13 @@ services:
       PORT: 5007
       DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri}:${POSTGRES_CORE_PASSWORD:-deepiripassword}@postgres-core:5432/${POSTGRES_CORE_DB:-deepiri}
       SYNAPSE_URL: http://synapse:8002
-      K8S_SERVICE_NAME: adaptive-experience-engine  # Filter to only load this service's configmap
+      K8S_SERVICE_NAME: jobs  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-adaptive-experience-engine/src:/app/src
-      - ./platform-services/backend/deepiri-adaptive-experience-engine/tsconfig.json:/app/tsconfig.json
+      - ./platform-services/backend/deepiri-jobs/src:/app/src
+      - ./platform-services/backend/deepiri-jobs/tsconfig.json:/app/tsconfig.json
     command: node dist/server.js
     depends_on:
       - postgres-core
@@ -694,6 +656,9 @@ services:
       STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       CYREX_BASE_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      # Prefer Sugar Glider for document.* publishes (same bus as Cyrex/Helox).
+      SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
+      SYNAPSE_SUGAR_GLIDER_URL: ${SYNAPSE_SUGAR_GLIDER_URL:-http://synapse-sidecar:8081}
       # AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-}  # Optional - set to enable auth
       K8S_SERVICE_NAME: language-intelligence-service
     volumes:
@@ -791,9 +756,9 @@ services:
       # Override or add docker-specific variables here if needed
       PORT: 5008
       SYNAPSE_URL: http://synapse:8002
-      SYNAPSE_SUGAR_GLIDER_URL: ${SYNAPSE_SUGAR_GLIDER_URL:-http://synapse-sidecar:8081}
-      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
-      SYNAPSE_GRPC_ADDR: ${SYNAPSE_GRPC_ADDR:-synapse-sidecar:50051}
+      SYNAPSE_SUGAR_GLIDER_URL: ${SYNAPSE_SUGAR_GLIDER_URL:-http://sugar-glider:8081}
+      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://sugar-glider:8081}
+      SYNAPSE_GRPC_ADDR: ${SYNAPSE_GRPC_ADDR:-sugar-glider:50051}
       STREAM_TRANSPORT: ${STREAM_TRANSPORT:-sugar-glider-grpc}
       STREAM_SHADOW_MODE: ${STREAM_SHADOW_MODE:-false}
       STREAM_CONSUMER_GROUP: ${STREAM_CONSUMER_GROUP:-realtime-gateway}
@@ -946,7 +911,7 @@ services:
       SYNAPSE_URL: http://synapse:8002
       # Synapse transport (redis|sidecar). Default to sidecar in dev.
       SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
-      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://synapse-sidecar:8081}
+      SYNAPSE_SIDECAR_URL: ${SYNAPSE_SIDECAR_URL:-http://sugar-glider:8081}
       SYNAPSE_SIDECAR_TIMEOUT_SEC: ${SYNAPSE_SIDECAR_TIMEOUT_SEC:-5}
       SYNAPSE_SIDECAR_SENDER: ${SYNAPSE_SIDECAR_SENDER:-cyrex}
       SYNAPSE_CONSUMER_NAME: ${SYNAPSE_CONSUMER_NAME:-cyrex-1}
@@ -1164,14 +1129,14 @@ services:
     networks:
       - deepiri-dev-network
 
-  # Synapse Sugar Glider - stream transport service
-  synapse-sugar-glider:
+  # Sugar Glider - Redis Streams transport sidecar
+  sugar-glider:
     build:
       context: ./platform-services/shared/deepiri-sugar-glider
       dockerfile: Dockerfile
-    image: deepiri-dev-synapse-sugar-glider:latest
+    image: deepiri-dev-sugar-glider:latest
     pull_policy: never
-    container_name: deepiri-synapse-sugar-glider-dev
+    container_name: deepiri-sugar-glider-dev
     restart: unless-stopped
     logging: *minimal-logging
     ports:
@@ -1182,8 +1147,11 @@ services:
       SIDECAR_REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/0
       SIDECAR_LISTEN_ADDR: tcp://0.0.0.0:8081
       SIDECAR_GRPC_ADDR: tcp://0.0.0.0:50051
-      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events
-      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events
+      # Allowlist for Cyrex AGI + Helox + LIS buses. Sugar Glider uses
+      # XGROUP CREATE MKSTREAM on subscribe, so missing streams are created
+      # lazily and do not abort sidecar startup.
+      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
+      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
       SIDECAR_MAX_STREAM_LEN: "10000"
       SIDECAR_WAL_DIR: /data/synapse-wal
       SIDECAR_WAL_REPLAY_BATCH: "100"
@@ -1192,7 +1160,7 @@ services:
       SIDECAR_DLQ_MIN_IDLE_MS: "30000"
       SIDECAR_DLQ_SCAN_INTERVAL_MS: "5000"
     volumes:
-      - synapse_sugar_glider_dev_wal:/data/synapse-wal
+      - sugar_glider_dev_wal:/data/synapse-wal
     depends_on:
       - redis
     healthcheck:
@@ -1201,9 +1169,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      deepiri-dev-network:
-        aliases:
-          - synapse-sidecar
+      - deepiri-dev-network
 
   # Jupyter Notebook for AI Research
   # DISABLED: No services depend on Jupyter - it's only for manual research/experimentation
@@ -1328,7 +1294,7 @@ volumes:
     driver: local
   minio_dev_data:
     driver: local
-  synapse_sugar_glider_dev_wal:
+  sugar_glider_dev_wal:
     driver: local
 
 networks:

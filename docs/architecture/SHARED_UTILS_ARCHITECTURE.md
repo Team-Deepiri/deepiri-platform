@@ -21,7 +21,44 @@ Each service has its own `utils/logger.js` file that provides logging functional
 Located at `platform-services/shared/deepiri-shared-utils/`, this package provides:
 
 - Logger factory function
+- Redis Streams `StreamingClient`
+- Shared stream topic constants
 - Common utilities (to be expanded)
+
+### Streaming Foundation
+
+The Redis Streams utilities are transport/event infrastructure only. They let
+backend services publish and consume events without copying Redis boilerplate
+into every service, but they must not define product-specific producer logic,
+subscriber behavior, document schemas, or Cyrex/Helox training semantics.
+
+Current PR ownership:
+
+- Keep shared-utils focused on the generic `StreamingClient`, topic constants,
+  ACK/error handling, and transport-level documentation.
+- Put service-specific producers and consumers in the owning service PRs after
+  that service's purpose and data ownership are confirmed.
+- Keep streaming failures logged and isolated from user-facing HTTP responses
+  where a publish is fire-and-forget.
+
+This foundation is not the LIS document-routing implementation. The document
+routing plan sits on top of these rails:
+
+- LIS owns document ingestion, MinIO/source metadata, routing decisions, and
+  conditional publication.
+- Cyrex consumes artifact-oriented document routes such as `document.vectorize`
+  and `document.structured`.
+- Helox consumes Cyrex-produced training streams such as
+  `pipeline.helox-training.raw` and `pipeline.helox-training.structured`.
+- Sugar Glider/Synapse may observe and monitor the stream topology, but they
+  are not in the producer write path.
+
+Keep these namespaces distinct:
+
+- `platform-events`: product/service lifecycle events.
+- `inference-events` and `training-events`: AI runtime analytics events.
+- `pipeline.helox-training.*`: Cyrex runtime training signals for Helox.
+- `document.*`: LIS document-routing events.
 
 ## Long-Term Solutions
 

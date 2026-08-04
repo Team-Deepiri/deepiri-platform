@@ -161,7 +161,7 @@ def main():
     print(f"  - Ollama:          http://localhost:{get_port('ollama', 'ai')}")
     print(f"  - MLflow:          http://localhost:{get_port('mlflow', 'ai')}")
     # print(f"  - Jupyter:         http://localhost:{get_port('jupyter', 'ai')}")  # DISABLED: No services depend on Jupyter
-    print(f"  - Adaptive Experience Engine: http://localhost:{get_port('adaptive-experience-engine', 'ai')}")
+    print(f"  - Jobs: http://localhost:{get_port('jobs', 'ai')}")
     print(f"  - pgAdmin:         http://localhost:{get_port('pgadmin', 'ai')}")
     print(f"  - Adminer:         http://localhost:{get_port('adminer', 'ai')}")
     print(f"  - MinIO Console:   http://localhost:{get_port('minio-console', 'ai')}")

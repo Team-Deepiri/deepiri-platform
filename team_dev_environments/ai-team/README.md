@@ -43,7 +43,7 @@ This protects `main`, `master`, and branches containing `team-dev` from accident
 This builds:
 - `cyrex`
 - `jupyter`
-- `adaptive-experience-engine`
+- `jobs`
 
 ### Start Services
 
@@ -59,7 +59,7 @@ This starts all required infrastructure and services.
 cd ../..
 docker compose -f docker-compose.dev.yml stop \
   postgres influxdb redis etcd minio milvus \
-  cyrex jupyter mlflow adaptive-experience-engine
+  cyrex jupyter mlflow jobs
 ```
 
 ### Rebuild After Code Changes
@@ -129,7 +129,7 @@ docker compose -f docker-compose.dev.yml logs -f
 ```bash
 docker compose -f docker-compose.dev.yml logs -f cyrex
 docker compose -f docker-compose.dev.yml logs -f jupyter
-docker compose -f docker-compose.dev.yml logs -f adaptive-experience-engine
+docker compose -f docker-compose.dev.yml logs -f jobs
 # ... etc for all services
 ```
 
@@ -140,7 +140,7 @@ docker compose -f docker-compose.dev.yml logs -f adaptive-experience-engine
   - Task understanding models
   - RL models for personalization
   - Multimodal AI integration
-- `platform-services/backend/deepiri-adaptive-experience-engine/` - Challenge service integration
+- `platform-services/backend/deepiri-jobs/` - Challenge service integration
 
 ## Service URLs
 
