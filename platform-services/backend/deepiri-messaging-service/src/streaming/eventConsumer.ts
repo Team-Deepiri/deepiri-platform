@@ -41,7 +41,7 @@ export async function startEventConsumption(): Promise<void> {
 
   await streamingClient.connect();
 
-  await streamingClient.subscribe(
+  void streamingClient.subscribe(
     StreamTopics.PLATFORM_EVENTS,
     async (event: StreamEvent) => {
       if (!event.user_id) return;
@@ -70,7 +70,7 @@ export async function startEventConsumption(): Promise<void> {
     },
   );
 
-  await streamingClient.subscribe(
+  void streamingClient.subscribe(
     StreamTopics.INFERENCE_EVENTS,
     async (event: StreamEvent) => {
       if (event.success !== false || !event.user_id) return;

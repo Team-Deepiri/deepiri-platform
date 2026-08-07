@@ -130,7 +130,7 @@ services:
       TRUSS_URL: http://truss:5002
       REGISTRY_URL: http://registry:5003
       TELEMETRY_URL: http://telemetry:5004
-      EXTERNAL_BRIDGE_SERVICE_URL: http://external-bridge-service:5006
+      EXTERNAL_BRIDGE_SERVICE_URL: ${EXTERNAL_BRIDGE_SERVICE_URL:-http://disabled-external-bridge:5006}
       JOBS_URL: http://jobs:5007
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
       MESSAGING_SERVICE_URL: http://messaging-service:5009
@@ -230,7 +230,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SYNAPSE_URL: http://synapse:8002
-    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+    command: sh -c "if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else npx prisma migrate deploy || true; fi && node dist/server.js"
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -334,41 +334,6 @@ services:
     networks:
       - deepiri-network
 
-  external-bridge-service:
-    <<: *default-env
-    build:
-      context: ./platform-services
-      dockerfile: backend/deepiri-external-bridge-service/Dockerfile
-    image: deepiri-external-bridge-service:prod
-    container_name: deepiri-external-bridge-service
-    restart: unless-stopped
-    logging: *minimal-logging
-    environment:
-      NODE_ENV: production
-      PORT: 5006
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
-      AUTH_SERVICE_URL: http://auth-service:5001
-      EXTERNAL_BRIDGE_BASE_URL: ${EXTERNAL_BRIDGE_BASE_URL:-}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
-      NOTION_WEBHOOK_SECRET: ${NOTION_WEBHOOK_SECRET:-}
-      TRELLO_WEBHOOK_SECRET: ${TRELLO_WEBHOOK_SECRET:-}
-      KAFKA_BROKERS: ${KAFKA_BROKERS:-}
-      SYNAPSE_URL: http://synapse:8002
-    depends_on:
-      postgres-core:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      auth-service:
-        condition: service_started
-    networks:
-      - deepiri-network
-
   jobs:
     <<: *default-env
     build:
@@ -407,12 +372,12 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
-      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-disabled}
-      STORAGE_BUCKET: ${STORAGE_BUCKET:-language-intelligence-documents}
-      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-}
-      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-}
-      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:?STORAGE_PROVIDER must be set}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:?STORAGE_BUCKET must be set}
+      STORAGE_REGION: ${STORAGE_REGION:?STORAGE_REGION must be set}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?STORAGE_ENDPOINT must be set}
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:?STORAGE_ACCESS_KEY_ID must be set}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:?STORAGE_SECRET_ACCESS_KEY must be set}
       CYREX_BASE_URL: ${CYREX_BASE_URL:-http://disabled-cyrex:8000}
       CYREX_API_KEY: ${CYREX_API_KEY:-}
       AUTH_ENABLED: ${LANGUAGE_INTELLIGENCE_AUTH_ENABLED:-false}
@@ -554,6 +519,7 @@ services:
   # mlflow:
   # ollama:
   # kafka:
+  # external-bridge-service:
   # pgadmin:
   # adminer:
   # deepiri-prismpipe:
