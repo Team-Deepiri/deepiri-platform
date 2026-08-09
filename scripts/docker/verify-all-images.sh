@@ -12,12 +12,11 @@ REQUIRED_IMAGES=(
     "deepiri-dev-frontend:latest"
     "deepiri-dev-api-gateway:latest"
     "deepiri-dev-auth-service:latest"
-    "deepiri-dev-workflow-orchestrator:latest"
-    "deepiri-dev-adaptive-experience-engine:latest"
-    "deepiri-dev-incentive-engine:latest"
-    "deepiri-dev-decision-intelligence:latest"
+    "deepiri-dev-truss:latest"
+    "deepiri-dev-jobs:latest"
+    "deepiri-dev-registry:latest"
+    "deepiri-dev-telemetry:latest"
     "deepiri-dev-external-bridge-service:latest"
-    "deepiri-dev-communications-hub:latest"
     "deepiri-dev-realtime-gateway:latest"
 )
 

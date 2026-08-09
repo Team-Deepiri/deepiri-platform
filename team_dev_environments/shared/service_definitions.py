@@ -78,8 +78,8 @@ def get_microservice_config(
     }
     
     # Add /shared-utils/node_modules volume for services that use shared-utils
-    if name in ["adaptive-experience-engine", "auth-service", "incentive-engine", "external-bridge-service", 
-                "communications-hub", "decision-intelligence", "workflow-orchestrator", "realtime-gateway",
+    if name in ["jobs", "auth-service", "registry", "external-bridge-service", 
+ "telemetry", "truss", "realtime-gateway",
                 "language-intelligence-service", "messaging-service"]:
         config["volumes"]["/shared-utils/node_modules"] = {}
     
@@ -122,8 +122,8 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         redis_url,
         {
             "AUTH_SERVICE_URL": f"http://deepiri-auth-service-{team_suffix}:5001",
-            "WORKFLOW_ORCHESTRATOR_URL": f"http://deepiri-workflow-orchestrator-{team_suffix}:5002",
-            "INCENTIVE_ENGINE_URL": f"http://deepiri-incentive-engine-{team_suffix}:5003",
+            "TRUSS_URL": f"http://deepiri-truss-{team_suffix}:5002",
+            "REGISTRY_URL": f"http://deepiri-registry-{team_suffix}:5003",
         },
         ["postgres-core", "redis"],
         network_name,
@@ -145,13 +145,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Workflow Orchestrator
+    # Truss
     services.append(get_microservice_config(
-        "workflow-orchestrator",
-        f"deepiri-workflow-orchestrator-{team_suffix}",
+        "truss",
+        f"deepiri-truss-{team_suffix}",
         5002,
         project_root,
-        "platform-services/backend/deepiri-workflow-orchestrator",
+        "platform-services/backend/deepiri-truss",
         database_url_core,
         None,
         None,
@@ -160,13 +160,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Incentive Engine
+    # Registry
     services.append(get_microservice_config(
-        "incentive-engine",
-        f"deepiri-incentive-engine-{team_suffix}",
+        "registry",
+        f"deepiri-registry-{team_suffix}",
         5003,
         project_root,
-        "platform-services/backend/deepiri-incentive-engine",
+        "platform-services/backend/deepiri-registry",
         database_url_core,
         redis_url,
         None,
@@ -175,13 +175,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Decision Intelligence
+    # Telemetry
     services.append(get_microservice_config(
-        "decision-intelligence",
-        f"deepiri-decision-intelligence-{team_suffix}",
+        "telemetry",
+        f"deepiri-telemetry-{team_suffix}",
         5004,
         project_root,
-        "platform-services/backend/deepiri-decision-intelligence",
+        "platform-services/backend/deepiri-telemetry",
         database_url_core,
         None,
         None,
@@ -189,22 +189,7 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         network_name,
         team_suffix
     ))
-    
-    # Communications Hub
-    services.append(get_microservice_config(
-        "communications-hub",
-        f"deepiri-communications-hub-{team_suffix}",
-        5005,
-        project_root,
-        "platform-services/backend/deepiri-communications-hub",
-        database_url_core,
-        redis_url,
-        None,
-        ["postgres-core", "redis"],
-        network_name,
-        team_suffix
-    ))
-    
+
     # External Bridge Service
     services.append(get_microservice_config(
         "external-bridge-service",
@@ -220,13 +205,13 @@ def get_backend_team_services(project_root: Path, env: dict, network_name: str, 
         team_suffix
     ))
     
-    # Adaptive Experience Engine
+    # Jobs
     services.append(get_microservice_config(
-        "adaptive-experience-engine",
-        f"deepiri-adaptive-experience-engine-{team_suffix}",
+        "jobs",
+        f"deepiri-jobs-{team_suffix}",
         5007,
         project_root,
-        "platform-services/backend/deepiri-adaptive-experience-engine",
+        "platform-services/backend/deepiri-jobs",
         database_url_core,
         None,
         None,
@@ -359,18 +344,18 @@ def get_ai_team_services(project_root: Path, env: dict, network_name: str, team_
     #     "network": network_name,
     # })
     
-    # Adaptive Experience Engine
+    # Jobs
     database_url_core = (
         f"postgresql://{env.get('POSTGRES_CORE_USER', 'deepiri')}:"
         f"{env.get('POSTGRES_CORE_PASSWORD', 'deepiripassword')}@postgres-core:5432/"
         f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
     )
     services.append(get_microservice_config(
-        "adaptive-experience-engine",
-        f"deepiri-adaptive-experience-engine-{team_suffix}",
+        "jobs",
+        f"deepiri-jobs-{team_suffix}",
         5007,
         project_root,
-        "platform-services/backend/deepiri-adaptive-experience-engine",
+        "platform-services/backend/deepiri-jobs",
         database_url_core,
         None,
         {"CYREX_URL": f"http://deepiri-cyrex-{team_suffix}:8000"},
@@ -470,11 +455,11 @@ def get_ml_team_services(project_root: Path, env: dict, network_name: str, team_
         f"{env.get('POSTGRES_CORE_DB', 'deepiri')}"
     )
     services.append(get_microservice_config(
-        "decision-intelligence",
-        f"deepiri-decision-intelligence-{team_suffix}",
+        "telemetry",
+        f"deepiri-telemetry-{team_suffix}",
         5004,
         project_root,
-        "platform-services/backend/deepiri-decision-intelligence",
+        "platform-services/backend/deepiri-telemetry",
         database_url_core,
         None,
         None,

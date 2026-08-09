@@ -1,0 +1,75 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["registry", "public"]
+}
+
+model Repo {
+  id          String   @id @default(uuid()) @db.Uuid
+  org         String   @default("Team-Deepiri") @db.VarChar(128)
+  name        String   @db.VarChar(255)
+  displayName String?  @map("display_name") @db.VarChar(255)
+  githubUrl   String?  @map("github_url") @db.Text
+  tier        Int      @default(1)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  healthChecks RepoHealthCheck[]
+
+  @@unique([org, name])
+  @@index([tier])
+  @@schema("registry")
+  @@map("repos")
+}
+
+model RepoHealthCheck {
+  id        String   @id @default(uuid()) @db.Uuid
+  repoId    String   @map("repo_id") @db.Uuid
+  status    String   @db.VarChar(32)
+  detail    String?  @db.Text
+  checkedAt DateTime @default(now()) @map("checked_at") @db.Timestamp
+
+  repo Repo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  @@index([repoId])
+  @@index([checkedAt])
+  @@schema("registry")
+  @@map("repo_health_checks")
+}
+
+model ToolRegistration {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(128)
+  kind        String   @db.VarChar(64)
+  description String?  @db.Text
+  endpoint    String?  @db.Text
+  metadata    Json?    @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  @@schema("registry")
+  @@map("tool_registrations")
+}
+
+model RegisteredService {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(128)
+  repo      String?  @db.VarChar(255)
+  healthUrl String?  @map("health_url") @db.Text
+  tier      Int      @default(1)
+  status    String   @default("unknown") @db.VarChar(32)
+  lastSeen  DateTime? @map("last_seen") @db.Timestamp
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  @@index([status])
+  @@schema("registry")
+  @@map("registered_services")
+}

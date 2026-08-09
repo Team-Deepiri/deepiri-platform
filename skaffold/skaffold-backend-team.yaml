@@ -23,29 +23,23 @@ build:
       docker:
         dockerfile: backend/deepiri-auth-service/Dockerfile
     
-    # Workflow Orchestrator
-    - image: deepiri-dev-workflow-orchestrator
+    # Truss
+    - image: deepiri-dev-truss
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-workflow-orchestrator/Dockerfile
+        dockerfile: backend/deepiri-truss/Dockerfile
     
-    # Incentive Engine
-    - image: deepiri-dev-incentive-engine
+    # Registry
+    - image: deepiri-dev-registry
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-incentive-engine/Dockerfile
+        dockerfile: backend/deepiri-registry/Dockerfile
     
-    # Decision Intelligence
-    - image: deepiri-dev-decision-intelligence
+    # Telemetry
+    - image: deepiri-dev-telemetry
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-decision-intelligence/Dockerfile
-    
-    # Communications Hub
-    - image: deepiri-dev-communications-hub
-      context: ./platform-services
-      docker:
-        dockerfile: backend/deepiri-communications-hub/Dockerfile
+        dockerfile: backend/deepiri-telemetry/Dockerfile
     
     # External Bridge Service
     - image: deepiri-dev-external-bridge-service
@@ -53,11 +47,11 @@ build:
       docker:
         dockerfile: backend/deepiri-external-bridge-service/Dockerfile
     
-    # Adaptive Experience Engine
-    - image: deepiri-dev-adaptive-experience-engine
+    # Jobs
+    - image: deepiri-dev-jobs
       context: ./platform-services
       docker:
-        dockerfile: backend/deepiri-adaptive-experience-engine/Dockerfile
+        dockerfile: backend/deepiri-jobs/Dockerfile
     
     # Realtime Gateway
     - image: deepiri-dev-realtime-gateway
