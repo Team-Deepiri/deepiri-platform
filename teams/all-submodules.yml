@@ -52,8 +52,6 @@ submodules:
     url: git@github.com:Team-Deepiri/deepiri-sugar-glider.git
     branch: dev
 
-# Local / compose-backed trees that are NOT git submodules today:
-not_submodules:
   - path: platform-services/backend/deepiri-speech
-    compose_service: speech
-    notes: Required by ai-team livekit+speech stack; local tree, not in .gitmodules.
+    url: git@github.com:Team-Deepiri/deepiri-speech.git
+    notes: Speech engine (Kokoro TTS + faster-whisper STT, local-first). Required by ai-team livekit+speech stack only.

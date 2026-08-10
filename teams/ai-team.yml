@@ -36,6 +36,7 @@ submodules:
   - deepiri-logger
   - deepiri-suite
   - platform-services/backend/deepiri-api-gateway
+  - platform-services/backend/deepiri-speech
   - platform-services/shared/deepiri-prismpipe
   - platform-services/shared/deepiri-shared-utils
   - platform-services/shared/deepiri-synapse

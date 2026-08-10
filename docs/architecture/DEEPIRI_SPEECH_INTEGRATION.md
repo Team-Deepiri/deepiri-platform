@@ -31,7 +31,8 @@ Pipecat is **not** a separate service. LiveKit is the SFU; the agent runs inside
 | `PIPECAT_ENABLED` | `1` |
 | `LIVEKIT_WORKER_ENABLED` | `1` |
 | Core Poetry deps | `pipecat-ai[websocket,livekit]`, `livekit-api`, `livekit` |
-| Engines | mock until `SPEECH_EXTRAS=engines` |
+| STT / TTS | **Local-first:** faster-whisper (`small.en`) + Kokoro-82M. `SPEECH_EXTRAS=engines` is the compose default so both engines install. OpenAI only when `STT_PROVIDER=openai` / `TTS_PROVIDER=openai` + `OPENAI_API_KEY` (opt-in). |
+| Model downloads | Auto-download + background warm-up on first boot (`KOKORO_AUTO_DOWNLOAD=1`, `WARM_UP_ON_START=1`); cached under `KOKORO_MODEL_DIR` / HF cache |
 
 ## LiveKit capabilities wired
 

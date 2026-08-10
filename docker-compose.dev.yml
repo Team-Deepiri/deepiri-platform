@@ -841,8 +841,9 @@ services:
       context: ./platform-services/backend/deepiri-speech
       dockerfile: Dockerfile
       args:
-        # default installs Pipecat+LiveKit (core). engines|speech|full add whisper/kokoro
-        SPEECH_EXTRAS: ${SPEECH_EXTRAS:-0}
+        # local-first default: engines installs Kokoro + faster-whisper (+ torch).
+        # core = Pipecat+LiveKit only; full = +apple.
+        SPEECH_EXTRAS: ${SPEECH_EXTRAS:-engines}
     image: deepiri-dev-speech:latest
     pull_policy: never
     container_name: deepiri-speech-dev
@@ -855,8 +856,8 @@ services:
       K8S_SERVICE_NAME: speech
       PORT: 5020
       SPEECH_DEVICE: ${SPEECH_DEVICE:-auto}
-      STT_PROVIDER: ${SPEECH_STT_PROVIDER:-mock}
-      TTS_PROVIDER: ${SPEECH_TTS_PROVIDER:-mock}
+      STT_PROVIDER: ${SPEECH_STT_PROVIDER:-faster_whisper}
+      TTS_PROVIDER: ${SPEECH_TTS_PROVIDER:-kokoro}
       STT_MODEL: ${SPEECH_STT_MODEL:-small.en}
       TTS_VOICE: ${SPEECH_TTS_VOICE:-af_heart}
       ENABLE_SILERO_VAD: ${SPEECH_ENABLE_SILERO_VAD:-1}
@@ -866,7 +867,7 @@ services:
       CYREX_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
       KOKORO_MODEL_DIR: ${KOKORO_MODEL_DIR:-/models/kokoro}
-      KOKORO_AUTO_DOWNLOAD: ${KOKORO_AUTO_DOWNLOAD:-0}
+      KOKORO_AUTO_DOWNLOAD: ${KOKORO_AUTO_DOWNLOAD:-1}
       LIVEKIT_URL: ws://livekit:7880
       LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-APIdeepirispeechdev}
@@ -887,9 +888,9 @@ services:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
       - ./ops/k8s/load-k8s-env.sh:/usr/local/bin/load-k8s-env.sh:ro
       - ./ops/k8s/secrets:/k8s-secrets:ro
-      - ./platform-services/backend/deepiri-speech/app:/app/app
+      - ./platform-services/backend/deepiri-speech/deepiri_speech:/app/deepiri_speech
       - speech_kokoro_models:/models/kokoro
-    command: uvicorn app.main:app --host 0.0.0.0 --port 5020 --reload
+    command: uvicorn deepiri_speech.main:app --host 0.0.0.0 --port 5020 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5020/health"]
       interval: 15s

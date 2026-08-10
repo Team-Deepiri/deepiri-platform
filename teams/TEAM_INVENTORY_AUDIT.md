@@ -53,7 +53,7 @@ Interactive onboard and day-to-day aliases remap QA capacity to eng team YAMLs �
 | `deepiri-prismpipe` | all teams | Commented in most SERVICES lists; present in compose and most pull scripts. Treat as optional / coming-soon. |
 | `postgres-cyrex` | compose only | In compose; no team script lists it except platform-engineers (`config --services` = all). |
 | `deepiri-logger` | `.gitmodules` only | Never pulled by any team `pull_submodules.sh`. |
-| `speech` / `livekit` | ai-team | In ai SERVICES; speech code is local (`platform-services/backend/deepiri-speech/`) — not a git submodule today. |
+| `speech` / `livekit` | ai-team | In ai SERVICES; speech engine is a git submodule (`platform-services/backend/deepiri-speech/`, `Team-Deepiri/deepiri-speech`). |
 | platform-engineers | compose all | build = sequential `config --services`; start/stop = no service filter (entire project). pull = `git submodule update --init --recursive` (all). |
 
 Canonical recommendation when build ≠ start ≠ stop: **union of build + start** for services the team needs to run; call out stop-only stale names as do-not-port.
@@ -261,7 +261,7 @@ Paths are relative to repo root. `platform-engineers` and conceptually `all` = e
 
 | Path / service | Notes |
 |---|---|
-| `platform-services/backend/deepiri-speech` | `speech` compose service; untracked local tree in working copy |
+| `platform-services/backend/deepiri-speech` | `speech` compose service; git submodule `Team-Deepiri/deepiri-speech` (ai-team only) |
 | Many backend microservices under `platform-services/backend/` (workflow-orchestrator, etc.) | Built from monorepo paths in compose, not separate gitmodules |
 
 ---

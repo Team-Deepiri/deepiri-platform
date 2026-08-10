@@ -11,8 +11,8 @@ data:
   LOG_LEVEL: "INFO"
 
   SPEECH_DEVICE: "auto"
-  STT_PROVIDER: "mock"
-  TTS_PROVIDER: "mock"
+  STT_PROVIDER: "faster_whisper"
+  TTS_PROVIDER: "kokoro"
   STT_MODEL: "small.en"
   TTS_VOICE: "af_heart"
   ENABLE_SILERO_VAD: "1"
@@ -20,7 +20,7 @@ data:
   PIPECAT_AUTO_REPLY: "1"
 
   KOKORO_MODEL_DIR: "/models/kokoro"
-  KOKORO_AUTO_DOWNLOAD: "0"
+  KOKORO_AUTO_DOWNLOAD: "1"
 
   CYREX_URL: "http://cyrex:8000"
   # Jobs = async work (5007); Truss = workflows + /speech/* proxies (5002)
