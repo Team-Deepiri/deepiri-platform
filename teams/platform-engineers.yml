@@ -16,7 +16,6 @@ start:
 
 pull:
   all_recursive: true
-  recursive: true
   checkout_main: false
   setup_hooks: true
 
