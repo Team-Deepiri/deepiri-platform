@@ -306,7 +306,7 @@ ensure_prereqs() {
 
     ensure_docker
 
-    info "Optional: team_dev_environments/run.py may need PyYAML (pip3 install --user pyyaml)"
+    info "Team envs are YAML-driven: ./setup-deepiri-dev.sh pull|build|start <team> (see teams/*.yml)"
 }
 
 # ---------- SSH key + GitHub --------------------------------------------
@@ -898,10 +898,30 @@ team_cmd_pull() {
     if [[ "$TEAM_PULL_SETUP_HOOKS" == "true" ]]; then
         hooks="$root/setup-hooks.sh"
         [[ -f "$hooks" ]] && team_run --no-check bash "$hooks"
-        team_hooks="$root/team_submodule_commands/${TEAM_YAML_ID:-$team_id}/setup-hooks.sh"
-        [[ -f "$team_hooks" ]] && team_run --no-check bash "$team_hooks"
+        team_sync_hooks_to_submodules
     fi
     echo "Submodules ready for $display"
+}
+
+# Sync .git-hooks into each of this team's submodules (driven by the same
+# teams/<team>.yml submodule list as the pull above). Formerly the per-team
+# team_submodule_commands/<team>/setup-hooks.sh scripts; consolidated here so
+# the team YAML is the single source of truth for the submodule set.
+team_sync_hooks_to_submodules() {
+    local subs root path
+    root="$(team_repo_root)"
+    [[ -d "$root/.git-hooks" ]] || return 0
+    mapfile -t subs < <(team_resolve_submodules)
+    for rel in "${subs[@]}"; do
+        path="$root/$rel"
+        [[ -d "$path/.git" ]] || [[ -f "$path/.git" ]] || continue
+        ( cd "$path" && git rev-parse --git-dir >/dev/null 2>&1 ) || continue
+        mkdir -p "$path/.git-hooks"
+        cp "$root/.git-hooks/"* "$path/.git-hooks/" 2>/dev/null || true
+        chmod +x "$path/.git-hooks/"* 2>/dev/null || true
+        ( cd "$path" && git config core.hooksPath .git-hooks ) 2>/dev/null || true
+        echo "  hooks synced: $rel"
+    done
 }
 
 team_image_exists_for_service() {
@@ -919,8 +939,10 @@ team_build_one_service() {
     local s="$1"
     local -n _failed="$2"
     local -n _optional_build="$3"
+    local nc=()
+    [[ "${TEAM_BUILD_NO_CACHE:-0}" == "1" ]] && nc=(--no-cache)
     echo "-- Building $s --"
-    if team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" build "$s"; then return 0; fi
+    if team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" build "${nc[@]}" "$s"; then return 0; fi
     if team_in_list "$s" "${_optional_build[@]}"; then
         echo "OPTIONAL FAIL $s (continuing)"
         return 0
@@ -962,7 +984,9 @@ team_cmd_build() {
     if [[ "$TEAM_BUILD_SEQUENTIAL" == "true" ]]; then
         for svc in "${buildable[@]}"; do team_build_one_service "$svc" failed optional_build || true; done
     elif ((${#buildable[@]} > 0)); then
-        if ! team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" build "${buildable[@]}"; then
+        local nc=()
+        [[ "${TEAM_BUILD_NO_CACHE:-0}" == "1" ]] && nc=(--no-cache)
+        if ! team_run --no-check docker compose -f "$TEAM_COMPOSE_FILE" build "${nc[@]}" "${buildable[@]}"; then
             for svc in "${buildable[@]}"; do team_build_one_service "$svc" failed optional_build || true; done
         fi
     fi
@@ -1157,7 +1181,7 @@ print_ops_usage() {
     cat <<EOF
 Usage:
   $0                          Interactive onboard (clone, pull, build, start, seed)
-  $0 pull|build|start|stop|stop-rm|restart|show <team>
+  $0 pull|build|build-nc|start|stop|stop-rm|restart|show <team>
   $0 list-teams
 
 Teams (see teams/*.yml):
@@ -1262,7 +1286,7 @@ EOF
 }
 
 # ---------- main ----------------------------------------------------------
-OPS_COMMANDS="pull|build|start|stop|stop-rm|restart|show|list-teams|help|-h|--help"
+OPS_COMMANDS="pull|build|build-nc|start|stop|stop-rm|restart|show|list-teams|help|-h|--help"
 
 run_ops_command() {
     local cmd="$1"
@@ -1277,9 +1301,13 @@ run_ops_command() {
             team_ops list-teams
             exit 0
             ;;
-        pull|build|start|stop|stop-rm|restart|show)
+        pull|build|build-nc|start|stop|stop-rm|restart|show)
             local team="${1:-}"
             [[ -n "$team" ]] || { print_ops_usage; fatal "Missing team argument"; }
+            if [[ "$cmd" == "build-nc" ]]; then
+                cmd="build"
+                TEAM_BUILD_NO_CACHE=1
+            fi
             if [[ -f "$SCRIPT_DIR/teams/all-services.yml" ]]; then
                 PLATFORM_REPO_DIR="$SCRIPT_DIR"
             elif [[ -f "$SCRIPT_DIR/../teams/all-services.yml" ]]; then

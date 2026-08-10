@@ -2,7 +2,7 @@
 
 > **NEW TO THE PROJECT?** Start here: [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md)  
 > **FIND YOUR TEAM:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md)  
-> **Quick Start (All Services):** Run `team_dev_environments/platform-engineers/start.sh` or use docker compose directly
+> **Quick Start (All Services):** `bash setup-deepiri-dev.sh start platform` or use docker compose directly
 
 ## Quick Start
 
