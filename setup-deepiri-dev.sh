@@ -379,10 +379,28 @@ choose_project_dir() {
 detect_existing_clone() {
     local script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    if [[ -f "$script_dir/.gitmodules" ]] \
+
+    # When the checkout lives on a Windows mount (/mnt/c) and we're in WSL, git
+    # flags "dubious ownership" and refuses to read the repo. Add a safe.directory
+    # exception so detection (and any later git ops) work.
+    if git -C "$script_dir" rev-parse --show-toplevel 2>&1 | grep -q "dubious ownership"; then
+        warn "git flagged dubious ownership at $script_dir -- adding safe.directory exception"
+        git config --global --add safe.directory "$script_dir" 2>/dev/null || true
+    fi
+
+    local toplevel
+    toplevel="$(cd "$script_dir" && git rev-parse --show-toplevel 2>/dev/null || true)"
+    if [[ -z "$toplevel" ]]; then
+        EXISTING_CLONE=""
+        return
+    fi
+    # Also mark the toplevel safe in case it differs from script_dir
+    git config --global --add safe.directory "$toplevel" 2>/dev/null || true
+
+    if [[ -f "$toplevel/.gitmodules" ]] \
        && grep -q "Team-Deepiri/deepiri-platform\|Team-Deepiri/deepiri-core-api" \
-                  "$script_dir/.gitmodules" 2>/dev/null; then
-        EXISTING_CLONE="$script_dir"
+                  "$toplevel/.gitmodules" 2>/dev/null; then
+        EXISTING_CLONE="$toplevel"
     else
         EXISTING_CLONE=""
     fi
