@@ -1,6 +1,6 @@
 {
   "name": "deepiri-telemetry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Decision Intelligence - Time-Series, Clustering, Predictive Analytics",
   "main": "dist/server.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#v1.2.2",
+    "@team-deepiri/shared-utils": "github:Team-Deepiri/deepiri-shared-utils#d4122237e0afa27d6999838b909cd2d76272cca1",
     "@influxdata/influxdb-client": "^1.33.2",
     "@prisma/client": "^5.7.0",
     "axios": "^1.16.0",

@@ -46,7 +46,7 @@ services:
 
   # --- shared / frontend ---
   - synapse
-  - synapse-sugar-glider
+  - sugar-glider
   - frontend-dev
   - deepiri-prismpipe
 

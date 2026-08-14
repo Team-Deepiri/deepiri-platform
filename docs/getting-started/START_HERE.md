@@ -43,43 +43,38 @@ The hooks protect `main`, `master`, and branches containing `team-dev` from acci
 
 After setting up Git hooks, follow your team-specific path:
 
+All teams now use the single `./setup-deepiri-dev.sh` script with their team catalog in `teams/<team>.yml` (see [ENVIRONMENT_SETUP_WITH_SCRIPT.md](ENVIRONMENT_SETUP_WITH_SCRIPT.md) for full usage). Onboarding docs below cover team-specific context; the `team_dev_environments/` and `team_submodule_commands/` folders they may still reference have been replaced by this script.
+
 ### 🤖 AI Team
 1. **Onboarding:** [docs/onboarding/AI_TEAM_ONBOARDING.md](docs/onboarding/AI_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/ai-team/README.md](team_dev_environments/ai-team/README.md)
-3. **Submodules:** [team_submodule_commands/ai-team/AI_TEAM.md](team_submodule_commands/ai-team/AI_TEAM.md)
+2. **Catalog:** `teams/ai-team.yml` — `./setup-deepiri-dev.sh pull|build|start ai-team`
 
 ### 🧠 ML Team
 1. **ML Guide:** [docs/development/ML_ENGINEER_COMPLETE_GUIDE.md](docs/development/ML_ENGINEER_COMPLETE_GUIDE.md)
 2. **MLOps:** [docs/onboarding/MLOPS_TEAM_ONBOARDING.md](docs/onboarding/MLOPS_TEAM_ONBOARDING.md)
-3. **Dev Environment:** [team_dev_environments/ml-team/README.md](team_dev_environments/ml-team/README.md)
-4. **Submodules:** [team_submodule_commands/ml-team/ML_TEAM.md](team_submodule_commands/ml-team/ML_TEAM.md)
+3. **Catalog:** `teams/ml-team.yml` — `./setup-deepiri-dev.sh pull|build|start ml-team`
 
 ### ⚙️ Backend Team
 1. **Onboarding:** [docs/onboarding/BACKEND_TEAM_ONBOARDING.md](docs/onboarding/BACKEND_TEAM_ONBOARDING.md)
 2. **Microservices:** [docs/architecture/MICROSERVICES_SETUP.md](docs/architecture/MICROSERVICES_SETUP.md)
-3. **Dev Environment:** [team_dev_environments/backend-team/README.md](team_dev_environments/backend-team/README.md)
-4. **Submodules:** [team_submodule_commands/backend-team/BACKEND_TEAM.md](team_submodule_commands/backend-team/BACKEND_TEAM.md)
+3. **Catalog:** `teams/backend-team.yml` — `./setup-deepiri-dev.sh pull|build|start backend-team`
 
 ### 🎨 Frontend Team
 1. **Onboarding:** [docs/onboarding/FRONTEND_TEAM_ONBOARDING.md](docs/onboarding/FRONTEND_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/frontend-team/README.md](team_dev_environments/frontend-team/README.md)
-3. **Submodules:** [team_submodule_commands/frontend-team/FRONTEND_TEAM.md](team_submodule_commands/frontend-team/FRONTEND_TEAM.md)
+2. **Catalog:** `teams/frontend-team.yml` — `./setup-deepiri-dev.sh pull|build|start frontend-team`
 
 ### 🏗️ Infrastructure Team
 1. **Onboarding:** [docs/onboarding/PLATFORM_TEAM_ONBOARDING.md](docs/onboarding/PLATFORM_TEAM_ONBOARDING.md)
 2. **Skaffold:** [docs/infrastructure/SKAFFOLD_SETUP.md](docs/infrastructure/SKAFFOLD_SETUP.md)
-3. **Dev Environment:** [team_dev_environments/infrastructure-team/README.md](team_dev_environments/infrastructure-team/README.md)
-4. **Submodules:** [team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md](team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md)
+3. **Catalog:** `teams/infrastructure-team.yml` — `./setup-deepiri-dev.sh pull|build|start infrastructure-team`
 
 ### 🔧 Platform Engineers
 1. **Onboarding:** [docs/onboarding/PLATFORM_TEAM_ONBOARDING.md](docs/onboarding/PLATFORM_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/platform-engineers/README.md](team_dev_environments/platform-engineers/README.md)
-3. **Submodules:** [team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md](team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md)
+2. **Catalog:** `teams/platform-engineers.yml` — `./setup-deepiri-dev.sh pull|build|start platform-engineers`
 
 ### 🧪 QA Team
 1. **Onboarding:** [docs/onboarding/SECURITY_QA_TEAM_ONBOARDING.md](docs/onboarding/SECURITY_QA_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/qa-team/README.md](team_dev_environments/qa-team/README.md)
-3. **Submodules:** [team_submodule_commands/qa-team/QA_TEAM.md](team_submodule_commands/qa-team/QA_TEAM.md)
+2. **Catalog:** `teams/qa-team.yml` — `./setup-deepiri-dev.sh pull|build|start qa-team`
 
 ---
 

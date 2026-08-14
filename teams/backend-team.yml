@@ -19,7 +19,7 @@ services:
   - realtime-gateway
   - language-intelligence-service
   - synapse
-  - synapse-sugar-glider
+  - sugar-glider
   - frontend-dev
   - adminer
 

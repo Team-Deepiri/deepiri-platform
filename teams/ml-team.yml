@@ -11,7 +11,7 @@ services:
   - milvus
   - mlflow
   - synapse
-  - synapse-sugar-glider
+  - sugar-glider
 
 disabled_services:
   - jupyter
@@ -37,7 +37,7 @@ start:
   no_deps: false
   require_dockerfile:
     - synapse
-    - synapse-sugar-glider
+    - sugar-glider
 
 pull:
   recursive: true

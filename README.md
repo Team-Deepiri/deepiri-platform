@@ -33,21 +33,21 @@ bash setup-deepiri-dev.sh
 git clone git@github.com:Team-Deepiri/deepiri-platform.git
 cd deepiri-platform
 
-# 2. Initialize submodules
-./team_submodule_commands/your_team_folder//pull_submodules.sh
+# 2. Pull submodules for your team (see teams/<team>.yml)
+./setup-deepiri-dev.sh pull ai-team
 
 # 3. Build services
-./team_dev_environments/your_team_folder/build.sh
+./setup-deepiri-dev.sh build ai-team
 
 # 4. Start the full stack
-./team_dev_environments/your_team_folder/start.sh
+./setup-deepiri-dev.sh start ai-team
 
 # OR use docker compose directly
-docker compose -f docker-compose.dev.yml up -d <serivce> 
+docker compose -f docker-compose.dev.yml up -d <service>
 
 # All services
 
-docker compose -f docker-compose.dev.yml up -d 
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ### Access services
@@ -66,32 +66,29 @@ docker compose -f docker-compose.dev.yml up -d
 
 ## Team Development Environments
 
-Each team has its own development environment in `team_dev_environments/`:
+Each team has its own service/submodule catalog in `teams/<team>.yml`, driven by `setup-deepiri-dev.sh`:
 
-| Team | Path | Description |
-|------|------|-------------|
-| Backend | `team_dev_environments/backend-team/` | Backend microservices |
-| AI | `team_dev_environments/ai-team/` | AI/ML services (Cyrex, MLflow) |
-| Frontend | `team_dev_environments/frontend-team/` | Web frontend |
-| ML | `team_dev_environments/ml-team/` | Machine learning pipelines |
-| Infrastructure | `team_dev_environments/infrastructure-team/` | Infrastructure services |
-| Platform | `team_dev_environments/platform-engineers/` | All services |
-| QA | `team_dev_environments/qa-team/` | QA testing environment |
+| Team | Catalog | Description |
+|------|---------|--------------|
+| Backend | `teams/backend-team.yml` | Backend microservices |
+| AI | `teams/ai-team.yml` | AI/ML services (Cyrex, MLflow, speech) |
+| Frontend | `teams/frontend-team.yml` | Web frontend |
+| ML | `teams/ml-team.yml` | Machine learning pipelines |
+| Infrastructure | `teams/infrastructure-team.yml` | Infrastructure services |
+| Platform | `teams/platform-engineers.yml` | All services |
+| QA | `teams/qa-team.yml` | QA testing environment |
 
 ### Team-Specific Setup
 
 ```bash
 # Backend Team
-cd team_dev_environments/backend-team
-./build.sh && ./start.sh
+./setup-deepiri-dev.sh build backend-team && ./setup-deepiri-dev.sh start backend-team
 
 # AI Team
-cd team_dev_environments/ai-team
-./build.sh && ./start.sh
+./setup-deepiri-dev.sh build ai-team && ./setup-deepiri-dev.sh start ai-team
 
 # Frontend Team
-cd team_dev_environments/frontend-team
-./build.sh && ./start.sh
+./setup-deepiri-dev.sh build frontend-team && ./setup-deepiri-dev.sh start frontend-team
 ```
 
 ## Services
@@ -139,14 +136,14 @@ cd team_dev_environments/frontend-team
 
 ## Submodule Management
 
-The platform uses git submodules for service repositories. Use the team-specific scripts:
+The platform uses git submodules for service repositories, scoped per team in `teams/<team>.yml`:
 
 ```bash
 # Pull submodules for a specific team
-./team_submodule_commands/backend-team/pull_submodules.sh
+./setup-deepiri-dev.sh pull backend-team
 
-# Update all submodules
-./team_submodule_commands/all_submodules/pull_submodules.sh
+# Pull all submodules
+./setup-deepiri-dev.sh pull all-services
 ```
 
 ### Available Submodules
@@ -215,8 +212,8 @@ deepiri-platform/
 ├── diri-helox/                     # ML training pipelines
 ├── deepiri-web-frontend/          # React frontend
 ├── deepiri-modelkit/              # Shared contracts
-├── team_dev_environments/         # Team-specific environments
-├── team_submodule_commands/       # Submodule management scripts
+├── teams/                        # Per-team service/submodule catalogs (*.yml)
+├── setup-deepiri-dev.sh          # Onboard + day-to-day team ops (pull/build/start)
 ├── docs/                         # Documentation
 └── docker-compose.dev.yml        # Development configuration
 ```

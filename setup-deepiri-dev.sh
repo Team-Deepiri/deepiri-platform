@@ -398,7 +398,7 @@ detect_existing_clone() {
     git config --global --add safe.directory "$toplevel" 2>/dev/null || true
 
     if [[ -f "$toplevel/.gitmodules" ]] \
-       && grep -q "Team-Deepiri/deepiri-platform\|Team-Deepiri/deepiri-core-api" \
+       && grep -q "Team-Deepiri/" \
                   "$toplevel/.gitmodules" 2>/dev/null; then
         EXISTING_CLONE="$toplevel"
     else
@@ -436,7 +436,7 @@ declare -A TEAM_DOCKERFILE_HINTS=(
     [external-bridge-service]="platform-services/backend/deepiri-external-bridge-service/Dockerfile"
     [language-intelligence-service]="platform-services/backend/deepiri-language-intelligence-service/Dockerfile"
     [synapse]="platform-services/shared/deepiri-synapse/Dockerfile"
-    [synapse-sugar-glider]="platform-services/shared/deepiri-sugar-glider/Dockerfile"
+    [sugar-glider]="platform-services/shared/deepiri-sugar-glider/Dockerfile"
     [frontend-dev]="deepiri-web-frontend/Dockerfile"
     [cyrex]="diri-cyrex/Dockerfile"
     [speech]="platform-services/backend/deepiri-speech/Dockerfile"
@@ -631,8 +631,9 @@ team_catalog_list() {
         fi
         if (( in_list )) && [[ "$line" =~ ^[a-zA-Z0-9_-]+: ]]; then break; fi
         if (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+path:[[:space:]]*(.+)$ ]]; then
-            out+=("$(team_yaml_strip "${BASH_REMATCH[1]}")")
-        elif (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+([^[:space:]]+)$ ]]; then
+            item="${BASH_REMATCH[1]%%#*}"
+            out+=("$(team_yaml_strip "$item")")
+        elif (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+([^[:space:]]+)([[:space:]]|$) ]]; then
             item="$(team_yaml_strip "${BASH_REMATCH[1]}")"
             [[ "$item" != path:* ]] && out+=("$item")
         fi

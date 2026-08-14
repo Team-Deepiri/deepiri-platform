@@ -20,7 +20,7 @@ services:
   - language-intelligence-service
   - frontend-dev
   - synapse
-  - synapse-sugar-glider
+  - sugar-glider
   - adminer
 
 submodules:
@@ -47,7 +47,7 @@ start:
     - auth-service
     - external-bridge-service
     - synapse
-    - synapse-sugar-glider
+    - sugar-glider
 
 pull:
   recursive: true

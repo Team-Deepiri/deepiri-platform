@@ -28,7 +28,7 @@ services:
   - realtime-gateway
   - language-intelligence-service
   - synapse
-  - synapse-sugar-glider
+  - sugar-glider
   - frontend-dev
   - adminer
 
@@ -56,7 +56,7 @@ start:
   optional:
     - language-intelligence-service
   phases:
-    - [postgres-auth, postgres-core, postgres-intelligence, redis, influxdb, kafka, synapse, synapse-sugar-glider]
+    - [postgres-auth, postgres-core, postgres-intelligence, redis, influxdb, kafka, synapse, sugar-glider]
     - [api-gateway, auth-service, truss, registry, telemetry, messaging-service, external-bridge-service, jobs, realtime-gateway, adminer]
   phase_wait_seconds: 3
 
