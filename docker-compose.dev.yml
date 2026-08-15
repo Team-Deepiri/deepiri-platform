@@ -8,6 +8,12 @@ x-build-args: &build-args
   DOCKER_BUILDKIT: 1
   BUILDKIT_PROGRESS: plain
 
+# Published Bedd image (never pin a local retag like deepiri-bedd:local).
+# Override only for offline emergency: BEDD_IMAGE=deepiri-bedd:local
+# Requires ghcr.io pull access (docker login ghcr.io with read:packages).
+x-bedd-build-args: &bedd-build-args
+  BEDD_IMAGE: ${BEDD_IMAGE:-ghcr.io/team-deepiri/bedd:0.8}
+
 # Minimal logging - logs are automatically cleared and not saved
 x-logging: &minimal-logging
   driver: "local"
@@ -35,7 +41,7 @@ services:
     networks:
       - deepiri-dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-deepiri_auth}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-deepiri_auth} -d ${POSTGRES_AUTH_DB:-auth_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,7 +65,7 @@ services:
     networks:
       - deepiri-dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CORE_USER:-deepiri}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CORE_USER:-deepiri} -d ${POSTGRES_CORE_DB:-deepiri}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,7 +89,7 @@ services:
     networks:
       - deepiri-dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CYREX_USER:-deepiri_cyrex}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CYREX_USER:-deepiri_cyrex} -d ${POSTGRES_CYREX_DB:-cyrex_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -109,7 +115,7 @@ services:
     depends_on:
       - postgres-auth
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_INTELLIGENCE_USER:-deepiri_intel} -d ${POSTGRES_INTELLIGENCE_DB:-intelligence_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -356,6 +362,7 @@ services:
       REALTIME_GATEWAY_URL: http://realtime-gateway:5008
       LANGUAGE_INTELLIGENCE_SERVICE_URL: http://language-intelligence-service:5010
       SYNAPSE_URL: http://synapse:8002
+      JWT_SECRET: ${JWT_SECRET:-deepiri-local-dev-jwt-key-for-dev-only-x9z}
       K8S_SERVICE_NAME: api-gateway  # Filter to only load this service's configmap
     volumes:
       - ./ops/k8s/configmaps:/k8s-configmaps:ro
@@ -632,6 +639,8 @@ services:
     build:
       context: ./platform-services
       dockerfile: backend/deepiri-language-intelligence-service/Dockerfile
+      args:
+        <<: *bedd-build-args
     image: deepiri-dev-language-intelligence-service:latest
     pull_policy: never
     container_name: deepiri-language-intelligence-service-dev
@@ -656,6 +665,9 @@ services:
       STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       CYREX_BASE_URL: http://cyrex:8000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      BEDD_SKILLS_DIR: /opt/bedd/skills
+      BEDD_BUS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379
+      BEDD_DLQ_STREAM: bedd.dlq
       # Prefer Sugar Glider for document.* publishes (same bus as Cyrex/Helox).
       SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
       SYNAPSE_SUGAR_GLIDER_URL: ${SYNAPSE_SUGAR_GLIDER_URL:-http://synapse-sidecar:8081}
@@ -840,6 +852,13 @@ services:
       OLLAMA_KEEP_ALIVE: "24h"
       OLLAMA_NUM_PARALLEL: "4"
       OLLAMA_MAX_LOADED_MODELS: "2"
+    healthcheck:
+      # Stock ollama/ollama has no curl; CLI proves the daemon is up (same as exovra-platform).
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
     networks:
       - deepiri-dev-network
 
@@ -1099,6 +1118,8 @@ services:
     build:
       context: ./platform-services/shared/deepiri-synapse
       dockerfile: Dockerfile
+      args:
+        <<: *bedd-build-args
     container_name: deepiri-synapse-dev
     restart: unless-stopped
     logging: *minimal-logging
@@ -1257,24 +1278,6 @@ services:
         condition: service_started
       synapse:
         condition: service_started
-    networks:
-      - deepiri-dev-network
-
-
-  # PrismPipe - Capability-Routed API Pipeline
-  deepiri-prismpipe:
-    build:
-      context: ./platform-services/shared/deepiri-prismpipe
-      dockerfile: Dockerfile
-    image: deepiri-dev-prismpipe:latest
-    pull_policy: never
-    container_name: deepiri-prismpipe-dev
-    restart: unless-stopped
-    logging: *minimal-logging
-    ports:
-      - "5011:5011"
-    environment:
-      PORT: 5011
     networks:
       - deepiri-dev-network
 
