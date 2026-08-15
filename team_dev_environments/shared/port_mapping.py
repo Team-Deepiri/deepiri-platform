@@ -43,7 +43,7 @@ BASE_PORTS = {
     "milvus": 19530,
     "milvus-metrics": 9091,
     "etcd": 2379,
-    "deepiri-prismpipe": 5011,
+    "deepiri-prismpipe": 5011,  # removed from platform — Cyrex consumes git tag v0.2.1 via Poetry
 }
 
 # Special ports that should NOT be offset (shared infrastructure)
