@@ -18,14 +18,15 @@
 #   6. Hardware detection + tier selection (T1/T2/T3) — decides whether
 #      how many services run (T3 = core only). Ollama runs on Linux/WSL,
 #      excluded on Mac/MPS, per the original ai-team behavior.
-#   7. Team-scoped submodule init (replaces team_submodule_commands/)
+#   7. Team-scoped submodule init (canonical; team_submodule_commands/*.sh delegate here)
 #   8. Team + tier-scoped docker compose up (replaces team_dev_environments/)
 #   9. Postgres core DB seeding
 #
 # Usage:
 #   bash setup-deepiri-dev.sh [--team <team>] [--tier <1|2|3>]
 #                             [--skip-submodules] [--skip-docker]
-#                             [--build] [--update-submodules] [--non-interactive]
+#                             [--build] [--update-submodules] [--submodules-only]
+#                             [--non-interactive]
 #
 # Submodule policy:
 #   Fresh / uninitialized submodules are pulled at the latest branch tip.
@@ -39,7 +40,7 @@ set -o pipefail
 
 # ---------- args -----------------------------------------------------------
 ARG_TEAM=""; ARG_TIER=""; SKIP_SUBMODULES=false; SKIP_DOCKER=false
-DO_BUILD=false; NON_INTERACTIVE=false; UPDATE_SUBMODULES=false
+DO_BUILD=false; NON_INTERACTIVE=false; UPDATE_SUBMODULES=false; SUBMODULES_ONLY=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -49,6 +50,7 @@ while [[ $# -gt 0 ]]; do
         --skip-docker) SKIP_DOCKER=true; shift ;;
         --build) DO_BUILD=true; shift ;;
         --update-submodules) UPDATE_SUBMODULES=true; shift ;;
+        --submodules-only) SUBMODULES_ONLY=true; shift ;;
         --non-interactive) NON_INTERACTIVE=true; shift ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
@@ -176,7 +178,7 @@ select_tier() {
 # ---------- team selection ------------------------------------------------
 TEAMS_DISPLAY=("AI" "Backend" "Frontend" "Infrastructure" "ML" "Platform" "QA" "Cyrex")
 TEAMS_KEY=("ai" "backend" "frontend" "infrastructure" "ml" "platform" "qa" "cyrex")
-TEAMS_FOLDER=("ai-team" "backend-team" "frontend-team" "infrastructure-team" "ml-team" "platform-engineers" "qa-team" "")
+TEAMS_FOLDER=("ai-team" "backend-team" "frontend-team" "infrastructure-team" "ml-team" "platform-engineers" "qa-team" "cyrex-team")
 
 QA_TIER=""
 QA_TIER_LABELS=("Frontend stack" "Backend stack" "AI stack")
@@ -599,7 +601,6 @@ pull_submodules() {
     init_submodule "deepiri-suite"
 
     local SHARED=(
-        "platform-services/shared/deepiri-prismpipe"
         "platform-services/shared/deepiri-shared-utils"
         "platform-services/shared/deepiri-synapse"
         "platform-services/shared/deepiri-sugar-glider"
@@ -614,6 +615,7 @@ pull_submodules() {
     local SUBS=()
     case "$TEAM_KEY" in
         cyrex)          SUBS=("diri-cyrex" "deepiri-modelkit" "${SHARED[@]}") ;;
+        # PrismPipe is a Poetry git dep on diri-cyrex (deepiri-prismpipe@v0.2.1), not a platform submodule.
         ai)             SUBS=("diri-cyrex" "deepiri-ollama-utils" "deepiri-modelkit" "platform-services/backend/deepiri-api-gateway" "${SHARED[@]}") ;;
         ml)             SUBS=("diri-helox" "deepiri-modelkit" "deepiri-ollama-utils" "${SHARED[@]}") ;;
         backend)        SUBS=("${BACKEND[@]}" "${SHARED[@]}") ;;
@@ -624,13 +626,13 @@ pull_submodules() {
                             "platform-services/shared/deepiri-synapse"
                             "platform-services/shared/deepiri-sugar-glider"
                             "platform-services/shared/deepiri-shared-utils"
-                            "platform-services/shared/deepiri-prismpipe"
                             "platform-services/backend/deepiri-auth-service"
                             "platform-services/backend/deepiri-external-bridge-service"
                             "platform-services/backend/deepiri-api-gateway"
                             "platform-services/backend/deepiri-language-intelligence-service"
                             "deepiri-web-frontend"
                             "deepiri-ollama-utils"
+                            "deepiri-suite"
                         ) ;;
     esac
 
@@ -837,6 +839,15 @@ EOF
 
 # ---------- main ----------------------------------------------------------
 main() {
+    if [[ "$SUBMODULES_ONLY" == true ]]; then
+        step "Deepiri Platform :: submodule init"
+        PLATFORM_REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null)" || fatal "Run --submodules-only from a deepiri-platform checkout"
+        [[ -n "$ARG_TEAM" ]] || fatal "Pass --team <name> with --submodules-only"
+        select_team
+        pull_submodules
+        exit 0
+    fi
+
     step "Deepiri Platform :: dev environment setup"
     detect_platform
     info "OS: $OS_KIND  distro: ${DISTRO_ID:-n/a}  pkg: ${PKG_MANAGER:-n/a}"

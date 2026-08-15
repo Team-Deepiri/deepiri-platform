@@ -1,6 +1,10 @@
 -- ===========================
 -- DEEPIRI CYREX POSTGRESQL SETUP
 -- ===========================
+-- Runtime ops baseline only (agents / workflows / memories / events).
+-- AGI artifact-plane tables are owned by numbered migrations under
+-- scripts/database/cyrex/ and applied by run-cyrex-migrations.py.
+-- Do not duplicate AGI DDL here.
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

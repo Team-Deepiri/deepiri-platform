@@ -1,6 +1,15 @@
 # Git Submodule Commands - Team Documentation
 
-This directory contains comprehensive documentation for working with Git submodules in the Deepiri project, organized by team.
+**Canonical submodule init lives in [`setup-deepiri-dev.sh`](../setup-deepiri-dev.sh)** (and `setup-deepiri-dev.ps1` on Windows). Each team's `pull_submodules.sh` / `update_submodules.sh` here are thin wrappers that call:
+
+```bash
+bash setup-deepiri-dev.sh --team <team> --submodules-only --skip-docker --non-interactive
+# add --update-submodules for update_submodules.sh
+```
+
+Use the unified setup script for full onboarding (prereqs, clone, submodules, Docker, seed). Use the team wrappers when you only need submodules after `git pull`.
+
+This directory contains team-specific docs and the wrapper scripts above.
 
 ## 📚 Directory Structure
 
@@ -31,7 +40,10 @@ team_submodule_commands/
 │
 ├── qa-team/
 │   ├── QA_TEAM.md                     # QA Team specific commands
-│   └── pull_submodules.sh             # Script to pull all submodules (QA needs everything)
+│   └── pull_submodules.sh             # Wrapper → setup-deepiri-dev.sh --team qa
+│
+├── cyrex-team/
+│   └── pull_submodules.sh             # Wrapper → setup-deepiri-dev.sh --team cyrex
 │
 └── platform-engineers/
     ├── PLATFORM_ENGINEERS.md          # Platform Engineers specific commands
@@ -65,7 +77,7 @@ git pull origin main
 
 | Submodule | Path | Team(s) |
 |-----------|------|---------|
-| **diri-cyrex** | `diri-cyrex` | AI, ML |
+| **diri-cyrex** | `diri-cyrex` | AI, Cyrex |
 | **deepiri-core-api** | `deepiri-core-api` | Backend |
 | **deepiri-web-frontend** | `deepiri-web-frontend` | Frontend, Backend |
 | **deepiri-api-gateway** | `platform-services/backend/deepiri-api-gateway` | Infrastructure, Backend, Platform |
