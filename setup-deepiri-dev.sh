@@ -568,21 +568,18 @@ init_submodule() {
     fi
 
     # Bump to the tip of the tracking branch (fresh clone, or explicit update).
-    (
-        cd "$path"
-        git fetch origin 2>/dev/null || true
-        local branch="main"
-        case "$path" in
-            *deepiri-synapse*|*deepiri-sugar-glider*) branch="dev" ;;
-        esac
-        if ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-            git show-ref --verify --quiet refs/remotes/origin/master && branch="master"
-        fi
-        if ! git symbolic-ref -q HEAD >/dev/null 2>&1; then
-            git checkout -B "$branch" "origin/$branch" 2>/dev/null || true
-        fi
-        git pull origin "$branch" 2>/dev/null || true
-    )
+    local branch="main"
+    case "$path" in
+        *deepiri-synapse*|*deepiri-sugar-glider*) branch="dev" ;;
+    esac
+    git -C "$path" fetch origin 2>/dev/null || true
+    if ! git -C "$path" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        git -C "$path" show-ref --verify --quiet refs/remotes/origin/master && branch="master"
+    fi
+    if ! git -C "$path" symbolic-ref -q HEAD >/dev/null 2>&1; then
+        git -C "$path" checkout -B "$branch" "origin/$branch" 2>/dev/null || true
+    fi
+    git -C "$path" pull origin "$branch" 2>/dev/null || true
     ok "$path (at latest $branch)"
 }
 
