@@ -23,65 +23,41 @@ x-env: &default-env
 
 services:
   # Data
-  postgres-auth:
+  #
+  # Single Postgres 16 container hosting 3 logical databases (platform_auth,
+  # platform_core, platform_intelligence), each with its own role, instead
+  # of one container per tenant. Lower overhead on a cheap VPS, simpler
+  # backups (one data dir, one pg_dumpall), still logically separated.
+  # scripts/database/postgres-init-multi-db.sh creates the roles/databases
+  # on first boot and applies each tenant's existing schema file inside its
+  # own database.
+  postgres:
     <<: *default-env
     image: postgres:16-alpine
-    container_name: deepiri-postgres-auth
+    container_name: deepiri-postgres
     restart: unless-stopped
     logging: *minimal-logging
     environment:
-      POSTGRES_USER: ${POSTGRES_AUTH_USER:-${POSTGRES_USER:-deepiri_auth}}
-      POSTGRES_PASSWORD: ${POSTGRES_AUTH_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
-      POSTGRES_DB: ${POSTGRES_AUTH_DB:-auth_db}
+      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-deepiri}
+      POSTGRES_AUTH_DB: ${POSTGRES_AUTH_DB:-platform_auth}
+      POSTGRES_AUTH_USER: ${POSTGRES_AUTH_USER:-deepiri_auth}
+      POSTGRES_AUTH_PASSWORD: ${POSTGRES_AUTH_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
+      POSTGRES_CORE_DB: ${POSTGRES_CORE_DB:-platform_core}
+      POSTGRES_CORE_USER: ${POSTGRES_CORE_USER:-deepiri_core}
+      POSTGRES_CORE_PASSWORD: ${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
+      POSTGRES_INTELLIGENCE_DB: ${POSTGRES_INTELLIGENCE_DB:-platform_intelligence}
+      POSTGRES_INTELLIGENCE_USER: ${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}
+      POSTGRES_INTELLIGENCE_PASSWORD: ${POSTGRES_INTELLIGENCE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
     volumes:
-      - postgres_auth_data:/var/lib/postgresql/data
-      - ./scripts/database/postgres-init-auth.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/database/postgres-init-multi-db.sh:/docker-entrypoint-initdb.d/00-init-multi-db.sh:ro
+      - ./scripts/database/postgres-init-auth.sql:/docker-entrypoint-initdb.d/schemas/auth.sql:ro
+      - ./scripts/database/postgres-init-core.sql:/docker-entrypoint-initdb.d/schemas/core.sql:ro
+      - ./scripts/database/postgres-init-intelligence.sql:/docker-entrypoint-initdb.d/schemas/intelligence.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_AUTH_USER:-${POSTGRES_USER:-deepiri_auth}}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - deepiri-network
-
-  postgres-core:
-    <<: *default-env
-    image: postgres:16-alpine
-    container_name: deepiri-postgres-core
-    restart: unless-stopped
-    logging: *minimal-logging
-    environment:
-      POSTGRES_USER: ${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}
-      POSTGRES_PASSWORD: ${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
-      POSTGRES_DB: ${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
-    volumes:
-      - postgres_core_data:/var/lib/postgresql/data
-      - ./scripts/database/postgres-init-core.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - deepiri-network
-
-  postgres-intelligence:
-    <<: *default-env
-    image: postgres:16-alpine
-    container_name: deepiri-postgres-intelligence
-    restart: unless-stopped
-    logging: *minimal-logging
-    environment:
-      POSTGRES_USER: ${POSTGRES_INTELLIGENCE_USER:-${POSTGRES_USER:-deepiri_intel}}
-      POSTGRES_PASSWORD: ${POSTGRES_INTELLIGENCE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
-      POSTGRES_DB: ${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
-    volumes:
-      - postgres_intelligence_data:/var/lib/postgresql/data
-      - ./scripts/database/postgres-init-intelligence.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_INTELLIGENCE_USER:-${POSTGRES_USER:-deepiri_intel}}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deepiri}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -120,10 +96,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      DB_HOST: postgres-core
+      DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
-      DB_USER: ${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}
+      DB_NAME: ${POSTGRES_CORE_DB:-platform_core}
+      DB_USER: ${POSTGRES_CORE_USER:-deepiri_core}
       DB_PASSWORD: ${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
       AUTH_SERVICE_URL: http://auth-service:5001
@@ -201,11 +177,56 @@ services:
       - "443:443"
     volumes:
       - ./ops/nginx/cloud-prod.conf:/etc/nginx/nginx.conf:ro
-      - ./ops/nginx/ssl:/etc/nginx/ssl:ro
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot:ro
     depends_on:
       - frontend
       - api-gateway
       - realtime-gateway
+    networks:
+      - deepiri-network
+
+  # Nightly full-cluster backup (all 3 logical databases + roles in one
+  # pg_dumpall, via scripts/database/postgres-backup.sh) to a named volume.
+  # Copy that volume off the box regularly — a backup that only lives on
+  # the same disk as the database isn't a real backup.
+  pg-backup:
+    image: postgres:16-alpine
+    container_name: deepiri-pg-backup
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      BACKUP_DIR: /backups
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - ./scripts/database/postgres-backup.sh:/usr/local/bin/postgres-backup.sh:ro
+      - postgres_backups:/backups
+    entrypoint: >
+      /bin/bash -c "trap exit TERM; while :; do /usr/local/bin/postgres-backup.sh; sleep 24h & wait $${!}; done"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - deepiri-network
+
+  # Issues/renews the real TLS cert (ops/nginx/init-letsencrypt.sh does the
+  # one-time bootstrap; this loop just keeps it renewed after that). nginx
+  # reads certs from the same certbot_conf volume but doesn't auto-reload on
+  # renewal — see the crontab note init-letsencrypt.sh prints.
+  certbot:
+    image: certbot/certbot:latest
+    container_name: deepiri-certbot
+    restart: unless-stopped
+    logging: *minimal-logging
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: >
+      /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
     networks:
       - deepiri-network
 
@@ -222,7 +243,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5001
-      DATABASE_URL: postgresql://${POSTGRES_AUTH_USER:-${POSTGRES_USER:-deepiri_auth}}:${POSTGRES_AUTH_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-auth:5432/${POSTGRES_AUTH_DB:-auth_db}
+      DATABASE_URL: postgresql://${POSTGRES_AUTH_USER:-deepiri_auth}:${POSTGRES_AUTH_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres:5432/${POSTGRES_AUTH_DB:-platform_auth}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?INTERNAL_SERVICE_SECRET must be set}
       CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS must be set}
@@ -232,7 +253,7 @@ services:
       SYNAPSE_URL: http://synapse:8002
     command: sh -c "if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else npx prisma migrate deploy || true; fi && node dist/server.js"
     depends_on:
-      postgres-auth:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -257,14 +278,14 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5002
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri_core}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres:5432/${POSTGRES_CORE_DB:-platform_core}
       JOBS_URL: http://jobs:5007
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SYNAPSE_URL: http://synapse:8002
     depends_on:
-      postgres-core:
+      postgres:
         condition: service_healthy
       jobs:
         condition: service_started
@@ -285,14 +306,14 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5003
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri_core}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres:5432/${POSTGRES_CORE_DB:-platform_core}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SYNAPSE_URL: http://synapse:8002
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     depends_on:
-      postgres-core:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -311,7 +332,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5004
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri_core}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres:5432/${POSTGRES_CORE_DB:-platform_core}
       JOBS_URL: http://jobs:5007
       REGISTRY_URL: http://registry:5003
       REDIS_HOST: redis
@@ -323,7 +344,7 @@ services:
       INFLUXDB_ORG: ${INFLUXDB_ORG:-deepiri}
       INFLUXDB_BUCKET: ${INFLUXDB_BUCKET:-analytics}
     depends_on:
-      postgres-core:
+      postgres:
         condition: service_healthy
       jobs:
         condition: service_started
@@ -346,12 +367,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5007
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri_core}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres:5432/${POSTGRES_CORE_DB:-platform_core}
       HELOX_URL: ${HELOX_URL:-}
       HELOX_API_KEY: ${HELOX_API_KEY:-}
       SYNAPSE_URL: http://synapse:8002
     depends_on:
-      postgres-core:
+      postgres:
         condition: service_healthy
     networks:
       - deepiri-network
@@ -368,7 +389,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5003
-      DATABASE_URL: postgresql://${POSTGRES_INTELLIGENCE_USER:-${POSTGRES_USER:-deepiri_intel}}:${POSTGRES_INTELLIGENCE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-intelligence:5432/${POSTGRES_INTELLIGENCE_DB:-intelligence_db}
+      DATABASE_URL: postgresql://${POSTGRES_INTELLIGENCE_USER:-deepiri_intel}:${POSTGRES_INTELLIGENCE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres:5432/${POSTGRES_INTELLIGENCE_DB:-platform_intelligence}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
@@ -384,7 +405,7 @@ services:
       SYNAPSE_TRANSPORT: ${SYNAPSE_TRANSPORT:-sidecar}
       SYNAPSE_SUGAR_GLIDER_URL: http://sugar-glider:8081
     depends_on:
-      postgres-intelligence:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -407,7 +428,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5009
-      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-${POSTGRES_USER:-deepiri}}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres-core:5432/${POSTGRES_CORE_DB:-${POSTGRES_DB:-deepiri}}
+      DATABASE_URL: postgresql://${POSTGRES_CORE_USER:-deepiri_core}:${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}@postgres:5432/${POSTGRES_CORE_DB:-platform_core}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
@@ -418,7 +439,7 @@ services:
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_EMAIL: ${VAPID_EMAIL:-mailto:notifications@example.com}
     depends_on:
-      postgres-core:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -525,11 +546,12 @@ services:
   # deepiri-prismpipe:
 
 volumes:
-  postgres_auth_data:
-  postgres_core_data:
-  postgres_intelligence_data:
+  postgres_data:
+  postgres_backups:
   redis_data:
   sugar_glider_wal:
+  certbot_conf:
+  certbot_webroot:
   # Commented out disabled-service volumes:
   # mlflow_data:
   # influxdb_data:
