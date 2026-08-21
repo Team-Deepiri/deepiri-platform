@@ -22,12 +22,12 @@
 [submodule "platform-services/backend/deepiri-language-intelligence-service"]
 	path = platform-services/backend/deepiri-language-intelligence-service
 	url = git@github.com:Team-Deepiri/deepiri-language-intelligence-service.git
-[submodule "platform-services/shared/deepiri-prismpipe"]
-	path = platform-services/shared/deepiri-prismpipe
-	url = git@github.com:Team-Deepiri/deepiri-prismpipe.git
 [submodule "platform-services/shared/deepiri-shared-utils"]
 	path = platform-services/shared/deepiri-shared-utils
 	url = git@github.com:Team-Deepiri/deepiri-shared-utils.git
+[submodule "platform-services/shared/deepiri-prismpipe"]
+	path = platform-services/shared/deepiri-prismpipe
+	url = git@github.com:Team-Deepiri/deepiri-prismpipe.git
 [submodule "platform-services/shared/deepiri-synapse"]
 	path = platform-services/shared/deepiri-synapse
 	url = git@github.com:Team-Deepiri/deepiri-synapse.git
