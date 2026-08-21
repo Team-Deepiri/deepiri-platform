@@ -260,46 +260,6 @@ services:
     networks:
       - deepiri-network
 
-  # Lightweight host + container monitoring (replaces the cut
-  # Prometheus/Grafana/InfluxDB stack — ~150-200MB RAM vs. that combo's
-  # 500MB-1GB+). Runs with host networking/PID namespace, same as
-  # Netdata's own recommended Docker setup, so it sees real host-level
-  # network/disk stats rather than the container's own NATed view.
-  #
-  # SECURITY: with no NETDATA_CLAIM_TOKEN set, the local dashboard on
-  # port 19999 has NO AUTH. Either claim this node to Netdata Cloud (free
-  # tier — set NETDATA_CLAIM_TOKEN/_URL/_ROOMS from a Netdata Cloud
-  # account, not something this repo can set up for you) and firewall
-  # 19999 from the public internet, or firewall 19999 regardless and
-  # access the local dashboard over an SSH tunnel.
-  netdata:
-    image: netdata/netdata:stable
-    container_name: deepiri-netdata
-    hostname: ${NETDATA_HOSTNAME:-deepiri-vps}
-    restart: unless-stopped
-    logging: *minimal-logging
-    network_mode: host
-    pid: host
-    cap_add:
-      - SYS_PTRACE
-      - SYS_ADMIN
-    security_opt:
-      - apparmor:unconfined
-    environment:
-      NETDATA_CLAIM_TOKEN: ${NETDATA_CLAIM_TOKEN:-}
-      NETDATA_CLAIM_URL: ${NETDATA_CLAIM_URL:-https://app.netdata.cloud}
-      NETDATA_CLAIM_ROOMS: ${NETDATA_CLAIM_ROOMS:-}
-    volumes:
-      - netdata_config:/etc/netdata
-      - netdata_lib:/var/lib/netdata
-      - netdata_cache:/var/cache/netdata
-      - /etc/passwd:/host/etc/passwd:ro
-      - /etc/group:/host/etc/group:ro
-      - /etc/os-release:/host/etc/os-release:ro
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-
   # Platform domain services
   auth-service:
     <<: *default-env
@@ -622,9 +582,6 @@ volumes:
   sugar_glider_wal:
   certbot_conf:
   certbot_webroot:
-  netdata_config:
-  netdata_lib:
-  netdata_cache:
   # Commented out disabled-service volumes:
   # mlflow_data:
   # influxdb_data:
