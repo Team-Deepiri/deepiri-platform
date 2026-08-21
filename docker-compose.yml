@@ -188,8 +188,8 @@ services:
 
   # Nightly full-cluster backup (all 3 logical databases + roles in one
   # pg_dumpall, via scripts/database/postgres-backup.sh) to a named volume.
-  # Copy that volume off the box regularly — a backup that only lives on
-  # the same disk as the database isn't a real backup.
+  # That volume is still local disk — see pg-backup-offsite below for
+  # actually getting copies off the box.
   pg-backup:
     image: postgres:16-alpine
     container_name: deepiri-pg-backup
@@ -210,6 +210,36 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - deepiri-network
+
+  # Copies pg-backup's output to off-box, S3-compatible storage (S3/R2/B2/
+  # Spaces/MinIO — anything speaking the S3 API) via rclone. A backup that
+  # only lives on the same disk as the database it's backing up isn't a
+  # real backup. Safe no-op until BACKUP_OFFSITE_ENABLED=true and a real
+  # bucket/account are set — see scripts/database/postgres-backup-offsite-sync.sh.
+  pg-backup-offsite:
+    image: rclone/rclone:latest
+    container_name: deepiri-pg-backup-offsite
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      BACKUP_DIR: /backups
+      BACKUP_OFFSITE_ENABLED: ${BACKUP_OFFSITE_ENABLED:-false}
+      BACKUP_OFFSITE_PROVIDER: ${BACKUP_OFFSITE_PROVIDER:-Other}
+      BACKUP_OFFSITE_BUCKET: ${BACKUP_OFFSITE_BUCKET:-}
+      BACKUP_OFFSITE_ENDPOINT: ${BACKUP_OFFSITE_ENDPOINT:-}
+      BACKUP_OFFSITE_REGION: ${BACKUP_OFFSITE_REGION:-}
+      BACKUP_OFFSITE_ACCESS_KEY_ID: ${BACKUP_OFFSITE_ACCESS_KEY_ID:-}
+      BACKUP_OFFSITE_SECRET_ACCESS_KEY: ${BACKUP_OFFSITE_SECRET_ACCESS_KEY:-}
+      BACKUP_OFFSITE_PREFIX: ${BACKUP_OFFSITE_PREFIX:-postgres-backups}
+    volumes:
+      - ./scripts/database/postgres-backup-offsite-sync.sh:/usr/local/bin/postgres-backup-offsite-sync.sh:ro
+      - postgres_backups:/backups:ro
+    entrypoint: >
+      /bin/sh -c "trap exit TERM; while :; do sh /usr/local/bin/postgres-backup-offsite-sync.sh; sleep 24h & wait $${!}; done"
+    depends_on:
+      - pg-backup
     networks:
       - deepiri-network
 
