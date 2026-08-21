@@ -4,10 +4,11 @@ Branch-merge PR Creator for Deepiri (can be Dev-to-Main or Main-to-Dev)
 Creates PRs between two branches across the repos via GitHub CLI.
 No local clones required — operates entirely through the GitHub API.
 
-Merge behavior:
-  All merges use [skip ci] in the commit message so GitHub Actions skip push workflows.
-  Tries direct branch merge first (no PR = no pull_request CI). Falls back to
-  PR + admin merge only when direct merge fails (conflicts / protection).
+All PRs are automatically merged after creation. If auto-merge is blocked by
+branch protection rules and there are no merge conflicts, the script retries
+with a plain squash merge, which honors the caller's branch-protection bypass
+allowance (e.g. Support Team). It only falls back to `gh pr merge --admin`
+if the caller holds repo admin rights and the plain merge is rejected.
 
 Every processed repo gets a DevOps label (created if missing; existing
 case variants like devops/DEVOPS are reused). Every PR this script creates
@@ -394,18 +395,28 @@ def admin_merge(
     head_branch: str,
     base_branch: str,
 ) -> tuple[bool, str]:
-    """Force-merge a PR using --admin. Commit message includes [skip ci]."""
-    result = gh(
+    """Merge a PR via squash. Relies on the caller's branch-protection bypass
+    allowance (e.g. Support Team) rather than --admin, which requires repo
+    *admin* permission and fails for maintain/write-level accounts even when
+    they're on the review-bypass list. Falls back to --admin only if the
+    caller does happen to have admin rights and the plain merge is rejected.
+    """
+    base_args = [
         "pr", "merge", pr_url,
         "--repo", repo_slug(repo_name),
         "--squash",
-        "--admin",
         "--delete-branch=false",
         "--subject", merge_commit_message(head_branch, base_branch),
-    )
+    ]
+    result = gh(*base_args)
     if result.returncode == 0:
+        return True, f"Merged {SKIP_CI}"
+
+    err = (result.stderr or result.stdout).strip()
+    result_admin = gh(*base_args[:3], "--admin", *base_args[3:])
+    if result_admin.returncode == 0:
         return True, f"Merged with --admin {SKIP_CI}"
-    return False, (result.stderr or result.stdout).strip()
+    return False, err or (result_admin.stderr or result_admin.stdout).strip()
 
 
 def merge_pr(
@@ -414,11 +425,8 @@ def merge_pr(
     head_branch: str,
     base_branch: str,
 ) -> tuple[bool, str]:
-    """Admin-merge an existing PR with [skip ci] on the squash commit.
-
-    This intentionally bypasses branch protection for this sync automation.
-    """
-    print(f"  {Colors.GRAY}Admin merge {SKIP_CI}...{Colors.NC}")
+    """Merge an existing PR with [skip ci] on the squash commit."""
+    print(f"  {Colors.GRAY}Merging {SKIP_CI}...{Colors.NC}")
     print(f"  {Colors.GRAY}Checking mergeability...{Colors.NC}")
     mergeable = wait_for_mergeable(repo_name, pr_url, max_attempts=10)
     if mergeable is False:
