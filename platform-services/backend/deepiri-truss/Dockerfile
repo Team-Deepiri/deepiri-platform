@@ -1,17 +1,6 @@
-# Embed Bedd via multi-stage FROM published image (BuildKit-safe).
-ARG BEDD_IMAGE=ghcr.io/team-deepiri/bedd:0.8
-FROM ${BEDD_IMAGE} AS bedd
-
 FROM ghcr.io/team-deepiri/deepiri-suite:18-slim
 
 # Prisma binary compatibility (service-specific)
-
-# Bedd runtime (Bun-style) — glibc binary
-COPY --from=bedd /usr/local/bin/bedd /usr/local/bin/bedd
-COPY --from=bedd /opt/bedd/skills /opt/bedd/skills
-ENV BEDD_SKILLS_DIR=/opt/bedd/skills
-ENV BEDD_BUS_URL=redis://redis:6379
-ENV BEDD_DLQ_STREAM=bedd.dlq
 
 RUN mkdir -p /lib64 \
  && ln -sf /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 \
