@@ -86,6 +86,7 @@ services:
     volumes:
       - postgres_cyrex_dev_data:/var/lib/postgresql/data
       - ./scripts/database/postgres-init-cyrex.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./scripts/database/cyrex/140_elkedel_memory.sql:/docker-entrypoint-initdb.d/02-elkedel-memory.sql:ro
     networks:
       - deepiri-dev-network
     healthcheck:
@@ -918,6 +919,11 @@ services:
       POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
       POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
       POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
+      # Elkedel — episodic visual memory (Cyrex eyes)
+      ELKEDEL_BASE_URL: http://elkedel:8765
+      ELKEDEL_MCP_URL: http://elkedel-mcp:8766/mcp
+      ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
+      ELKEDEL_EYES_SYNC_ENABLED: ${ELKEDEL_EYES_SYNC_ENABLED:-true}
       # Node Backend (API Gateway) Configuration
       NODE_BACKEND_URL: http://api-gateway:5000
       # Local LLM Configuration
@@ -983,6 +989,8 @@ services:
     depends_on:
       postgres-cyrex:
         condition: service_healthy
+      elkedel:
+        condition: service_healthy
       influxdb:
         condition: service_started
       milvus:
@@ -995,6 +1003,95 @@ services:
         condition: service_started
       mlflow:
         condition: service_started
+    networks:
+      - deepiri-dev-network
+
+  # Elkedel — Cyrex eyes (vision pipeline + episodic memory on postgres-cyrex)
+  elkedel:
+    build:
+      context: ./deepiri-elkedel
+      dockerfile: infra/docker/runtime.Dockerfile
+    image: deepiri-dev-elkedel:latest
+    pull_policy: never
+    container_name: deepiri-elkedel-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      ELKEDEL_USE_POSTGRES: "1"
+      POSTGRES_HOST: postgres-cyrex
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
+      POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
+      POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
+      ELKEDEL_PHYSICAL_DB_PATH: /var/lib/elkedel/sensory/elkedel_physical.db
+      ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
+      ELKEDEL_PIPELINE_AUTO: ${ELKEDEL_PIPELINE_AUTO:-0}
+      ELKEDEL_USE_YOLO: ${ELKEDEL_USE_YOLO:-1}
+      ELKEDEL_CLASSES: ${ELKEDEL_CLASSES:-person}
+      ELKEDEL_PIPELINE_FPS: ${ELKEDEL_PIPELINE_FPS:-5}
+      ELKEDEL_CAMERA_DEVICE: ${ELKEDEL_CAMERA_DEVICE:-}
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./deepiri-elkedel:/opt/elkedel
+      - elkedel_dev_data:/var/lib/elkedel
+    depends_on:
+      postgres-cyrex:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/ready').read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - deepiri-dev-network
+
+  elkedel-mcp:
+    build:
+      context: ./deepiri-elkedel
+      dockerfile: infra/docker/runtime.Dockerfile
+    image: deepiri-dev-elkedel:latest
+    pull_policy: never
+    container_name: deepiri-elkedel-mcp-dev
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      ELKEDEL_USE_POSTGRES: "1"
+      POSTGRES_HOST: postgres-cyrex
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
+      POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
+      POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
+      ELKEDEL_PHYSICAL_DB_PATH: /var/lib/elkedel/sensory/elkedel_physical.db
+      ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
+    command:
+      [
+        "poetry",
+        "run",
+        "elkedel-mcp",
+        "serve",
+        "--transport",
+        "streamable-http",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8766",
+      ]
+    ports:
+      - "8766:8766"
+    volumes:
+      - ./deepiri-elkedel:/opt/elkedel
+      - elkedel_dev_data:/var/lib/elkedel
+    depends_on:
+      elkedel:
+        condition: service_healthy
     networks:
       - deepiri-dev-network
 
@@ -1301,6 +1398,8 @@ volumes:
   ollama_dev_data:
     driver: local
   cyrex_cache:
+    driver: local
+  elkedel_dev_data:
     driver: local
   #cyrex_agi_cache:
   #  driver: local
