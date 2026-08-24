@@ -926,6 +926,7 @@ services:
       ELKEDEL_MCP_URL: http://elkedel-mcp:8766/mcp
       ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
       ELKEDEL_EYES_SYNC_ENABLED: ${ELKEDEL_EYES_SYNC_ENABLED:-true}
+      ELKEDEL_EYES_AUTO_START: ${ELKEDEL_EYES_AUTO_START:-true}
       # Node Backend (API Gateway) Configuration
       NODE_BACKEND_URL: http://api-gateway:5000
       # Local LLM Configuration
