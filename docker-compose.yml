@@ -37,6 +37,8 @@ services:
     container_name: deepiri-postgres
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 1536m
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-deepiri}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
@@ -71,6 +73,8 @@ services:
     container_name: deepiri-redis
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 384m
     command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
@@ -93,6 +97,8 @@ services:
     container_name: deepiri-api-gateway
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 768m
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -161,6 +167,8 @@ services:
     container_name: deepiri-frontend
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 256m
     depends_on:
       - api-gateway
     networks:
@@ -172,6 +180,8 @@ services:
     container_name: deepiri-nginx
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 256m
     ports:
       - "80:80"
       - "443:443"
@@ -195,6 +205,8 @@ services:
     container_name: deepiri-pg-backup
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 256m
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -223,6 +235,8 @@ services:
     container_name: deepiri-pg-backup-offsite
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 128m
     environment:
       BACKUP_DIR: /backups
       BACKUP_OFFSITE_ENABLED: ${BACKUP_OFFSITE_ENABLED:-false}
@@ -252,6 +266,8 @@ services:
     container_name: deepiri-certbot
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 128m
     volumes:
       - certbot_conf:/etc/letsencrypt
       - certbot_webroot:/var/www/certbot
@@ -270,6 +286,8 @@ services:
     container_name: deepiri-auth-service
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 512m
     environment:
       NODE_ENV: production
       PORT: 5001
@@ -305,6 +323,8 @@ services:
     container_name: deepiri-truss
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 384m
     environment:
       NODE_ENV: production
       PORT: 5002
@@ -333,6 +353,8 @@ services:
     container_name: deepiri-registry
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 384m
     environment:
       NODE_ENV: production
       PORT: 5003
@@ -359,6 +381,8 @@ services:
     container_name: deepiri-telemetry
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 384m
     environment:
       NODE_ENV: production
       PORT: 5004
@@ -394,6 +418,8 @@ services:
     container_name: deepiri-jobs
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 384m
     environment:
       NODE_ENV: production
       PORT: 5007
@@ -416,6 +442,8 @@ services:
     container_name: deepiri-language-intelligence-service
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; NLP-heavy service, tune to actual box size.
+    mem_limit: 1536m
     environment:
       NODE_ENV: production
       PORT: 5003
@@ -455,6 +483,8 @@ services:
     container_name: deepiri-messaging-service
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 384m
     environment:
       NODE_ENV: production
       PORT: 5009
@@ -489,6 +519,8 @@ services:
     container_name: deepiri-realtime-gateway
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 384m
     environment:
       NODE_ENV: production
       PORT: 5008
@@ -521,6 +553,8 @@ services:
     container_name: deepiri-synapse
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 256m
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -540,6 +574,8 @@ services:
     container_name: deepiri-sugar-glider
     restart: unless-stopped
     logging: *minimal-logging
+    # Soft memory cap for the cheap one-box profile; tune to actual box size.
+    mem_limit: 256m
     environment:
       SIDECAR_SERVICE_NAME: deepiri-platform
       SIDECAR_REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
