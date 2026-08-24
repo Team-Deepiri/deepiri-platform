@@ -223,6 +223,11 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       NODE_BACKEND_URL: http://backend:5000
       CYREX_API_KEY: ${CYREX_API_KEY:-change-me}
+      # Elkedel — sensory / episodic visual memory
+      ELKEDEL_BASE_URL: ${ELKEDEL_BASE_URL:-http://elkedel:8765}
+      ELKEDEL_MCP_URL: ${ELKEDEL_MCP_URL:-http://elkedel-mcp:8766/mcp}
+      ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
+      ELKEDEL_TIMEOUT_SEC: ${ELKEDEL_TIMEOUT_SEC:-30}
       # AI Training Configuration
       MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
       WANDB_API_KEY: ${WANDB_API_KEY}

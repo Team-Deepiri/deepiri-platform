@@ -1,0 +1,90 @@
+# Elkedel sensory / episodic memory — attach to deepiri-network
+#
+# Soft-decouple overlay (see docs/architecture/CYREX_HELOX_PLATFORM_DECOUPLING.md):
+#   docker compose -f docker-compose.yml -f docker-compose.elkedel.yml up -d elkedel elkedel-mcp cyrex
+#
+# Or AGI-local bring-up once docker-compose.cyrex.yml lands:
+#   docker compose -f docker-compose.elkedel.yml up -d
+
+version: '3.8'
+
+x-logging: &minimal-logging
+  driver: "local"
+  options:
+    max-size: "1m"
+    max-file: "1"
+    compress: "false"
+
+services:
+  elkedel:
+    build:
+      context: ./deepiri-elkedel
+      dockerfile: infra/docker/runtime.Dockerfile
+    container_name: deepiri-elkedel
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      ELKEDEL_DB_PATH: /var/lib/elkedel/memory/elkedel.db
+      ELKEDEL_PHYSICAL_DB_PATH: /var/lib/elkedel/sensory/elkedel_physical.db
+      ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
+    ports:
+      - "8765:8765"
+    volumes:
+      - elkedel_data:/var/lib/elkedel
+    networks:
+      - deepiri-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/ready').read()",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  elkedel-mcp:
+    build:
+      context: ./deepiri-elkedel
+      dockerfile: infra/docker/runtime.Dockerfile
+    container_name: deepiri-elkedel-mcp
+    restart: unless-stopped
+    logging: *minimal-logging
+    environment:
+      ELKEDEL_DB_PATH: /var/lib/elkedel/memory/elkedel.db
+      ELKEDEL_PHYSICAL_DB_PATH: /var/lib/elkedel/sensory/elkedel_physical.db
+      ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
+    command:
+      [
+        "poetry",
+        "run",
+        "elkedel-mcp",
+        "serve",
+        "--transport",
+        "streamable-http",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8766",
+      ]
+    ports:
+      - "8766:8766"
+    volumes:
+      - elkedel_data:/var/lib/elkedel
+    networks:
+      - deepiri-network
+    depends_on:
+      elkedel:
+        condition: service_healthy
+
+volumes:
+  elkedel_data:
+    driver: local
+
+networks:
+  deepiri-network:
+    external: true
+    name: deepiri_deepiri-network
