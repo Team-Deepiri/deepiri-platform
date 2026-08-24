@@ -87,6 +87,7 @@ services:
       - postgres_cyrex_dev_data:/var/lib/postgresql/data
       - ./scripts/database/postgres-init-cyrex.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - ./scripts/database/cyrex/140_elkedel_memory.sql:/docker-entrypoint-initdb.d/02-elkedel-memory.sql:ro
+      - ./scripts/database/cyrex/141_elkedel_pressure.sql:/docker-entrypoint-initdb.d/03-elkedel-pressure.sql:ro
     networks:
       - deepiri-dev-network
     healthcheck:
@@ -915,10 +916,11 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
       # PostgreSQL Configuration
       POSTGRES_HOST: postgres-cyrex
-      POSTGRES_PORT: 5434
+      POSTGRES_PORT: "5432"
       POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
       POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
       POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
+      CYREX_MIGRATIONS_DIR: /migrations/cyrex
       # Elkedel — episodic visual memory (Cyrex eyes)
       ELKEDEL_BASE_URL: http://elkedel:8765
       ELKEDEL_MCP_URL: http://elkedel-mcp:8766/mcp
@@ -954,6 +956,7 @@ services:
       - ./diri-cyrex/inference:/app/inference
       - ./diri-cyrex/tests:/app/tests
       - ./diri-cyrex/cyrex_watcher.py:/app/cyrex_watcher.py:ro
+      - ./scripts/database/cyrex:/migrations/cyrex:ro
       - cyrex_cache:/app/.cache
     command: python /app/cyrex_watcher.py --watch-dir /app/app --app-module app.main:app --host 0.0.0.0 --port 8000
     # GPU support - automatically detects and uses available GPU
