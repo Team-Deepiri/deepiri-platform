@@ -995,6 +995,8 @@ services:
         condition: service_healthy
       elkedel:
         condition: service_healthy
+      elkedel-mcp:
+        condition: service_started
       influxdb:
         condition: service_started
       milvus:
@@ -1074,7 +1076,8 @@ services:
       POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
       POSTGRES_USER: ${POSTGRES_CYREX_USER:-deepiri_cyrex}
       POSTGRES_PASSWORD: ${POSTGRES_CYREX_PASSWORD:-deepiripassword}
-      ELKEDEL_PHYSICAL_DB_PATH: /var/lib/elkedel/sensory/elkedel_physical.db
+      # Separate SQLite path — do not share elkedel_dev_data with runtime writers
+      ELKEDEL_PHYSICAL_DB_PATH: /var/lib/elkedel-mcp/sensory/elkedel_physical.db
       ELKEDEL_API_KEY: ${ELKEDEL_API_KEY:-}
     command:
       [
@@ -1093,7 +1096,7 @@ services:
       - "8766:8766"
     volumes:
       - ./deepiri-elkedel:/opt/elkedel
-      - elkedel_dev_data:/var/lib/elkedel
+      - elkedel_mcp_dev_data:/var/lib/elkedel-mcp
     depends_on:
       elkedel:
         condition: service_healthy
@@ -1405,6 +1408,7 @@ volumes:
   cyrex_cache:
     driver: local
   elkedel_dev_data:
+  elkedel_mcp_dev_data:
     driver: local
   #cyrex_agi_cache:
   #  driver: local
