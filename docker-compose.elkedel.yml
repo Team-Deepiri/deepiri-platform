@@ -87,4 +87,4 @@ volumes:
 networks:
   deepiri-network:
     external: true
-    name: deepiri_deepiri-network
+    name: ${DEEPIRI_NETWORK_NAME:-deepiri_deepiri-network}
