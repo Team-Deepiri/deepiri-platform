@@ -129,15 +129,19 @@ services:
       SIDECAR_DISPATCHER_ACK_FLUSH_CONCURRENCY: ${SIDECAR_DISPATCHER_ACK_FLUSH_CONCURRENCY:-8}
       SIDECAR_DISPATCHER_ACK_FLUSH_MS: ${SIDECAR_DISPATCHER_ACK_FLUSH_MS:-6}
       SIDECAR_DISPATCHER_ACK_QUEUE_SIZE: ${SIDECAR_DISPATCHER_ACK_QUEUE_SIZE:-16384}
-      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events
-      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events
+      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events,speech-events
+      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events,speech-events
       SIDECAR_MAX_STREAM_LEN: "10000"
+      SIDECAR_PUBLISH_PIPELINE_ENABLED: ${SIDECAR_PUBLISH_PIPELINE_ENABLED:-true}
       SIDECAR_WAL_DIR: /data/synapse-wal
+      SIDECAR_WAL_MAX_ENTRIES: ${SIDECAR_WAL_MAX_ENTRIES:-100000}
+      SIDECAR_WAL_MAX_BYTES: ${SIDECAR_WAL_MAX_BYTES:-268435456}
       SIDECAR_WAL_REPLAY_BATCH: "100"
       SIDECAR_WAL_REPLAY_INTERVAL_MS: "2000"
       SIDECAR_DLQ_MAX_RETRIES: "3"
       SIDECAR_DLQ_MIN_IDLE_MS: "30000"
       SIDECAR_DLQ_SCAN_INTERVAL_MS: "5000"
+      SIDECAR_DLQ_STREAM_POLICIES: ${SIDECAR_DLQ_STREAM_POLICIES:-platform-events:5:30000,model-events:5:30000,training-events:8:45000,speech-events:5:30000}
     ports:
       - "8081:8081"
       - "50051:50051"
