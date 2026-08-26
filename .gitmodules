@@ -48,4 +48,4 @@
 [submodule "deepiri-elkedel"]
 	path = deepiri-elkedel
 	url = git@github.com:Team-Deepiri/deepiri-elkedel.git
-	branch = feat/elkedel-platform-wire
+	branch = main
