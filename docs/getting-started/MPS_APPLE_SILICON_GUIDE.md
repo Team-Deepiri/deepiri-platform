@@ -27,9 +27,9 @@ python -c "import torch; print(f'MPS available: {torch.backends.mps.is_available
 Set up Git hooks and pull the required submodules.
 
 ```bash
-cd deepiri-platform/team_submodule_commands/ai-team
+cd deepiri-platform
 ./setup-hooks.sh
-./pull_submodules.sh
+./setup-deepiri-dev.sh pull ai-team
 ```
 
 ## Installing Dependencies
@@ -110,11 +110,11 @@ LOG_LEVEL=DEBUG
 
 ## Starting Docker Services
 
-Navigate to the AI team development scripts and start the Docker services.
+Start the AI team stack via the consolidated setup script.
 
 ```bash
-cd deepiri-platform/team_dev_environments/ai-team
-./start.sh
+cd deepiri-platform
+./setup-deepiri-dev.sh start ai-team
 ```
 
 ## Starting Ollama Locally
@@ -141,9 +141,9 @@ To shut down the environment:
 
 - Press `Ctrl + C` in the terminal running Ollama
 - Press `Ctrl + C` in the terminal running Cyrex
-- Run the stop script to turn off Docker services:
+- Stop Docker services:
 
 ```bash
-cd deepiri-platform/team_dev_environments/ai-team
-./stop.sh
+cd deepiri-platform
+./setup-deepiri-dev.sh stop ai-team
 ```

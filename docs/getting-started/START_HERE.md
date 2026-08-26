@@ -33,6 +33,7 @@ The hooks protect `main`, `master`, and branches containing `team-dev` from acci
 **If hooks aren't working** (e.g., existing clone), run:
 ```bash
 ./setup-hooks.sh
+# Team submodule hooks are also synced on: ./setup-deepiri-dev.sh pull <team>
 ```
 
 **Why?** See [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) for details.

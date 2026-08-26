@@ -630,12 +630,19 @@ team_catalog_list() {
             in_list=1; continue
         fi
         if (( in_list )) && [[ "$line" =~ ^[a-zA-Z0-9_-]+: ]]; then break; fi
-        if (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+path:[[:space:]]*(.+)$ ]]; then
-            item="${BASH_REMATCH[1]%%#*}"
-            out+=("$(team_yaml_strip "$item")")
-        elif (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+([^[:space:]]+)([[:space:]]|$) ]]; then
+        if (( in_list )) && [[ "$line" =~ ^[[:space:]]+-[[:space:]]+(.*)$ ]]; then
+            # Strip inline comments before tokenizing so trailing "# ..." on
+            # pull_only / services entries (e.g. cyrex-interface) are recognized.
             item="$(team_yaml_strip "${BASH_REMATCH[1]}")"
-            [[ "$item" != path:* ]] && out+=("$item")
+            [[ -z "$item" ]] && continue
+            if [[ "$item" =~ ^path:[[:space:]]*(.+)$ ]]; then
+                item="$(team_yaml_strip "${BASH_REMATCH[1]}")"
+                [[ -n "$item" ]] && out+=("$item")
+            else
+                # First whitespace-delimited token is the list value.
+                item="${item%%[[:space:]]*}"
+                [[ -n "$item" && "$item" != path:* ]] && out+=("$item")
+            fi
         fi
     done < "$catalog"
     printf '%s\n' "${out[@]}"

@@ -177,6 +177,7 @@
 2. **Set up Git hooks (REQUIRED - protects main/master and branches containing team-dev):**
    ```bash
    ./setup-hooks.sh
+   # Also synced for team submodules on: ./setup-deepiri-dev.sh pull <your-team>
    ```
 
 3. **Follow your team's onboarding guide** (see links above)

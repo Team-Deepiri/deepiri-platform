@@ -1,5 +1,7 @@
 # 🚀 Complete Setup Guide - Deepiri
 
+> **Updated workflow:** Per-team `team_dev_environments/` and `team_submodule_commands/` were replaced by `./setup-deepiri-dev.sh` + `teams/<team>.yml`. Prefer [ENVIRONMENT_SETUP_WITH_SCRIPT.md](ENVIRONMENT_SETUP_WITH_SCRIPT.md) for day-to-day pull/build/start/stop. Sections below that still mention the old folders are historical.
+
 **This is the definitive guide for setting up and running the entire Deepiri project from scratch.**
 
 This guide covers:
