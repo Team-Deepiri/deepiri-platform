@@ -317,7 +317,6 @@ if (-not $SkipSubmodules) {
     Initialize-Submodule "deepiri-suite"
 
     $Shared = @(
-        "platform-services/shared/deepiri-prismpipe",
         "platform-services/shared/deepiri-shared-utils",
         "platform-services/shared/deepiri-synapse",
         "platform-services/shared/deepiri-sugar-glider"
@@ -343,13 +342,13 @@ if (-not $SkipSubmodules) {
                             "platform-services/shared/deepiri-synapse",
                             "platform-services/shared/deepiri-sugar-glider",
                             "platform-services/shared/deepiri-shared-utils",
-                            "platform-services/shared/deepiri-prismpipe",
                             "platform-services/backend/deepiri-auth-service",
                             "platform-services/backend/deepiri-external-bridge-service",
                             "platform-services/backend/deepiri-api-gateway",
                             "platform-services/backend/deepiri-language-intelligence-service",
                             "deepiri-web-frontend",
-                            "deepiri-ollama-utils"
+                            "deepiri-ollama-utils",
+                            "deepiri-suite"
                         ) }
     }
 

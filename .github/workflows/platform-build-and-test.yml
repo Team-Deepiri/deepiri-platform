@@ -327,7 +327,7 @@ jobs:
           path: platform-services/shared/deepiri-shared-utils
 
       - name: Log in to GitHub Container Registry
-        if: matrix.service != 'synapse' && matrix.service != 'sugar-glider'
+        if: matrix.service != 'sugar-glider'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io

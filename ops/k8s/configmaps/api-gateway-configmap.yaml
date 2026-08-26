@@ -23,3 +23,5 @@ data:
   CYREX_URL: "http://cyrex:8000"
   SYNAPSE_URL: "http://synapse:8002"
   MLFLOW_URL: "http://mlflow:5000"
+  PRISMPIPE_URL: "http://deepiri-prismpipe:5011"
+  PRISMPIPE_ENABLED: "true"

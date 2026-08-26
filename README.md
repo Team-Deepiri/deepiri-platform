@@ -157,7 +157,7 @@ The platform uses git submodules for service repositories, scoped per team in `t
 - `diri-helox` - ML training pipelines
 - `deepiri-modelkit` - Shared contracts
 - `deepiri-language-intelligence-service` - Language processing
-- `platform-services/shared/deepiri-prismpipe` - PrismPipe pipeline
+- `deepiri-prismpipe` - Cyrex AGI execution engine (Poetry git tag on `diri-cyrex`, not a platform submodule)
 - `platform-services/shared/deepiri-synapse` - Matrix server
 - `platform-services/shared/deepiri-sugar-glider` - Synapse stream bridge runtime
 
@@ -204,11 +204,10 @@ deepiri-platform/
 │   │   ├── deepiri-messaging-service/
 │   │   └── deepiri-language-intelligence-service/
 │   └── shared/
-│       ├── deepiri-prismpipe/      # Capability-routed API pipeline
 │       ├── deepiri-synapse/        # Matrix server
 │       ├── deepiri-sugar-glider/   # Synapse stream bridge runtime
 │       └── deepiri-shared-utils/  # Shared utilities
-├── diri-cyrex/                     # AI/ML service
+├── diri-cyrex/                     # AI/ML service (Poetry: deepiri-prismpipe@v0.2.1)
 ├── diri-helox/                     # ML training pipelines
 ├── deepiri-web-frontend/          # React frontend
 ├── deepiri-modelkit/              # Shared contracts
