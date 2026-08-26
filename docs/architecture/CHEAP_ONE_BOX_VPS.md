@@ -51,7 +51,18 @@ Memory is not the constraint at any point tested — even under load, peak usage
 
 **Bottom line for sizing:** fine for bursty usage (gaps between requests, which is the expected shape for a document-intelligence tool); worth watching CPU once real users hit it, if usage turns out to be more sustained/concurrent than expected.
 
-**Discord summary (David Li, 2026-08-26):** at rest under ~7% of box memory; under simulated heavy traffic memory still fine but 4 cores can tighten under concurrent multi-service load (slower responses, not crashes). Launch-suitable; upgrade is a quick non-disruptive change if needed. Same document-upload gap as above.
+### David Li (2026-08-26, 2:58 PM) — VPS sizing check
+
+> **VPS sizing check: Netcup VPS 1000 G12 — suitable, with one thing to watch**
+>
+> Ran the full platform stack on hardware matching this VPS's specs (4 cores, 8GB RAM) and stress-tested it two ways:
+>
+> - **At rest:** uses under 7% of the box's memory. Huge headroom.
+> - **Under simulated heavy traffic:** memory still fine, but CPU gets tight if multiple services get hit hard at the same time — the box's 4 cores could become a bottleneck under sustained concurrent load. Practically, that shows up as slower response times, not crashes or downtime.
+>
+> **Bottom line:** this VPS works for launch. Given how document-intelligence tools actually get used (bursts of activity, not constant high-volume traffic), it should hold up fine. Worth keeping an eye on CPU usage once we have real users, and upgrading is a quick, non-disruptive change if we ever need more headroom.
+>
+> **One gap:** I couldn't stress-test actual document upload/processing (the heaviest real workload) in this test environment — that's the one thing that could turn out heavier than measured.
 
 <details>
 <summary>Original 2026-08-12 measurement (stale — three Postgres containers, superseded above)</summary>
@@ -74,23 +85,26 @@ That run still used three Postgres containers; PR #304 has since consolidated to
 
 ---
 
-## Secrets / env readiness (David Li, 2026-08-26)
+## Secrets / env readiness — David Li (2026-08-26, 3:40 PM)
 
-Work done toward a real `ops/k8s/secrets/.env` (uncommitted; never paste secrets into chat or the PR):
+> Here's what I got so far:
+>
+> **Generated** (real random secrets, 32 bytes each, never printed anywhere — including in this chat):
+> `POSTGRES_AUTH_PASSWORD`, `POSTGRES_CORE_PASSWORD`, `POSTGRES_INTELLIGENCE_PASSWORD`, `POSTGRES_CYREX_PASSWORD`, `INTERNAL_SERVICE_SECRET`, `CYREX_API_KEY`
+>
+> **Filled with safe, non-secret defaults** (matching what `docker-compose.yml` / `.env.example` already use — usernames, DB names, `NODE_ENV`, `BEDD_IMAGE`, service URLs, `BACKUP_RETENTION_DAYS`, `BACKUP_OFFSITE_ENABLED=false`, etc.)
+>
+> **Set to localhost placeholders**, flagged to update once DNS exists: `CLIENT_URL`, `CORS_ORIGIN` / `CORS_ORIGINS`, `VITE_API_URL`
+>
+> Also fixed along the way (unrelated to the request, but the file wouldn't have worked otherwise).
+>
+> **Still blocking a real deploy**, left as commented placeholders with notes. I don't think I have the resources for these:
+>
+> - `STORAGE_PROVIDER` / `BUCKET` / `REGION` / `ENDPOINT` / `ACCESS_KEY_ID` / `SECRET_ACCESS_KEY` — real object-storage bucket credentials. This one's hard-required by compose, so `docker compose up` will refuse to start with a clear error until it's set — that's intentional, not a bug.
+> - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — real OAuth app credentials.
+> - `BACKUP_OFFSITE_BUCKET` / `ENDPOINT` / `REGION` / `ACCESS_KEY_ID` / `SECRET_ACCESS_KEY` — **moot for now since `BACKUP_OFFSITE_ENABLED=false`**.
 
-| Status | Items |
-|--------|--------|
-| Generated (random, not printed in chat) | `POSTGRES_AUTH_PASSWORD`, `POSTGRES_CORE_PASSWORD`, `POSTGRES_INTELLIGENCE_PASSWORD`, `POSTGRES_CYREX_PASSWORD`, `INTERNAL_SERVICE_SECRET`, `CYREX_API_KEY` |
-| Safe non-secret defaults (match compose / `.env.example`) | Usernames, DB names, `NODE_ENV`, `BEDD_IMAGE`, service URLs, `BACKUP_RETENTION_DAYS`, `BACKUP_OFFSITE_ENABLED=false`, etc. |
-| Localhost placeholders — update once DNS exists | `CLIENT_URL`, `CORS_ORIGIN` / `CORS_ORIGINS`, `VITE_API_URL` |
-
-### Still blocking a real `docker compose up`
-
-| Blocker | Vars | Notes |
-|---------|------|--------|
-| **Hard-required object storage** | `STORAGE_PROVIDER`, `STORAGE_BUCKET`, `STORAGE_REGION`, `STORAGE_ENDPOINT`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | Compose refuses to start until set (intentional). Need a real S3-compatible bucket + keys. |
-| Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Real OAuth app credentials. |
-| Off-box backups | `BACKUP_OFFSITE_BUCKET`, `BACKUP_OFFSITE_ENDPOINT`, `BACKUP_OFFSITE_REGION`, `BACKUP_OFFSITE_ACCESS_KEY_ID`, `BACKUP_OFFSITE_SECRET_ACCESS_KEY` | **Moot while `BACKUP_OFFSITE_ENABLED=false`.** Enable only after a real off-box bucket exists; until then local `pg-backup` only. |
+Target file: `ops/k8s/secrets/.env` (uncommitted; never paste secret values into chat or the PR).
 
 ---
 
