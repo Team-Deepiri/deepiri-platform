@@ -28,6 +28,10 @@ concurrency:
 
 env:
   # Compose interpolations without defaults — CI placeholders (not production secrets).
+  POSTGRES_PASSWORD: ci-postgres-password
+  PLATFORM_DB_PASSWORD: ci-platform-db-password
+  JWT_SECRET: ci-jwt-secret-minimum-32-characters-long
+  INTERNAL_SERVICE_SECRET: ci-internal-service-secret
   GOOGLE_CLIENT_ID: ci-google-client-id-not-used
   GOOGLE_CLIENT_SECRET: ci-google-client-secret-not-used
   AUTH_SERVICE_URL: http://auth-service:5001
