@@ -1,8 +1,13 @@
-# Deepiri Platform
+# Deepiri Platform (cloud portal)
 
-> **NEW TO THE PROJECT?** Start here: [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md)  
-> **FIND YOUR TEAM:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md)  
-> **Quick Start (All Services):** Run `team_dev_environments/platform-engineers/start.sh` or use docker compose directly
+> **Cloud VPS** internal portal — auth, org, tools, Plaky. No Cyrex / LIS / AI runtime.  
+> **Full local builder stack** → [Team-Deepiri/deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane) (`docker-compose.dev.yml`, `setup-deepiri-dev.sh`, speech engine).
+
+Deploy: `docker compose up -d` (see `docker-compose.yml`)  
+Dev setup for Cyrex/LIS/speech: clone **deepiri-control-plane** and run `bash setup-deepiri-dev.sh`
+
+> **NEW TO THE PROJECT?** [docs/getting-started/START_HERE.md](docs/getting-started/START_HERE.md)  
+> **Architecture split:** [docs/architecture/REPO_SPLIT.md](docs/architecture/REPO_SPLIT.md)
 
 ## Quick Start
 
