@@ -1,5 +1,9 @@
 # Platform decoupling plan
 
+> **Superseding design (Cyrex/LIS out of cloud):**  
+> [`CLOUD_HUB_AND_CONTROL_PLANE_REDESIGN.md`](./CLOUD_HUB_AND_CONTROL_PLANE_REDESIGN.md)  
+> **Hard rule:** Cyrex and Language Intelligence have **zero** cloud coupling — local control plane only. Cloud = internal hub (auth, org, events, artifacts).
+
 ## What the shared cloud + web frontend are *for* (target)
 
 For Deepiri **devs and ecosystem builders**, not end-user AI/doc products.
