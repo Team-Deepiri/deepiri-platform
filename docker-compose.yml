@@ -190,8 +190,12 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
-      # Cloud: HTTP poll + Postgres only — no Kafka on VPS
-      KAFKA_BROKERS: ""
+      # Cloud: HTTP poll + Postgres only — no Kafka on VPS.
+      # KAFKA_BROKERS: "" does NOT disable this — the service's own code falls
+      # back to localhost:9092 on a falsy/empty value and will crash-loop.
+      # KAFKA_ENABLED=false is the actual switch (see external-bridge-service
+      # commit 535042c / branch david_li/fix/external-bridge-cloud-kafka-and-health-leak).
+      KAFKA_ENABLED: "false"
       PLAKY_API_TOKEN: ${PLAKY_API_TOKEN:-}
       PLAKY_POLL_INTERVAL_SEC: ${PLAKY_POLL_INTERVAL_SEC:-60}
     depends_on:
