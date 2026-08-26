@@ -1,191 +1,190 @@
-# Databases + compose split (cloud vs control plane)
+# Cloud vs control plane — full service lists + Plaky
 
-Naming locked:
+## Plaky realtime / sync — where it lives
 
-| Plane | Postgres container | What |
-|-------|-------------------|------|
-| **Cloud** | `postgres-platform` | Portal / org / auth / jobs / registry data |
-| **Control plane** | `postgres-cp-db` | Local non-Cyrex DBs |
-| **Control plane** | `postgres-cyrex-db` | Cyrex only |
+**Owner: `external-bridge-service` (cloud).**  
+**Not** a new microservice. **Not** business logic inside `api-gateway`.
 
-No `lis_db`. No `hub-api` — cloud uses **`api-gateway`** (same service; Cyrex/LIS routes off or 503).
+| Piece | Responsibility |
+|-------|----------------|
+| **`external-bridge-service`** | Plaky API poll + optional webhooks; upsert `integrations.plaky_*` in `postgres-platform`; map assignees → users; expose internal HTTP for “list/get issues” |
+| **`api-gateway`** | AuthZ + route `/api/plaky/*` → bridge only (proxy). No Plaky tokens in gateway env if avoidable |
+| **`platform-frontend`** | Renders issues; can poll gateway every N seconds or use SSE/WS **from gateway** that just streams bridge responses |
+| **`jobs`** | Optional scheduled “full sync” job that hits bridge `/internal/plaky/sync` |
 
----
+**Realtime enough for portal:** bridge polls Plaky on an interval (e.g. 30–60s) and/or accepts Plaky webhooks → DB. Frontend polls `/api/plaky/issues` or gateway SSE that reads bridge. True sub-second Plaky push is optional later.
 
-## 1. Postgres counts
+**Cloud bridge config:** prefer **HTTP + Postgres**, no Kafka required on the VPS. Kafka stays control-plane if the bridge still uses it locally.
 
-### Cloud
-- **1 container:** `postgres-platform`
-- Logical DBs / schemas on it (v1):
-  - auth (users, sessions, keys, invites)
-  - platform core slice used by **gateway, jobs, registry** + portal org/events/artifacts tables  
-  - **Not** intelligence / Cyrex
-
-### Control plane
-- **2 containers:** `postgres-cp-db`, `postgres-cyrex-db`
-- On `postgres-cp-db` (3 logical DBs):
-  - `cp_auth` — local auth when developing offline
-  - `cp_core` — truss, telemetry, messaging, external-bridge, local gateway extras
-  - `cp_intel` — language-intelligence-service, mlflow (old intelligence_db)
-- On `postgres-cyrex-db`:
-  - `cyrex_db`
-
-**Control plane total:** 2 Postgres containers, 4 logical databases.
+```
+Plaky API / webhooks
+        │
+external-bridge-service  ──writes──▶  postgres-platform.integrations
+        ▲
+api-gateway  (/api/plaky/* proxy + JWT)
+        ▲
+platform-frontend
+```
 
 ---
 
-## 2. What both planes need
+## Databases (reminder)
 
-| Need | Cloud | Control plane |
-|------|-------|---------------|
-| **Auth** | `auth-service` → `postgres-platform` | Local `auth-service` → `cp_auth` (lab/offline); can also trust cloud JWT later |
-| **Redis** | Yes | Yes (separate instance) |
-| **API entry** | **`api-gateway`** | **`api-gateway`** (full upstreams: LIS, Cyrex, …) |
-| **Frontend** | **`platform-frontend`** (was `frontend` / `frontend-dev`) | Optional local copy only for offline UI work |
-| **Jobs** | **Yes — on cloud** | Optional duplicate only if you need local-only workers |
-| **Registry** | **Yes — on cloud** | Optional local if developing registry in isolation |
+| Plane | Postgres |
+|-------|----------|
+| Cloud | **`postgres-platform`** (schemas: identity, org, portal, catalog, onboarding, vizult, integrations, jobs_meta) |
+| Control plane | **`postgres-cp-db`** (`cp_auth`, `cp_core`, `cp_intel`) + **`postgres-cyrex-db`** (`cyrex_db`) |
 
-**Not on cloud:** Cyrex, language-intelligence, mlflow, milvus/minio/etcd for AI, ollama, kafka/bridge unless you explicitly add them later.
+DDL: `scripts/database/postgres-init-platform.sql`
 
 ---
 
-## 3. `api-gateway` (not “hub-api”)
+## CLOUD platform — full service list
 
-`api-gateway` stays the single HTTP front door.
+Everything that runs on the VPS for the internal portal.
 
-| Plane | Gateway behavior |
-|-------|------------------|
-| **Cloud** | Routes to `auth-service`, `jobs`, `registry`, and portal/BFF-style routes that hit `postgres-platform`. **No** required upstream to Cyrex or language-intelligence (omit or soft-fail). |
-| **Control plane** | Full wiring: auth, jobs, registry, truss, telemetry, messaging, realtime, LIS, Cyrex, etc. |
-
-There is **no** separate `hub-api` service. Kill that name.
-
----
-
-## 4. Cloud compose — services
-
-| Service | DB / store |
-|---------|------------|
-| `postgres-platform` | platform auth + core (incl. jobs/registry tables) |
-| `redis` | sessions/cache |
-| `auth-service` | `postgres-platform` |
-| **`api-gateway`** | talks to auth/jobs/registry; not Cyrex/LIS |
-| **`jobs`** | `postgres-platform` |
-| **`registry`** | `postgres-platform` |
-| **`platform-frontend`** | Portal UI (rename of `frontend` / `frontend-dev`) |
-| `nginx` + `certbot` | prod edge |
-| `pg-backup` (+ optional offsite) | `postgres-platform` only |
-
----
-
-## 5. Control-plane compose — services
-
-### Data
+### Data / edge
 | Service | Notes |
 |---------|--------|
-| `postgres-cp-db` | `cp_auth`, `cp_core`, `cp_intel` |
-| `postgres-cyrex-db` | `cyrex_db` |
-| `redis` | |
-| `minio`, `etcd`, `milvus`, `influxdb` | AI / LIS / Cyrex deps |
-| `kafka` | if external-bridge stays |
+| `postgres-platform` | Sole cloud app DB |
+| `redis` | Sessions / cache / rate limits |
+| `nginx` | TLS termination / reverse proxy |
+| `certbot` | Certificates |
+| `pg-backup` | Nightly dumps of `postgres-platform` |
+| `pg-backup-offsite` | Optional; only if `BACKUP_OFFSITE_ENABLED=true` |
 
-### Apps
-| Service | DB |
-|---------|-----|
-| `auth-service` | `cp_auth` |
-| `api-gateway` | full local graph |
+### App
+| Service | Notes |
+|---------|--------|
+| `auth-service` | Login, invites, sessions, API keys → `identity` (+ org membership APIs) |
+| **`api-gateway`** | Public API door; **no Cyrex/LIS hard deps**; proxies Plaky to bridge |
+| **`jobs`** | Shared jobs; vizult scan ingest; optional Plaky full-sync trigger |
+| **`registry`** | Tools catalog / service registry for portal |
+| **`platform-frontend`** | Portal UI (was frontend / frontend-dev) |
+| **`external-bridge-service`** | **Plaky sync + read API** (and later GitHub if needed) |
+
+### On-box tools (not long-running product services)
+| Piece | Notes |
+|-------|--------|
+| `deepiri-vizult` CLI | Installed on VM or job image; run by `jobs` → write `vizult.*` |
+
+### Explicitly NOT on cloud
+Cyrex, cyrex-interface, language-intelligence, mlflow, ollama, milvus, etcd, minio (AI), kafka, synapse, sugar-glider, realtime-gateway, messaging-service, truss, telemetry, external-bridge’s Kafka dependency (if any — strip for cloud), adminer/pgadmin (optional ops only).
+
+---
+
+## CONTROL PLANE — full service list
+
+Local / lab compose (includes Cyrex stack). Talks to cloud optionally via JWT + `DEEPIRI_PLATFORM_URL`.
+
+### Data stores
+| Service | Notes |
+|---------|--------|
+| `postgres-cp-db` | Logical DBs: `cp_auth`, `cp_core`, `cp_intel` |
+| `postgres-cyrex-db` | `cyrex_db` |
+| `redis` | Local |
+| `minio` | LIS / Cyrex object (as configured) |
+| `etcd` | Milvus dep |
+| `milvus` | Vectors |
+| `influxdb` | Metrics |
+| `kafka` | external-bridge / streaming if used locally |
+
+### App services
+| Service | DB / store |
+|---------|------------|
+| `auth-service` | `cp_auth` (offline lab auth) |
+| `api-gateway` | Full upstreams (LIS, Cyrex, truss, …) |
 | `truss` | `cp_core` |
 | `telemetry` | `cp_core` |
 | `messaging-service` | `cp_core` |
-| `external-bridge-service` | `cp_core` (+ kafka) |
+| `realtime-gateway` | redis / synapse path |
+| `synapse` | local event bus |
+| `sugar-glider` | with synapse |
 | `language-intelligence-service` | `cp_intel` + minio/`STORAGE_*` |
 | `mlflow` | `cp_intel` |
-| `realtime-gateway` | redis |
-| `synapse`, `sugar-glider` | as today |
-| `cyrex`, `cyrex-interface` | `postgres-cyrex-db` |
-| `ollama` | — |
-| `jobs`, `registry` | **optional local** only for offline/dev; **cloud is source for shared org** |
-| `platform-frontend` | optional local only |
-| `pgadmin`, `adminer` | optional |
+| `external-bridge-service` | local integrations; may use kafka |
+| `cyrex` | `postgres-cyrex-db` |
+| `cyrex-interface` | UI for Cyrex |
+| `ollama` | local models |
+| `jobs` | **optional local** (cloud jobs is SoT for org) |
+| `registry` | **optional local** |
+| `platform-frontend` | **optional** local UI against CP gateway |
+
+### Dev-only
+| Service | Notes |
+|---------|--------|
+| `pgadmin` | |
+| `adminer` | |
+
+### Libraries (not compose DB services)
+| Piece | Notes |
+|-------|--------|
+| Helox | Library used by Cyrex / training — **no DB container** |
 
 ---
 
-## 6. Full split from today’s `docker-compose.dev.yml`
+## Side-by-side (from today’s `docker-compose.dev.yml`)
 
-### → CLOUD
-- `postgres-platform` *(replaces putting auth/core/intel on the VPS)*
-- `redis`
-- `auth-service`
-- `api-gateway` *(cloud config — no Cyrex/LIS hard deps)*
-- **`jobs`**
-- **`registry`**
-- **`platform-frontend`** (was `frontend` / `frontend-dev`)
-- prod: `nginx`, `certbot`, `pg-backup`
-
-### → CONTROL PLANE
-- `postgres-cp-db` *(was postgres-auth + postgres-core + postgres-intelligence, one container)*
-- `postgres-cyrex-db` *(was postgres-cyrex)*
-- `redis`
-- `minio`, `etcd`, `milvus`, `influxdb`
-- `kafka` (with bridge)
-- `auth-service` (local)
-- `api-gateway` (full)
-- `truss`
-- `telemetry`
-- `messaging-service`
-- `realtime-gateway`
-- `synapse`, `sugar-glider`
-- `language-intelligence-service`
-- `mlflow`
-- `external-bridge-service`
-- `cyrex`, `cyrex-interface`
-- `ollama`
-- optional: local `platform-frontend` (dev only), `pgadmin`, `adminer`
-- optional local copies: `jobs`, `registry` (dev only)
-
-### → NOT on cloud
-- Cyrex + `postgres-cyrex-db`
-- language-intelligence + `cp_intel` + LIS object storage
-- mlflow, ollama, milvus, etcd, minio (AI), kafka/bridge
-- truss, telemetry, messaging, realtime, synapse, sugar-glider *(unless you later promote one)*
+| Service (today) | Cloud | Control plane |
+|-----------------|:----:|:-------------:|
+| postgres-auth / core / intelligence | → **`postgres-platform`** schemas | → **`postgres-cp-db`** (`cp_auth`/`cp_core`/`cp_intel`) |
+| postgres-cyrex | — | **`postgres-cyrex-db`** |
+| redis | ✓ | ✓ |
+| kafka | — | ✓ |
+| influxdb | — | ✓ |
+| etcd | — | ✓ |
+| minio | — | ✓ |
+| milvus | — | ✓ |
+| api-gateway | ✓ (slim) | ✓ (full) |
+| auth-service | ✓ | ✓ |
+| jobs | ✓ | optional |
+| registry | ✓ | optional |
+| truss | — | ✓ |
+| telemetry | — | ✓ |
+| messaging-service | — | ✓ |
+| realtime-gateway | — | ✓ |
+| synapse | — | ✓ |
+| sugar-glider | — | ✓ |
+| language-intelligence-service | — | ✓ |
+| mlflow | — | ✓ |
+| external-bridge-service | ✓ (**Plaky**, no Kafka) | ✓ (full) |
+| cyrex | — | ✓ |
+| cyrex-interface | — | ✓ |
+| ollama | — | ✓ |
+| frontend / frontend-dev | → **`platform-frontend`** ✓ | optional |
+| nginx / certbot / pg-backup | ✓ | — |
+| pgadmin / adminer | optional | optional |
+| deepiri-vizult | CLI via jobs ✓ | CLI local ✓ |
 
 ---
 
-## 7. Picture
+## Cloud compose picture
 
 ```
-CLOUD
+CLOUD VPS
   postgres-platform
   redis
-  auth-service
-  api-gateway          ← not hub-api
-  jobs                 ← on cloud
-  registry             ← on cloud
-  platform-frontend    ← on cloud (was frontend / frontend-dev)
   nginx / certbot / pg-backup
+  auth-service
+  api-gateway          ← proxies /api/plaky/* 
+  jobs                 ← vizult ingest, sync triggers
+  registry
+  platform-frontend
+  external-bridge-service   ← Plaky poll/webhooks + DB upsert
+  [vizult CLI on host/job image]
+```
 
+## Control plane picture
+
+```
 CONTROL PLANE
-  postgres-cp-db       ← cp_auth | cp_core | cp_intel
-  postgres-cyrex-db
-  redis, minio, etcd, milvus, influxdb, [kafka]
-  auth-service, api-gateway
+  postgres-cp-db | postgres-cyrex-db
+  redis, minio, etcd, milvus, influxdb, kafka
+  auth-service, api-gateway (full)
   truss, telemetry, messaging, realtime-gateway
   synapse, sugar-glider
   language-intelligence-service, mlflow
   external-bridge-service
   cyrex, cyrex-interface, ollama
-  [optional local jobs/registry/platform-frontend for offline]
+  [optional jobs/registry/platform-frontend]
 ```
-
----
-
-## 8. Rename map
-
-| Old | New |
-|-----|-----|
-| “hub-api” | **deleted — use `api-gateway`** |
-| cloud hub postgres / deepiri_hub naming | **`postgres-platform`** |
-| `frontend` / `frontend-dev` (cloud) | **`platform-frontend`** |
-| postgres-auth / core / intelligence (local) | logical DBs on **`postgres-cp-db`** |
-| postgres-cyrex | **`postgres-cyrex-db`** |
-| lis_db | **never — use `cp_intel`** |
