@@ -71,19 +71,6 @@ def gh_api(path: str, *extra: str) -> tuple[int, Any]:
     return result.returncode, data
 
 
-def get_org_repos() -> list[str]:
-    result = gh(
-        "api",
-        f"orgs/{GITHUB_ORG}/repos",
-        "--paginate",
-        "--jq", '.[] | select(.archived==false and .fork==false) | .name'
-    )
-    if result.returncode != 0:
-        print(f"{Colors.RED}Failed to fetch repos: {result.stderr}{Colors.NC}")
-        return []
-    return [r for r in result.stdout.strip().split("\n") if r]
-
-
 def check_gh_auth() -> bool:
     return gh("auth", "status").returncode == 0
 
@@ -471,18 +458,16 @@ def merge_pr(
 
 
 def get_all_repos() -> list[str]:
-    repos = []
-    page = 1
-
-    while True:
-        code, data = gh_api(f"orgs/{GITHUB_ORG}/repos?per_page=100&page={page}")
-        if code != 0 or not isinstance(data, list) or not data:
-            break
-
-        repos.extend([repo["name"] for repo in data])
-        page += 1
-
-    return repos
+    result = gh(
+        "api",
+        f"orgs/{GITHUB_ORG}/repos",
+        "--paginate",
+        "--jq", '.[] | select(.archived==false and .fork==false) | .name'
+    )
+    if result.returncode != 0:
+        print(f"{Colors.RED}Failed to fetch repos: {result.stderr}{Colors.NC}")
+        return []
+    return [r for r in result.stdout.strip().split("\n") if r]
 
 
 # ---------------------------------------------------------------------------
@@ -599,7 +584,6 @@ def merge_direction(
         ensure_devops_label(repo_name, dry_run=True)
         return {"repo": repo_name, "status": "dry_run", "title": title}
 
-    print(f"  {Colors.GRAY}Creating PR...{Colors.NC}")
     ok, url_or_err = create_pr(repo_name, head_branch, base_branch, title, body, draft=draft)
     if ok:
         print(f"  {Colors.GREEN}PR created: {url_or_err}{Colors.NC}")
@@ -624,6 +608,18 @@ def merge_direction(
     else:
         print(f"  {Colors.RED}Failed: {url_or_err}{Colors.NC}")
         return {"status": "failed", "error": url_or_err}
+
+    print(f"  {Colors.GREEN}PR created: {url_or_err}{Colors.NC}")
+    ok_adm, msg_adm = merge_pr(repo_name, url_or_err, head_branch, base_branch)
+    if ok_adm:
+        print(f"  {Colors.GREEN}{msg_adm}: {url_or_err}{Colors.NC}")
+        return {"status": "merged", "url": url_or_err}
+
+    if msg_adm == "PR has merge conflicts":
+        print(f"  {Colors.YELLOW}PR has merge conflicts, leaving for manual merge.{Colors.NC}")
+    else:
+        print(f"  {Colors.RED}Admin merge failed: {msg_adm}{Colors.NC}")
+    return {"status": "created", "url": url_or_err, "error": msg_adm}
 
 
 def handle_repo(
@@ -697,8 +693,7 @@ def main():
         )
 
     print(f"{Colors.CYAN}Fetching repositories from org...{Colors.NC}")
-    repos = get_org_repos()
-    if not repos:
+    if not all_repos:
         print(f"{Colors.RED}No repositories found or failed to fetch.{Colors.NC}")
         sys.exit(1)
     print(f"{Colors.CYAN}Targeting org: {Colors.BOLD}{GITHUB_ORG}{Colors.NC}")

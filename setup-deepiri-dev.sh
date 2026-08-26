@@ -10,7 +10,11 @@
 #   3. GitHub SSH key setup
 #   4. Repo clone (or reuse existing clone)
 #   5. Team selection (AI / Backend / Frontend / Infrastructure / ML /
-#      Platform / QA / Cyrex)
+#      Platform / QA / Cyrex). QA also picks a tier that mirrors another
+#      engineering team's env:
+#        QA Tier 1 -> frontend-team services (lighter machines)
+#        QA Tier 2 -> backend-team services (includes frontend)
+#        QA Tier 3 -> ai-team services (full ML/AI stack; can run any tier)
 #   6. Hardware detection + tier selection (T1/T2/T3) — decides whether
 #      how many services run (T3 = core only). Ollama runs on Linux/WSL,
 #      excluded on Mac/MPS, per the original ai-team behavior.
@@ -176,6 +180,58 @@ TEAMS_DISPLAY=("AI" "Backend" "Frontend" "Infrastructure" "ML" "Platform" "QA" "
 TEAMS_KEY=("ai" "backend" "frontend" "infrastructure" "ml" "platform" "qa" "cyrex")
 TEAMS_FOLDER=("ai-team" "backend-team" "frontend-team" "infrastructure-team" "ml-team" "platform-engineers" "qa-team" "cyrex-team")
 
+QA_TIER=""
+QA_TIER_LABELS=("Frontend stack" "Backend stack" "AI stack")
+# Keep these folder names aligned with team_dev_environments/<team>/.
+QA_TIER_FOLDERS=("frontend-team" "backend-team" "ai-team")
+
+apply_qa_tier() {
+    local choice="$1"
+    case "$choice" in
+        1|2|3)
+            QA_TIER="$choice"
+            TEAM_FOLDER="${QA_TIER_FOLDERS[$((choice - 1))]}"
+            TEAM_DISPLAY="QA Tier ${QA_TIER} (${QA_TIER_LABELS[$((choice - 1))]})"
+            ;;
+        *) fatal "Invalid QA tier: $choice (must be 1, 2, or 3)" ;;
+    esac
+}
+
+select_qa_tier() {
+    if [[ -n "$ARG_TIER" ]]; then
+        apply_qa_tier "$ARG_TIER"
+        ok "Selected: $TEAM_DISPLAY -> team_dev_environments/$TEAM_FOLDER"
+        return
+    fi
+    if [[ "$NON_INTERACTIVE" == true ]]; then
+        apply_qa_tier "1"
+        ok "Selected: $TEAM_DISPLAY -> team_dev_environments/$TEAM_FOLDER"
+        return
+    fi
+
+    step "Which QA tier are you?"
+    info "QA tiers match the same services used by engineering teams."
+    echo
+    printf "    1) Tier 1 - Frontend stack\n"
+    printf "       Same services as Frontend engineers (lighter machines).\n"
+    printf "    2) Tier 2 - Backend stack\n"
+    printf "       Same services as Backend engineers (includes frontend).\n"
+    printf "    3) Tier 3 - AI stack\n"
+    printf "       Same services as AI engineers; can also run Tier 1 or 2.\n"
+    echo
+    local choice
+    while :; do
+        read -r -p "  ?? Enter a number [1-3]: " choice || choice=""
+        if [[ "$choice" =~ ^[123]$ ]]; then
+            apply_qa_tier "$choice"
+            ok "Selected: $TEAM_DISPLAY -> team_dev_environments/$TEAM_FOLDER"
+            info "Submodules + Docker services will use $TEAM_FOLDER."
+            return
+        fi
+        warn "Invalid selection. Enter 1, 2, or 3."
+    done
+}
+
 select_team() {
     if [[ -n "$ARG_TEAM" ]]; then
         TEAM_KEY="${ARG_TEAM,,}"
@@ -188,6 +244,9 @@ select_team() {
             fi
         done
         [[ "$found" == true ]] || fatal "Unknown team: $ARG_TEAM"
+        if [[ "$TEAM_KEY" == "qa" ]]; then
+            select_qa_tier
+        fi
         ok "Team: $TEAM_DISPLAY"
         return
     fi
@@ -204,7 +263,11 @@ select_team() {
             TEAM_DISPLAY="${TEAMS_DISPLAY[$((choice - 1))]}"
             TEAM_KEY="${TEAMS_KEY[$((choice - 1))]}"
             TEAM_FOLDER="${TEAMS_FOLDER[$((choice - 1))]}"
-            ok "Selected: $TEAM_DISPLAY"
+            if [[ "$TEAM_KEY" == "qa" ]]; then
+                select_qa_tier
+            else
+                ok "Selected: $TEAM_DISPLAY"
+            fi
             return
         fi
         warn "Invalid selection. Try again."
@@ -505,21 +568,18 @@ init_submodule() {
     fi
 
     # Bump to the tip of the tracking branch (fresh clone, or explicit update).
-    (
-        cd "$path"
-        git fetch origin 2>/dev/null || true
-        local branch="main"
-        case "$path" in
-            *deepiri-synapse*|*deepiri-sugar-glider*) branch="dev" ;;
-        esac
-        if ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-            git show-ref --verify --quiet refs/remotes/origin/master && branch="master"
-        fi
-        if ! git symbolic-ref -q HEAD >/dev/null 2>&1; then
-            git checkout -B "$branch" "origin/$branch" 2>/dev/null || true
-        fi
-        git pull origin "$branch" 2>/dev/null || true
-    )
+    local branch="main"
+    case "$path" in
+        *deepiri-synapse*|*deepiri-sugar-glider*) branch="dev" ;;
+    esac
+    git -C "$path" fetch origin 2>/dev/null || true
+    if ! git -C "$path" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        git -C "$path" show-ref --verify --quiet refs/remotes/origin/master && branch="master"
+    fi
+    if ! git -C "$path" symbolic-ref -q HEAD >/dev/null 2>&1; then
+        git -C "$path" checkout -B "$branch" "origin/$branch" 2>/dev/null || true
+    fi
+    git -C "$path" pull origin "$branch" 2>/dev/null || true
     ok "$path (at latest $branch)"
 }
 
@@ -726,8 +786,24 @@ seed_databases() {
 # ---------- summary -------------------------------------------------------
 print_summary() {
     step "All done!"
+    local qa_note=""
+    local env_note=""
+    if [[ -n "$TEAM_FOLDER" ]]; then
+        env_note="  ${C_BOLD}Env folder:${C_RESET}    team_dev_environments/$TEAM_FOLDER
+"
+    fi
+    if [[ -n "$QA_TIER" ]]; then
+        qa_note="
+  ${C_BOLD}QA tier:${C_RESET}       $QA_TIER -> using team_dev_environments/$TEAM_FOLDER
+"
+        if [[ "$QA_TIER" == "3" ]]; then
+            qa_note+="  ${C_CYAN}Tip:${C_RESET} QA Tier 3 can also run frontend-team or backend-team envs if needed.
+"
+        fi
+    fi
     cat <<EOF
   ${C_BOLD}Team:${C_RESET}          $TEAM_DISPLAY
+${env_note}${qa_note}
   ${C_BOLD}Tier:${C_RESET}          $TIER
   ${C_BOLD}Hardware:${C_RESET}      ${RAM_GB}GB RAM, GPU: ${GPU}
   ${C_BOLD}Platform repo:${C_RESET} $PLATFORM_REPO_DIR
