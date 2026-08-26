@@ -57,26 +57,72 @@ Do **not** add both to the cart (that becomes ~€20.26/mo for two boxes).
 
 **Recommendation for first deploy:** Option **A** (hourly NUE). Prove the stack for one month; cancel if it does not work. Full year on hourly ≈ €4.20 + 12×€11.56 ≈ **€143** vs **€104** prepaid — ~€40 extra for no lock-in.
 
-Product pages:
+---
 
-- Catalog: https://www.netcup.com/en/server/vps
-- 12M (avoid for a one-month trial): https://www.netcup.com/en/server/vps/vps-1000-g12-iv-12m
-- Hourly (DE): https://www.netcup.com/de/server/vps/vps-1000-g12-stundenbasiert
+## Exact links
+
+### Netcup (8 GB / 16 GB)
+
+| What | URL |
+|------|-----|
+| VPS catalog (EN) | https://www.netcup.com/en/server/vps |
+| VPS catalog (DE) | https://www.netcup.com/de/server/vps |
+| **VPS 1000 G12 — 12-month prepaid** (`iv 12M`) — avoid for a 1-month trial | https://www.netcup.com/en/server/vps/vps-1000-g12-iv-12m |
+| **VPS 1000 G12 — hourly / no min term** (`stundenbasiert`) | https://www.netcup.com/de/server/vps/vps-1000-g12-stundenbasiert |
+| VPS 1000 G12 — hourly OpenClaw special (if still offered) | https://www.netcup.com/de/server/vps/vps-1000-g12-stundenbasiert-openclaw-special |
+| VPS 2000 G12 — 16 GB, 12-month prepaid | https://www.netcup.com/en/server/vps/vps-2000-g12-iv-12m |
+
+Checkout product names observed 2026-08-26:
+
+- `VPS 1000 G12 iv 12M` — billing every 12 months, contract ≥12 months, “No preference Europe”, €0 setup / €8.70/mo
+- `VPS 1000 G12 iv NUE hourly-based` — billing every 1 month, contract ≥0 months, Nuremberg, €4.20 setup / €11.56/mo
+
+### OVHcloud (VPS-2 ≈ 4 vCore / 8 GB / 75 GB NVMe, ~$8.50/mo)
+
+| What | URL |
+|------|-----|
+| VPS plans (worldwide) | https://www.ovhcloud.com/en/vps/ |
+| VPS plans (US) | https://us.ovhcloud.com/vps/ |
+| **Order / configurator (US)** | https://us.ovhcloud.com/vps/configurator/ |
+| 8 GB overview | https://www.ovhcloud.com/en/vps/vps-8gb/ |
+
+### Hetzner Cloud (hourly → monthly cap; cancel by deleting the server)
+
+| What | URL |
+|------|-----|
+| Cloud overview | https://www.hetzner.com/cloud/ |
+| **CX33** Cost-Optimized (4 vCPU / 8 GB / 80 GB) | https://www.hetzner.com/cloud/cost-optimized/ |
+| **CPX32** Regular Performance (4 vCPU / 8 GB / 160 GB) | https://www.hetzner.com/cloud/regular-performance/ |
+| Create / manage servers | https://console.hetzner.com/ |
+
+### Contabo (staging only)
+
+| What | URL |
+|------|-----|
+| Cloud VPS | https://contabo.com/en-us/vps/ |
+
+### Related docs / PR
+
+| What | URL |
+|------|-----|
+| Platform PR #304 (cheap one-box compose) | https://github.com/Team-Deepiri/deepiri-platform/pull/304 |
+| CloudInfra Google Doc | https://docs.google.com/document/d/1dueFs3c2O74jn6X-5sLQtAHuMt_lmIs_UrdRL1hPgS0/edit |
+| CloudInfra metrics tab | https://docs.google.com/document/d/1dueFs3c2O74jn6X-5sLQtAHuMt_lmIs_UrdRL1hPgS0/edit?tab=t.hluss5r9vfxc |
 
 ---
 
 ## Month-to-month alternatives (same ~4 vCPU / 8 GB class)
 
-| Provider / plan | Specs (approx.) | ~Price / mo | Link |
-|-----------------|-----------------|-------------|------|
-| OVHcloud VPS-2 | 4 vCore / 8 GB / 75 GB NVMe | ~$8.50 | https://www.ovhcloud.com/en/vps/ — order: https://us.ovhcloud.com/vps/configurator/ |
-| Hetzner CX33 | 4 vCPU / 8 GB / 80 GB | ~€6.50–8 (+ IPv4) | https://www.hetzner.com/cloud/cost-optimized/ — create: https://console.hetzner.com/ |
-| Hetzner CPX32 | 4 vCPU / 8 GB / 160 GB | ~€14–16 | https://www.hetzner.com/cloud/regular-performance/ |
-| Contabo ~8 GB | varies | often cheaper | https://contabo.com/en-us/vps/ — treat as **staging only** (reliability tradeoffs) |
+| Provider / plan | Specs (approx.) | ~Price / mo | Notes |
+|-----------------|-----------------|-------------|-------|
+| OVHcloud VPS-2 | 4 vCore / 8 GB / 75 GB NVMe | ~$8.50 | Best simple 1-month try outside Netcup. Links above. |
+| Hetzner CX33 | 4 vCPU / 8 GB / 80 GB | ~€6.50–8 (+ IPv4) | Cost-Optimized stock can be limited. |
+| Hetzner CPX32 | 4 vCPU / 8 GB / 160 GB | ~€14–16 | More disk; still cancel anytime. |
+| Contabo ~8 GB | varies | often cheaper | Treat as **staging only** (reliability tradeoffs). |
 
 Netcup’s **256 GB** disk is the outlier vs OVH/Hetzner CX (~75–80 GB). Fine for lean compose; tighter once images + Postgres + local backups grow.
 
-If memory headroom matters more than ~€10/mo: Netcup **VPS 2000 G12** (16 GB) — https://www.netcup.com/en/server/vps/vps-2000-g12-iv-12m (prefer hourly if available).
+If memory headroom matters more than ~€10/mo: Netcup **VPS 2000 G12** (16 GB) — prefer hourly if available; 12M link in Exact links above.
 
 ---
 
