@@ -122,23 +122,23 @@ services:
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?INTERNAL_SERVICE_SECRET must be set}
     depends_on:
       auth-service:
-        condition: service_started
+        condition: service_healthy
       truss:
-        condition: service_started
+        condition: service_healthy
       registry:
-        condition: service_started
+        condition: service_healthy
       telemetry:
-        condition: service_started
+        condition: service_healthy
       jobs:
-        condition: service_started
+        condition: service_healthy
       messaging-service:
-        condition: service_started
+        condition: service_healthy
       realtime-gateway:
-        condition: service_started
+        condition: service_healthy
       language-intelligence-service:
-        condition: service_started
+        condition: service_healthy
       synapse:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -341,6 +341,12 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - deepiri-network
 
@@ -369,6 +375,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - deepiri-network
 
@@ -406,6 +418,12 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - deepiri-network
 
@@ -430,6 +448,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - deepiri-network
 
@@ -471,6 +495,12 @@ services:
         condition: service_started
       sugar-glider:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - deepiri-network
 
@@ -507,6 +537,12 @@ services:
         condition: service_started
       auth-service:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - deepiri-network
 
@@ -541,6 +577,12 @@ services:
         condition: service_started
       sugar-glider:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - deepiri-network
 
@@ -562,6 +604,13 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      # python:3.11-slim has no curl; the interpreter is guaranteed present instead.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - deepiri-network
 

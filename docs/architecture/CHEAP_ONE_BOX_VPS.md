@@ -25,22 +25,50 @@ Early priority under resource pressure was gateway + jobs first; the shippable s
 
 ---
 
-## Local-prod measurement (idle)
+## Local-prod measurement (idle + load)
 
-Report: `ops/benchmark-results/20260812T021218Z` (2026-08-12).
+Updated 2026-08-26 against the *current* branch tip (consolidated single Postgres, all 18 services, including this PR's `mem_limit` caps) — supersedes the 2026-08-12 three-Postgres-container numbers below.
+
+**Idle** (`ops/benchmark-results/netcup-vps1000-g12-20260826T174449Z`, 90s sample):
+
+| Metric | Value |
+|--------|-------|
+| Containers measured | 18 |
+| Total memory snapshot | **~538.2 MiB** |
+| Total CPU snapshot | **~1.37%** |
+| Health | All health-checked services healthy |
+
+**Under concurrent load** (autocannon, 200 total connections across `api-gateway`/`auth-service`/`language-intelligence-service`/`truss` simultaneously, 30s, ~330k requests, zero errors):
+
+| Metric | Value |
+|--------|-------|
+| Peak memory (whole stack, single sample) | **~885 MiB** |
+| Peak CPU, worst container (`language-intelligence-service`) | **~192%** (≈1.9 cores) |
+| Peak CPU, next three (`api-gateway`/`truss`/`auth-service`) | 118% / 107% / 106% |
+| Peak CPU, `postgres` | 46% |
+
+Memory is not the constraint at any point tested — even under load, peak usage is ~11% of 8 GB. **CPU is the real ceiling**: if those five peaks landed simultaneously and stayed sustained, that's ~5.7 core-equivalents of demand against this box's 4 vCore, which would mean queuing/added latency under real concurrent load (not crashes — nothing here is memory-bound). `language-intelligence-service`'s `/health` does a live `SELECT 1` via Prisma per request, so its number is a reasonable stand-in for a real DB-backed request, not a trivial ping. Not tested: actual document upload/processing (Bedd + text extraction) — this harness's object storage isn't wired to a real backend, so that path — likely the single heaviest real workload — couldn't be exercised end-to-end.
+
+**Bottom line for sizing:** fine for bursty usage (gaps between requests, which is the expected shape for a document-intelligence tool); worth watching CPU once real users hit it, if usage turns out to be more sustained/concurrent than expected.
+
+<details>
+<summary>Original 2026-08-12 measurement (stale — three Postgres containers, superseded above)</summary>
+
+Report: `ops/benchmark-results/20260812T021218Z`.
 
 | Metric | Value |
 |--------|-------|
 | Containers measured | 17 |
-| Total memory snapshot | **~477.8 MiB** |
-| Total CPU snapshot | **~8.64%** |
-| Health | All health-checked services healthy |
+| Total memory snapshot | ~477.8 MiB |
+| Total CPU snapshot | ~8.64% |
 
 Top memory (idle): messaging ~41.7 MiB, postgres-core ~41.5 MiB, synapse ~40.4 MiB, language-intelligence ~39.0 MiB, auth ~37.1 MiB.
 
-That run still used **three** Postgres containers. PR #304 consolidates to **one** Postgres with three logical databases, so prod should be slightly leaner.
+That run still used three Postgres containers; PR #304 has since consolidated to one Postgres with three logical databases (reflected in the updated numbers above, not just hypothesized).
 
-**Implication:** An **8 GB** VPS has large idle headroom (~16× measured RSS). Soft `mem_limit` caps on the compose profile sum near ~8.5 GB (ceiling if everything spikes together). OS + Docker need ~0.5–1 GB on top. 8 GB fits the designed MVP; 16 GB is headroom, not a requirement to boot.
+</details>
+
+**Implication:** An **8 GB** VPS has large memory headroom at both idle and under load (~15× measured idle RSS, ~9× peak-under-load RSS). Soft `mem_limit` caps on the compose profile sum near ~8.5 GB (ceiling if everything spikes together) — memory was never observed anywhere near that ceiling. CPU, not memory, is the dimension to actually watch on this box.
 
 ---
 
@@ -141,7 +169,7 @@ TLS via certbot in-compose is $0 once DNS points at the box.
 
 | Question | Answer |
 |----------|--------|
-| Will 8 GB run the PR #304 stack? | **Yes** — idle ~478 MiB; designed for 8 GB. |
+| Will 8 GB run the PR #304 stack? | **Yes** — idle ~538 MiB, peak ~885 MiB under simulated concurrent load. Memory isn't the constraint at any point tested; CPU is (see load section above). |
 | Cheapest credible “try one month”? | Netcup **hourly NUE** (~€16 first charge) or OVHcloud **VPS-2** (~$8.50/mo). |
 | Buy the 12M prepaid now? | Only if committing for a year; otherwise skip. |
 | Same as CloudInfra doc “Metrics Confirm” tab? | **Yes** — same `20260812T021218Z` local-prod summary. |

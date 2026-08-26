@@ -139,12 +139,47 @@ echo -e "${YELLOW}📥 Restoring from backup...${NC}"
 echo -e "   This may take a few minutes..."
 echo ""
 
-gunzip -c "$RESTORE_FILE" | PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "postgres" \
-    2>&1 | grep -E "(ERROR|FATAL|WARNING)" || true
+# pg_dumpall --clean emits `DROP ROLE IF EXISTS <role>;` / `CREATE ROLE <role>;`
+# for every role, including whichever one we connect as to run the restore
+# (POSTGRES_USER). Postgres refuses to let a role drop itself mid-session
+# ("current user cannot be dropped"), so that one DROP always fails, and then
+# CREATE ROLE fails too ("already exists") since the drop never happened.
+# The role already exists with the right attributes either way — the
+# following ALTER ROLE line (password, attributes) still runs and re-syncs
+# it — so it's safe to just strip these two self-referential statements
+# rather than let them hard-fail the whole restore under ON_ERROR_STOP.
+# grep exits 1 on the happy path (no ERROR/FATAL/WARNING lines found) — under
+# `set -e`, grep being last in the pipe and exiting 1 would kill the script
+# right here on every *successful* restore. Appending `|| true` would dodge
+# that, but it also collapses PIPESTATUS down to just `true`'s own trivial
+# status, destroying the real gunzip/sed/psql exit codes we need below —
+# confirmed empirically, not just in theory. Toggling `set -e` off for just
+# this pipeline avoids the kill without touching PIPESTATUS at all.
+set +e
+gunzip -c "$RESTORE_FILE" \
+    | sed -e "/^DROP ROLE IF EXISTS ${POSTGRES_USER};\$/d" -e "/^CREATE ROLE ${POSTGRES_USER};\$/d" \
+    | PGPASSWORD="$POSTGRES_PASSWORD" psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "postgres" \
+        -v ON_ERROR_STOP=1 \
+        2>&1 | grep -E "(ERROR|FATAL|WARNING)"
+# ON_ERROR_STOP=1 makes psql itself exit non-zero on the first real SQL error
+# instead of just printing it and continuing (its default behavior with no
+# flag at all) — gunzip/sed/psql's own exit codes are what actually matter
+# here, not grep's. Must capture the whole array in one statement — it gets
+# overwritten by the very next simple command, so reading each element on
+# separate lines silently loses everything but the first.
+pipe_status=("${PIPESTATUS[@]}")
+set -e
+gunzip_status=${pipe_status[0]}
+psql_status=${pipe_status[2]}
+if [ "$gunzip_status" -ne 0 ] || [ "$psql_status" -ne 0 ]; then
+    echo ""
+    echo -e "${RED}❌ Restore failed (gunzip exit ${gunzip_status}, psql exit ${psql_status})${NC}"
+    exit 1
+fi
 
 echo ""
 echo -e "${GREEN}✅ Restore completed successfully!${NC}"
@@ -176,6 +211,14 @@ for db in platform_auth platform_core platform_intelligence; do
         -d "$db" \
         -c "VACUUM ANALYZE;" \
         2>&1 | grep -v "NOTICE" || true
+    # VACUUM ANALYZE output is almost entirely NOTICE lines on a clean run, so
+    # grep -v exiting 1 (nothing left to print) is the normal case, not a
+    # failure — but that also means it can't tell us whether psql itself
+    # failed. Check psql's own exit code directly instead; non-fatal since
+    # this is a post-restore optimization, not the restore itself.
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        echo -e "${YELLOW}⚠️  VACUUM ANALYZE failed on ${db} (non-fatal, restore data is unaffected)${NC}"
+    fi
 done
 
 echo -e "${GREEN}✅ Optimization complete${NC}"
