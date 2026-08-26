@@ -20,7 +20,7 @@ See `REPO_SPLIT.md`.
 ## Phase 0 — Done / in PR #304
 
 - [x] Slim `docker-compose.yml` — cloud portal only
-- [x] `docker-compose.control-plane.yml` — copy of full dev stack
+- [x] `docker-compose.dev.yml` in **deepiri-control-plane** — full dev stack (speech, Cyrex, LIS)
 - [x] `platform.pg_backup` in jobs
 - [x] `postgres-init-platform.sql` + init script
 - [x] Architecture docs + service lists
@@ -46,7 +46,7 @@ See `REPO_SPLIT.md`.
 | Repo | CI gate |
 |------|---------|
 | `deepiri-platform` | `docker compose -f docker-compose.yml config` + cloud service builds |
-| `deepiri-control-plane` | `docker-compose.control-plane.yml` + full stack smoke |
+| `deepiri-control-plane` | `docker-compose.dev.yml` + full stack smoke |
 
 ---
 

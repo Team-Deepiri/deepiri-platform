@@ -3,7 +3,7 @@ name: deepiri-platform
 # Cloud portal — cheap VPS one-box compose.
 # Internal portal only: auth, org, tools, Plaky, jobs. No Cyrex / LIS / AI runtime.
 #
-# Full local builder stack → docker-compose.control-plane.yml (deepiri-control-plane repo).
+# Full local builder stack → deepiri-control-plane (`docker-compose.dev.yml`).
 #
 # Secrets: ./ops/k8s/secrets/.env
 

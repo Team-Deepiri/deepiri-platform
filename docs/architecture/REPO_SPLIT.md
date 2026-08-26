@@ -1,21 +1,16 @@
 # Repo split: deepiri-platform vs deepiri-control-plane
 
-**Decision (2026-08-26):** invert the earlier doc default — the **current monorepo body** is the control plane; the **cloud portal** is the slim fork.
+**Decision (2026-08-26):** the **full monorepo body** lives in **deepiri-control-plane**; **deepiri-platform** is the slim cloud VPS portal.
 
 | Repo | What it is | Compose file |
 |------|------------|--------------|
-| **`deepiri-control-plane`** | Full local/lab stack (Cyrex, LIS, Kafka, Milvus, full gateway) | `docker-compose.control-plane.yml` (same as `docker-compose.dev.yml`) |
+| **`deepiri-control-plane`** | Full local/lab stack (Cyrex, LIS, Kafka, Milvus, speech engine) | **`docker-compose.dev.yml`** (main dev compose) |
 | **`deepiri-platform`** | Cloud VPS internal portal only | `docker-compose.yml` |
 
-## Target GitHub layout
+## GitHub layout
 
-1. **`Team-Deepiri/deepiri-control-plane`** (new) — push from `dev` + `docker-compose.control-plane.yml`
-2. **`Team-Deepiri/deepiri-platform`** — PR #304 branch becomes cloud-only; org may later rename old default branch history or keep both repos side-by-side
-
-Optional org admin step (not required day one):
-
-- Rename archive of full monorepo → `deepiri-control-plane`
-- Reset `deepiri-platform` default branch to cloud-only `main`
+1. **`Team-Deepiri/deepiri-control-plane`** — `docker-compose.dev.yml`, `setup-deepiri-dev.sh`, `teams/*.yml`
+2. **`Team-Deepiri/deepiri-platform`** — PR #304 cloud-only `docker-compose.yml`
 
 ## Cloud services (`docker-compose.yml`)
 
@@ -24,18 +19,22 @@ Optional org admin step (not required day one):
 - `auth-service`, `api-gateway`, `jobs`, `registry`, `platform-frontend`, `external-bridge-service`
 - `pg-backup-offsite` (optional)
 
-## Control plane services (`docker-compose.control-plane.yml`)
+## Control plane (`docker-compose.dev.yml`)
 
-See `docs/architecture/DATABASES_AND_COMPOSE_BY_PLANE.md`.
+See `docs/architecture/DATABASES_AND_COMPOSE_BY_PLANE.md` in **deepiri-control-plane**.
+
+Includes **speech engine** (`livekit` + `speech` in compose and `teams/ai-team.yml`).
 
 ## Local dev
 
 ```bash
-# Cloud portal (VPS-shaped)
+# Cloud portal (VPS-shaped) — deepiri-platform
 docker compose -f docker-compose.yml up -d
 
-# Full builder stack
-docker compose -f docker-compose.control-plane.yml up -d
+# Full builder stack — deepiri-control-plane
+git clone git@github.com:Team-Deepiri/deepiri-control-plane.git
+cd deepiri-control-plane
+bash setup-deepiri-dev.sh
 ```
 
 Control plane may set `DEEPIRI_PLATFORM_URL` to call cloud auth when online.
