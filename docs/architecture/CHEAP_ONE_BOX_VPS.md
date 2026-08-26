@@ -6,22 +6,20 @@ Decision notes for hosting the non-AI platform stack from `docker-compose.yml` o
 
 ---
 
-## Minimum services on the VPS
+## Minimum services on the VPS (cloud portal — post-decoupling)
 
-Shared control plane only. Heavy / experimental services stay local and call into the cloud gateway when needed.
+**Hard rule:** no Cyrex, LIS, speech, Kafka, or messaging on the VPS.
 
 | Role | Services |
 |------|----------|
-| Edge / portal | `frontend`, `nginx`, `api-gateway`, `auth-service` |
-| Jobs | `jobs` |
-| Realtime / messaging | `realtime-gateway`, `messaging-service`, `synapse`, `sugar-glider` |
-| Data | **one** Postgres (logical DBs: `platform_auth`, `platform_core`, `platform_intelligence`) + `redis` |
-| Portal domain | `registry`, `truss`, `telemetry`, `language-intelligence-service` |
-| Ops (in PR) | `certbot`, `jobs` (`platform.pg_backup`) (+ optional `pg-backup-offsite`) |
+| Edge / portal | `platform-frontend`, `nginx`, `certbot`, `api-gateway`, `auth-service` |
+| Portal domain | `registry`, `jobs`, `external-bridge-service` |
+| Data | **`postgres-platform`** (single DB: `platform` schema) + `redis` |
+| Ops | `jobs` (`platform.pg_backup` scheduler) + optional `pg-backup-offsite` |
 
-**Out of cloud (local / later):** Cyrex, Ollama, MLflow, Milvus, etcd, MinIO, Kafka, Influx, admin UIs, prismpipe, external-bridge (Kafka-dependent).
+**Out of cloud (control plane — `deepiri-control-plane`):** Cyrex, LIS, speech, Ollama, MLflow, Milvus, Kafka, synapse, sugar-glider, truss, telemetry, messaging, realtime-gateway, etc.
 
-Early priority under resource pressure was gateway + jobs first; the shippable set is the table above (what PR #304 composes).
+See [`REPO_SPLIT.md`](REPO_SPLIT.md) and [`DATABASES_AND_COMPOSE_BY_PLANE.md`](DATABASES_AND_COMPOSE_BY_PLANE.md).
 
 ---
 
@@ -90,7 +88,9 @@ That run still used three Postgres containers; PR #304 has since consolidated to
 > Here's what I got so far:
 >
 > **Generated** (real random secrets, 32 bytes each, never printed anywhere — including in this chat):
-> `POSTGRES_AUTH_PASSWORD`, `POSTGRES_CORE_PASSWORD`, `POSTGRES_INTELLIGENCE_PASSWORD`, `POSTGRES_CYREX_PASSWORD`, `INTERNAL_SERVICE_SECRET`, `CYREX_API_KEY`
+> `POSTGRES_PASSWORD`, `PLATFORM_DB_PASSWORD`, `INTERNAL_SERVICE_SECRET`, `JWT_SECRET`, `REDIS_PASSWORD`
+>
+> **Control-plane DB passwords** (`POSTGRES_AUTH_PASSWORD`, etc.) belong in **`secrets.7z` → deepiri-control-plane**, not the cloud VPS bundle.
 >
 > **Filled with safe, non-secret defaults** (matching what `docker-compose.yml` / `.env.example` already use — usernames, DB names, `NODE_ENV`, `BEDD_IMAGE`, service URLs, `BACKUP_RETENTION_DAYS`, `BACKUP_OFFSITE_ENABLED=false`, etc.)
 >
@@ -104,7 +104,7 @@ That run still used three Postgres containers; PR #304 has since consolidated to
 > - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — real OAuth app credentials.
 > - `BACKUP_OFFSITE_BUCKET` / `ENDPOINT` / `REGION` / `ACCESS_KEY_ID` / `SECRET_ACCESS_KEY` — **moot for now since `BACKUP_OFFSITE_ENABLED=false`**.
 
-Target file: `ops/k8s/secrets/.env` (uncommitted; never paste secret values into chat or the PR).
+Target file: `ops/k8s/secrets/.env` (uncommitted). Templates: `ops/k8s/secrets-templates/cloud-portal/`. See `ops/k8s/secrets-templates/SECRETS_SPLIT.md` — **@daev1005** to publish **`cloud-portal-secrets.7z`** on Discord.
 
 ---
 

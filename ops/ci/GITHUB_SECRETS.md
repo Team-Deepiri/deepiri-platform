@@ -1,4 +1,4 @@
-# GitHub Actions secrets for `deepiri-platform` CI
+# GitHub Actions secrets for `deepiri-platform` CI (cloud portal)
 
 Repository: **Team-Deepiri/deepiri-platform** → Settings → Secrets and variables → Actions.
 
@@ -6,44 +6,25 @@ Repository: **Team-Deepiri/deepiri-platform** → Settings → Secrets and varia
 
 | Secret | Purpose | How to obtain |
 |--------|---------|---------------|
-| `PLATFORM_ACCESS_TOKEN` | Clone private Team-Deepiri submodules over HTTPS in CI | **Preferred:** PAT from `secrets.7z` (Discord). Or create a fine-grained PAT at [github.com/settings/tokens](https://github.com/settings/tokens) with **read** access to all submodule repos in the org. `GITHUB_TOKEN` alone cannot read other private repos. |
+| `PLATFORM_ACCESS_TOKEN` | Clone private Team-Deepiri submodules over HTTPS in CI | Fine-grained PAT with **read** on cloud-portal submodule repos, or from **`cloud-portal-secrets.7z`** (Discord — @daev1005) |
 
-`GITHUB_TOKEN` is provided automatically by Actions (used for `ghcr.io` login to pull `deepiri-suite` base images). No manual setup.
+`GITHUB_TOKEN` is automatic (used for `ghcr.io` / `deepiri-suite` base images).
 
-## Not required for CI (dummy values used in workflow)
+## Not required for CI (workflow placeholders)
 
-These appear in `docker-compose.dev.yml` without defaults. CI sets safe placeholders via workflow `env` so `docker compose config` and builds do not warn/fail. **Do not add these to GitHub unless you need them for deploy workflows.**
+Cloud `docker-compose.yml` vars are set in `.github/workflows/platform-build-and-test.yml` for `docker compose config` / builds:
 
-| Variable | Used by | Real value source |
-|----------|---------|-------------------|
-| `GOOGLE_CLIENT_ID` | auth-service, external-bridge | `secrets.7z` or Google Cloud Console OAuth client — **consult Josep** (tied to org Google project) |
-| `GOOGLE_CLIENT_SECRET` | external-bridge | Same as above — **consult Josep** |
-| `AUTH_SERVICE_URL` | external-bridge | Compose default locally; set per environment in k8s configmaps |
-| `EXTERNAL_BRIDGE_BASE_URL` | external-bridge | Environment-specific URL |
-| `OPENAI_API_KEY` | cyrex | `secrets.7z` or OpenAI dashboard — **consult Josep** if using org billing |
-| `WANDB_API_KEY` | cyrex | Weights & Biases account — optional for ML |
-| `PINECONE_API_KEY` | cyrex | Pinecone console — optional |
-| `WEAVIATE_URL` | cyrex | Self-hosted or cloud Weaviate URL — optional |
-| `INFLUXDB_TOKEN` | cyrex, telemetry | Generate via InfluxDB UI or use value from `secrets.7z` |
+`POSTGRES_PASSWORD`, `PLATFORM_DB_PASSWORD`, `JWT_SECRET`, `INTERNAL_SERVICE_SECRET`, `REDIS_PASSWORD`, `CORS_ORIGINS`, `VITE_API_URL`, OAuth dummies, etc.
 
-## Local dev secrets (not GitHub)
+## Local / VPS secrets (not GitHub)
 
-Per-service runtime secrets live in **gitignored** `ops/k8s/secrets/<service>-secret.yaml`. Bootstrap locally from `secrets.7z` (Discord) or generate shared keys:
+| Plane | Discord archive | Local path |
+|-------|-----------------|------------|
+| **Cloud portal** | **`cloud-portal-secrets.7z`** (new — @daev1005) | `ops/k8s/secrets/.env` + `*-secret.yaml` |
+| **Control plane** | **`secrets.7z`** (existing — edit for control-plane) | **deepiri-control-plane** repo only |
 
-```bash
-openssl rand -base64 32   # JWT_SECRET, INTERNAL_SERVICE_SECRET
-```
-
-Shared keys (`JWT_SECRET`, `INTERNAL_SERVICE_SECRET`, `REDIS_PASSWORD`, `INFLUXDB_TOKEN`) are duplicated per service file by design.
-
-## `secrets.7z` (Discord)
-
-Team bundle — extract and map values into:
-
-1. **GitHub:** `PLATFORM_ACCESS_TOKEN` (minimum for CI)
-2. **Local:** `ops/k8s/secrets/*-secret.yaml` for full stack dev
-3. **Consult Josep** for OAuth/OpenAI keys tied to personal/org accounts
+See [`ops/k8s/secrets-templates/SECRETS_SPLIT.md`](../k8s/secrets-templates/SECRETS_SPLIT.md).
 
 ## Manual CI full build
 
-Actions → **Platform Build and Test** → **Run workflow** → enable **full_build** to build all 13 platform services (ignores path-based detection).
+Actions → **Platform Build and Test** → **Run workflow** → **full_build** builds all cloud portal services.

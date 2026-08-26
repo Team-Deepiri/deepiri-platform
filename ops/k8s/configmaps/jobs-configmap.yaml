@@ -4,10 +4,16 @@ metadata:
   name: jobs-config
   namespace: default
   annotations:
-    description: "ConfigMap for Jobs (async work / training triggers) service"
+    description: "Cloud portal Jobs — pg_backup scheduler, no Cyrex/Helox on VPS"
+    plane: cloud-portal
 data:
-  NODE_ENV: "development"
+  NODE_ENV: "production"
   PORT: "5007"
-  SYNAPSE_URL: "http://synapse:8002"
-  HELOX_URL: "http://cyrex:8000"
-  CYREX_URL: "http://cyrex:8000"
+  PG_BACKUP_SCHEDULER_ENABLED: "true"
+  PG_BACKUP_CRON: "0 2 * * *"
+  PG_BACKUP_HOST: "postgres-platform"
+  PG_BACKUP_PORT: "5432"
+  PG_BACKUP_DB: "platform"
+  PG_BACKUP_USER: "deepiri_platform"
+  PG_BACKUP_DIR: "/backups/postgres"
+  PG_BACKUP_RETENTION_DAYS: "30"

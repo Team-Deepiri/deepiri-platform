@@ -4,24 +4,17 @@ metadata:
   name: api-gateway-config
   namespace: default
   annotations:
-    description: "ConfigMap for API Gateway service - public configuration"
+    description: "Cloud portal API Gateway — slim routes, no Cyrex/LIS upstreams"
+    plane: cloud-portal
 data:
-  # Server Configuration
-  NODE_ENV: "development"
+  NODE_ENV: "production"
   PORT: "5000"
-
-  # Service URLs (internal Docker/K8s service names)
+  CLOUD_PORTAL_MODE: "true"
   AUTH_SERVICE_URL: "http://auth-service:5001"
-  TRUSS_URL: "http://truss:5002"
   REGISTRY_URL: "http://registry:5003"
-  TELEMETRY_URL: "http://telemetry:5004"
-  MESSAGING_SERVICE_URL: "http://messaging-service:5010"
-  EXTERNAL_BRIDGE_SERVICE_URL: "http://external-bridge-service:5006"
   JOBS_URL: "http://jobs:5007"
-  REALTIME_GATEWAY_URL: "http://realtime-gateway:5008"
-  LANGUAGE_INTELLIGENCE_SERVICE_URL: "http://language-intelligence-service:5003"
-  CYREX_URL: "http://cyrex:8000"
-  SYNAPSE_URL: "http://synapse:8002"
-  MLFLOW_URL: "http://mlflow:5000"
-  PRISMPIPE_URL: "http://deepiri-prismpipe:5011"
-  PRISMPIPE_ENABLED: "true"
+  EXTERNAL_BRIDGE_SERVICE_URL: "http://external-bridge-service:5006"
+  DB_HOST: "postgres-platform"
+  DB_PORT: "5432"
+  DB_NAME: "platform"
+  DB_USER: "deepiri_platform"

@@ -4,20 +4,12 @@ metadata:
   name: external-bridge-service-config
   namespace: default
   annotations:
-    description: "ConfigMap for External Bridge Service - public configuration"
+    description: "Cloud portal External Bridge — Plaky HTTP poll, no Kafka"
+    plane: cloud-portal
 data:
-  # Server Configuration
-  NODE_ENV: "development"
+  NODE_ENV: "production"
   PORT: "5006"
-  
-  # Database URLs (using Docker service names)
-  DATABASE_URL: "postgresql://deepiri:deepiripassword@postgres-core:5432/deepiri"
-  
-  # Streaming Service Configuration (for publishing external API events)
-  SYNAPSE_URL: "http://synapse:8002"
-  
-  # OAuth Configuration
-  GOOGLE_CLIENT_ID: "your-google-client-id.apps.googleusercontent.com"
-  EXTERNAL_BRIDGE_BASE_URL: "http://external-bridge-service:5006"
   AUTH_SERVICE_URL: "http://auth-service:5001"
-
+  EXTERNAL_BRIDGE_BASE_URL: "https://portal.example.com/api/bridge"
+  KAFKA_BROKERS: ""
+  PLAKY_POLL_INTERVAL_SEC: "60"
