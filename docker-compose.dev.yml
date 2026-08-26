@@ -1290,26 +1290,57 @@ services:
       - "8081:8081"
       - "50051:50051"
     environment:
+      # Dual namespace: SUGAR_GLIDER_* preferred by beefed-up sugar-glider,
+      # SIDECAR_* kept as identical aliases for older images / tooling.
+      SUGAR_GLIDER_SERVICE_NAME: deepiri-platform
+      SUGAR_GLIDER_REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/0
+      SUGAR_GLIDER_LISTEN_ADDR: tcp://0.0.0.0:8081
+      SUGAR_GLIDER_GRPC_ADDR: tcp://0.0.0.0:50051
       SIDECAR_SERVICE_NAME: deepiri-platform
       SIDECAR_REDIS_URL: redis://:${REDIS_PASSWORD:-password}@redis:6379/0
       SIDECAR_LISTEN_ADDR: tcp://0.0.0.0:8081
       SIDECAR_GRPC_ADDR: tcp://0.0.0.0:50051
-# Allowlist for Cyrex AGI + Helox + LIS + speech buses. Sugar Glider uses
+      # Allowlist for Cyrex AGI + Helox + LIS + speech buses. Sugar Glider uses
       # XGROUP CREATE MKSTREAM on subscribe, so missing streams are created
       # lazily and do not abort sidecar startup.
-      SIDECAR_PUBLISH_STREAMS: platform-events,inference-events,model-events,training-events,speech-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
-      SIDECAR_CONSUME_STREAMS: platform-events,inference-events,model-events,training-events,speech-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts
+      # Note: service reads SUGAR_GLIDER_* first then SIDECAR_* — identical values,
+      # not double-subscribe.
+      SUGAR_GLIDER_PUBLISH_STREAMS: &sg_streams platform-events,inference-events,model-events,training-events,training-jobs,agi-decisions,pipeline.helox-training.raw,pipeline.helox-training.structured,pipeline.pressure.events,pipeline.artifact.invalidation,pipeline.splice.events,pipeline.dead-letter,pipeline.metrics,document.vectorize,document.training,document.structured,document.artifacts,speech-events
+      SUGAR_GLIDER_CONSUME_STREAMS: *sg_streams
+      SIDECAR_PUBLISH_STREAMS: *sg_streams
+      SIDECAR_CONSUME_STREAMS: *sg_streams
+      SUGAR_GLIDER_MAX_STREAM_LEN: "10000"
       SIDECAR_MAX_STREAM_LEN: "10000"
+      # Publish pipeline is supported by the bumped sugar-glider submodule image.
+      SUGAR_GLIDER_PUBLISH_PIPELINE_ENABLED: "true"
+      SIDECAR_PUBLISH_PIPELINE_ENABLED: "true"
+      SUGAR_GLIDER_PUBLISH_PIPELINE_MAX_BATCH: "64"
+      SIDECAR_PUBLISH_PIPELINE_MAX_BATCH: "64"
+      SUGAR_GLIDER_PUBLISH_PIPELINE_QUEUE_SIZE: "8192"
+      SIDECAR_PUBLISH_PIPELINE_QUEUE_SIZE: "8192"
+      SUGAR_GLIDER_WAL_DIR: /data/synapse-wal
       SIDECAR_WAL_DIR: /data/synapse-wal
+      SUGAR_GLIDER_WAL_MAX_ENTRIES: "100000"
+      SIDECAR_WAL_MAX_ENTRIES: "100000"
+      SUGAR_GLIDER_WAL_MAX_BYTES: "268435456"
+      SIDECAR_WAL_MAX_BYTES: "268435456"
+      SUGAR_GLIDER_WAL_REPLAY_BATCH: "100"
       SIDECAR_WAL_REPLAY_BATCH: "100"
+      SUGAR_GLIDER_WAL_REPLAY_INTERVAL_MS: "2000"
       SIDECAR_WAL_REPLAY_INTERVAL_MS: "2000"
+      SUGAR_GLIDER_DLQ_MAX_RETRIES: "3"
       SIDECAR_DLQ_MAX_RETRIES: "3"
+      SUGAR_GLIDER_DLQ_MIN_IDLE_MS: "30000"
       SIDECAR_DLQ_MIN_IDLE_MS: "30000"
+      SUGAR_GLIDER_DLQ_SCAN_INTERVAL_MS: "5000"
       SIDECAR_DLQ_SCAN_INTERVAL_MS: "5000"
+      SUGAR_GLIDER_DLQ_STREAM_POLICIES: &sg_dlq platform-events:5:30000,model-events:5:30000,training-events:8:45000,pipeline.pressure.events:3:20000,document.vectorize:5:30000,speech-events:5:30000,agi-decisions:5:30000
+      SIDECAR_DLQ_STREAM_POLICIES: *sg_dlq
     volumes:
       - sugar_glider_dev_wal:/data/synapse-wal
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "/app/sidecar", "healthcheck"]
       interval: 10s
