@@ -41,7 +41,7 @@ No `lis_db`. No `hub-api` — cloud uses **`api-gateway`** (same service; Cyrex/
 | **Auth** | `auth-service` → `postgres-platform` | Local `auth-service` → `cp_auth` (lab/offline); can also trust cloud JWT later |
 | **Redis** | Yes | Yes (separate instance) |
 | **API entry** | **`api-gateway`** | **`api-gateway`** (full upstreams: LIS, Cyrex, …) |
-| **Frontend** | Portal | Optional `frontend-dev` |
+| **Frontend** | **`platform-frontend`** (was `frontend` / `frontend-dev`) | Optional local copy only for offline UI work |
 | **Jobs** | **Yes — on cloud** | Optional duplicate only if you need local-only workers |
 | **Registry** | **Yes — on cloud** | Optional local if developing registry in isolation |
 
@@ -72,7 +72,7 @@ There is **no** separate `hub-api` service. Kill that name.
 | **`api-gateway`** | talks to auth/jobs/registry; not Cyrex/LIS |
 | **`jobs`** | `postgres-platform` |
 | **`registry`** | `postgres-platform` |
-| `frontend` | — |
+| **`platform-frontend`** | Portal UI (rename of `frontend` / `frontend-dev`) |
 | `nginx` + `certbot` | prod edge |
 | `pg-backup` (+ optional offsite) | `postgres-platform` only |
 
@@ -119,7 +119,7 @@ There is **no** separate `hub-api` service. Kill that name.
 - `api-gateway` *(cloud config — no Cyrex/LIS hard deps)*
 - **`jobs`**
 - **`registry`**
-- `frontend` / portal build
+- **`platform-frontend`** (was `frontend` / `frontend-dev`)
 - prod: `nginx`, `certbot`, `pg-backup`
 
 ### → CONTROL PLANE
@@ -140,7 +140,7 @@ There is **no** separate `hub-api` service. Kill that name.
 - `external-bridge-service`
 - `cyrex`, `cyrex-interface`
 - `ollama`
-- optional: `frontend-dev`, `pgadmin`, `adminer`
+- optional: local `platform-frontend` (dev only), `pgadmin`, `adminer`
 - optional local copies: `jobs`, `registry` (dev only)
 
 ### → NOT on cloud
@@ -161,7 +161,7 @@ CLOUD
   api-gateway          ← not hub-api
   jobs                 ← on cloud
   registry             ← on cloud
-  frontend
+  platform-frontend    ← on cloud (was frontend / frontend-dev)
   nginx / certbot / pg-backup
 
 CONTROL PLANE
@@ -174,7 +174,7 @@ CONTROL PLANE
   language-intelligence-service, mlflow
   external-bridge-service
   cyrex, cyrex-interface, ollama
-  [optional local jobs/registry for offline]
+  [optional local jobs/registry/platform-frontend for offline]
 ```
 
 ---
@@ -185,6 +185,7 @@ CONTROL PLANE
 |-----|-----|
 | “hub-api” | **deleted — use `api-gateway`** |
 | cloud hub postgres / deepiri_hub naming | **`postgres-platform`** |
+| `frontend` / `frontend-dev` (cloud) | **`platform-frontend`** |
 | postgres-auth / core / intelligence (local) | logical DBs on **`postgres-cp-db`** |
 | postgres-cyrex | **`postgres-cyrex-db`** |
 | lis_db | **never — use `cp_intel`** |
