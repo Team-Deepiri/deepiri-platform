@@ -9,8 +9,12 @@ name: Platform Build and Test
 
 on:
   pull_request:
-  push:
-    branches: [main]
+    branches: [main, dev]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE*'
   workflow_dispatch:
     inputs:
       full_build:
