@@ -133,18 +133,17 @@ All teams now use the single `./setup-deepiri-dev.sh` script with their team cat
 
 ### Common Commands
 
+**Cloud portal (this repo):**
 ```bash
-# Build all services
-./build.sh              # Linux/Mac/WSL
-.\build.ps1             # Windows PowerShell
+./build.sh
+make up
+docker compose -f docker-compose.yml logs -f
+```
 
-# Start all services
+**Full dev stack ([deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)):**
+```bash
+./build.sh
 docker compose -f docker-compose.dev.yml up -d
-
-# Start only your team's services
-docker compose -f docker-compose.<team>-team.yml up -d
-
-# View logs
 docker compose -f docker-compose.dev.yml logs -f
 ```
 

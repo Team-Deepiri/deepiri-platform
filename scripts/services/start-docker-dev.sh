@@ -58,9 +58,14 @@ if [ $? -eq 0 ]; then
     echo "   Restart service:  $COMPOSE_CMD -f $COMPOSE_FILE restart <service-name>"
     echo ""
     echo "🌐 Services available:"
-    echo "   Backend API:      http://localhost:5000"
-    echo "   Cyrex AI:         http://localhost:8000"
-    echo "   Redis:            localhost:6379"
+    if [ "$REPO_ROLE" = "cloud-portal" ]; then
+        echo "   Portal (nginx):   http://localhost"
+        echo "   API Gateway:      internal (api-gateway:5100)"
+    else
+        echo "   Backend API:      http://localhost:5000"
+        echo "   Cyrex AI:         http://localhost:8000"
+        echo "   Redis:            localhost:6379"
+    fi
     echo ""
 else
     echo "❌ Failed to start services"

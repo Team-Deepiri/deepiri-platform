@@ -45,7 +45,7 @@ Either way you need a **GitHub account** with access to **`Team-Deepiri/deepiri-
 
 ## 2. Docker in this repo (what you're running)
 
-Deepiri runs **mostly in containers** orchestrated by **Docker Compose**, using **`docker-compose.dev.yml`** at the **`deepiri-platform`** repo root.
+Deepiri runs **mostly in containers** orchestrated by **Docker Compose**, using **`docker-compose.dev.yml`** at the **`deepiri-control-plane`** repo root (not this cloud portal repo).
 
 - **Docker Engine** builds and runs **images** defined in service Dockerfiles; your code often **bind-mounts** into containers for hot reload, so host-side `pip install` / `npm install` are **not** the primary dependency path — that happens **inside images** during **`docker compose build`**.
 - **Compose** reads **`docker-compose.dev.yml`**, wires **networks and ports**, and starts named **services** (e.g. `api-gateway`, `cyrex`).
