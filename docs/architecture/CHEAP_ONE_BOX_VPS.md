@@ -51,6 +51,8 @@ Memory is not the constraint at any point tested — even under load, peak usage
 
 **Bottom line for sizing:** fine for bursty usage (gaps between requests, which is the expected shape for a document-intelligence tool); worth watching CPU once real users hit it, if usage turns out to be more sustained/concurrent than expected.
 
+**Discord summary (David Li, 2026-08-26):** at rest under ~7% of box memory; under simulated heavy traffic memory still fine but 4 cores can tighten under concurrent multi-service load (slower responses, not crashes). Launch-suitable; upgrade is a quick non-disruptive change if needed. Same document-upload gap as above.
+
 <details>
 <summary>Original 2026-08-12 measurement (stale — three Postgres containers, superseded above)</summary>
 
@@ -69,6 +71,26 @@ That run still used three Postgres containers; PR #304 has since consolidated to
 </details>
 
 **Implication:** An **8 GB** VPS has large memory headroom at both idle and under load (~15× measured idle RSS, ~9× peak-under-load RSS). Soft `mem_limit` caps on the compose profile sum near ~8.5 GB (ceiling if everything spikes together) — memory was never observed anywhere near that ceiling. CPU, not memory, is the dimension to actually watch on this box.
+
+---
+
+## Secrets / env readiness (David Li, 2026-08-26)
+
+Work done toward a real `ops/k8s/secrets/.env` (uncommitted; never paste secrets into chat or the PR):
+
+| Status | Items |
+|--------|--------|
+| Generated (random, not printed in chat) | `POSTGRES_AUTH_PASSWORD`, `POSTGRES_CORE_PASSWORD`, `POSTGRES_INTELLIGENCE_PASSWORD`, `POSTGRES_CYREX_PASSWORD`, `INTERNAL_SERVICE_SECRET`, `CYREX_API_KEY` |
+| Safe non-secret defaults (match compose / `.env.example`) | Usernames, DB names, `NODE_ENV`, `BEDD_IMAGE`, service URLs, `BACKUP_RETENTION_DAYS`, `BACKUP_OFFSITE_ENABLED=false`, etc. |
+| Localhost placeholders — update once DNS exists | `CLIENT_URL`, `CORS_ORIGIN` / `CORS_ORIGINS`, `VITE_API_URL` |
+
+### Still blocking a real `docker compose up`
+
+| Blocker | Vars | Notes |
+|---------|------|--------|
+| **Hard-required object storage** | `STORAGE_PROVIDER`, `STORAGE_BUCKET`, `STORAGE_REGION`, `STORAGE_ENDPOINT`, `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | Compose refuses to start until set (intentional). Need a real S3-compatible bucket + keys. |
+| Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Real OAuth app credentials. |
+| Off-box backups | `BACKUP_OFFSITE_BUCKET`, `BACKUP_OFFSITE_ENDPOINT`, `BACKUP_OFFSITE_REGION`, `BACKUP_OFFSITE_ACCESS_KEY_ID`, `BACKUP_OFFSITE_SECRET_ACCESS_KEY` | **Moot while `BACKUP_OFFSITE_ENABLED=false`.** Enable only after a real off-box bucket exists; until then local `pg-backup` only. |
 
 ---
 
@@ -156,10 +178,11 @@ If memory headroom matters more than ~€10/mo: Netcup **VPS 2000 G12** (16 GB) 
 
 ## Still needed after the box exists
 
-1. Domain + DNS (Let’s Encrypt needs a real hostname; `VITE_API_URL` / `CORS_ORIGINS` need one too).
-2. Real secrets in `ops/k8s/secrets/.env` (uncommitted).
-3. Off-box backup bucket (S3-compatible) + `BACKUP_OFFSITE_*` if nightly dumps must leave the VPS disk.
-4. Runtime validation of PR #304 on the real VPS (compose so far verified in local/throwaway Docker).
+1. Domain + DNS (Let’s Encrypt needs a real hostname; update `CLIENT_URL` / `VITE_API_URL` / `CORS_ORIGINS`).
+2. **Object storage credentials** (`STORAGE_*`) — hard gate for compose; pick S3/R2/B2/Spaces/MinIO and fill keys.
+3. Google OAuth app (`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`) if login via Google is in scope for launch.
+4. Off-box backup bucket only if flipping `BACKUP_OFFSITE_ENABLED=true` (optional at launch while false).
+5. Runtime validation of PR #304 on the real VPS; watch **CPU** under concurrent load and document-upload path once available.
 
 TLS via certbot in-compose is $0 once DNS points at the box.
 
@@ -169,7 +192,10 @@ TLS via certbot in-compose is $0 once DNS points at the box.
 
 | Question | Answer |
 |----------|--------|
-| Will 8 GB run the PR #304 stack? | **Yes** — idle ~538 MiB, peak ~885 MiB under simulated concurrent load. Memory isn't the constraint at any point tested; CPU is (see load section above). |
+| Will 8 GB run the PR #304 stack? | **Yes** — idle ~538 MiB, peak ~885 MiB under simulated concurrent load. Memory is not the constraint; CPU is. |
+| CPU risk? | **Watch under concurrent load** — 4 cores can tighten (~5.7 core-eq peaks vs 4 vCore); upgrade if needed. |
+| Document upload risk? | **Not stress-tested yet** — heaviest path may be heavier than measured. |
 | Cheapest credible “try one month”? | Netcup **hourly NUE** (~€16 first charge) or OVHcloud **VPS-2** (~$8.50/mo). |
 | Buy the 12M prepaid now? | Only if committing for a year; otherwise skip. |
-| Same as CloudInfra doc “Metrics Confirm” tab? | **Yes** — same `20260812T021218Z` local-prod summary. |
+| Deploy blocked on? | Real `STORAGE_*` (hard), Google OAuth if needed, DNS URLs; offsite backup optional while `BACKUP_OFFSITE_ENABLED=false`. |
+| CloudInfra “Metrics Confirm” tab? | Historical Aug 12 idle (~478 MiB); **superseded** by Aug 26 idle+load numbers above. |
