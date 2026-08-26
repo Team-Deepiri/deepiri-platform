@@ -1,213 +1,190 @@
-# Databases + compose split (renamed)
+# Databases + compose split (cloud vs control plane)
 
 Naming locked:
 
-| Plane | Postgres container name | What it is |
-|-------|-------------------------|------------|
-| **Cloud** | `postgres-platform` | The hub DB (internal portal / shared org backend) |
-| **Control plane** | `postgres-cp-db` | All non-Cyrex local/platform DBs |
+| Plane | Postgres container | What |
+|-------|-------------------|------|
+| **Cloud** | `postgres-platform` | Portal / org / auth / jobs / registry data |
+| **Control plane** | `postgres-cp-db` | Local non-Cyrex DBs |
 | **Control plane** | `postgres-cyrex-db` | Cyrex only |
 
-**Do not** call anything `lis_db` / `postgres-lis`. Language-intelligence uses a logical DB **inside** `postgres-cp-db` (see below).
-
-Full inventory from today’s `docker-compose.dev.yml` → cloud vs control-plane.
+No `lis_db`. No `hub-api` — cloud uses **`api-gateway`** (same service; Cyrex/LIS routes off or 503).
 
 ---
 
-## 1. How many databases (control plane)?
+## 1. Postgres counts
 
-**Two Postgres containers:**
+### Cloud
+- **1 container:** `postgres-platform`
+- Logical DBs / schemas on it (v1):
+  - auth (users, sessions, keys, invites)
+  - platform core slice used by **gateway, jobs, registry** + portal org/events/artifacts tables  
+  - **Not** intelligence / Cyrex
 
-1. `postgres-cp-db`
-2. `postgres-cyrex-db`
+### Control plane
+- **2 containers:** `postgres-cp-db`, `postgres-cyrex-db`
+- On `postgres-cp-db` (3 logical DBs):
+  - `cp_auth` — local auth when developing offline
+  - `cp_core` — truss, telemetry, messaging, external-bridge, local gateway extras
+  - `cp_intel` — language-intelligence-service, mlflow (old intelligence_db)
+- On `postgres-cyrex-db`:
+  - `cyrex_db`
 
-Inside `postgres-cp-db`, keep **three logical databases** (same jobs as today’s auth/core/intelligence, renamed):
-
-| Logical DB name | Old name | Used by |
-|-----------------|----------|---------|
-| `cp_auth` | `auth_db` / `platform_auth` | local `auth-service` |
-| `cp_core` | `deepiri` / `platform_core` | truss, registry, telemetry, jobs, messaging, external-bridge, local gateway |
-| `cp_intel` | `intelligence_db` / `platform_intelligence` | `language-intelligence-service`, `mlflow` |
-
-So: **2 Postgres containers**, **3 logical DBs on cp-db + 1 on cyrex** = **4 Postgres databases** on the control-plane side total.
-
-| # | Container | Logical DB | Plane |
-|---|-----------|------------|-------|
-| 1 | `postgres-platform` | `platform` (or `deepiri_platform`) | **Cloud only** |
-| 2 | `postgres-cp-db` | `cp_auth` | Control plane |
-| 3 | `postgres-cp-db` | `cp_core` | Control plane |
-| 4 | `postgres-cp-db` | `cp_intel` | Control plane |
-| 5 | `postgres-cyrex-db` | `cyrex_db` | Control plane / Cyrex stack |
-
-Cloud = **1** Postgres container / **1** app DB.  
-Control plane = **2** containers / **4** logical DBs.
+**Control plane total:** 2 Postgres containers, 4 logical databases.
 
 ---
 
 ## 2. What both planes need
 
-| Need | Cloud (`postgres-platform`) | Control plane |
-|------|----------------------------|---------------|
-| **Auth** | Yes — `auth-service` → `postgres-platform` | Yes — local `auth-service` → `cp_auth` (offline / lab). May also accept **cloud JWT** later |
-| **Redis** | Yes — `redis` (sessions/cache) | Yes — `redis` (Cyrex, gateway, jobs, realtime, LIS, etc.) |
-| **API entry** | Yes — slim `hub-api` or stripped gateway (**no** Cyrex/LIS routes) | Yes — full `api-gateway` (LIS, Cyrex, jobs, …) |
-| **Frontend** | Yes — portal (hub-focused build) | Optional `frontend-dev` against local stack |
-| **Postgres backups** | Yes — hub only | Optional for cp/cyrex |
-| **Object / vector / GPU stores** | **No** | Yes — minio, milvus, etcd, ollama, etc. as needed |
-| **Cyrex DB** | **No** | Yes — `postgres-cyrex-db` |
+| Need | Cloud | Control plane |
+|------|-------|---------------|
+| **Auth** | `auth-service` → `postgres-platform` | Local `auth-service` → `cp_auth` (lab/offline); can also trust cloud JWT later |
+| **Redis** | Yes | Yes (separate instance) |
+| **API entry** | **`api-gateway`** | **`api-gateway`** (full upstreams: LIS, Cyrex, …) |
+| **Frontend** | Portal | Optional `frontend-dev` |
+| **Jobs** | **Yes — on cloud** | Optional duplicate only if you need local-only workers |
+| **Registry** | **Yes — on cloud** | Optional local if developing registry in isolation |
 
-**Auth is not one shared Postgres across planes.**  
-Two auth *services* (or one local + cloud tokens). Same *product idea* (login), different data stores. Cloud users ≠ forcing Cyrex lab DB onto the VPS.
+**Not on cloud:** Cyrex, language-intelligence, mlflow, milvus/minio/etcd for AI, ollama, kafka/bridge unless you explicitly add them later.
 
 ---
 
-## 3. Cloud vs control-plane — every `docker-compose.dev.yml` service
+## 3. `api-gateway` (not “hub-api”)
 
-### CLOUD (platform / hub compose)
+`api-gateway` stays the single HTTP front door.
 
-| Service | Role on cloud |
-|---------|----------------|
-| `postgres-platform` | **New name** for hub Postgres (replaces using auth+core+intel on VPS) |
-| `redis` | Hub cache/sessions |
-| `auth-service` | Hub login / invites / API keys → `postgres-platform` |
-| `hub-api` *(new; or gutted `api-gateway`)* | Org, events, announcements, artifacts, run catalog — **no** Cyrex/LIS upstreams |
-| `frontend` / `frontend-dev` (prod build) | Internal portal |
-| `nginx` + `certbot` | Edge (prod compose; not always in dev.yml) |
-| `pg-backup` (+ offsite optional) | Backup `postgres-platform` only |
+| Plane | Gateway behavior |
+|-------|------------------|
+| **Cloud** | Routes to `auth-service`, `jobs`, `registry`, and portal/BFF-style routes that hit `postgres-platform`. **No** required upstream to Cyrex or language-intelligence (omit or soft-fail). |
+| **Control plane** | Full wiring: auth, jobs, registry, truss, telemetry, messaging, realtime, LIS, Cyrex, etc. |
 
-**Cloud logical DB content (`postgres-platform`):**  
-identity, teams/projects, announcements, events, artifacts, run_records — **not** cp_intel schemas, **not** cyrex.
+There is **no** separate `hub-api` service. Kill that name.
 
 ---
 
-### CONTROL PLANE (local compose — includes Cyrex stack)
+## 4. Cloud compose — services
 
-#### Data stores
+| Service | DB / store |
+|---------|------------|
+| `postgres-platform` | platform auth + core (incl. jobs/registry tables) |
+| `redis` | sessions/cache |
+| `auth-service` | `postgres-platform` |
+| **`api-gateway`** | talks to auth/jobs/registry; not Cyrex/LIS |
+| **`jobs`** | `postgres-platform` |
+| **`registry`** | `postgres-platform` |
+| `frontend` | — |
+| `nginx` + `certbot` | prod edge |
+| `pg-backup` (+ optional offsite) | `postgres-platform` only |
 
+---
+
+## 5. Control-plane compose — services
+
+### Data
 | Service | Notes |
 |---------|--------|
-| `postgres-cp-db` | Hosts `cp_auth`, `cp_core`, `cp_intel` |
-| `postgres-cyrex-db` | Was `postgres-cyrex` — rename only |
-| `redis` | Shared local redis |
-| `minio` | LIS + Cyrex object bits as configured |
-| `etcd` | Milvus dependency |
-| `milvus` | Vectors (Cyrex / AI) |
-| `influxdb` | Metrics (Cyrex/telemetry style) |
-| `kafka` | Only if `external-bridge-service` stays |
+| `postgres-cp-db` | `cp_auth`, `cp_core`, `cp_intel` |
+| `postgres-cyrex-db` | `cyrex_db` |
+| `redis` | |
+| `minio`, `etcd`, `milvus`, `influxdb` | AI / LIS / Cyrex deps |
+| `kafka` | if external-bridge stays |
 
-#### App services → which DB
-
-| Service | Goes to | Database |
-|---------|---------|----------|
-| `auth-service` | Control plane | `cp_auth` on `postgres-cp-db` |
-| `api-gateway` | Control plane | `cp_core` (if it still has direct DB) + routes to others |
-| `truss` | Control plane | `cp_core` |
-| `registry` | Control plane | `cp_core` |
-| `telemetry` | Control plane | `cp_core` |
-| `jobs` | Control plane | `cp_core` |
-| `messaging-service` | Control plane | `cp_core` |
-| `external-bridge-service` | Control plane | `cp_core` (+ kafka) |
-| `language-intelligence-service` | Control plane | `cp_intel` + minio/`STORAGE_*` |
-| `mlflow` | Control plane | `cp_intel` |
-| `realtime-gateway` | Control plane | redis (no own PG) |
-| `synapse` | Control plane | (as today) |
-| `sugar-glider` | Control plane | (as today) |
-| `cyrex` | Control plane | `postgres-cyrex-db` / `cyrex_db` |
-| `cyrex-interface` | Control plane | talks to cyrex |
-| `ollama` | Control plane | local models |
-| `frontend-dev` | Control plane (optional) | against local gateway |
-
-#### Dev-only admin (control plane)
-
-| Service | Notes |
-|---------|--------|
-| `pgadmin` | Point at `postgres-cp-db` / `postgres-cyrex-db` |
-| `adminer` | Same |
+### Apps
+| Service | DB |
+|---------|-----|
+| `auth-service` | `cp_auth` |
+| `api-gateway` | full local graph |
+| `truss` | `cp_core` |
+| `telemetry` | `cp_core` |
+| `messaging-service` | `cp_core` |
+| `external-bridge-service` | `cp_core` (+ kafka) |
+| `language-intelligence-service` | `cp_intel` + minio/`STORAGE_*` |
+| `mlflow` | `cp_intel` |
+| `realtime-gateway` | redis |
+| `synapse`, `sugar-glider` | as today |
+| `cyrex`, `cyrex-interface` | `postgres-cyrex-db` |
+| `ollama` | — |
+| `jobs`, `registry` | **optional local** only for offline/dev; **cloud is source for shared org** |
+| `frontend-dev` | optional |
+| `pgadmin`, `adminer` | optional |
 
 ---
 
-## 4. Split checklist (copy/paste)
+## 6. Full split from today’s `docker-compose.dev.yml`
 
-### → Cloud compose only
-- [ ] `postgres-platform`
-- [ ] `redis` (hub)
-- [ ] `auth-service` (hub)
-- [ ] `hub-api` (or stripped gateway)
-- [ ] `frontend` (portal)
-- [ ] `nginx`, `certbot`, `pg-backup` (prod)
+### → CLOUD
+- `postgres-platform` *(replaces putting auth/core/intel on the VPS)*
+- `redis`
+- `auth-service`
+- `api-gateway` *(cloud config — no Cyrex/LIS hard deps)*
+- **`jobs`**
+- **`registry`**
+- `frontend` / portal build
+- prod: `nginx`, `certbot`, `pg-backup`
 
-### → Control-plane compose
-- [ ] `postgres-cp-db` (`cp_auth`, `cp_core`, `cp_intel`)
-- [ ] `postgres-cyrex-db` (`cyrex_db`)
-- [ ] `redis`
-- [ ] `minio`, `etcd`, `milvus`, `influxdb`
-- [ ] `kafka` (if bridge stays)
-- [ ] `auth-service` (local)
-- [ ] `api-gateway`
-- [ ] `truss`, `registry`, `telemetry`, `jobs`
-- [ ] `messaging-service`, `realtime-gateway`
-- [ ] `synapse`, `sugar-glider`
-- [ ] `language-intelligence-service`
-- [ ] `mlflow`
-- [ ] `external-bridge-service`
-- [ ] `cyrex`, `cyrex-interface`
-- [ ] `ollama`
-- [ ] `frontend-dev` (optional)
-- [ ] `pgadmin`, `adminer`
+### → CONTROL PLANE
+- `postgres-cp-db` *(was postgres-auth + postgres-core + postgres-intelligence, one container)*
+- `postgres-cyrex-db` *(was postgres-cyrex)*
+- `redis`
+- `minio`, `etcd`, `milvus`, `influxdb`
+- `kafka` (with bridge)
+- `auth-service` (local)
+- `api-gateway` (full)
+- `truss`
+- `telemetry`
+- `messaging-service`
+- `realtime-gateway`
+- `synapse`, `sugar-glider`
+- `language-intelligence-service`
+- `mlflow`
+- `external-bridge-service`
+- `cyrex`, `cyrex-interface`
+- `ollama`
+- optional: `frontend-dev`, `pgadmin`, `adminer`
+- optional local copies: `jobs`, `registry` (dev only)
 
-### → Neither as “shared cloud DB”
-- Cyrex tables never in `postgres-platform`
-- `cp_intel` / language-intelligence never in `postgres-platform`
-
----
-
-## 5. Both have auth — what else is duplicated vs shared idea
-
-| Capability | Cloud | Control plane | Shared how? |
-|------------|-------|---------------|-------------|
-| Auth | Hub users | Lab users / service accounts | Optional: CP trusts hub JWT; still has local auth for offline |
-| Redis | Hub | Lab | **Separate** instances |
-| Gateway/API | Hub API only | Full gateway | Different binaries/config |
-| Frontend | Portal | Dev UI | Same repo, different env flags |
-| Events/people/artifacts | **Cloud source of truth** | Read via hub API | Not copied into `cp_core` as SoT |
-| Jobs/truss/registry/LIS/Cyrex | No | Yes | Local only |
-| Postgres | `postgres-platform` | `postgres-cp-db` + `postgres-cyrex-db` | **Never one container for both planes** |
+### → NOT on cloud
+- Cyrex + `postgres-cyrex-db`
+- language-intelligence + `cp_intel` + LIS object storage
+- mlflow, ollama, milvus, etcd, minio (AI), kafka/bridge
+- truss, telemetry, messaging, realtime, synapse, sugar-glider *(unless you later promote one)*
 
 ---
 
-## 6. Picture
+## 7. Picture
 
 ```
 CLOUD
-  postgres-platform     ← 1 container, hub DB
+  postgres-platform
   redis
   auth-service
-  hub-api
+  api-gateway          ← not hub-api
+  jobs                 ← on cloud
+  registry             ← on cloud
   frontend
-  nginx / certbot / backup
+  nginx / certbot / pg-backup
 
 CONTROL PLANE
-  postgres-cp-db        ← cp_auth | cp_core | cp_intel
-  postgres-cyrex-db     ← cyrex_db
+  postgres-cp-db       ← cp_auth | cp_core | cp_intel
+  postgres-cyrex-db
   redis, minio, etcd, milvus, influxdb, [kafka]
-  auth-service (local)
-  api-gateway
-  truss, registry, telemetry, jobs, messaging
-  realtime-gateway, synapse, sugar-glider
+  auth-service, api-gateway
+  truss, telemetry, messaging, realtime-gateway
+  synapse, sugar-glider
   language-intelligence-service, mlflow
   external-bridge-service
   cyrex, cyrex-interface, ollama
-  [frontend-dev, pgadmin, adminer]
+  [optional local jobs/registry for offline]
 ```
 
 ---
 
-## 7. Rename map (old → new)
+## 8. Rename map
 
-| Old compose service / DB | New |
-|--------------------------|-----|
-| cloud single postgres / `platform_*` trio on VPS | `postgres-platform` |
-| `postgres-auth` + `auth_db` (local) | logical `cp_auth` on `postgres-cp-db` |
-| `postgres-core` + `deepiri` | logical `cp_core` on `postgres-cp-db` |
-| `postgres-intelligence` + `intelligence_db` | logical `cp_intel` on `postgres-cp-db` (**not** “lis_db”) |
-| `postgres-cyrex` + `cyrex_db` | `postgres-cyrex-db` + `cyrex_db` |
+| Old | New |
+|-----|-----|
+| “hub-api” | **deleted — use `api-gateway`** |
+| cloud hub postgres / deepiri_hub naming | **`postgres-platform`** |
+| postgres-auth / core / intelligence (local) | logical DBs on **`postgres-cp-db`** |
+| postgres-cyrex | **`postgres-cyrex-db`** |
+| lis_db | **never — use `cp_intel`** |
