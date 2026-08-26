@@ -25,7 +25,7 @@ See `REPO_SPLIT.md`.
 - [x] `postgres-init-platform.sql` + init script
 - [x] Architecture docs + service lists
 - [x] CI validates cloud `docker-compose.yml` (no LIS/Cyrex)
-- [ ] Create `Team-Deepiri/deepiri-control-plane` repo and push
+- [x] Create `Team-Deepiri/deepiri-control-plane` repo and push
 - [ ] Gateway code: soft-fail optional upstreams (follow-up PR in api-gateway submodule)
 - [ ] Frontend cloud build flags wired in FE repo
 - [ ] External-bridge Plaky poll without Kafka (follow-up in bridge submodule)
