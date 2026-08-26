@@ -105,7 +105,7 @@ There is **no** separate `hub-api` service. Kill that name.
 | `cyrex`, `cyrex-interface` | `postgres-cyrex-db` |
 | `ollama` | — |
 | `jobs`, `registry` | **optional local** only for offline/dev; **cloud is source for shared org** |
-| `frontend-dev` | optional |
+| `platform-frontend` | optional local only |
 | `pgadmin`, `adminer` | optional |
 
 ---
