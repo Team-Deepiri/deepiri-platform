@@ -72,7 +72,7 @@ Internal Deepiri site + shared org backend:
 | `hub-api` *(new or slimmed gateway)* | CRUD for org entities; **no** upstreams to Cyrex/LIS |
 | `postgres` | **One** hub database (new schema — see §5) |
 | `redis` | Sessions / cache as needed |
-| `pg-backup` | Hub DB only |
+| `jobs` | Hub DB backup via `platform.pg_backup`; vizult + sync triggers |
 
 **Explicitly removed from cloud compose / env:**
 

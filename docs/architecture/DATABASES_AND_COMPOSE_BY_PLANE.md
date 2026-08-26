@@ -50,7 +50,7 @@ Everything that runs on the VPS for the internal portal.
 | `redis` | Sessions / cache / rate limits |
 | `nginx` | TLS termination / reverse proxy |
 | `certbot` | Certificates |
-| `pg-backup` | Nightly dumps of `postgres-platform` |
+| `jobs` | Nightly Postgres dumps via `platform.pg_backup` (replaces `pg-backup` container) |
 | `pg-backup-offsite` | Optional; only if `BACKUP_OFFSITE_ENABLED=true` |
 
 ### App
@@ -152,7 +152,7 @@ Local / lab compose (includes Cyrex stack). Talks to cloud optionally via JWT + 
 | cyrex-interface | — | ✓ |
 | ollama | — | ✓ |
 | frontend / frontend-dev | → **`platform-frontend`** ✓ | optional |
-| nginx / certbot / pg-backup | ✓ | — |
+| nginx / certbot / jobs (backup) | ✓ | — |
 | pgadmin / adminer | optional | optional |
 | deepiri-vizult | CLI via jobs ✓ | CLI local ✓ |
 
@@ -164,10 +164,10 @@ Local / lab compose (includes Cyrex stack). Talks to cloud optionally via JWT + 
 CLOUD VPS
   postgres-platform
   redis
-  nginx / certbot / pg-backup
+  nginx / certbot
   auth-service
-  api-gateway          ← proxies /api/plaky/* 
-  jobs                 ← vizult ingest, sync triggers
+  api-gateway          ← proxies /api/plaky/*
+  jobs                 ← platform.pg_backup + vizult / sync triggers
   registry
   platform-frontend
   external-bridge-service   ← Plaky poll/webhooks + DB upsert

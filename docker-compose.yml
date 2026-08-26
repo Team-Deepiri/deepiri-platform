@@ -196,36 +196,11 @@ services:
     networks:
       - deepiri-network
 
-  # Nightly full-cluster backup (all 3 logical databases + roles in one
-  # pg_dumpall, via scripts/database/postgres-backup.sh) to a named volume.
-  # That volume is still local disk — see pg-backup-offsite below for
-  # actually getting copies off the box.
-  pg-backup:
-    image: postgres:16-alpine
-    container_name: deepiri-pg-backup
-    restart: unless-stopped
-    logging: *minimal-logging
-    # Soft memory cap for the cheap one-box profile; tune to actual box size.
-    mem_limit: 256m
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER:-deepiri}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
-      BACKUP_DIR: /backups
-      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
-    volumes:
-      - ./scripts/database/postgres-backup.sh:/usr/local/bin/postgres-backup.sh:ro
-      - postgres_backups:/backups
-    entrypoint: >
-      /bin/bash -c "trap exit TERM; while :; do /usr/local/bin/postgres-backup.sh; sleep 24h & wait $${!}; done"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - deepiri-network
+  # Nightly Postgres dumps run inside `jobs` as `platform.pg_backup` (see
+  # PG_BACKUP_* env on the jobs service). This volume is still local disk —
+  # see pg-backup-offsite below for actually getting copies off the box.
 
-  # Copies pg-backup's output to off-box, S3-compatible storage (S3/R2/B2/
+  # Copies backup output to off-box, S3-compatible storage (S3/R2/B2/
   # Spaces/MinIO — anything speaking the S3 API) via rclone. A backup that
   # only lives on the same disk as the database it's backing up isn't a
   # real backup. Safe no-op until BACKUP_OFFSITE_ENABLED=true and a real
@@ -238,7 +213,7 @@ services:
     # Soft memory cap for the cheap one-box profile; tune to actual box size.
     mem_limit: 128m
     environment:
-      BACKUP_DIR: /backups
+      BACKUP_DIR: /backups/postgres
       BACKUP_OFFSITE_ENABLED: ${BACKUP_OFFSITE_ENABLED:-false}
       BACKUP_OFFSITE_PROVIDER: ${BACKUP_OFFSITE_PROVIDER:-Other}
       BACKUP_OFFSITE_BUCKET: ${BACKUP_OFFSITE_BUCKET:-}
@@ -249,11 +224,11 @@ services:
       BACKUP_OFFSITE_PREFIX: ${BACKUP_OFFSITE_PREFIX:-postgres-backups}
     volumes:
       - ./scripts/database/postgres-backup-offsite-sync.sh:/usr/local/bin/postgres-backup-offsite-sync.sh:ro
-      - postgres_backups:/backups:ro
+      - postgres_backups:/backups/postgres:ro
     entrypoint: >
       /bin/sh -c "trap exit TERM; while :; do sh /usr/local/bin/postgres-backup-offsite-sync.sh; sleep 24h & wait $${!}; done"
     depends_on:
-      - pg-backup
+      - jobs
     networks:
       - deepiri-network
 
@@ -445,6 +420,17 @@ services:
       HELOX_URL: ${HELOX_URL:-}
       HELOX_API_KEY: ${HELOX_API_KEY:-}
       SYNAPSE_URL: http://synapse:8002
+      PG_BACKUP_SCHEDULER_ENABLED: ${PG_BACKUP_SCHEDULER_ENABLED:-true}
+      PG_BACKUP_CRON: ${PG_BACKUP_CRON:-0 2 * * *}
+      PG_BACKUP_HOST: postgres
+      PG_BACKUP_PORT: 5432
+      PG_BACKUP_DB: ${POSTGRES_CORE_DB:-platform_core}
+      PG_BACKUP_USER: ${POSTGRES_CORE_USER:-deepiri_core}
+      PG_BACKUP_PASSWORD: ${POSTGRES_CORE_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}}
+      PG_BACKUP_DIR: /backups/postgres
+      PG_BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - postgres_backups:/backups/postgres
     depends_on:
       postgres:
         condition: service_healthy

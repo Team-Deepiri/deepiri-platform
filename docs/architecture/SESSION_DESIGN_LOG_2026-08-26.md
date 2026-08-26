@@ -100,7 +100,7 @@ Docs: `CLOUD_HUB_AND_CONTROL_PLANE_REDESIGN.md`, `PLATFORM_DECOUPLING_PLAN.md`, 
 ### Cloud services (final list this session)
 
 - `postgres-platform`, `redis`
-- `nginx`, `certbot`, `pg-backup` (+ optional offsite)
+- `nginx`, `certbot`, `jobs` (`platform.pg_backup`) (+ optional offsite)
 - `auth-service`
 - **`api-gateway`** (slim: no Cyrex/LIS hard deps; proxies Plaky)
 - **`jobs`**, **`registry`**

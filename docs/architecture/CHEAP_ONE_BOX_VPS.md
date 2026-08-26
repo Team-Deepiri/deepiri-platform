@@ -17,7 +17,7 @@ Shared control plane only. Heavy / experimental services stay local and call int
 | Realtime / messaging | `realtime-gateway`, `messaging-service`, `synapse`, `sugar-glider` |
 | Data | **one** Postgres (logical DBs: `platform_auth`, `platform_core`, `platform_intelligence`) + `redis` |
 | Portal domain | `registry`, `truss`, `telemetry`, `language-intelligence-service` |
-| Ops (in PR) | `certbot`, `pg-backup` (+ optional `pg-backup-offsite`) |
+| Ops (in PR) | `certbot`, `jobs` (`platform.pg_backup`) (+ optional `pg-backup-offsite`) |
 
 **Out of cloud (local / later):** Cyrex, Ollama, MLflow, Milvus, etcd, MinIO, Kafka, Influx, admin UIs, prismpipe, external-bridge (Kafka-dependent).
 
