@@ -85,7 +85,7 @@ services:
       POSTGRES_DB: ${POSTGRES_CYREX_DB:-cyrex_db}
     volumes:
       - postgres_cyrex_dev_data:/var/lib/postgresql/data
-      - ./scripts/database/postgres-init-cyrex.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./scripts/database/postgres-init-cyrex.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
       - ./scripts/database/cyrex/140_elkedel_memory.sql:/docker-entrypoint-initdb.d/02-elkedel-memory.sql:ro
       - ./scripts/database/cyrex/141_elkedel_pressure.sql:/docker-entrypoint-initdb.d/03-elkedel-pressure.sql:ro
     networks:

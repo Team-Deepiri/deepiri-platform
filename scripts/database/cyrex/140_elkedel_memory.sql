@@ -1,5 +1,7 @@
 -- Cyrex migration 140: Elkedel episodic visual memory (shared with elkedel-runtime).
 
+CREATE SCHEMA IF NOT EXISTS cyrex;
+
 CREATE TABLE IF NOT EXISTS cyrex.elkedel_traces (
     trace_id TEXT PRIMARY KEY,
     centroid BYTEA NOT NULL,
