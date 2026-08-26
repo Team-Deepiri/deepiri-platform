@@ -34,8 +34,8 @@ Quick navigation to all documentation organized by category.
 
 | Resource | Description |
 |----------|-------------|
-| [../team_dev_environments/](../team_dev_environments/) | Team-specific dev environment scripts |
-| [../team_submodule_commands/](../team_submodule_commands/) | Team-specific submodule workflows |
+| [../teams/](../teams/) | Team YAML catalogs (`ai-team.yml`, …) driving `./setup-deepiri-dev.sh` |
+| [getting-started/ENVIRONMENT_SETUP_WITH_SCRIPT.md](getting-started/ENVIRONMENT_SETUP_WITH_SCRIPT.md) | Single-script team pull/build/start/stop (replaces old `team_dev_environments/` + `team_submodule_commands/`) |
 | [onboarding/README_AI_TEAM.md](onboarding/README_AI_TEAM.md) | AI team resources |
 | [onboarding/README_BACKEND_TEAM.md](onboarding/README_BACKEND_TEAM.md) | Backend team resources |
 | [onboarding/README_FRONTEND_TEAM.md](onboarding/README_FRONTEND_TEAM.md) | Frontend team resources |

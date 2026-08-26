@@ -1,0 +1,59 @@
+# deepiri-speech — Platform Integration
+
+Poetry FastAPI **`speech`** service with **Pipecat always-on** (in-process) and
+**LiveKit** as the WebRTC SFU + agent path.
+
+## Containers
+
+| Service | Port | Role |
+|---------|------|------|
+| `speech` | 5020 | Providers + Pipecat pipelines + LiveKit agent worker |
+| `livekit` | 7880 | WebRTC SFU (always started with speech) |
+
+## Architecture
+
+```text
+Clients
+  ├─ JSON WS ──────────► /v1/session/ws     (Pipecat oneshot STT/TTS)
+  ├─ Pipecat media WS ─► /v1/pipecat/ws     (FastAPIWebsocketTransport Pipeline)
+  ├─ WebRTC ───────────► livekit ◄── speech agent (Pipecat LiveKitTransport)
+  └─ HTTP batch ───────► /v1/stt /v1/tts    (via Truss proxies; Jobs is separate :5007)
+```
+
+Pipecat is **not** a separate service. LiveKit is the SFU; the agent runs inside `speech`.
+
+**URL map:** `TRUSS_URL=http://truss:5002` (workflows + `/speech/*`), `JOBS_URL=http://jobs:5007` (async work). Do not point both at the same host.
+
+## Always-on defaults
+
+| Setting | Default |
+|---------|---------|
+| `PIPECAT_ENABLED` | `1` |
+| `LIVEKIT_WORKER_ENABLED` | `1` |
+| Core Poetry deps | `pipecat-ai[websocket,livekit]`, `livekit-api`, `livekit` |
+| STT / TTS | **Local-first:** faster-whisper (`small.en`) + Kokoro-82M. `SPEECH_EXTRAS=engines` is the compose default so both engines install. OpenAI only when `STT_PROVIDER=openai` / `TTS_PROVIDER=openai` + `OPENAI_API_KEY` (opt-in). |
+| Model downloads | Auto-download + background warm-up on first boot (`KOKORO_AUTO_DOWNLOAD=1`, `WARM_UP_ON_START=1`); cached under `KOKORO_MODEL_DIR` / HF cache |
+
+## LiveKit capabilities wired
+
+- Room auto-create (`livekit.yaml` + `POST /v1/livekit/rooms`)
+- Full access tokens (publish/subscribe/data/metadata/admin/agent)
+- Default room `deepiri-voice` ensured on startup
+- Agent worker: **Pipecat LiveKitTransport** → livekit-agents fallback
+- Redis `speech-events` on session/STT
+
+## Pipecat capabilities wired
+
+- Provider STT/TTS/VAD as FrameProcessors
+- Cyrex (or echo) LLM turn
+- Interruptible Pipeline (`allow_interruptions=True`)
+- FastAPI WebSocket transport + LiveKit transport
+
+## Dev
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build redis livekit speech
+curl -s localhost:5020/health | jq .pipecat,.livekit
+curl -s localhost:5020/v1/pipeline/status | jq
+curl -s localhost:5020/v1/livekit/rooms | jq
+```

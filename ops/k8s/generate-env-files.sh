@@ -76,6 +76,7 @@ SERVICES=(
     "realtime-gateway"
     "messaging-service"
     "language-intelligence-service"
+    "speech"
     "cyrex"
     "frontend-dev"
 )

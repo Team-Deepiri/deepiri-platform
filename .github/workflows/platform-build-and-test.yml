@@ -222,15 +222,15 @@ jobs:
           for svc in api-gateway auth-service registry external-bridge-service jobs; do
             write_secret "$svc"
           done
-          cat > "$SECRETS_DIR/.env" <<'EOF'
-POSTGRES_PASSWORD=ci-postgres-password
-PLATFORM_DB_PASSWORD=ci-platform-db-password
-REDIS_PASSWORD=password
-JWT_SECRET=ci-jwt-secret-minimum-32-characters-long
-INTERNAL_SERVICE_SECRET=ci-internal-service-secret
-CORS_ORIGINS=http://localhost
-VITE_API_URL=http://localhost/api
-EOF
+          printf '%s\n' \
+            'POSTGRES_PASSWORD=ci-postgres-password' \
+            'PLATFORM_DB_PASSWORD=ci-platform-db-password' \
+            'REDIS_PASSWORD=password' \
+            'JWT_SECRET=ci-jwt-secret-minimum-32-characters-long' \
+            'INTERNAL_SERVICE_SECRET=ci-internal-service-secret' \
+            'CORS_ORIGINS=http://localhost' \
+            'VITE_API_URL=http://localhost/api' \
+            > "$SECRETS_DIR/.env"
 
       - name: Validate cloud compose (docker-compose.yml)
         env:
@@ -262,7 +262,7 @@ EOF
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          submodules: recursive
+          submodules: false
           token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Init submodules (private repos)
@@ -321,7 +321,7 @@ EOF
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          submodules: recursive
+          submodules: false
           token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Init submodules (private repos)
@@ -376,15 +376,15 @@ EOF
           for svc in api-gateway auth-service registry external-bridge-service jobs; do
             write_secret "$svc"
           done
-          cat > "$SECRETS_DIR/.env" <<'EOF'
-POSTGRES_PASSWORD=ci-postgres-password
-PLATFORM_DB_PASSWORD=ci-platform-db-password
-REDIS_PASSWORD=password
-JWT_SECRET=ci-jwt-secret-minimum-32-characters-long
-INTERNAL_SERVICE_SECRET=ci-internal-service-secret
-CORS_ORIGINS=http://localhost
-VITE_API_URL=http://localhost/api
-EOF
+          printf '%s\n' \
+            'POSTGRES_PASSWORD=ci-postgres-password' \
+            'PLATFORM_DB_PASSWORD=ci-platform-db-password' \
+            'REDIS_PASSWORD=password' \
+            'JWT_SECRET=ci-jwt-secret-minimum-32-characters-long' \
+            'INTERNAL_SERVICE_SECRET=ci-internal-service-secret' \
+            'CORS_ORIGINS=http://localhost' \
+            'VITE_API_URL=http://localhost/api' \
+            > "$SECRETS_DIR/.env"
 
       - name: Ensure deepiri-suite base images
         env:
