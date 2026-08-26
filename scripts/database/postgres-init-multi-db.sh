@@ -1,3 +1,7 @@
+
+# DEPRECATED for CLOUD portal SoT.
+# Cloud uses postgres-init-platform.sh + postgres-init-platform.sql (DB `platform`).
+# Keep this script only for legacy/control-plane auth+core+intel multi-tenant bring-up.
 #!/bin/bash
 # Bootstraps the consolidated single-container Postgres instance used by the
 # cheap one-box prod compose (docker-compose.yml / docker-compose.local-prod.yml).
