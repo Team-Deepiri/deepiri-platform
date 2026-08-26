@@ -1,5 +1,7 @@
 # Find Your Tasks - Team Roles & Responsibilities
 
+> **Repo split:** Team catalogs and `./setup-deepiri-dev.sh` live in **[deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)**. This cloud repo keeps copies under `teams/` for reference; use `teams/cloud-portal.yml` here for VPS deploy.
+
 **🎯 Start here to find your team and understand your role in the Deepiri platform.**
 
 ---

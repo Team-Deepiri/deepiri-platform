@@ -16,15 +16,12 @@ else
     COMPOSE_CMD="docker-compose"
 fi
 
-COMPOSE_FILE="docker-compose.dev.yml"
+cd "$(dirname "$0")/../.."
+# shellcheck source=scripts/utils/resolve-compose-file.sh
+source "$(dirname "$0")/../utils/resolve-compose-file.sh"
+resolve_compose_file "$(pwd)" || exit 1
 
-# Check if compose file exists
-if [ ! -f "$COMPOSE_FILE" ]; then
-    echo "❌ $COMPOSE_FILE not found. Please run this script from the project root."
-    exit 1
-fi
-
-# CRITICAL: Check if Minikube is running and use its Docker daemon
+echo "🚀 Starting Deepiri ($REPO_ROLE) with Docker Compose..."
 if command -v minikube &> /dev/null; then
     if minikube status &> /dev/null; then
         echo "📋 Minikube is running - using Minikube's Docker daemon (where Skaffold builds images)"

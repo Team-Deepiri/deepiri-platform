@@ -10,50 +10,39 @@ Dev setup for Cyrex/LIS/speech: clone **deepiri-control-plane** and run `bash se
 > **FIND YOUR TEAM:** [docs/getting-started/FIND_YOUR_TASKS.md](docs/getting-started/FIND_YOUR_TASKS.md)  
 > **Architecture split:** [docs/architecture/REPO_SPLIT.md](docs/architecture/REPO_SPLIT.md)
 
-## Quick Start
-
-### Setup script (Recommended)
-
-Download `setup-deepiri-dev.sh` from this repo and save it to any directory on your system. Run the script from your terminal and follow the instruction
+## Quick Start (cloud portal)
 
 ```bash
-# From the same working directory as the script
+git clone git@github.com:Team-Deepiri/deepiri-platform.git
+cd deepiri-platform
+git checkout infra/cheap-one-box-compose-dev   # until merged to main
+
+# Bootstrap secrets (see .env.example)
+mkdir -p ops/k8s/secrets
+cp .env.example ops/k8s/secrets/.env   # edit passwords before prod
+
+docker compose -f docker-compose.yml up -d
+```
+
+## Full dev stack (Cyrex, LIS, speech engine)
+
+Use **[deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)** — not this repo:
+
+```bash
+git clone git@github.com:Team-Deepiri/deepiri-control-plane.git
+cd deepiri-control-plane
 bash setup-deepiri-dev.sh
 ```
 
-Alternatively, you can also clone the repository and run the setup script directly from the project root
+`setup-deepiri-dev.sh` in **this** repo only prints the redirect above.
+
+## Common commands (cloud)
 
 ```bash
-# Clone the repository
-git clone git@github.com:Team-Deepiri/deepiri-platform.git
-cd deepiri-platform
-
-# Run the install script
-bash setup-deepiri-dev.sh
-```
-
-### Manual install
-
-```bash
-# 1. Clone the repository
-git clone git@github.com:Team-Deepiri/deepiri-platform.git
-cd deepiri-platform
-
-# 2. Pull submodules for your team (see teams/<team>.yml)
-./setup-deepiri-dev.sh pull ai-team
-
-# 3. Build services
-./setup-deepiri-dev.sh build ai-team
-
-# 4. Start the full stack
-./setup-deepiri-dev.sh start ai-team
-
-# OR use docker compose directly
-docker compose -f docker-compose.dev.yml up -d <service>
-
-# All services
-
-docker compose -f docker-compose.dev.yml up -d
+./build.sh                          # build cloud services
+make up                             # docker compose -f docker-compose.yml up -d
+make down
+docker compose -f docker-compose.yml ps
 ```
 
 ### Access services
