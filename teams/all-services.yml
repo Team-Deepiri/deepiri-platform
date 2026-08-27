@@ -1,0 +1,88 @@
+# Catalog of every active service in docker-compose.dev.yml.
+# Used as the platform-engineers / "all" service set.
+# Source: docker-compose.dev.yml (top-level keys under `services:`).
+# Audit: teams/TEAM_INVENTORY_AUDIT.md
+
+compose_file: docker-compose.dev.yml
+
+services:
+  # --- databases / admin ---
+  - postgres-auth
+  - postgres-core
+  - postgres-cyrex
+  - postgres-intelligence
+  - pgadmin
+  - adminer
+
+  # --- data / messaging infra ---
+  - redis
+  - kafka
+  - influxdb
+  - etcd
+  - minio
+  - milvus
+
+  # --- backend microservices ---
+  - api-gateway
+  - auth-service
+  - truss
+  - registry
+  - telemetry
+  - messaging-service
+  - external-bridge-service
+  - jobs
+  - language-intelligence-service
+  - realtime-gateway
+
+  # --- speech engine ---
+  - livekit
+  - speech
+
+  # --- AI / ML ---
+  - ollama
+  - cyrex
+  - cyrex-interface
+  - mlflow
+
+  # --- shared / frontend ---
+  - synapse
+  - sugar-glider
+  - frontend-dev
+  - deepiri-prismpipe
+
+# Present in compose as comments only (not active keys):
+disabled:
+  - jupyter
+
+# Names that appear in team scripts but are NOT compose keys (do not add to services):
+stale_script_names:
+  - postgres
+  - challenge-service
+  - platform-analytics-service
+  - task-orchestrator
+  - workflow-orchestrator
+  - incentive-engine
+  - decision-intelligence
+  - adaptive-experience-engine
+  - communications-hub
+  - engagement-service
+  - notification-service
+
+# Images typically pulled rather than built from a Dockerfile in this compose project:
+pull_only:
+  - postgres-auth
+  - postgres-core
+  - postgres-cyrex
+  - postgres-intelligence
+  - pgadmin
+  - adminer
+  - redis
+  - kafka
+  - influxdb
+  - etcd
+  - minio
+  - milvus
+  - ollama
+  - livekit
+  # node:20-alpine runtime image; deps install at container start (keep comment off the list value)
+  - cyrex-interface

@@ -14,6 +14,8 @@ Every processed repo gets a DevOps label (created if missing; existing
 case variants like devops/DEVOPS are reused). Every PR this script creates
 or finds (dev→main and, with --backwards, main→dev) is tagged with that label.
 
+Merges include [skip ci] except deepiri-landing dev→main, so Cloudflare Pages can deploy.
+
 Usage:
     python dev-to-main-pr.py                     # default: dev → main
     python dev-to-main-pr.py --draft             # create PRs as drafts
@@ -28,6 +30,7 @@ import time
 from typing import Any, Optional
 
 SKIP_CI = "[skip ci]"
+LANDING_REPO = "deepiri-landing"
 
 
 class Colors:
@@ -338,8 +341,24 @@ def enable_auto_merge(repo_name: str, pr_url: str) -> tuple[bool, str]:
 
     return False, "Auto-merge was not enabled"
 
-def merge_commit_message(head_branch: str, base_branch: str) -> str:
-    return f"Merge {head_branch} into {base_branch} {SKIP_CI}"
+def uses_skip_ci(repo_name: str, head_branch: str, base_branch: str) -> bool:
+    """Skip CI on all merges except deepiri-landing dev → main (Cloudflare Pages)."""
+    return not (
+        repo_name == LANDING_REPO
+        and head_branch == "dev"
+        and base_branch == "main"
+    )
+
+
+def skip_ci_label(repo_name: str, head_branch: str, base_branch: str) -> str:
+    return SKIP_CI if uses_skip_ci(repo_name, head_branch, base_branch) else "CI enabled"
+
+
+def merge_commit_message(repo_name: str, head_branch: str, base_branch: str) -> str:
+    msg = f"Merge {head_branch} into {base_branch}"
+    if uses_skip_ci(repo_name, head_branch, base_branch):
+        return f"{msg} {SKIP_CI}"
+    return msg
 
 
 def direct_merge(
@@ -354,7 +373,7 @@ def direct_merge(
             "-X", "POST",
             "-f", f"base={base_branch}",
             "-f", f"head={head_branch}",
-            "-f", f"commit_message={merge_commit_message(head_branch, base_branch)}",
+            "-f", f"commit_message={merge_commit_message(repo_name, head_branch, base_branch)}",
         ],
         capture_output=True,
         text=True,
@@ -364,9 +383,11 @@ def direct_merge(
             data = json.loads(result.stdout)
             sha = (data.get("sha") or "")[:7]
             url = data.get("html_url") or ""
-            return True, f"Direct merge {SKIP_CI} ({sha})", url
+            note = skip_ci_label(repo_name, head_branch, base_branch)
+            return True, f"Direct merge {note} ({sha})", url
         except json.JSONDecodeError:
-            return True, f"Direct merge {SKIP_CI}", None
+            note = skip_ci_label(repo_name, head_branch, base_branch)
+            return True, f"Direct merge {note}", None
 
     err = (result.stderr or result.stdout).strip()
     if "409" in err or "Merge conflict" in err or "not mergeable" in err.lower():
@@ -406,16 +427,17 @@ def admin_merge(
         "--repo", repo_slug(repo_name),
         "--squash",
         "--delete-branch=false",
-        "--subject", merge_commit_message(head_branch, base_branch),
+        "--subject", merge_commit_message(repo_name, head_branch, base_branch),
     ]
+    note = skip_ci_label(repo_name, head_branch, base_branch)
     result = gh(*base_args)
     if result.returncode == 0:
-        return True, f"Merged {SKIP_CI}"
+        return True, f"Merged {note}"
 
     err = (result.stderr or result.stdout).strip()
     result_admin = gh(*base_args[:3], "--admin", *base_args[3:])
     if result_admin.returncode == 0:
-        return True, f"Merged with --admin {SKIP_CI}"
+        return True, f"Merged with --admin {note}"
     return False, err or (result_admin.stderr or result_admin.stdout).strip()
 
 
@@ -425,8 +447,9 @@ def merge_pr(
     head_branch: str,
     base_branch: str,
 ) -> tuple[bool, str]:
-    """Merge an existing PR with [skip ci] on the squash commit."""
-    print(f"  {Colors.GRAY}Merging {SKIP_CI}...{Colors.NC}")
+    """Merge an existing PR. Squash subject includes [skip ci] except landing dev→main."""
+    note = skip_ci_label(repo_name, head_branch, base_branch)
+    print(f"  {Colors.GRAY}Merging {note}...{Colors.NC}")
     print(f"  {Colors.GRAY}Checking mergeability...{Colors.NC}")
     mergeable = wait_for_mergeable(repo_name, pr_url, max_attempts=10)
     if mergeable is False:
@@ -458,7 +481,7 @@ def print_banner(num_repos: int, direction: str, backwards: bool = False):
     print(f"║{title:^60}║")
     print(f"║{f'  {num_repos} repos · {direction} · GitHub API  ':^60}║")
     if backwards:
-        print(f"║{'  backwards: main→dev, then dev→main (all [skip ci])  ':^60}║")
+        print(f"║{'  skip ci except landing dev→main  ':^60}║")
     print(f"╚{'═'*60}╝{Colors.NC}")
     print()
 
@@ -470,8 +493,9 @@ def print_repo_header(name: str, index: int, total: int):
     print(f"{Colors.CYAN}╚{'─'*58}╝{Colors.NC}")
 
 
-def print_direction_header(head_branch: str, base_branch: str):
-    print(f"  {Colors.CYAN}→ {head_branch} → {base_branch} ({SKIP_CI}){Colors.NC}")
+def print_direction_header(repo_name: str, head_branch: str, base_branch: str):
+    note = skip_ci_label(repo_name, head_branch, base_branch)
+    print(f"  {Colors.CYAN}→ {head_branch} → {base_branch} ({note}){Colors.NC}")
 
 
 # ---------------------------------------------------------------------------
@@ -485,8 +509,8 @@ def merge_direction(
     draft: bool,
     dry_run: bool,
 ) -> dict:
-    """Merge one branch direction with [skip ci]. Direct merge first, PR fallback."""
-    print_direction_header(head_branch, base_branch)
+    """Merge one branch direction. Direct merge first, PR fallback."""
+    print_direction_header(repo_name, head_branch, base_branch)
 
     if not branch_exists(repo_name, head_branch):
         print(f"  {Colors.YELLOW}Branch '{head_branch}' not found, skipping.{Colors.NC}")
@@ -500,7 +524,8 @@ def merge_direction(
         print(f"  {Colors.GRAY}Open PR exists: {existing}{Colors.NC}")
         apply_devops_label(repo_name, existing, dry_run=dry_run)
         if dry_run:
-            print(f"  {Colors.YELLOW}[DRY RUN] Would admin-merge existing PR {SKIP_CI}{Colors.NC}")
+            note = skip_ci_label(repo_name, head_branch, base_branch)
+            print(f"  {Colors.YELLOW}[DRY RUN] Would admin-merge existing PR {note}{Colors.NC}")
             return {"status": "dry_run", "url": existing}
         ok_adm, msg_adm = merge_pr(repo_name, existing, head_branch, base_branch)
         if ok_adm:
@@ -545,12 +570,14 @@ def merge_direction(
         deletions = sum(f.get("deletions", 0) for f in files)
         print(f"  {Colors.CYAN}Files changed: {len(files)}  +{additions} -{deletions}{Colors.NC}")
 
-    title = merge_commit_message(head_branch, base_branch)
+    title = merge_commit_message(repo_name, head_branch, base_branch)
     body = "## Summary\n\n"
     for c in commits[:10]:
         msg = c.get("commit", {}).get("message", "").split("\n")[0]
         body += f"- {msg}\n"
     body += "\nCreated with dev-to-main-pr.py"
+    if uses_skip_ci(repo_name, head_branch, base_branch):
+        body += f"\n\n{SKIP_CI}"
 
     if dry_run:
         print(f"  {Colors.YELLOW}[DRY RUN] Would create PR, label DevOps, and auto-merge: '{title}'{Colors.NC}")
@@ -655,12 +682,14 @@ def main():
     if draft:
         print(f"{Colors.YELLOW}[DRAFT mode — PRs will be created as drafts]{Colors.NC}\n")
     if backwards:
-        print(f"{Colors.YELLOW}[BACKWARDS — main→dev then dev→main, all merges {SKIP_CI}]{Colors.NC}\n")
+        print(
+            f"{Colors.YELLOW}[BACKWARDS — main→dev then dev→main, {SKIP_CI} "
+            f"except {LANDING_REPO} dev→main]{Colors.NC}\n"
+        )
     else:
         print(
-            f"{Colors.YELLOW}"
-            f"[All merges use {SKIP_CI} — direct merge first; PR fallback uses --admin]"
-            f"{Colors.NC}\n"
+            f"{Colors.YELLOW}[Merges use {SKIP_CI} except {LANDING_REPO} "
+            f"dev→main]{Colors.NC}\n"
         )
 
     print(f"{Colors.CYAN}Fetching repositories from org...{Colors.NC}")

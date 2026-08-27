@@ -77,8 +77,16 @@ export class MessageService {
       // Call cyrex agent (pass chatRoomId so cyrex can send response back)
       const response = await cyrexAgentClient.sendMessage(agentInstanceId, userMessage, chatRoomId);
 
-      // Extract response content
-      const agentResponse = response.data?.message || response.message || 'No response from agent';
+      // Extract response content.
+      // Cyrex invoke returns `{ response, message }` (message aliases response).
+      // Older Cyrex builds only had `response` — reading both avoids a duplicate
+      // AGENT row with the literal "No response from agent".
+      const agentResponse =
+        response.data?.message ||
+        response.message ||
+        response.data?.response ||
+        response.response ||
+        'No response from agent';
 
       // Save agent response to database
       const message = await this.createMessage({

@@ -24,8 +24,7 @@
 
 **📚 Your path:**
 1. [docs/AI_TEAM_ONBOARDING.md](docs/AI_TEAM_ONBOARDING.md) - Complete onboarding guide
-2. [team_dev_environments/ai-team/README.md](team_dev_environments/ai-team/README.md) - Your dev environment
-3. [team_submodule_commands/ai-team/AI_TEAM.md](team_submodule_commands/ai-team/AI_TEAM.md) - Submodule workflow
+2. **Catalog:** `teams/ai-team.yml` — `./setup-deepiri-dev.sh pull|build|start ai-team`
 
 ---
 
@@ -50,8 +49,7 @@
 **📚 Your path:**
 1. [docs/ML_ENGINEER_COMPLETE_GUIDE.md](docs/ML_ENGINEER_COMPLETE_GUIDE.md) - Complete ML guide
 2. [docs/MLOPS_TEAM_ONBOARDING.md](docs/MLOPS_TEAM_ONBOARDING.md) - MLOps workflow
-3. [team_dev_environments/ml-team/README.md](team_dev_environments/ml-team/README.md) - Your dev environment
-4. [team_submodule_commands/ml-team/ML_TEAM.md](team_submodule_commands/ml-team/ML_TEAM.md) - Submodule workflow
+3. **Catalog:** `teams/ml-team.yml` — `./setup-deepiri-dev.sh pull|build|start ml-team`
 
 ---
 
@@ -80,8 +78,7 @@
 **📚 Your path:**
 1. [docs/BACKEND_TEAM_ONBOARDING.md](docs/BACKEND_TEAM_ONBOARDING.md) - Complete onboarding guide
 2. [docs/MICROSERVICES_SETUP.md](docs/MICROSERVICES_SETUP.md) - Microservices architecture
-3. [team_dev_environments/backend-team/README.md](team_dev_environments/backend-team/README.md) - Your dev environment
-4. [team_submodule_commands/backend-team/BACKEND_TEAM.md](team_submodule_commands/backend-team/BACKEND_TEAM.md) - Submodule workflow
+3. **Catalog:** `teams/backend-team.yml` — `./setup-deepiri-dev.sh pull|build|start backend-team`
 
 ---
 
@@ -102,8 +99,7 @@
 
 **📚 Your path:**
 1. [docs/FRONTEND_TEAM_ONBOARDING.md](docs/FRONTEND_TEAM_ONBOARDING.md) - Complete onboarding guide
-2. [team_dev_environments/frontend-team/README.md](team_dev_environments/frontend-team/README.md) - Your dev environment
-3. [team_submodule_commands/frontend-team/FRONTEND_TEAM.md](team_submodule_commands/frontend-team/FRONTEND_TEAM.md) - Submodule workflow
+2. **Catalog:** `teams/frontend-team.yml` — `./setup-deepiri-dev.sh pull|build|start frontend-team`
 
 ---
 
@@ -127,8 +123,7 @@
 **📚 Your path:**
 1. [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md) - Platform guide
 2. [docs/SKAFFOLD_SETUP.md](docs/SKAFFOLD_SETUP.md) - Skaffold/Kubernetes setup
-3. [team_dev_environments/infrastructure-team/README.md](team_dev_environments/infrastructure-team/README.md) - Your dev environment
-4. [team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md](team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md) - Submodule workflow
+3. **Catalog:** `teams/infrastructure-team.yml` — `./setup-deepiri-dev.sh pull|build|start infrastructure-team`
 
 ---
 
@@ -148,8 +143,7 @@
 
 **📚 Your path:**
 1. [docs/PLATFORM_TEAM_ONBOARDING.md](docs/PLATFORM_TEAM_ONBOARDING.md) - Complete platform guide
-2. [team_dev_environments/platform-engineers/README.md](team_dev_environments/platform-engineers/README.md) - Your dev environment
-3. [team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md](team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md) - Submodule workflow
+2. **Catalog:** `teams/platform-engineers.yml` — `./setup-deepiri-dev.sh pull|build|start platform-engineers`
 
 ---
 
@@ -168,8 +162,7 @@
 
 **📚 Your path:**
 1. [docs/SECURITY_QA_TEAM_ONBOARDING.md](docs/SECURITY_QA_TEAM_ONBOARDING.md) - Complete QA guide
-2. [team_dev_environments/qa-team/README.md](team_dev_environments/qa-team/README.md) - Your dev environment
-3. [team_submodule_commands/qa-team/QA_TEAM.md](team_submodule_commands/qa-team/QA_TEAM.md) - Submodule workflow
+2. **Catalog:** `teams/qa-team.yml` — `./setup-deepiri-dev.sh pull|build|start qa-team`
 
 ---
 
@@ -184,17 +177,18 @@
 2. **Set up Git hooks (REQUIRED - protects main/master and branches containing team-dev):**
    ```bash
    ./setup-hooks.sh
+   # Also synced for team submodules on: ./setup-deepiri-dev.sh pull <your-team>
    ```
 
 3. **Follow your team's onboarding guide** (see links above)
 
-4. **Set up your development environment:**
-   - Navigate to `team_dev_environments/<your-team>/`
-   - Follow the README.md
-
-5. **Set up submodules:**
-   - Navigate to `team_submodule_commands/<your-team>/`
-   - Follow the team-specific guide
+4. **Set up submodules, build, and start your team's services:**
+   ```bash
+   ./setup-deepiri-dev.sh pull <your-team>
+   ./setup-deepiri-dev.sh build <your-team>
+   ./setup-deepiri-dev.sh start <your-team>
+   ```
+   Team catalogs live in `teams/<your-team>.yml`.
 
 ---
 
