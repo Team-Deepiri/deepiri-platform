@@ -1,0 +1,148 @@
+# CD: Cloud portal → Netcup VPS 1000 G12 (platform.deepiri.com)
+#
+# Deploys the cloud portal stack (docker-compose.yml) to the cheap one-box VPS.
+# Triggers on push to `dev` (after PR 304 merges) and on manual dispatch.
+#
+# Required GitHub secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST              e.g. 159.195.234.19
+#   VPS_USER              e.g. root
+#   VPS_SSH_KEY           private key (ed25519 or rsa) paired with VPS ~/.ssh/authorized_keys
+# Optional secrets:
+#   VPS_PORT              default 22
+#   VPS_DEPLOY_PATH       default /opt/deepiri/deepiri-platform
+#   VPS_ENV_FILE          full content of ops/k8s/secrets/.env (if set, overwrites remote .env)
+#
+name: CD Cloud Portal Deploy
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'docker-compose.yml'
+      - 'deepiri-web-frontend/**'
+      - 'platform-services/**'
+      - 'scripts/database/**'
+      - 'ops/nginx/**'
+      - 'ops/k8s/**'
+      - '.github/workflows/cd-cloud-portal.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-cloud-portal-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: false
+          token: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Init cloud submodules
+        env:
+          TOKEN: ${{ secrets.PLATFORM_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          CLOUD_SUBMODULES=(
+            deepiri-suite
+            deepiri-web-frontend
+            platform-services/backend/deepiri-api-gateway
+            platform-services/backend/deepiri-auth-service
+            platform-services/backend/deepiri-external-bridge-service
+            platform-services/shared/deepiri-shared-utils
+          )
+          git submodule sync "${CLOUD_SUBMODULES[@]}"
+          git submodule update --init --depth 1 "${CLOUD_SUBMODULES[@]}"
+          # Verify frontend build contexts exist
+          test -f deepiri-web-frontend/package.json
+          test -f platform-services/backend/deepiri-auth-service/package.json
+
+      - name: Setup SSH key
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+          ssh-keyscan -p "${{ secrets.VPS_PORT || 22 }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Rsync to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}
+        run: |
+          set -euo pipefail
+          # rsync the source tree (no .git, no node_modules — container builds reinstall)
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/vps_key -p ${VPS_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts" \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            --exclude 'dist/' \
+            ./ "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/"
+
+      - name: Write secrets .env if VPS_ENV_FILE is set
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}
+          VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VPS_ENV_FILE:-}" ]; then
+            echo "No VPS_ENV_FILE secret, skipping .env overwrite (using existing remote .env)"
+            exit 0
+          fi
+          printf '%s' "$VPS_ENV_FILE" | ssh -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" \
+            "cat > ${VPS_PATH}/ops/k8s/secrets/.env && chmod 600 ${VPS_PATH}/ops/k8s/secrets/.env && echo 'Wrote .env'"
+
+      - name: Build & restart on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" bash -s <<'EOSSH'
+          set -euo pipefail
+          VPS_PATH="${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}"
+          cd "$VPS_PATH"
+          if [ ! -f ops/k8s/secrets/.env ]; then
+            echo "ERROR: ops/k8s/secrets/.env missing on VPS — deploy the secrets archive first"
+            exit 1
+          fi
+          set -a && . ./ops/k8s/secrets/.env && set +a
+          # Ensure nginx can bind :443 (dummy cert if no real cert yet)
+          ./ops/nginx/ensure-dummy-cert.sh platform.deepiri.com -- -f docker-compose.yml || true
+          # Build changed images (frontend + gateway/auth) and recreate
+          docker compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml up -d
+          echo "=== containers ==="
+          docker ps --format "table {{.Names}}\t{{.Status}}"
+          echo "=== health ==="
+          sleep 8
+          curl -skS -o /dev/null -w "frontend: %{http_code}\n" https://127.0.0.1/ || true
+          curl -skS https://127.0.0.1/api/health | head -c 300; echo
+          EOSSH
+
+      - name: Verify via public domain
+        run: |
+          set -euo pipefail
+          echo "Waiting for Cloudflare edge to see new origin..."
+          sleep 10
+          curl -sS -o /dev/null -w "https://platform.deepiri.com/ -> %{http_code} (time_total=%{time_total}s)\n" https://platform.deepiri.com/
+          curl -sS https://platform.deepiri.com/api/health | head -c 400; echo

@@ -1,7 +1,6 @@
 # Catalog of every active service in docker-compose.dev.yml.
-# Used as the platform-engineers / "all" service set.
-# Source: docker-compose.dev.yml (top-level keys under `services:`).
-# Audit: teams/TEAM_INVENTORY_AUDIT.md
+# **Repo:** deepiri-control-plane (not this cloud portal repo).
+# Cloud portal catalog → teams/cloud-portal.yml + docker-compose.yml
 
 compose_file: docker-compose.dev.yml
 

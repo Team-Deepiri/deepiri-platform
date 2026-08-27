@@ -1,3 +1,4 @@
+# Repo: deepiri-control-plane (docker-compose.dev.yml)
 # Infrastructure Team — same compose set as backend (canonical build/start; stale stop names dropped)
 id: infrastructure-team
 display: Infrastructure Team

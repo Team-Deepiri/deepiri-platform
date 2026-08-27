@@ -1,5 +1,6 @@
 # AI Team — compose + submodule inventory
-# Source of truth for ./setup-deepiri-dev.sh {pull,build,start,stop} ai-team
+# **Repo:** deepiri-control-plane (docker-compose.dev.yml)
+# Speech engine: livekit + speech (see docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md)
 id: ai-team
 display: AI Team
 

@@ -1,5 +1,8 @@
 # 🚀 START HERE - Deepiri Platform Setup Guide
 
+> **Repo split (2026-08-26):** This repo (**deepiri-platform**) is the **cloud VPS portal** only.  
+> For Cyrex, LIS, speech, Kafka, and team dev onboarding → **[deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)** (`docker-compose.dev.yml`, `setup-deepiri-dev.sh`).
+
 **Welcome to Deepiri! This is your complete getting started guide.**
 
 ---
@@ -19,9 +22,17 @@ This will help you identify:
 
 ### 1. Clone the Repository
 
+**Cloud portal (this repo):**
 ```bash
-git clone <your-repo-url>
+git clone git@github.com:Team-Deepiri/deepiri-platform.git
 cd deepiri-platform
+```
+
+**Full local dev stack (AI/backend teams):**
+```bash
+git clone git@github.com:Team-Deepiri/deepiri-control-plane.git
+cd deepiri-control-plane
+bash setup-deepiri-dev.sh
 ```
 
 ### 2. Git Hooks (Automatic!)
@@ -122,18 +133,17 @@ All teams now use the single `./setup-deepiri-dev.sh` script with their team cat
 
 ### Common Commands
 
+**Cloud portal (this repo):**
 ```bash
-# Build all services
-./build.sh              # Linux/Mac/WSL
-.\build.ps1             # Windows PowerShell
+./build.sh
+make up
+docker compose -f docker-compose.yml logs -f
+```
 
-# Start all services
+**Full dev stack ([deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)):**
+```bash
+./build.sh
 docker compose -f docker-compose.dev.yml up -d
-
-# Start only your team's services
-docker compose -f docker-compose.<team>-team.yml up -d
-
-# View logs
 docker compose -f docker-compose.dev.yml logs -f
 ```
 

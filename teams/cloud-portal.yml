@@ -1,0 +1,17 @@
+# Cloud portal service set — docker-compose.yml (VPS prod).
+# Full local builder stack → Team-Deepiri/deepiri-control-plane (docker-compose.dev.yml).
+
+compose_file: docker-compose.yml
+
+services:
+  - postgres-platform
+  - redis
+  - nginx
+  - certbot
+  - auth-service
+  - api-gateway
+  - jobs
+  - registry
+  - platform-frontend
+  - external-bridge-service
+  - pg-backup-offsite
