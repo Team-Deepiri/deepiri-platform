@@ -12,7 +12,7 @@
 #   VPS_DEPLOY_PATH       default /opt/deepiri/deepiri-platform
 #   VPS_ENV_FILE          full content of ops/k8s/secrets/.env (if set, overwrites remote .env)
 #
-name: CD — Cloud Portal Deploy
+name: CD Cloud Portal Deploy
 
 on:
   push:
