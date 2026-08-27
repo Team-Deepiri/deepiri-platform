@@ -94,15 +94,19 @@ jobs:
             ./ "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/"
 
       - name: Write secrets .env if VPS_ENV_FILE is set
-        if: ${{ secrets.VPS_ENV_FILE != '' }}
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
           VPS_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}
+          VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
         run: |
           set -euo pipefail
-          printf '%s' "${{ secrets.VPS_ENV_FILE }}" | ssh -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" \
+          if [ -z "${VPS_ENV_FILE:-}" ]; then
+            echo "No VPS_ENV_FILE secret, skipping .env overwrite (using existing remote .env)"
+            exit 0
+          fi
+          printf '%s' "$VPS_ENV_FILE" | ssh -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" \
             "cat > ${VPS_PATH}/ops/k8s/secrets/.env && chmod 600 ${VPS_PATH}/ops/k8s/secrets/.env && echo 'Wrote .env'"
 
       - name: Build & restart on VPS
