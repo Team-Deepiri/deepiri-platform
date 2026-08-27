@@ -25,7 +25,42 @@ See [`REPO_SPLIT.md`](REPO_SPLIT.md) and [`DATABASES_AND_COMPOSE_BY_PLANE.md`](D
 
 ## Local-prod measurement (idle + load)
 
-Updated 2026-08-26 against the *current* branch tip (consolidated single Postgres, all 18 services, including this PR's `mem_limit` caps) — supersedes the 2026-08-12 three-Postgres-container numbers below.
+Updated 2026-08-27 against the **decoupled cloud portal stack** (`docker-compose.yml`, branch `infra/cheap-one-box-compose-dev` @ `7c8f576` — 11 services, no Cyrex/LIS/truss/messaging/telemetry/synapse/sugar-glider) — supersedes the 2026-08-26 18-service numbers, now moved into the collapsed section below.
+
+**Idle** (`ops/benchmark-results/decoupled-cloud-20260827T003852Z`, 90s sample):
+
+| Metric | Value |
+|--------|-------|
+| Containers measured | **11** |
+| Total memory | **~316.0 MiB** (avg, 313.9–317.0 MiB range) |
+| Total CPU | **~2.04%** (avg, max 13.22% brief blip) |
+| Health | All 11 healthy |
+
+**Under concurrent load — gateway-routed** (autocannon, 50 connections against `https://localhost/api/health` via nginx → api-gateway, 30s, 88,048 requests, zero errors — this is the path real external traffic actually takes):
+
+| Metric | Value |
+|--------|-------|
+| Peak memory (whole stack) | **~440.3 MiB** |
+| Peak CPU, whole stack | **~165.55%** (≈1.66 core-eq) |
+| Peak CPU, worst container (`api-gateway`) | **~106.50%** |
+
+**Under concurrent load — 4 backend services direct** (auth-service/registry/jobs/external-bridge-service each hit directly and simultaneously at ~2.5k–4.8k req/sec, bypassing the gateway — synthetic worst-case saturation, not a traffic pattern real requests produce since api-gateway's proxy paths don't currently reach these services' health routes anyway):
+
+| Metric | Value |
+|--------|-------|
+| Peak memory (whole stack) | **~589.5 MiB** |
+| Peak CPU, whole stack | **~446.19%** (≈4.46 core-eq) |
+| Peak CPU, worst container (`registry`) | **~115.60%** |
+| Next three (`jobs`/`external-bridge-service`/`auth-service`) | 111.78% / 111.76% / 111.08% |
+
+Memory is not the constraint at any point tested — even the synthetic worst-case peak is ~7% of 8 GB, roughly half the pre-decoupling peak (~885 MiB → ~590 MiB), as expected from removing 7 services. **CPU is still the dimension to watch, but the realistic picture improved**: traffic arriving the way it actually will (through nginx → api-gateway) peaks at ~1.66 core-equivalents, comfortably under this box's 4 vCore. The ~4.46 core-equivalent number only shows up if all four backend services are simultaneously saturated at full throttle independent of the gateway — a synthetic ceiling-finding test, not a pattern real bursty portal usage produces. Not tested: actual document upload/processing — out of scope for the cloud portal stack now that LIS is control-plane-only.
+
+**Bottom line for sizing:** fine for bursty portal usage. CPU headroom is meaningfully better than pre-decoupling for the traffic pattern that matters (gateway-routed); worth re-checking once real users hit it, same as before.
+
+<details>
+<summary>2026-08-26 measurement — pre-decoupling, 18 services (stale, superseded above)</summary>
+
+Updated 2026-08-26 against the *then-current* branch tip (consolidated single Postgres, all 18 services, including this PR's `mem_limit` caps) — supersedes the 2026-08-12 three-Postgres-container numbers further below.
 
 **Idle** (`ops/benchmark-results/netcup-vps1000-g12-20260826T174449Z`, 90s sample):
 
@@ -48,6 +83,8 @@ Updated 2026-08-26 against the *current* branch tip (consolidated single Postgre
 Memory is not the constraint at any point tested — even under load, peak usage is ~11% of 8 GB. **CPU is the real ceiling**: if those five peaks landed simultaneously and stayed sustained, that's ~5.7 core-equivalents of demand against this box's 4 vCore, which would mean queuing/added latency under real concurrent load (not crashes — nothing here is memory-bound). `language-intelligence-service`'s `/health` does a live `SELECT 1` via Prisma per request, so its number is a reasonable stand-in for a real DB-backed request, not a trivial ping. Not tested: actual document upload/processing (Bedd + text extraction) — this harness's object storage isn't wired to a real backend, so that path — likely the single heaviest real workload — couldn't be exercised end-to-end.
 
 **Bottom line for sizing:** fine for bursty usage (gaps between requests, which is the expected shape for a document-intelligence tool); worth watching CPU once real users hit it, if usage turns out to be more sustained/concurrent than expected.
+
+</details>
 
 ### David Li (2026-08-26, 2:58 PM) — VPS sizing check
 
@@ -206,9 +243,10 @@ TLS via certbot in-compose is $0 once DNS points at the box.
 
 | Question | Answer |
 |----------|--------|
-| Will 8 GB run the PR #304 stack? | **Yes** — idle ~538 MiB, peak ~885 MiB under simulated concurrent load. Memory is not the constraint; CPU is. |
-| CPU risk? | **Watch under concurrent load** — 4 cores can tighten (~5.7 core-eq peaks vs 4 vCore); upgrade if needed. |
-| Document upload risk? | **Not stress-tested yet** — heaviest path may be heavier than measured. |
+| Will 8 GB run the decoupled 11-service stack? | **Yes** — idle ~316 MiB, peak ~590 MiB under synthetic worst-case concurrent load. Memory is not the constraint; CPU is. |
+| Can we go cheaper (2c/4GB)? | **No** — realistic gateway-routed traffic alone already peaks at ~1.66 core-eq (83% of a 2-vCore budget) from one endpoint under moderate load, with no margin left for everything else running concurrently. |
+| CPU risk? | **Watch under concurrent load** — realistic gateway-routed traffic peaks at ~1.66 core-eq (comfortable under 4 vCore); simultaneous full saturation of all backend services at once peaks at ~4.46 core-eq (over 4 vCore if sustained) — same qualitative risk as pre-decoupling, lower absolute magnitude. |
+| Document upload risk? | **Not applicable to this stack** — LIS/document-intelligence is control-plane-only post-decoupling, not part of the cloud portal. |
 | Cheapest credible “try one month”? | Netcup **hourly NUE** (~€16 first charge) or OVHcloud **VPS-2** (~$8.50/mo). |
 | Buy the 12M prepaid now? | Only if committing for a year; otherwise skip. |
 | Deploy blocked on? | Real `STORAGE_*` (hard), Google OAuth if needed, DNS URLs; offsite backup optional while `BACKUP_OFFSITE_ENABLED=false`. |
