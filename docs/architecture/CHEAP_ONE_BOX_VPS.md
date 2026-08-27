@@ -57,6 +57,12 @@ Memory is not the constraint at any point tested — even the synthetic worst-ca
 
 **Bottom line for sizing:** fine for bursty portal usage. CPU headroom is meaningfully better than pre-decoupling for the traffic pattern that matters (gateway-routed); worth re-checking once real users hit it, same as before.
 
+### Discord summary — Redis `/health` leak (same evening)
+
+David also reported an earlier concurrent hit (200 connections across `api-gateway` / `auth` / `registry` / `jobs` / `external-bridge`) that peaked **~913 MiB** with worst CPU **`external-bridge-service` at 159%**. Root cause: `/health` created a **new Redis client per request** (~6k errors of ~23k under concurrent health hits). Fix: [external-bridge PR #84](https://github.com/Team-Deepiri/deepiri-external-bridge-service/pull/84). **Merge before Saturday deploy** and bump the submodule pointer on this PR.
+
+**Verdict (David, Discord):** comfortably fits 4c/8GB; **memory was never close to a concern.**
+
 <details>
 <summary>2026-08-26 measurement — pre-decoupling, 18 services (stale, superseded above)</summary>
 
@@ -249,5 +255,5 @@ TLS via certbot in-compose is $0 once DNS points at the box.
 | Document upload risk? | **Not applicable to this stack** — LIS/document-intelligence is control-plane-only post-decoupling, not part of the cloud portal. |
 | Cheapest credible “try one month”? | Netcup **hourly NUE** (~€16 first charge) or OVHcloud **VPS-2** (~$8.50/mo). |
 | Buy the 12M prepaid now? | Only if committing for a year; otherwise skip. |
-| Deploy blocked on? | Real `STORAGE_*` (hard), Google OAuth if needed, DNS URLs; offsite backup optional while `BACKUP_OFFSITE_ENABLED=false`. |
-| CloudInfra “Metrics Confirm” tab? | Historical Aug 12 idle (~478 MiB); **superseded** by Aug 26 idle+load numbers above. |
+| Deploy blocked on? | Real `STORAGE_*` (hard), Google OAuth if needed, DNS URLs; **merge [bridge PR #84](https://github.com/Team-Deepiri/deepiri-external-bridge-service/pull/84)** (`/health` Redis reuse); offsite backup optional while `BACKUP_OFFSITE_ENABLED=false`. |
+| CloudInfra “Metrics Confirm” tab? | Superseded by **decoupled** Aug 27 numbers (`ops/benchmark-results/decoupled-cloud-20260827T003852Z`). |
