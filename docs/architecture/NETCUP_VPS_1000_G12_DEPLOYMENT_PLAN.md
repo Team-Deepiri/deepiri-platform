@@ -70,21 +70,24 @@ cd deepiri-platform
 git fetch origin infra/cheap-one-box-compose-dev
 git checkout infra/cheap-one-box-compose-dev
 
-# Init ONLY cloud-needed submodules (same list as CI — not full monorepo)
-# Adjust if workflow list changes; do not init diri-cyrex / LIS / speech
-git submodule update --init --recursive \
-  platform-services/backend/deepiri-auth-service \
+# Init ONLY cloud-needed submodules (matches CI in platform-build-and-test.yml)
+git submodule sync \
   platform-services/backend/deepiri-api-gateway \
+  platform-services/backend/deepiri-auth-service \
   platform-services/backend/deepiri-external-bridge-service \
-  platform-services/backend/deepiri-registry \
-  # …add other paths referenced by docker-compose.yml build contexts
+  platform-services/shared/deepiri-shared-utils
+git submodule update --init --depth 1 \
+  platform-services/backend/deepiri-api-gateway \
+  platform-services/backend/deepiri-auth-service \
+  platform-services/backend/deepiri-external-bridge-service \
+  platform-services/shared/deepiri-shared-utils
+# Also init any other build-context paths in docker-compose.yml (registry, jobs, frontend) if they are submodules
 ```
 
 Verify compose is the **cloud** file:
 
 ```bash
 grep -q postgres-platform docker-compose.yml && echo "cloud portal OK"
-test ! -s docker-compose.dev.yml -o "$(grep -c '^  cyrex:' docker-compose.dev.yml 2>/dev/null || echo 0)" = "0" && echo "no full-dev cyrex on this clone"
 ```
 
 ---
