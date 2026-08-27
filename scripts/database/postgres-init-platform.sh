@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Bootstraps CLOUD postgres-platform for the portal direction.
 # Creates role + database `platform`, then applies postgres-init-platform.sql.
 #
@@ -9,16 +9,17 @@
 #
 # Mount this script + postgres-init-platform.sql into docker-entrypoint-initdb.d
 # (or run once against a fresh volume).
-set -euo pipefail
+# Must be LF line endings and /bin/sh — postgres:*-alpine has no bash.
+set -eu
 
 PLATFORM_DB_NAME="${PLATFORM_DB_NAME:-platform}"
 PLATFORM_DB_USER="${PLATFORM_DB_USER:-deepiri_platform}"
 PLATFORM_DB_PASSWORD="${PLATFORM_DB_PASSWORD:?PLATFORM_DB_PASSWORD must be set}"
 SCHEMA_FILE="${PLATFORM_SCHEMA_FILE:-/docker-entrypoint-initdb.d/schemas/platform.sql}"
 
-if [[ ! -f "$SCHEMA_FILE" ]]; then
+if [ ! -f "$SCHEMA_FILE" ]; then
   # Local/dev fallback when not running inside the official entrypoint layout
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  SCRIPT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
   SCHEMA_FILE="${SCRIPT_DIR}/postgres-init-platform.sql"
 fi
 
