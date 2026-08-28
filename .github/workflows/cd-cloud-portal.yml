@@ -129,9 +129,12 @@ jobs:
           set -a && . ./ops/k8s/secrets/.env && set +a
           # Ensure nginx can bind :443 (dummy cert if no real cert yet)
           ./ops/nginx/ensure-dummy-cert.sh platform.deepiri.com -- -f docker-compose.yml || true
-          # Build changed images (frontend + gateway/auth) and recreate
-          docker compose -f docker-compose.yml build
+          # Build changed images and recreate - build frontend explicitly so
+          # Docker correctly detects submodule content changes (rsync --delete).
+          docker compose -f docker-compose.yml build platform-frontend
+          docker compose -f docker-compose.yml build api-gateway auth-service registry jobs external-bridge-service
           docker compose -f docker-compose.yml up -d --force-recreate
+          docker exec deepiri-nginx nginx -s reload 2>/dev/null || true
           echo "=== containers ==="
           docker ps --format "table {{.Names}}\t{{.Status}}"
           echo "=== health ==="
