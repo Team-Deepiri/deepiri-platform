@@ -19,6 +19,7 @@ on:
     branches: [dev]
     paths:
       - 'docker-compose.yml'
+      - 'deepiri-web-frontend'
       - 'deepiri-web-frontend/**'
       - 'platform-services/**'
       - 'scripts/database/**'
