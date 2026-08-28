@@ -1,0 +1,154 @@
+# VPS Monitoring — lightweight, temporary resource sampling for the cheap one-box VPS.
+#
+# Not CD. Manual (workflow_dispatch) only. Installs a cron job on the Netcup
+# VPS 1000 G12 that runs ops/monitoring/vps-sampler.sh once a minute, so we can
+# collect ~1 week of CPU / load / steal / memory / disk data and decide whether
+# the box is sustainable enough to commit to the annual plan.
+#
+# Reuses the same SSH secrets as cd-cloud-portal.yml:
+#   VPS_HOST, VPS_USER, VPS_SSH_KEY   (required)
+#   VPS_PORT                          (optional, default 22)
+#
+# Actions:
+#   status     — is the cron job there, how many rows collected, tail of the log
+#   install    — copy the sampler to the box, add the crontab line, take one sample now
+#   collect    — pull host.csv / containers.csv / log off the box as a build artifact
+#   uninstall  — remove the crontab line (data is left in place for a final collect)
+#
+# Data lives at /opt/deepiri/monitoring/ on the box — a sibling of the deploy
+# dir, so the CD rsync --delete never touches it.
+
+name: VPS Monitoring
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do on the VPS
+        required: true
+        default: status
+        type: choice
+        options:
+          - status
+          - install
+          - collect
+          - uninstall
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-monitoring
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # job-level env: workflow-level env can't read the secrets context
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+      MON_DIR: /opt/deepiri/monitoring
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - name: Setup SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      # NOTE: every heredoc below is quoted (<<'EOSSH'), so its body is sent
+      # verbatim to the remote bash over stdin. MON_DIR / CRON_LINE are set
+      # *inside* the remote script — never passed on the ssh command line,
+      # where the cron line's "* * * *" would glob-expand.
+
+      - name: Status
+        if: ${{ inputs.action == 'status' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" bash -s <<'EOSSH'
+          set -euo pipefail
+          MON_DIR=/opt/deepiri/monitoring
+          echo "=== crontab ==="
+          crontab -l 2>/dev/null | grep 'vps-sampler.sh' || echo "NOT INSTALLED — no crontab line"
+          echo "=== files ==="
+          ls -la "$MON_DIR" 2>/dev/null || echo "no $MON_DIR yet"
+          echo "=== row counts ==="
+          wc -l "$MON_DIR"/*.csv 2>/dev/null || echo "no csv yet"
+          echo "=== last host samples ==="
+          tail -n 3 "$MON_DIR/host.csv" 2>/dev/null || true
+          echo "=== sampler.log tail ==="
+          tail -n 15 "$MON_DIR/sampler.log" 2>/dev/null || true
+          EOSSH
+
+      - name: Install
+        if: ${{ inputs.action == 'install' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" \
+            "mkdir -p '$MON_DIR'"
+          scp -i ~/.ssh/vps_key -P "$VPS_PORT" -o StrictHostKeyChecking=no \
+            ops/monitoring/vps-sampler.sh "$VPS_USER@$VPS_HOST:$MON_DIR/vps-sampler.sh"
+          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" bash -s <<'EOSSH'
+          set -euo pipefail
+          MON_DIR=/opt/deepiri/monitoring
+          CRON_LINE='* * * * * flock -n /tmp/vps-sampler.lock /opt/deepiri/monitoring/vps-sampler.sh >> /opt/deepiri/monitoring/sampler.log 2>&1'
+          chmod +x "$MON_DIR/vps-sampler.sh"
+          command -v flock   >/dev/null || { echo "ERROR: flock not found (install util-linux)"; exit 1; }
+          command -v crontab >/dev/null || { echo "ERROR: crontab not found (install cron)";     exit 1; }
+          # Idempotent: drop any existing sampler line, re-add exactly one.
+          ( crontab -l 2>/dev/null | grep -v 'vps-sampler.sh' || true; echo "$CRON_LINE" ) | crontab -
+          echo "=== installed crontab line ==="
+          crontab -l | grep 'vps-sampler.sh'
+          echo "=== immediate test sample ==="
+          "$MON_DIR/vps-sampler.sh"
+          tail -n 1 "$MON_DIR/host.csv"
+          echo "--- containers ---"
+          tail -n 20 "$MON_DIR/containers.csv"
+          EOSSH
+
+      - name: Collect
+        if: ${{ inputs.action == 'collect' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" \
+            "cd '$MON_DIR' && tar czf - --ignore-failed-read host.csv containers.csv sampler.log \$(ls *.old 2>/dev/null || true)" \
+            > vps-monitoring-data.tar.gz || true
+          if [ ! -s vps-monitoring-data.tar.gz ]; then
+            echo "ERROR: nothing collected — is the sampler installed? (run 'status')"
+            exit 1
+          fi
+          echo "=== archive contents ==="
+          tar tzvf vps-monitoring-data.tar.gz
+
+      - name: Upload artifact
+        if: ${{ inputs.action == 'collect' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vps-monitoring-data
+          path: vps-monitoring-data.tar.gz
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Uninstall
+        if: ${{ inputs.action == 'uninstall' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" bash -s <<'EOSSH'
+          set -euo pipefail
+          MON_DIR=/opt/deepiri/monitoring
+          ( crontab -l 2>/dev/null | grep -v 'vps-sampler.sh' || true ) | crontab -
+          echo "cron line removed. Data kept at $MON_DIR:"
+          ls -la "$MON_DIR" 2>/dev/null || true
+          echo "Run 'collect' once more for the final data, then: rm -rf $MON_DIR"
+          EOSSH
