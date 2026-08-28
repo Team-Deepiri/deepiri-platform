@@ -131,7 +131,7 @@ jobs:
           ./ops/nginx/ensure-dummy-cert.sh platform.deepiri.com -- -f docker-compose.yml || true
           # Build changed images (frontend + gateway/auth) and recreate
           docker compose -f docker-compose.yml build
-          docker compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml up -d --force-recreate
           echo "=== containers ==="
           docker ps --format "table {{.Names}}\t{{.Status}}"
           echo "=== health ==="
