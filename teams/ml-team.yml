@@ -1,3 +1,4 @@
+# Repo: deepiri-control-plane (docker-compose.dev.yml)
 # ML Team — aligned to compose (dropped stale postgres / platform-analytics-service)
 id: ml-team
 display: ML Team

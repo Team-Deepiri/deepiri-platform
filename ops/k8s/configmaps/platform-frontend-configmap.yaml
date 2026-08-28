@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-frontend-config
+  namespace: default
+  annotations:
+    description: "Cloud portal frontend — no Cyrex/LIS/AI workspace in VPS build"
+data:
+  NODE_ENV: "production"
+  VITE_API_URL: "https://portal.example.com/api"
+  VITE_ENABLE_LIS: "false"
+  VITE_ENABLE_CYREX: "false"
+  VITE_ENABLE_AI_WORKSPACE: "false"

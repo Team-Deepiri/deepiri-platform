@@ -51,6 +51,12 @@ check_docker() {
 # Function to stop all containers
 stop_containers() {
   echo -e "${YELLOW}Stopping all Deepiri containers...${NC}"
+
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  # shellcheck source=scripts/utils/resolve-compose-file.sh
+  source "$REPO_ROOT/scripts/utils/resolve-compose-file.sh"
+  resolve_compose_file "$REPO_ROOT" 2>/dev/null || true
   
   # Stop all containers with deepiri in the name
   CONTAINERS=$(docker ps -a --filter "name=deepiri" --format "{{.Names}}" 2>/dev/null || true)
@@ -67,10 +73,10 @@ stop_containers() {
     
     # Also stop any containers started by docker-compose
     echo -e "${YELLOW}Stopping docker-compose services...${NC}"
-    docker-compose -f docker-compose.yml down 2>/dev/null || true
-    docker-compose -f docker-compose.dev.yml down 2>/dev/null || true
-    docker-compose -f docker-compose.microservices.yml down 2>/dev/null || true
-    docker-compose -f docker-compose.enhanced.yml down 2>/dev/null || true
+    if [ -n "${COMPOSE_FILE:-}" ] && [ -f "$COMPOSE_FILE" ]; then
+      docker compose -f "$COMPOSE_FILE" down 2>/dev/null || docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+    fi
+    docker compose -f "$REPO_ROOT/docker-compose.yml" down 2>/dev/null || true
     
     echo -e "${GREEN}✓ All containers stopped${NC}"
   fi

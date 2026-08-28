@@ -1,5 +1,7 @@
 # Find Your Tasks - Team Roles & Responsibilities
 
+> **Repo split:** Team catalogs and `./setup-deepiri-dev.sh` live in **[deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)**. This cloud repo keeps copies under `teams/` for reference; use `teams/cloud-portal.yml` here for VPS deploy.
+
 **🎯 Start here to find your team and understand your role in the Deepiri platform.**
 
 ---
@@ -168,10 +170,14 @@
 
 ## 🚀 Quick Start for Any Team
 
+**Cloud portal deploy** → clone **deepiri-platform** and use `docker compose -f docker-compose.yml up -d`.
+
+**Local dev (Cyrex, LIS, speech, team catalogs)** → clone **deepiri-control-plane**:
+
 1. **Clone the repository:**
    ```bash
-   git clone <repo-url>
-   cd deepiri-platform
+   git clone git@github.com:Team-Deepiri/deepiri-control-plane.git
+   cd deepiri-control-plane
    ```
 
 2. **Set up Git hooks (REQUIRED - protects main/master and branches containing team-dev):**

@@ -13,7 +13,9 @@ import {
   handleQueueStats,
 } from './jobsService';
 import { validateBodyIfPresent } from './middleware/inputValidation';
+import { startBackupScheduler } from './backupScheduler';
 import { connectDatabase } from './db';
+import { PLATFORM_PG_BACKUP_JOB_TYPE } from './platformPgBackup';
 
 dotenv.config();
 
@@ -29,7 +31,7 @@ app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'deepiri-jobs',
-    capabilities: ['async-jobs', 'helox.train'],
+    capabilities: ['async-jobs', 'helox.train', PLATFORM_PG_BACKUP_JOB_TYPE],
     timestamp: new Date().toISOString(),
   });
 });
@@ -50,6 +52,7 @@ app.use(errorHandler);
 
 app.listen(PORT, async () => {
   await connectDatabase();
+  startBackupScheduler();
   secureLog('info', `Jobs service running on port ${PORT}`);
 });
 

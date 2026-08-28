@@ -2,6 +2,7 @@ import { Job, Prisma } from '@prisma/client';
 import { Request, Response } from 'express';
 import { secureLog } from '@team-deepiri/shared-utils';
 import prisma from './db';
+import { PLATFORM_PG_BACKUP_JOB_TYPE, runPlatformPgBackup } from './platformPgBackup';
 
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
@@ -69,10 +70,7 @@ export async function handleCreateJob(req: Request, res: Response): Promise<void
     },
   });
   await appendJobLog(job.id, `Job created (type=${type})`);
-
-  if (type === 'helox.train') {
-    void triggerHeloxTraining(job.id);
-  }
+  dispatchJob(job);
 
   res.status(201).json(toRecord(job));
 }
@@ -159,9 +157,7 @@ export async function handleRetryJob(req: Request, res: Response): Promise<void>
   });
   await appendJobLog(retryJob.id, `Retry of job ${job.id}`);
 
-  if (retryJob.type === 'helox.train') {
-    void triggerHeloxTraining(retryJob.id);
-  }
+  dispatchJob(retryJob);
 
   res.status(201).json(toRecord(retryJob));
 }
@@ -173,6 +169,16 @@ export async function handleQueueStats(_req: Request, res: Response): Promise<vo
     stats[row.status] = row._count;
   }
   res.json({ stats });
+}
+
+function dispatchJob(job: Job): void {
+  if (job.type === 'helox.train') {
+    void triggerHeloxTraining(job.id);
+    return;
+  }
+  if (job.type === PLATFORM_PG_BACKUP_JOB_TYPE) {
+    void runPlatformPgBackup(job.id);
+  }
 }
 
 function resolveHeloxUrl(): string {

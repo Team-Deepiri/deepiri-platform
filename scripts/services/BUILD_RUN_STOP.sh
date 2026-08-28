@@ -11,6 +11,31 @@ if [ -z "$COMMAND" ]; then
     exit 1
 fi
 
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=scripts/utils/resolve-compose-file.sh
+source "$REPO_ROOT/scripts/utils/resolve-compose-file.sh"
+if resolve_compose_file "$REPO_ROOT"; then
+    if [ "$REPO_ROLE" = "cloud-portal" ]; then
+        cd "$REPO_ROOT"
+        if docker compose version &> /dev/null; then
+            COMPOSE_CMD="docker compose"
+        else
+            COMPOSE_CMD="docker-compose"
+        fi
+        case $COMMAND in
+            build)   ./build.sh ;;
+            run)     $COMPOSE_CMD -f "$COMPOSE_FILE" up -d ;;
+            logs)    $COMPOSE_CMD -f "$COMPOSE_FILE" logs -f ;;
+            stop)    $COMPOSE_CMD -f "$COMPOSE_FILE" down ;;
+            rebuild) $COMPOSE_CMD -f "$COMPOSE_FILE" down; ./build.sh; $COMPOSE_CMD -f "$COMPOSE_FILE" up -d ;;
+            status)  $COMPOSE_CMD -f "$COMPOSE_FILE" ps ;;
+            *)       echo "Unknown command: $COMMAND"; exit 1 ;;
+        esac
+        exit 0
+    fi
+fi
+
+# Legacy Skaffold/minikube path (control-plane or older layouts)
 # Set Minikube Docker environment
 eval $(minikube docker-env)
 
