@@ -33,6 +33,16 @@ on:
           - install
           - collect
           - uninstall
+  # A dispatch-only workflow that has never run, on a non-default branch, is
+  # not registered with the Actions API — "Run workflow" never appears and
+  # `gh workflow run` 404s. This narrow push trigger fires exactly once when
+  # this file lands on dev, which registers the workflow and makes the other
+  # actions available. It only ever runs the read-only `status` action, and
+  # only when THIS file changes, so it can never touch a deployment.
+  push:
+    branches: [dev]
+    paths:
+      - .github/workflows/vps-monitoring.yml
 
 permissions:
   contents: read
@@ -43,7 +53,7 @@ concurrency:
 
 jobs:
   run:
-    name: ${{ inputs.action }}
+    name: ${{ inputs.action || 'status (registration run)' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # job-level env: workflow-level env can't read the secrets context
@@ -72,8 +82,9 @@ jobs:
       # *inside* the remote script — never passed on the ssh command line,
       # where the cron line's "* * * *" would glob-expand.
 
+      # Also runs on the push registration event, where inputs.action is unset.
       - name: Status
-        if: ${{ inputs.action == 'status' }}
+        if: ${{ inputs.action == 'status' || github.event_name == 'push' }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/vps_key -p "$VPS_PORT" -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" bash -s <<'EOSSH'
