@@ -355,3 +355,4 @@ volumes:
 networks:
   deepiri-network:
     driver: bridge
+# CD verify 2026-08-28T16:23:20Z - prove force-recreate works
