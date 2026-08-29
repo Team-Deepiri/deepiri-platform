@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   proxy:
     build: .
@@ -8,12 +6,13 @@ services:
     env_file:
       - .env
     ports:
-      - "${PROXY_PORT:-1080}:1080"
+      - "${PROXY_PORT:-8888}:8888"
     logging:
       driver: "local"
       options:
         max-size: "1m"
         max-file: "1"
+        compress: "false"
     deploy:
       resources:
         limits:
