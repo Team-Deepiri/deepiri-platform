@@ -22,15 +22,18 @@ COMPOSE_ARGS=("$@")
 compose() {
   docker compose "${COMPOSE_ARGS[@]}" "$@"
 }
+# `run` calls below pass -T (no TTY / don't inherit stdin). Without it, when this
+# script is fed to a shell over `ssh ... bash -s`, `docker compose run` consumes
+# the caller's remaining stdin — i.e. the rest of the script.
 
-if compose run --rm --entrypoint sh certbot -c \
+if compose run --rm -T --entrypoint sh certbot -c \
     'test -e /etc/letsencrypt/live/current' >/dev/null 2>&1; then
   echo "ensure-dummy-cert: /etc/letsencrypt/live/current already exists, leaving it alone."
   exit 0
 fi
 
 echo "ensure-dummy-cert: no cert found, generating a throwaway self-signed one for ${DOMAIN}..."
-compose run --rm --entrypoint sh certbot -c "
+compose run --rm -T --entrypoint sh certbot -c "
   set -e
   mkdir -p /etc/letsencrypt/live/${DOMAIN}
   openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
