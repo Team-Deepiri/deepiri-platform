@@ -263,6 +263,21 @@ jobs:
                     max(length(password)) AS max_len
                FROM public.users GROUP BY 1 ORDER BY 2 DESC;"
 
+          echo "########## ACCOUNT HYGIENE ##########"
+          # Diagnoses the common login failures: email case/whitespace mismatch
+          # (login does an exact findUnique, so either breaks it), unexpected
+          # hash format, and whether a password was recently changed.
+          # No password hash value is selected — only its prefix and length.
+          q "SELECT id, email,
+                    length(email)            AS email_len,
+                    email <> lower(email)    AS has_uppercase,
+                    email <> btrim(email)    AS has_whitespace,
+                    left(password, 4)        AS hash_type,
+                    length(password)         AS hash_len,
+                    status, email_verified,
+                    last_login_at, updated_at
+               FROM public.users ORDER BY created_at;"
+
           echo "########## BACKUPS (postgres_backups volume) ##########"
           docker exec deepiri-jobs sh -c 'ls -la /backups/postgres 2>/dev/null || echo "backup dir not present/readable"' || echo "jobs container unavailable"
           EOSSH
