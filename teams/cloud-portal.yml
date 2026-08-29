@@ -13,5 +13,6 @@ services:
   - jobs
   - registry
   - platform-frontend
+  - lyback
   - external-bridge-service
   - pg-backup-offsite
