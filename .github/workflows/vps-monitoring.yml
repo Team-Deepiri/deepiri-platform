@@ -245,6 +245,24 @@ jobs:
                     pg_size_pretty(pg_relation_size(indexrelid)) AS size
                FROM pg_stat_user_indexes ORDER BY idx_scan ASC, 1, 2 LIMIT 30;"
 
+          echo "########## PASSWORD STORAGE FORMAT ##########"
+          # Classifies the hash format by prefix and returns COUNTS ONLY.
+          # No hash, email, or other row value is ever selected or printed.
+          q "SELECT CASE
+                      WHEN password IS NULL OR password = '' THEN 'empty/null'
+                      WHEN password LIKE '\$2a\$%' OR password LIKE '\$2b\$%'
+                        OR password LIKE '\$2y\$%' THEN 'bcrypt (ok)'
+                      WHEN password LIKE '\$argon2%' THEN 'argon2 (ok)'
+                      WHEN password LIKE '\$scrypt\$%' THEN 'scrypt (ok)'
+                      WHEN password ~ '^[a-f0-9]{64}\$' THEN 'sha256 hex (WEAK - unsalted)'
+                      WHEN password ~ '^[a-f0-9]{32}\$' THEN 'md5 hex (WEAK)'
+                      ELSE 'UNRECOGNISED - possible plaintext'
+                    END AS storage_format,
+                    count(*) AS accounts,
+                    min(length(password)) AS min_len,
+                    max(length(password)) AS max_len
+               FROM public.users GROUP BY 1 ORDER BY 2 DESC;"
+
           echo "########## BACKUPS (postgres_backups volume) ##########"
           docker exec deepiri-jobs sh -c 'ls -la /backups/postgres 2>/dev/null || echo "backup dir not present/readable"' || echo "jobs container unavailable"
           EOSSH
