@@ -278,6 +278,12 @@ jobs:
                     last_login_at, updated_at
                FROM public.users ORDER BY created_at;"
 
+          echo "########## AUTH-SERVICE RECENT LOG ##########"
+          docker logs --tail 40 deepiri-auth-service 2>&1 | tail -40 || echo "auth-service log unavailable"
+
+          echo "########## API-GATEWAY: AUTH ROUTING ##########"
+          docker logs --tail 60 deepiri-api-gateway 2>&1 | grep -iE 'auth|login|401|500|proxy|ECONN' | tail -20 || echo "no matching gateway lines"
+
           echo "########## BACKUPS (postgres_backups volume) ##########"
           docker exec deepiri-jobs sh -c 'ls -la /backups/postgres 2>/dev/null || echo "backup dir not present/readable"' || echo "jobs container unavailable"
           EOSSH
