@@ -14,6 +14,7 @@
 #   install    — copy the sampler to the box, add the crontab line, take one sample now
 #   collect    — pull host.csv / containers.csv / log off the box as a build artifact
 #   uninstall  — remove the crontab line (data is left in place for a final collect)
+#   db-audit   — read-only Postgres audit: schema inventory, sizes, health stats
 #
 # Data lives at /opt/deepiri/monitoring/ on the box — a sibling of the deploy
 # dir, so the CD rsync --delete never touches it.
@@ -33,6 +34,7 @@ on:
           - install
           - collect
           - uninstall
+          - db-audit
   # A dispatch-only workflow that has never run, on a non-default branch, is
   # not registered with the Actions API — "Run workflow" never appears and
   # `gh workflow run` 404s. This narrow push trigger fires exactly once when
@@ -162,4 +164,87 @@ jobs:
           echo "cron line removed. Data kept at $MON_DIR:"
           ls -la "$MON_DIR" 2>/dev/null || true
           echo "Run 'collect' once more for the final data, then: rm -rf $MON_DIR"
+          EOSSH
+
+      # Read-only Postgres audit. Connects over the container's local socket as
+      # the bootstrap superuser (the postgres image defaults local connections
+      # to trust, which the existing pg_isready healthcheck already relies on),
+      # so no DB password is read, passed, or printed. Every statement is a
+      # SELECT against pg_catalog / pg_stat_* — no table data is returned.
+      - name: DB audit
+        if: ${{ inputs.action == 'db-audit' }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" bash -s <<'EOSSH'
+          set -euo pipefail
+          PGC=deepiri-postgres-platform
+          DB="$(docker exec "$PGC" printenv PLATFORM_DB_NAME 2>/dev/null || echo platform)"
+          echo "Auditing database: $DB"
+          q() { docker exec "$PGC" psql -U postgres -d "$DB" -X -A -F'|' -P pager=off -c "$1"; }
+
+          echo "########## VERSION / UPTIME ##########"
+          q "SELECT version();"
+          q "SELECT date_trunc('second', now() - pg_postmaster_start_time()) AS uptime;"
+
+          echo "########## DATABASES ##########"
+          q "SELECT datname, pg_size_pretty(pg_database_size(datname)) AS size
+               FROM pg_database WHERE datistemplate = false ORDER BY 1;"
+
+          echo "########## SCHEMAS ##########"
+          q "SELECT nspname FROM pg_namespace
+              WHERE nspname NOT LIKE 'pg\_%' AND nspname <> 'information_schema' ORDER BY 1;"
+
+          echo "########## EXTENSIONS ##########"
+          q "SELECT extname, extversion FROM pg_extension ORDER BY 1;"
+
+          echo "########## TABLE INVENTORY (est rows + size) ##########"
+          q "SELECT n.nspname AS schema, c.relname AS tbl,
+                    c.reltuples::bigint AS est_rows,
+                    pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size
+               FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE c.relkind = 'r'
+                AND n.nspname NOT LIKE 'pg\_%' AND n.nspname <> 'information_schema'
+              ORDER BY 1, 2;"
+
+          echo "########## TABLE COUNT BY SCHEMA ##########"
+          q "SELECT n.nspname AS schema, count(*) AS tables
+               FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE c.relkind = 'r'
+                AND n.nspname NOT LIKE 'pg\_%' AND n.nspname <> 'information_schema'
+              GROUP BY 1 ORDER BY 1;"
+
+          echo "########## CONNECTIONS ##########"
+          q "SELECT (SELECT count(*) FROM pg_stat_activity) AS current_conns,
+                    (SELECT setting FROM pg_settings WHERE name = 'max_connections') AS max_allowed;"
+          q "SELECT coalesce(state,'(null)') AS state, count(*)
+               FROM pg_stat_activity GROUP BY 1 ORDER BY 2 DESC;"
+
+          echo "########## CACHE HIT RATIO / IO ##########"
+          q "SELECT datname, blks_hit, blks_read,
+                    CASE WHEN blks_hit + blks_read = 0 THEN NULL
+                         ELSE round(100.0 * blks_hit / (blks_hit + blks_read), 2) END AS cache_hit_pct,
+                    xact_commit, xact_rollback, deadlocks, temp_files
+               FROM pg_stat_database WHERE datname = '$DB';"
+
+          echo "########## KEY SETTINGS ##########"
+          q "SELECT name, setting, unit FROM pg_settings
+              WHERE name IN ('shared_buffers','work_mem','maintenance_work_mem',
+                             'effective_cache_size','max_connections','wal_level',
+                             'autovacuum','fsync','synchronous_commit')
+              ORDER BY 1;"
+
+          echo "########## VACUUM / DEAD TUPLES ##########"
+          q "SELECT schemaname, relname, n_live_tup, n_dead_tup,
+                    last_autovacuum, last_autoanalyze
+               FROM pg_stat_user_tables
+              WHERE n_dead_tup > 0 OR last_autovacuum IS NOT NULL
+              ORDER BY n_dead_tup DESC LIMIT 25;"
+
+          echo "########## INDEX USAGE (least used first) ##########"
+          q "SELECT schemaname, relname, indexrelname, idx_scan,
+                    pg_size_pretty(pg_relation_size(indexrelid)) AS size
+               FROM pg_stat_user_indexes ORDER BY idx_scan ASC, 1, 2 LIMIT 30;"
+
+          echo "########## BACKUPS (postgres_backups volume) ##########"
+          docker exec deepiri-jobs sh -c 'ls -la /backups/postgres 2>/dev/null || echo "backup dir not present/readable"' || echo "jobs container unavailable"
           EOSSH
