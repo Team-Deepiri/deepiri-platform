@@ -145,7 +145,19 @@ jobs:
           # Docker correctly detects submodule content changes (rsync --delete).
           docker compose -f docker-compose.yml build platform-frontend
           docker compose -f docker-compose.yml build api-gateway auth-service registry jobs external-bridge-service
-          docker compose -f docker-compose.yml up -d --force-recreate
+          # No --force-recreate: Compose hashes each service's resolved config
+          # (image id, env, volumes, command) and recreates ONLY what actually
+          # changed. --force-recreate tore down all 12 services on every deploy
+          # regardless of what the commit touched, causing a full-stack outage
+          # (~30-60s, Cloudflare 521) even for single-service changes. The
+          # explicit builds above produce new image ids, so changed services are
+          # still detected and recreated correctly.
+          #
+          # It also reduced churn that caused a real incident: recreating a
+          # container gives it a new IP on the docker network, and nginx caches
+          # upstream IPs until reloaded -- fewer recreates means fewer chances
+          # of a stale upstream. The reload below still runs regardless.
+          docker compose -f docker-compose.yml up -d
           docker exec deepiri-nginx nginx -s reload 2>/dev/null || true
           echo "=== containers ==="
           docker ps --format "table {{.Names}}\t{{.Status}}"
