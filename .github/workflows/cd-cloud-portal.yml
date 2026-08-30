@@ -121,7 +121,7 @@ jobs:
           # in a PR diff, git-blame-able, and impossible to drop a variable without
           # it showing up as a workflow change.
           #
-          # The heredoc delimiter is QUOTED. GitHub substitutes ${{ ... }} before
+          # The heredoc delimiter is QUOTED. GitHub substitutes secret expressions
           # bash sees this script, so a quoted delimiter stops bash from then
           # expanding a '$' or backtick that appears inside a secret VALUE -- which
           # would silently corrupt a password or key.
