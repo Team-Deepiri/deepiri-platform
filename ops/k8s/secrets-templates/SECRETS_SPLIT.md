@@ -17,12 +17,12 @@ Extract into `ops/k8s/secrets/` (gitignored):
 
 | File | Required keys |
 |------|----------------|
-| `.env` | `POSTGRES_PASSWORD`, `PLATFORM_DB_PASSWORD`, `PLATFORM_DB_NAME`, `PLATFORM_DB_USER`, `REDIS_PASSWORD`, `JWT_SECRET`, `INTERNAL_SERVICE_SECRET`, `CORS_ORIGINS`, `VITE_API_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PLAKY_API_TOKEN` (optional), `BACKUP_OFFSITE_*` (optional) |
+| `.env` | `POSTGRES_PASSWORD`, `PLATFORM_DB_PASSWORD`, `PLATFORM_DB_NAME`, `PLATFORM_DB_USER`, `REDIS_PASSWORD`, `JWT_SECRET`, `INTERNAL_SERVICE_SECRET`, `CORS_ORIGINS`, `VITE_API_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PLAKY_API_TOKEN` (optional), `BACKUP_OFFSITE_*` (optional), `GITHUB_APP_ID` / `GITHUB_APP_INSTALLATION_ID` / `GITHUB_APP_PRIVATE_KEY_BASE64` / `GITHUB_WEBHOOK_SECRET` (optional — People-page GitHub activity; `docker-compose.yml` reads these for `external-bridge-service`) |
 | `api-gateway-secret.yaml` | `JWT_SECRET`, `INTERNAL_SERVICE_SECRET`, `REDIS_PASSWORD`, `DB_PASSWORD` (= `PLATFORM_DB_PASSWORD`) |
 | `auth-service-secret.yaml` | `JWT_SECRET`, `INTERNAL_SERVICE_SECRET`, `REDIS_PASSWORD`, `GOOGLE_CLIENT_SECRET` |
 | `registry-secret.yaml` | `REDIS_PASSWORD`, `GITHUB_TOKEN` (optional) |
 | `jobs-secret.yaml` | `PG_BACKUP_PASSWORD` (= `PLATFORM_DB_PASSWORD`) |
-| `external-bridge-service-secret.yaml` | `REDIS_PASSWORD`, `GOOGLE_CLIENT_SECRET`, `PLAKY_API_TOKEN` |
+| `external-bridge-service-secret.yaml` | `REDIS_PASSWORD`, `GOOGLE_CLIENT_SECRET`, `PLAKY_API_TOKEN`, `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY_BASE64`, `GITHUB_WEBHOOK_SECRET` (last four optional — People-page GitHub activity) |
 
 Templates (no real values): [`cloud-portal/`](cloud-portal/)
 

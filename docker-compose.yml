@@ -198,6 +198,17 @@ services:
       KAFKA_ENABLED: "false"
       PLAKY_API_TOKEN: ${PLAKY_API_TOKEN:-}
       PLAKY_POLL_INTERVAL_SEC: ${PLAKY_POLL_INTERVAL_SEC:-60}
+      # GitHub team-activity API for the portal People page. GITHUB_APP_* and
+      # GITHUB_WEBHOOK_SECRET come from ops/k8s/secrets/.env; the rest from the
+      # configmap. All optional — unset ⇒ /github/* returns 503 notConfigured.
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_INSTALLATION_ID: ${GITHUB_APP_INSTALLATION_ID:-}
+      GITHUB_APP_PRIVATE_KEY_BASE64: ${GITHUB_APP_PRIVATE_KEY_BASE64:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      GITHUB_ORG: ${GITHUB_ORG:-Team-Deepiri}
+      GITHUB_REPOS: ${GITHUB_REPOS:-}
+      GITHUB_REPO_ACTIVE_DAYS: ${GITHUB_REPO_ACTIVE_DAYS:-120}
+      GITHUB_CACHE_TTL_SECONDS: ${GITHUB_CACHE_TTL_SECONDS:-600}
     depends_on:
       postgres-platform:
         condition: service_healthy
