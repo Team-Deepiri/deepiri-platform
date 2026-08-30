@@ -212,6 +212,41 @@ services:
     networks:
       - deepiri-network
 
+  plaky-bridge:
+    <<: *default-env
+    build:
+      context: ./platform-services/backend/deepiri-plaky-bridge
+      dockerfile: Dockerfile
+    image: deepiri-plaky-bridge:prod
+    container_name: deepiri-plaky-bridge
+    restart: unless-stopped
+    logging: *minimal-logging
+    mem_limit: 1024m
+    environment:
+      NODE_ENV: production
+      PORT: 5009
+      PLAKY_API_BASE: https://api.plaky.com/v1/public
+      PLAKY_API_KEY: ${PLAKY_API_KEY:-}
+      PLAKY_API_TOKEN: ${PLAKY_API_TOKEN:-}
+      PLAKY_EMAIL: ${PLAKY_EMAIL:-}
+      PLAKY_PASSWORD: ${PLAKY_PASSWORD:-}
+      PLAKY_BOT_EMAIL: ${PLAKY_BOT_EMAIL:-deepiriexternals@gmail.com}
+      IMAP_HOST: ${IMAP_HOST:-imap.gmail.com}
+      IMAP_USER: ${IMAP_USER:-}
+      IMAP_PASS: ${IMAP_PASS:-}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?INTERNAL_SERVICE_SECRET must be set}
+      PLAKY_BRIDGE_DATA_DIR: /app/data
+    volumes:
+      - plaky_bridge_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - deepiri-network
+
   api-gateway:
     <<: *default-env
     build:
@@ -361,6 +396,7 @@ volumes:
   postgres_platform_data:
   postgres_backups:
   redis_data:
+  plaky_bridge_data:
   certbot_conf:
   certbot_webroot:
 
