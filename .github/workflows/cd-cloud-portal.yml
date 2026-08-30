@@ -96,6 +96,7 @@ jobs:
             --exclude '.git/' \
             --exclude 'node_modules/' \
             --exclude 'dist/' \
+            --exclude 'DEPLOYED.txt' \
             ./ "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/"
 
       - name: Write secrets .env if VPS_ENV_FILE is set
@@ -153,6 +154,29 @@ jobs:
           curl -skS -o /dev/null -w "frontend: %{http_code}\n" https://127.0.0.1/ || true
           curl -skS https://127.0.0.1/api/health | head -c 300; echo
           EOSSH
+
+      - name: Record deployed version on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}
+        run: |
+          set -euo pipefail
+          # The tree is rsynced WITHOUT .git (see "Rsync to VPS"), so `git -C $VPS_PATH`
+          # on the box fails with "not a git repository" and nobody can tell what is
+          # actually deployed. This manifest is the box's answer to "what commit is this?".
+          {
+            echo "platform_commit: ${{ github.sha }}"
+            echo "platform_ref:    ${{ github.ref_name }}"
+            echo "deployed_at:     $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "run_url:         ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "submodules:"
+            git ls-tree -r HEAD | awk '$2 == "commit" { print "  " $4 ": " $3 }'
+          } > DEPLOYED.txt
+          cat DEPLOYED.txt
+          scp -i ~/.ssh/vps_key -P "${VPS_PORT}" -o StrictHostKeyChecking=no \
+            DEPLOYED.txt "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/DEPLOYED.txt"
 
       - name: Verify via public domain
         run: |
