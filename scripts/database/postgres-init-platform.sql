@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS org.teams (
 
 CREATE TABLE IF NOT EXISTS org.team_members (
   team_id     UUID NOT NULL REFERENCES org.teams(id) ON DELETE CASCADE,
-  user_id     UUID NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL,
   role        TEXT NOT NULL DEFAULT 'member'
               CHECK (role IN ('owner', 'admin', 'member')),
   created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -155,10 +155,10 @@ CREATE TABLE IF NOT EXISTS org.projects (
 
 CREATE TABLE IF NOT EXISTS org.project_members (
   project_id  UUID NOT NULL REFERENCES org.projects(id) ON DELETE CASCADE,
-  user_id     UUID NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL,
   role        TEXT NOT NULL DEFAULT 'contributor'
               CHECK (role IN ('lead', 'contributor', 'viewer')),
-  assigned_by UUID REFERENCES identity.users(id),
+  assigned_by UUID,
   assigned_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (project_id, user_id)
 );
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS portal.announcements (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title         TEXT NOT NULL,
   body_md       TEXT NOT NULL,
-  author_id     UUID REFERENCES identity.users(id),
+  author_id     UUID,
   pinned        BOOLEAN NOT NULL DEFAULT FALSE,
   published_at  TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -212,14 +212,14 @@ CREATE TABLE IF NOT EXISTS portal.events (
   ends_at        TIMESTAMPTZ,
   location_url   TEXT,
   description_md TEXT,
-  created_by     UUID REFERENCES identity.users(id),
+  created_by     UUID,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS portal.event_rsvps (
   event_id    UUID NOT NULL REFERENCES portal.events(id) ON DELETE CASCADE,
-  user_id     UUID NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL,
   status      TEXT NOT NULL CHECK (status IN ('going', 'maybe', 'no')),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (event_id, user_id)
@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS catalog.artifacts (
   type        TEXT NOT NULL
               CHECK (type IN ('dataset', 'doc', 'recording', 'other')),
   uri         TEXT NOT NULL,
-  owner_id    UUID REFERENCES identity.users(id),
+  owner_id    UUID,
   meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS catalog.run_records (
                  CHECK (status IN ('pending', 'running', 'passed', 'failed', 'unknown')),
   summary        JSONB NOT NULL DEFAULT '{}'::jsonb,
   artifact_uris  TEXT[] NOT NULL DEFAULT '{}',
-  created_by     UUID REFERENCES identity.users(id),
+  created_by     UUID,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -399,7 +399,7 @@ CREATE TABLE IF NOT EXISTS onboarding.steps (
 );
 
 CREATE TABLE IF NOT EXISTS onboarding.user_tracks (
-  user_id       UUID NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE,
+  user_id       UUID NOT NULL,
   track_id      UUID NOT NULL REFERENCES onboarding.tracks(id) ON DELETE CASCADE,
   started_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   completed_at  TIMESTAMPTZ,
@@ -407,7 +407,7 @@ CREATE TABLE IF NOT EXISTS onboarding.user_tracks (
 );
 
 CREATE TABLE IF NOT EXISTS onboarding.user_steps (
-  user_id     UUID NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL,
   step_id     UUID NOT NULL REFERENCES onboarding.steps(id) ON DELETE CASCADE,
   done        BOOLEAN NOT NULL DEFAULT FALSE,
   done_at     TIMESTAMPTZ,
@@ -453,7 +453,7 @@ CREATE TABLE IF NOT EXISTS vizult.snapshots (
   graph_json      JSONB,
   graph_uri       TEXT,
   stats           JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_by      UUID REFERENCES identity.users(id),
+  created_by      UUID,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT vizult_snapshots_payload_chk CHECK (graph_json IS NOT NULL OR graph_uri IS NOT NULL)
 );
@@ -534,7 +534,7 @@ CREATE TABLE IF NOT EXISTS integrations.plaky_issue_links (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   issue_id    UUID NOT NULL REFERENCES integrations.plaky_issues(id) ON DELETE CASCADE,
   project_id  UUID REFERENCES org.projects(id) ON DELETE CASCADE,
-  user_id     UUID REFERENCES identity.users(id) ON DELETE CASCADE,
+  user_id     UUID,
   link_kind   TEXT NOT NULL DEFAULT 'related',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -551,7 +551,7 @@ CREATE TABLE IF NOT EXISTS integrations.identity_maps (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   provider          TEXT NOT NULL,
   external_user_id  TEXT NOT NULL,
-  user_id           UUID NOT NULL REFERENCES identity.users(id) ON DELETE CASCADE,
+  user_id           UUID NOT NULL,
   UNIQUE (provider, external_user_id)
 );
 
@@ -570,7 +570,7 @@ CREATE TABLE IF NOT EXISTS jobs_meta.job_runs (
                CHECK (status IN ('queued', 'running', 'succeeded', 'failed', 'cancelled')),
   payload      JSONB NOT NULL DEFAULT '{}'::jsonb,
   result       JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_by   UUID REFERENCES identity.users(id),
+  created_by   UUID,
   started_at   TIMESTAMPTZ,
   finished_at  TIMESTAMPTZ,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -592,3 +592,67 @@ BEGIN
     EXECUTE 'ALTER DEFAULT PRIVILEGES IN SCHEMA identity, org, portal, catalog, onboarding, vizult, integrations, jobs_meta, registry GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO deepiri_platform';
   END IF;
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- User foreign keys -> public.users
+--
+-- public.users is owned by auth-service (Prisma) and is the canonical user
+-- table. It does NOT exist when this script runs: Postgres executes
+-- docker-entrypoint-initdb.d on first boot, before auth-service has ever
+-- started, so `prisma migrate deploy` has not yet created it.
+--
+-- The user columns above are therefore declared without an inline REFERENCES,
+-- and the foreign keys are added here only once public.users is present. On a
+-- fresh volume this block is skipped; the same statements are then applied by
+-- scripts/database/migrations/2026-08-29-repoint-user-fks-to-public.sql once
+-- auth-service has booted.
+--
+-- Idempotent: each constraint is added only if it is not already there.
+-- ---------------------------------------------------------------------------
+DO $user_fks$
+DECLARE
+  r RECORD;
+  n INT := 0;
+BEGIN
+  IF to_regclass('public.users') IS NULL THEN
+    RAISE NOTICE 'public.users not present yet — user foreign keys deferred to the migration';
+    RETURN;
+  END IF;
+
+  FOR r IN
+    SELECT * FROM (VALUES
+      ('org',          'team_members',       'user_id',     'CASCADE'),
+      ('org',          'project_members',    'user_id',     'CASCADE'),
+      ('org',          'project_members',    'assigned_by', 'NO ACTION'),
+      ('portal',       'announcements',      'author_id',   'NO ACTION'),
+      ('portal',       'events',             'created_by',  'NO ACTION'),
+      ('portal',       'event_rsvps',        'user_id',     'CASCADE'),
+      ('catalog',      'artifacts',          'owner_id',    'NO ACTION'),
+      ('catalog',      'run_records',        'created_by',  'NO ACTION'),
+      ('onboarding',   'user_tracks',        'user_id',     'CASCADE'),
+      ('onboarding',   'user_steps',         'user_id',     'CASCADE'),
+      ('vizult',       'snapshots',          'created_by',  'NO ACTION'),
+      ('integrations', 'plaky_issue_links',  'user_id',     'CASCADE'),
+      ('integrations', 'identity_maps',      'user_id',     'CASCADE'),
+      ('jobs_meta',    'job_runs',           'created_by',  'NO ACTION')
+    ) AS t(sch, tbl, col, on_delete)
+  LOOP
+    CONTINUE WHEN EXISTS (
+      SELECT 1 FROM pg_constraint con
+        JOIN pg_class     rel ON rel.oid = con.conrelid
+        JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+       WHERE con.contype = 'f'
+         AND nsp.nspname = r.sch
+         AND rel.relname = r.tbl
+         AND con.conname = format('%s_%s_fkey', r.tbl, r.col)
+    );
+
+    EXECUTE format(
+      'ALTER TABLE %I.%I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES public.users(id) ON DELETE %s',
+      r.sch, r.tbl, format('%s_%s_fkey', r.tbl, r.col), r.col, r.on_delete);
+    n := n + 1;
+  END LOOP;
+
+  RAISE NOTICE 'user foreign keys -> public.users: % added', n;
+END
+$user_fks$;

@@ -1,7 +1,11 @@
 # CD: Cloud portal → Netcup VPS 1000 G12 (platform.deepiri.com)
 #
 # Deploys the cloud portal stack (docker-compose.yml) to the cheap one-box VPS.
-# Triggers on push to `dev` (after PR 304 merges) and on manual dispatch.
+# Triggers on push to `main` and on manual dispatch.
+#
+# `main` is the single deploy source. Deploying from a feature branch is what
+# let production drift onto perf/cloud-frontend-optimization for a month while
+# main carried different code; do not repoint this at a non-main branch.
 #
 # Required GitHub secrets (Settings → Secrets and variables → Actions):
 #   VPS_HOST              e.g. 159.195.234.19
@@ -16,7 +20,7 @@ name: CD Cloud Portal Deploy
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
     paths:
       - 'docker-compose.yml'
       - 'deepiri-web-frontend'
@@ -118,7 +122,14 @@ jobs:
           VPS_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" bash -s <<'EOSSH'
+          # NOTE: the remote script is slurped into a file and then executed —
+          # NOT piped to `bash -s`. `ensure-dummy-cert.sh` runs `docker compose run`
+          # (interactive stdin by default), which, when the script is on ssh stdin,
+          # swallows the rest of the heredoc so the build/up/reload lines never run
+          # (the step still exits 0). `cat > file && bash file` gives those commands
+          # a clean stdin.
+          ssh -T -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" \
+            'd=$(mktemp) || exit 1; cat > "$d"; bash "$d"; rc=$?; rm -f "$d"; exit $rc' <<'EOSSH'
           set -euo pipefail
           VPS_PATH="${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}"
           cd "$VPS_PATH"

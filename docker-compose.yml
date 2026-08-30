@@ -285,6 +285,18 @@ services:
         aliases:
           - frontend
 
+  lyback:
+    build:
+      context: .
+      dockerfile: platform-services/games/Dockerfile
+    image: deepiri-lyback:prod
+    container_name: deepiri-lyback
+    restart: unless-stopped
+    logging: *minimal-logging
+    mem_limit: 128m
+    networks:
+      - deepiri-network
+
   nginx:
     <<: *default-env
     image: nginx:alpine
