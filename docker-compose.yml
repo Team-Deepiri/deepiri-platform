@@ -213,6 +213,13 @@ services:
       - deepiri-network
 
   plaky-bridge:
+    # Disabled: the service crash-loops (headless Chromium relaunched each cycle,
+    # ~226MB/6.4% CPU) because PLAKY_*/IMAP_* credentials are not present in
+    # ops/k8s/secrets/.env. It reached 27 restarts in prod before being stopped.
+    # Compose skips profiled services unless the profile is explicitly requested,
+    # so this keeps it down across deploys without deleting the service or its
+    # source. To re-enable: add the credentials, then remove this profiles key.
+    profiles: ["disabled"]
     <<: *default-env
     build:
       context: ./platform-services/backend/deepiri-plaky-bridge

@@ -14,7 +14,9 @@
 # Optional secrets:
 #   VPS_PORT              default 22
 #   VPS_DEPLOY_PATH       default /opt/deepiri/deepiri-platform
-#   VPS_ENV_FILE          full content of ops/k8s/secrets/.env (if set, overwrites remote .env)
+# Runtime env for the stack is one GitHub secret per variable, assembled in
+# the "Assemble and write secrets .env" step below. Add a variable there AND
+# as a repo secret; the deploy fails fast if any required value is empty.
 #
 name: CD Cloud Portal Deploy
 
@@ -99,21 +101,74 @@ jobs:
             --exclude 'DEPLOYED.txt' \
             ./ "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/"
 
-      - name: Write secrets .env if VPS_ENV_FILE is set
+      - name: Assemble and write secrets .env
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
           VPS_PATH: ${{ secrets.VPS_DEPLOY_PATH || '/opt/deepiri/deepiri-platform' }}
-          VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
         run: |
           set -euo pipefail
-          if [ -z "${VPS_ENV_FILE:-}" ]; then
-            echo "No VPS_ENV_FILE secret, skipping .env overwrite (using existing remote .env)"
-            exit 0
+          umask 077
+
+          # One GitHub secret per variable, assembled explicitly here.
+          #
+          # This replaces a single opaque VPS_ENV_FILE blob. GitHub secrets are
+          # write-only, so nobody could read back what that blob declared. It went
+          # stale, and twice in one night people believed they had updated it when
+          # they had only edited the live box -- whose .env this step overwrites on
+          # every deploy. The declared state is now visible in this file: reviewable
+          # in a PR diff, git-blame-able, and impossible to drop a variable without
+          # it showing up as a workflow change.
+          #
+          # The heredoc delimiter is QUOTED. GitHub substitutes ${{ ... }} before
+          # bash sees this script, so a quoted delimiter stops bash from then
+          # expanding a '$' or backtick that appears inside a secret VALUE -- which
+          # would silently corrupt a password or key.
+          cat > /tmp/deploy.env <<'ENVEOF'
+          ANNOUNCEMENTS_CHANNEL_ID=${{ secrets.ANNOUNCEMENTS_CHANNEL_ID }}
+          BACKUP_OFFSITE_ENABLED=${{ secrets.BACKUP_OFFSITE_ENABLED }}
+          CLIENT_URL=${{ secrets.CLIENT_URL }}
+          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+          DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}
+          EXTERNAL_BRIDGE_BASE_URL=${{ secrets.EXTERNAL_BRIDGE_BASE_URL }}
+          INTERNAL_SERVICE_SECRET=${{ secrets.INTERNAL_SERVICE_SECRET }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          NODE_ENV=${{ secrets.NODE_ENV }}
+          NOROZO_ANNOUNCEMENTS_WEBHOOK_URL=${{ secrets.NOROZO_ANNOUNCEMENTS_WEBHOOK_URL }}
+          NOROZO_WEBHOOK_SECRET=${{ secrets.NOROZO_WEBHOOK_SECRET }}
+          PLAKY_POLL_INTERVAL_SEC=${{ secrets.PLAKY_POLL_INTERVAL_SEC }}
+          PLATFORM_ANNOUNCEMENTS_WEBHOOK_SECRET=${{ secrets.PLATFORM_ANNOUNCEMENTS_WEBHOOK_SECRET }}
+          PLATFORM_DB_NAME=${{ secrets.PLATFORM_DB_NAME }}
+          PLATFORM_DB_PASSWORD=${{ secrets.PLATFORM_DB_PASSWORD }}
+          PLATFORM_DB_USER=${{ secrets.PLATFORM_DB_USER }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          VITE_API_URL=${{ secrets.VITE_API_URL }}
+          ENVEOF
+
+          # Fail BEFORE touching the remote file. The only pre-existing guard was
+          # `[ -f .env ]`, which a file full of empty values passes happily; an
+          # unset or misspelled secret renders as an empty string, so without this
+          # the stack would start misconfigured instead of failing loudly.
+          missing=""
+          for k in ANNOUNCEMENTS_CHANNEL_ID BACKUP_OFFSITE_ENABLED CLIENT_URL CORS_ORIGINS DISCORD_BOT_TOKEN EXTERNAL_BRIDGE_BASE_URL INTERNAL_SERVICE_SECRET JWT_SECRET NODE_ENV NOROZO_ANNOUNCEMENTS_WEBHOOK_URL NOROZO_WEBHOOK_SECRET PLAKY_POLL_INTERVAL_SEC PLATFORM_ANNOUNCEMENTS_WEBHOOK_SECRET PLATFORM_DB_NAME PLATFORM_DB_PASSWORD PLATFORM_DB_USER POSTGRES_DB POSTGRES_PASSWORD POSTGRES_USER REDIS_PASSWORD VITE_API_URL; do
+            grep -qE "^${k}=.+" /tmp/deploy.env || missing="${missing} ${k}"
+          done
+          if [ -n "${missing}" ]; then
+            echo "ERROR: required secret(s) empty or unset:${missing}"
+            echo "Create them in Settings > Secrets and variables > Actions, then re-run."
+            exit 1
           fi
-          printf '%s' "$VPS_ENV_FILE" | ssh -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" \
-            "cat > ${VPS_PATH}/ops/k8s/secrets/.env && chmod 600 ${VPS_PATH}/ops/k8s/secrets/.env && echo 'Wrote .env'"
+          echo "Assembled .env with $(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' /tmp/deploy.env) variables, all non-empty"
+
+          scp -i ~/.ssh/vps_key -P "${VPS_PORT}" -o StrictHostKeyChecking=no \
+            /tmp/deploy.env "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/ops/k8s/secrets/.env"
+          ssh -i ~/.ssh/vps_key -p "${VPS_PORT}" -o StrictHostKeyChecking=no "${VPS_USER}@${VPS_HOST}" \
+            "chmod 600 ${VPS_PATH}/ops/k8s/secrets/.env && echo 'Wrote .env'"
+          rm -f /tmp/deploy.env
 
       - name: Build & restart on VPS
         env:
@@ -145,7 +200,19 @@ jobs:
           # Docker correctly detects submodule content changes (rsync --delete).
           docker compose -f docker-compose.yml build platform-frontend
           docker compose -f docker-compose.yml build api-gateway auth-service registry jobs external-bridge-service
-          docker compose -f docker-compose.yml up -d --force-recreate
+          # No --force-recreate: Compose hashes each service's resolved config
+          # (image id, env, volumes, command) and recreates ONLY what actually
+          # changed. --force-recreate tore down all 12 services on every deploy
+          # regardless of what the commit touched, causing a full-stack outage
+          # (~30-60s, Cloudflare 521) even for single-service changes. The
+          # explicit builds above produce new image ids, so changed services are
+          # still detected and recreated correctly.
+          #
+          # It also reduced churn that caused a real incident: recreating a
+          # container gives it a new IP on the docker network, and nginx caches
+          # upstream IPs until reloaded -- fewer recreates means fewer chances
+          # of a stale upstream. The reload below still runs regardless.
+          docker compose -f docker-compose.yml up -d
           docker exec deepiri-nginx nginx -s reload 2>/dev/null || true
           echo "=== containers ==="
           docker ps --format "table {{.Names}}\t{{.Status}}"
