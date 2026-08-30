@@ -1,0 +1,31 @@
+{
+  "name": "deepiri-plaky-bridge",
+  "version": "1.0.0",
+  "description": "Headless Plaky bridge — 100% background, no GUI. Playwright + Express for invite/kick automation. Real API (X-API-Key) used where possible.",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
+  },
+  "dependencies": {
+    "axios": "^1.20.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "imap": "^0.8.19",
+    "mailparser": "^3.9.17",
+    "playwright": "1.46.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/imap": "^0.8.43",
+    "@types/mailparser": "^3.4.6",
+    "@types/node": "^26.4.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^7.0.2"
+  }
+}
