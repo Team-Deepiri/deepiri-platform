@@ -1,7 +1,11 @@
 # CD: Cloud portal → Netcup VPS 1000 G12 (platform.deepiri.com)
 #
 # Deploys the cloud portal stack (docker-compose.yml) to the cheap one-box VPS.
-# Triggers on push to `dev` (after PR 304 merges) and on manual dispatch.
+# Triggers on push to `main` and on manual dispatch.
+#
+# `main` is the single deploy source. Deploying from a feature branch is what
+# let production drift onto perf/cloud-frontend-optimization for a month while
+# main carried different code; do not repoint this at a non-main branch.
 #
 # Required GitHub secrets (Settings → Secrets and variables → Actions):
 #   VPS_HOST              e.g. 159.195.234.19
@@ -16,7 +20,7 @@ name: CD Cloud Portal Deploy
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
     paths:
       - 'docker-compose.yml'
       - 'deepiri-web-frontend'
