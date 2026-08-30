@@ -97,3 +97,23 @@ fi
 
 echo "[Prisma Baseline] Prisma migration check complete."
 
+# Final gate: every branch above swallows failures (`|| true`, "Warning: ...
+# This may be normal"), so a migration could silently not apply and the service
+# would still start against a schema it does not have. That happened: a
+# migration failed on 2026-08-28, Prisma then refused all later migrations with
+# P3009, and the RBAC `role` column never landed. The service started anyway and
+# the only clue was a log line saying the failure "may be normal".
+#
+# `migrate status` is the authority. If the schema is not up to date, fail here
+# rather than starting a service whose code expects columns that do not exist.
+echo "[Prisma Baseline] Verifying schema is actually up to date..."
+STATUS_OUTPUT=$(npx prisma migrate status 2>&1)
+if echo "$STATUS_OUTPUT" | grep -q "Database schema is up to date"; then
+    echo "[Prisma Baseline] Schema verified up to date."
+else
+    echo "[Prisma Baseline] FATAL: schema is NOT up to date. Refusing to start."
+    echo "$STATUS_OUTPUT"
+    echo "[Prisma Baseline] Resolve with: npx prisma migrate status  (then 'migrate resolve' for a failed migration, or 'migrate deploy' for pending ones)."
+    exit 1
+fi
+
