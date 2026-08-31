@@ -16,7 +16,8 @@ data:
   # GitHub team-activity API for the portal People page (non-secret config;
   # GITHUB_APP_* / GITHUB_WEBHOOK_SECRET live in the secret).
   GITHUB_ORG: "Team-Deepiri"
-  # Active product repos only — keeps /overview fast and relevant. No spaces.
+  # Active product repos only — keeps /overview fast and relevant.
+  # Comma-separated; the service trims surrounding whitespace on each entry.
   GITHUB_REPOS: "deepiri-platform,deepiri-web-frontend,deepiri-api-gateway,deepiri-auth-service,deepiri-external-bridge-service,deepiri-registry,deepiri-jobs,deepiri-control-plane,deepiri-language-intelligence-service,diri-cyrex"
   GITHUB_REPO_ACTIVE_DAYS: "120"
   GITHUB_CACHE_TTL_SECONDS: "600"
