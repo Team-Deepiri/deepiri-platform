@@ -337,7 +337,11 @@ services:
     logging: *minimal-logging
     mem_limit: 128m
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      # 127.0.0.1, not localhost: inside this image localhost resolves to ::1
+      # only, while nginx listens on 0.0.0.0:80 (IPv4). Using localhost made
+      # every probe fail with "connection refused" while the service was
+      # serving traffic perfectly — container marked unhealthy, nothing wrong.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
