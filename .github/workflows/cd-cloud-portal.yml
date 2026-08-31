@@ -220,7 +220,24 @@ jobs:
           # upstream IPs until reloaded -- fewer recreates means fewer chances
           # of a stale upstream. The reload below still runs regardless.
           docker compose -f docker-compose.yml up -d
-          docker exec deepiri-nginx nginx -s reload 2>/dev/null || true
+          # nginx.conf is bind-mounted as a SINGLE FILE. rsync replaces files by
+          # writing a temp and renaming, which creates a new inode — the container's
+          # mount keeps pointing at the old one, so `nginx -s reload` re-reads STALE
+          # content and the config change silently never applies. Observed live:
+          # host inode 390753 / 7956 bytes vs container inode 390760 / 5414 bytes,
+          # with the new vhost missing entirely from what nginx was actually serving.
+          #
+          # Compare checksums and recreate only when they differ, so a config change
+          # always lands while an unchanged deploy still gets a cheap reload rather
+          # than a front-door restart.
+          NGINX_HOST_SUM=$(md5sum ops/nginx/cloud-prod.conf | cut -d' ' -f1)
+          NGINX_CONT_SUM=$(docker exec deepiri-nginx md5sum /etc/nginx/nginx.conf 2>/dev/null | cut -d' ' -f1 || echo none)
+          if [ "$NGINX_HOST_SUM" != "$NGINX_CONT_SUM" ]; then
+            echo "nginx config changed (host=$NGINX_HOST_SUM container=$NGINX_CONT_SUM) — recreating nginx"
+            docker compose -f docker-compose.yml up -d --force-recreate nginx
+          else
+            docker exec deepiri-nginx nginx -s reload 2>/dev/null || true
+          fi
           echo "=== containers ==="
           docker ps --format "table {{.Names}}\t{{.Status}}"
           echo "=== health ==="
