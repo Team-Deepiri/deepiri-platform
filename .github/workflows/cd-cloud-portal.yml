@@ -132,6 +132,17 @@ jobs:
           CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
           DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}
           EXTERNAL_BRIDGE_BASE_URL=${{ secrets.EXTERNAL_BRIDGE_BASE_URL }}
+          # GitHub team-activity API (external-bridge-service). OPTIONAL — left
+          # out of the required-vars check below on purpose: unset just makes
+          # /api/integrations/github/* return 503 notConfigured, it must not
+          # fail the deploy. Source secrets are named GH_* because GitHub
+          # reserves the GITHUB_ prefix for Actions secret names; they map to
+          # the GITHUB_* env vars the service reads. GH_APP_PRIVATE_KEY_BASE64
+          # is `base64 -w0` of the App's .pem.
+          GITHUB_APP_ID=${{ secrets.GH_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID=${{ secrets.GH_APP_INSTALLATION_ID }}
+          GITHUB_APP_PRIVATE_KEY_BASE64=${{ secrets.GH_APP_PRIVATE_KEY_BASE64 }}
+          GITHUB_WEBHOOK_SECRET=${{ secrets.GH_WEBHOOK_SECRET }}
           INTERNAL_SERVICE_SECRET=${{ secrets.INTERNAL_SERVICE_SECRET }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           NODE_ENV=${{ secrets.NODE_ENV }}
@@ -162,7 +173,7 @@ jobs:
             echo "Create them in Settings > Secrets and variables > Actions, then re-run."
             exit 1
           fi
-          echo "Assembled .env with $(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' /tmp/deploy.env) variables, all non-empty"
+          echo "Assembled .env with $(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' /tmp/deploy.env) variables (required ones verified non-empty; GITHUB_* are optional)"
 
           scp -i ~/.ssh/vps_key -P "${VPS_PORT}" -o StrictHostKeyChecking=no \
             /tmp/deploy.env "${VPS_USER}@${VPS_HOST}:${VPS_PATH}/ops/k8s/secrets/.env"
