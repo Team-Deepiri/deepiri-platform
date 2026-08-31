@@ -205,6 +205,13 @@ jobs:
           # happened: a fix to prisma-baseline.sh (baked into that base image)
           # published successfully and still did not reach the running
           # container, because the build silently reused the stale local copy.
+          # Services defined with `image:` and no `build:` (voxier) are never
+          # refreshed by `build` or by `up -d` — compose reuses whatever copy of
+          # that tag is already on the box. Their tags are mutable, so a new
+          # image published upstream would silently never arrive. Pull them
+          # explicitly. --ignore-buildable skips anything we build ourselves.
+          docker compose -f docker-compose.yml pull --ignore-buildable || true
+
           docker compose -f docker-compose.yml build --pull platform-frontend
           docker compose -f docker-compose.yml build --pull api-gateway auth-service registry jobs external-bridge-service
           # No --force-recreate: Compose hashes each service's resolved config

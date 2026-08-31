@@ -209,3 +209,55 @@ Directly relevant to this work:
 - **Verify config before merging**, by rendering it into a throwaway
   `nginx:alpine` with the real certs and network attached. A bad config here
   takes down the entire front door.
+
+---
+
+## 6. Open question for @shan-versc — how Voxier should actually be hosted
+
+Voxier is now deployed and reachable at `games.deepiri.com/voxier`, served as a
+Godot 4 web export (static `index.html` + `.wasm` + `.pck` + `.js`) from an
+nginx container built in CI.
+
+**It works, but the hosting approach deserves a second opinion before more is
+built on top of it.** Handing this to Shanley to decide.
+
+### What it costs today
+
+- **`index.wasm` is 35 MB**, uncompressed on the wire. Every first-time visitor
+  downloads all of it before anything renders. No gzip/brotli is configured for
+  it, and `.wasm` compresses well — this is the single biggest win available.
+- The image is rebuilt and republished on **every push to Voxier's `main`**,
+  which means a ~36 MB image push per commit.
+- The whole export is baked into the container image rather than served from
+  object storage or a CDN, so every deploy moves the full payload.
+
+### Things that bit us getting here, worth knowing before changing it
+
+1. **COOP/COEP are load-bearing, not hardening.** Godot 4 uses
+   `SharedArrayBuffer`, which needs cross-origin isolation. Remove either header
+   and the page loads to a blank canvas with no obvious error. They are scoped to
+   `location /voxier/` deliberately — applied server-wide, `require-corp` would
+   also isolate Lyback.
+2. **Do not add a `types { }` block to that nginx config.** A `types` block in
+   server context *replaces* the inherited MIME map instead of extending it. Ours
+   declared only wasm, which made nginx serve `index.html` as
+   `application/octet-stream` — so browsers **downloaded the page instead of
+   rendering it**. The default `mime.types` already maps wasm. This is now fixed,
+   and the config carries a comment saying why.
+3. The Godot export must be built with **export templates matching the engine
+   version exactly** (4.2.2), and the project must be opened once headless
+   (`--editor --quit`) before export or `class_name` types fail to resolve.
+
+### Questions worth answering
+
+- Should the 35 MB wasm be served with **brotli/gzip precompression**, and from
+  nginx or a CDN? This is the obvious first improvement.
+- Should the export live in the **image** at all, or in object storage with the
+  container serving only a thin shell?
+- Is `/voxier` under a shared `games.deepiri.com` the right shape, or should each
+  game get its own subdomain? Subpath hosting constrains asset paths and makes
+  per-game headers fiddlier — which is exactly what the COOP/COEP scoping above
+  is working around.
+- Does Voxier need its own cert/hostname if it ever gains a backend?
+
+None of this blocks the current deployment. It is live and playable.
