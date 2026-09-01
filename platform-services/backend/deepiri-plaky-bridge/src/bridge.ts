@@ -401,7 +401,7 @@ export class PlakyBridge {
       }
       return { success: true, email, status: 'pending-removal', via: 'browser' };
     } catch (e: any) {
-      console.error(`[PlakyBridge] kick failed for ${email}:`, e.message);
+      console.error('[PlakyBridge] kick failed for %s: %s', email, e.message);
       await this.recoverSession().catch(() => {});
       return { success: false, email, error: e.message, via: 'browser' };
     }
