@@ -84,6 +84,24 @@ cd deepiri-control-plane
 Cloud compose builds from `platform-services/` paths. Submodule init for CI/deploy is scoped in `.github/workflows/platform-build-and-test.yml`.  
 Full team submodule lists → control-plane `teams/*.yml`.
 
+### Keeping pinned commits current
+
+Each service is a standalone repo tracked here as a git submodule (a single
+pinned commit SHA). Production deploys run from this repo's CD
+(`.github/workflows/cd-cloud-portal.yml`), which builds each submodule with
+docker compose on the VPS — so **merging a submodule-bump PR into `main`
+deploys that change.**
+
+The bumps are automated by **[deepiri-cascade](https://github.com/Team-Deepiri/deepiri-cascade)**:
+a push to a service's default branch → cascade opens a PR here on branch
+`deepiri-cascade/deepiri-platform/deps/<sha>` that repoints the submodule (and
+regenerates any npm/Poetry lock entries). A human reviews and merges it to
+deploy. No workflow files are needed in the service repos.
+
+This replaced a per-service `cd.yml` "auto-bump" workflow (GitHub App
+`deepiri-cd-token`), removed in favour of cascade so only one system opens
+bump PRs. To bump by hand: edit the pinned SHA on a branch, open a PR, merge.
+
 ## Documentation
 
 - [Getting Started](docs/getting-started/START_HERE.md)
