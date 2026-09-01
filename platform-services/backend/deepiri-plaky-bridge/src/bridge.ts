@@ -342,7 +342,7 @@ export class PlakyBridge {
       // If no verification, assume pending (email invite sent)
       return { success: true, email, role, status: 'pending', via: 'browser' };
     } catch (e: any) {
-      console.error(`[PlakyBridge] invite failed for ${email}:`, e.message);
+      console.error('[PlakyBridge] invite failed for %s: %s', email, e.message);
       await this.recoverSession().catch(() => {});
       return { success: false, email, role, error: e.message, via: 'browser' };
     }
