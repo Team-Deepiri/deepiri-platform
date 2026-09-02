@@ -22,6 +22,9 @@ data:
   
   # Streaming Service Configuration
   SYNAPSE_URL: "http://synapse:8002"
+  SYNAPSE_TRANSPORT: "sidecar"
+  SYNAPSE_SUGAR_GLIDER_URL: "http://sugar-glider:8081"
+  SYNAPSE_SIDECAR_URL: "http://sugar-glider:8081"
   
   # ModelKit Configuration
   MODELKIT_PATH: "/app/../deepiri-modelkit"

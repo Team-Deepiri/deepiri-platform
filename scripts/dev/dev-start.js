@@ -48,7 +48,7 @@ log('Starting API Server...', colors.blue);
 const serverProcess = spawn('node', ['server.js'], {
   cwd: apiServerDir,
   stdio: 'inherit',
-  shell: true,
+  shell: process.platform === 'win32',
   env: {
     ...process.env,
     NODE_ENV: 'development',
@@ -64,7 +64,7 @@ setTimeout(() => {
   const clientProcess = spawn('npm', ['run', 'dev'], {
     cwd: frontendDir,
     stdio: 'inherit',
-    shell: true,
+    shell: process.platform === 'win32',
     env: {
       ...process.env,
       NODE_ENV: 'development',

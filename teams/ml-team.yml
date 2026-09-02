@@ -1,0 +1,53 @@
+# Repo: deepiri-control-plane (docker-compose.dev.yml)
+# ML Team — aligned to compose (dropped stale postgres / platform-analytics-service)
+id: ml-team
+display: ML Team
+
+services:
+  - postgres-intelligence
+  - redis
+  - influxdb
+  - minio
+  - etcd
+  - milvus
+  - mlflow
+  - synapse
+  - sugar-glider
+
+disabled_services:
+  - jupyter
+
+submodules:
+  - diri-helox
+  - deepiri-modelkit
+  - deepiri-ollama-utils
+  - deepiri-logger
+  - deepiri-suite
+  - platform-services/shared/deepiri-shared-utils
+  - platform-services/shared/deepiri-synapse
+  - platform-services/shared/deepiri-sugar-glider
+
+build:
+  buildkit: true
+  sequential: false
+  ensure_suite_images: true
+
+start:
+  # Start listed services; allow compose deps for milvus stack when no_deps false for synapse-only path.
+  # Full list so build/start/stop stay consistent with compose.
+  no_deps: false
+  require_dockerfile:
+    - synapse
+    - sugar-glider
+
+pull:
+  recursive: true
+  checkout_main: true
+  setup_hooks: true
+  optional:
+    - deepiri-modelkit
+
+urls:
+  - "Synapse: http://localhost:8002"
+  - "Sugar Glider: http://localhost:8081"
+  - "MLflow: http://localhost:5500"

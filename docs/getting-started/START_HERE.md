@@ -1,5 +1,8 @@
 # 🚀 START HERE - Deepiri Platform Setup Guide
 
+> **Repo split (2026-08-26):** This repo (**deepiri-platform**) is the **cloud VPS portal** only.  
+> For Cyrex, LIS, speech, Kafka, and team dev onboarding → **[deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)** (`docker-compose.dev.yml`, `setup-deepiri-dev.sh`).
+
 **Welcome to Deepiri! This is your complete getting started guide.**
 
 ---
@@ -19,9 +22,17 @@ This will help you identify:
 
 ### 1. Clone the Repository
 
+**Cloud portal (this repo):**
 ```bash
-git clone <your-repo-url>
+git clone git@github.com:Team-Deepiri/deepiri-platform.git
 cd deepiri-platform
+```
+
+**Full local dev stack (AI/backend teams):**
+```bash
+git clone git@github.com:Team-Deepiri/deepiri-control-plane.git
+cd deepiri-control-plane
+bash setup-deepiri-dev.sh
 ```
 
 ### 2. Git Hooks (Automatic!)
@@ -33,6 +44,7 @@ The hooks protect `main`, `master`, and branches containing `team-dev` from acci
 **If hooks aren't working** (e.g., existing clone), run:
 ```bash
 ./setup-hooks.sh
+# Team submodule hooks are also synced on: ./setup-deepiri-dev.sh pull <team>
 ```
 
 **Why?** See [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) for details.
@@ -43,43 +55,38 @@ The hooks protect `main`, `master`, and branches containing `team-dev` from acci
 
 After setting up Git hooks, follow your team-specific path:
 
+All teams now use the single `./setup-deepiri-dev.sh` script with their team catalog in `teams/<team>.yml` (see [ENVIRONMENT_SETUP_WITH_SCRIPT.md](ENVIRONMENT_SETUP_WITH_SCRIPT.md) for full usage). Onboarding docs below cover team-specific context; the `team_dev_environments/` and `team_submodule_commands/` folders they may still reference have been replaced by this script.
+
 ### 🤖 AI Team
 1. **Onboarding:** [docs/onboarding/AI_TEAM_ONBOARDING.md](docs/onboarding/AI_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/ai-team/README.md](team_dev_environments/ai-team/README.md)
-3. **Submodules:** [team_submodule_commands/ai-team/AI_TEAM.md](team_submodule_commands/ai-team/AI_TEAM.md)
+2. **Catalog:** `teams/ai-team.yml` — `./setup-deepiri-dev.sh pull|build|start ai-team`
 
 ### 🧠 ML Team
 1. **ML Guide:** [docs/development/ML_ENGINEER_COMPLETE_GUIDE.md](docs/development/ML_ENGINEER_COMPLETE_GUIDE.md)
 2. **MLOps:** [docs/onboarding/MLOPS_TEAM_ONBOARDING.md](docs/onboarding/MLOPS_TEAM_ONBOARDING.md)
-3. **Dev Environment:** [team_dev_environments/ml-team/README.md](team_dev_environments/ml-team/README.md)
-4. **Submodules:** [team_submodule_commands/ml-team/ML_TEAM.md](team_submodule_commands/ml-team/ML_TEAM.md)
+3. **Catalog:** `teams/ml-team.yml` — `./setup-deepiri-dev.sh pull|build|start ml-team`
 
 ### ⚙️ Backend Team
 1. **Onboarding:** [docs/onboarding/BACKEND_TEAM_ONBOARDING.md](docs/onboarding/BACKEND_TEAM_ONBOARDING.md)
 2. **Microservices:** [docs/architecture/MICROSERVICES_SETUP.md](docs/architecture/MICROSERVICES_SETUP.md)
-3. **Dev Environment:** [team_dev_environments/backend-team/README.md](team_dev_environments/backend-team/README.md)
-4. **Submodules:** [team_submodule_commands/backend-team/BACKEND_TEAM.md](team_submodule_commands/backend-team/BACKEND_TEAM.md)
+3. **Catalog:** `teams/backend-team.yml` — `./setup-deepiri-dev.sh pull|build|start backend-team`
 
 ### 🎨 Frontend Team
 1. **Onboarding:** [docs/onboarding/FRONTEND_TEAM_ONBOARDING.md](docs/onboarding/FRONTEND_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/frontend-team/README.md](team_dev_environments/frontend-team/README.md)
-3. **Submodules:** [team_submodule_commands/frontend-team/FRONTEND_TEAM.md](team_submodule_commands/frontend-team/FRONTEND_TEAM.md)
+2. **Catalog:** `teams/frontend-team.yml` — `./setup-deepiri-dev.sh pull|build|start frontend-team`
 
 ### 🏗️ Infrastructure Team
 1. **Onboarding:** [docs/onboarding/PLATFORM_TEAM_ONBOARDING.md](docs/onboarding/PLATFORM_TEAM_ONBOARDING.md)
 2. **Skaffold:** [docs/infrastructure/SKAFFOLD_SETUP.md](docs/infrastructure/SKAFFOLD_SETUP.md)
-3. **Dev Environment:** [team_dev_environments/infrastructure-team/README.md](team_dev_environments/infrastructure-team/README.md)
-4. **Submodules:** [team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md](team_submodule_commands/infrastructure-team/INFRASTRUCTURE_TEAM.md)
+3. **Catalog:** `teams/infrastructure-team.yml` — `./setup-deepiri-dev.sh pull|build|start infrastructure-team`
 
 ### 🔧 Platform Engineers
 1. **Onboarding:** [docs/onboarding/PLATFORM_TEAM_ONBOARDING.md](docs/onboarding/PLATFORM_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/platform-engineers/README.md](team_dev_environments/platform-engineers/README.md)
-3. **Submodules:** [team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md](team_submodule_commands/platform-engineers/PLATFORM_ENGINEERS.md)
+2. **Catalog:** `teams/platform-engineers.yml` — `./setup-deepiri-dev.sh pull|build|start platform-engineers`
 
 ### 🧪 QA Team
 1. **Onboarding:** [docs/onboarding/SECURITY_QA_TEAM_ONBOARDING.md](docs/onboarding/SECURITY_QA_TEAM_ONBOARDING.md)
-2. **Dev Environment:** [team_dev_environments/qa-team/README.md](team_dev_environments/qa-team/README.md)
-3. **Submodules:** [team_submodule_commands/qa-team/QA_TEAM.md](team_submodule_commands/qa-team/QA_TEAM.md)
+2. **Catalog:** `teams/qa-team.yml` — `./setup-deepiri-dev.sh pull|build|start qa-team`
 
 ---
 
@@ -126,18 +133,17 @@ After setting up Git hooks, follow your team-specific path:
 
 ### Common Commands
 
+**Cloud portal (this repo):**
 ```bash
-# Build all services
-./build.sh              # Linux/Mac/WSL
-.\build.ps1             # Windows PowerShell
+./build.sh
+make up
+docker compose -f docker-compose.yml logs -f
+```
 
-# Start all services
+**Full dev stack ([deepiri-control-plane](https://github.com/Team-Deepiri/deepiri-control-plane)):**
+```bash
+./build.sh
 docker compose -f docker-compose.dev.yml up -d
-
-# Start only your team's services
-docker compose -f docker-compose.<team>-team.yml up -d
-
-# View logs
 docker compose -f docker-compose.dev.yml logs -f
 ```
 

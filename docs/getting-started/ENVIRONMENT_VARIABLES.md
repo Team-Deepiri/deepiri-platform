@@ -231,13 +231,11 @@ ops/k8s/
 
 ```bash
 # Use the k8s wrapper script (auto-loads configmaps & secrets)
-./docker-compose-k8s.sh -f docker-compose.backend-team.yml up -d    # Linux/Mac
-.\docker-compose-k8s.ps1 -f docker-compose.backend-team.yml up -d   # Windows
+./docker-compose-k8s.sh -f docker-compose.dev.yml up -d    # Linux/Mac
+.\docker-compose-k8s.ps1 -f docker-compose.dev.yml up -d   # Windows
 
-# Or use team start scripts (already configured)
-cd team_dev_environments/backend-team
-./start.sh          # Linux/Mac
-.\start.ps1         # Windows
+# Or use the consolidated team setup script
+./setup-deepiri-dev.sh start backend-team
 ```
 
 **How it works:**

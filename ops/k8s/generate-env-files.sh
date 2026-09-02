@@ -64,24 +64,19 @@ extract_service_secrets() {
     }' "$secret_file" >> "$output_file"
 }
 
-# List of services
-SERVICES=(
+# Cloud portal services only (docker-compose.yml).
+# Control-plane configmaps remain in-tree for reference — see configmaps/README.md.
+CLOUD_SERVICES=(
     "api-gateway"
     "auth-service"
-    "truss"
     "registry"
-    "telemetry"
     "external-bridge-service"
     "jobs"
-    "realtime-gateway"
-    "messaging-service"
-    "language-intelligence-service"
-    "cyrex"
-    "frontend-dev"
+    "platform-frontend"
 )
 
 # Generate .env files for each service
-for service in "${SERVICES[@]}"; do
+for service in "${CLOUD_SERVICES[@]}"; do
     configmap_file="$SCRIPT_DIR/configmaps/${service}-configmap.yaml"
     env_file="$ENV_DIR/${service}.env"
     

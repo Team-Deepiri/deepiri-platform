@@ -5,7 +5,12 @@
 
 set -e
 
-COMPOSE_FILE="docker-compose.dev.yml"
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=scripts/utils/resolve-compose-file.sh
+source "$REPO_ROOT/scripts/utils/resolve-compose-file.sh"
+resolve_compose_file "$REPO_ROOT" || exit 1
+
+COMPOSE_FILE="${COMPOSE_FILE#./}"
 SKIP_CHECKS=false
 
 # Parse arguments
