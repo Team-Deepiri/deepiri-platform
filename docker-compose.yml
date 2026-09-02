@@ -198,6 +198,19 @@ services:
       KAFKA_ENABLED: "false"
       PLAKY_API_TOKEN: ${PLAKY_API_TOKEN:-}
       PLAKY_POLL_INTERVAL_SEC: ${PLAKY_POLL_INTERVAL_SEC:-60}
+      # GitHub team-activity API for the portal People page. For docker-compose,
+      # GITHUB_APP_* and GITHUB_WEBHOOK_SECRET come from ops/k8s/secrets/.env; in
+      # a k8s deploy they are keys in external-bridge-service-secret.yaml. The
+      # rest come from the configmap. All optional — unset ⇒ /github/* returns
+      # 503 notConfigured.
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_APP_INSTALLATION_ID: ${GITHUB_APP_INSTALLATION_ID:-}
+      GITHUB_APP_PRIVATE_KEY_BASE64: ${GITHUB_APP_PRIVATE_KEY_BASE64:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      GITHUB_ORG: ${GITHUB_ORG:-Team-Deepiri}
+      GITHUB_REPOS: ${GITHUB_REPOS:-}
+      GITHUB_REPO_ACTIVE_DAYS: ${GITHUB_REPO_ACTIVE_DAYS:-120}
+      GITHUB_CACHE_TTL_SECONDS: ${GITHUB_CACHE_TTL_SECONDS:-600}
     depends_on:
       postgres-platform:
         condition: service_healthy
@@ -209,6 +222,48 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - deepiri-network
+
+  plaky-bridge:
+    # Disabled: the service crash-loops (headless Chromium relaunched each cycle,
+    # ~226MB/6.4% CPU) because PLAKY_*/IMAP_* credentials are not present in
+    # ops/k8s/secrets/.env. It reached 27 restarts in prod before being stopped.
+    # Compose skips profiled services unless the profile is explicitly requested,
+    # so this keeps it down across deploys without deleting the service or its
+    # source. To re-enable: add the credentials, then remove this profiles key.
+    profiles: ["disabled"]
+    <<: *default-env
+    build:
+      context: ./platform-services/backend/deepiri-plaky-bridge
+      dockerfile: Dockerfile
+    image: deepiri-plaky-bridge:prod
+    container_name: deepiri-plaky-bridge
+    restart: unless-stopped
+    logging: *minimal-logging
+    mem_limit: 1024m
+    environment:
+      NODE_ENV: production
+      PORT: 5009
+      PLAKY_API_BASE: https://api.plaky.com/v1/public
+      PLAKY_API_KEY: ${PLAKY_API_KEY:-}
+      PLAKY_API_TOKEN: ${PLAKY_API_TOKEN:-}
+      PLAKY_EMAIL: ${PLAKY_EMAIL:-}
+      PLAKY_PASSWORD: ${PLAKY_PASSWORD:-}
+      PLAKY_BOT_EMAIL: ${PLAKY_BOT_EMAIL:-deepiriexternals@gmail.com}
+      IMAP_HOST: ${IMAP_HOST:-imap.gmail.com}
+      IMAP_USER: ${IMAP_USER:-}
+      IMAP_PASS: ${IMAP_PASS:-}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?INTERNAL_SERVICE_SECRET must be set}
+      PLAKY_BRIDGE_DATA_DIR: /app/data
+    volumes:
+      - plaky_bridge_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - deepiri-network
 
@@ -284,6 +339,28 @@ services:
       deepiri-network:
         aliases:
           - frontend
+
+  # Voxier — Godot 4 web export, built and published by deepiri-voxier CI.
+  # Pulled rather than built here: a Godot export needs ~1GB of templates and is
+  # CPU-heavy, and this box has 4 vCPU running the whole platform.
+  voxier:
+    image: ghcr.io/team-deepiri/deepiri-voxier-web:latest
+    container_name: deepiri-voxier
+    restart: unless-stopped
+    logging: *minimal-logging
+    mem_limit: 128m
+    healthcheck:
+      # 127.0.0.1, not localhost: inside this image localhost resolves to ::1
+      # only, while nginx listens on 0.0.0.0:80 (IPv4). Using localhost made
+      # every probe fail with "connection refused" while the service was
+      # serving traffic perfectly — container marked unhealthy, nothing wrong.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - deepiri-network
 
   lyback:
     build:
@@ -361,6 +438,7 @@ volumes:
   postgres_platform_data:
   postgres_backups:
   redis_data:
+  plaky_bridge_data:
   certbot_conf:
   certbot_webroot:
 
