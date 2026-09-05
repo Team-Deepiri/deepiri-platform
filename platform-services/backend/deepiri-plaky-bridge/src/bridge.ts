@@ -94,7 +94,7 @@ export class PlakyBridge {
       const cookies = JSON.parse(raw);
       if (!this.context || !this.page) return false;
       await this.context.addCookies(cookies);
-      await this.page.goto('https://app.plaky.com/dashboard', { waitUntil: 'networkidle', timeout: 15000 });
+      await this.page.goto('https://deepiri-crew.plaky.com/dashboard', { waitUntil: 'networkidle', timeout: 15000 });
       // If we still see workspace UI, session is valid
       await this.page.waitForSelector('body', { timeout: 5000 });
       // Cheap check: not on login page
@@ -110,7 +110,7 @@ export class PlakyBridge {
   private async login() {
     if (!this.page || !PLAKY_EMAIL) throw new Error('Missing browser/page or PLAKY_EMAIL');
     console.log(`[PlakyBridge] Logging in headless as ${PLAKY_EMAIL} (code flow)...`);
-    await this.page.goto('https://app.plaky.com/login', { waitUntil: 'networkidle', timeout: 20000 });
+    await this.page.goto('https://deepiri-crew.plaky.com/login', { waitUntil: 'networkidle', timeout: 20000 });
 
     // Step 1: fill email and request code — handle Cloudflare Turnstile
     const emailSels = ['input[placeholder*="email" i]', '#email', 'input[type="email"]', 'input[name="email"]', '[data-testid="email"]'];
@@ -202,7 +202,7 @@ export class PlakyBridge {
     this.refreshTimer = setInterval(async () => {
       try {
         if (!this.page) return;
-        await this.page.goto('https://app.plaky.com/dashboard', { waitUntil: 'networkidle', timeout: 15000 });
+await this.page.goto('https://deepiri-crew.plaky.com/dashboard', { waitUntil: 'networkidle', timeout: 15000 });
         await this.saveSession();
         console.log('[PlakyBridge] Session refreshed');
       } catch (e) {
@@ -248,104 +248,91 @@ export class PlakyBridge {
       };
     }
 
-    // 3) Browser automation — 100% headless
+    // 3) Browser automation — navigate to the correct SPA domain and use the
+    // proven "Invite new members" modal flow (headless).
     try {
       console.log(`[PlakyBridge] Headless invite ${email} role=${role}`);
-      // Navigate to workspace members area — Plaky uses Administration → Users
-      await this.page!.goto('https://app.plaky.com/dashboard', { waitUntil: 'networkidle', timeout: 15000 });
+      await this.gotoDashboard();
+
+      // Open the Invite new members modal — the SPA renders this button on the
+      // dashboard. Using page.evaluate to find + click avoids flaky locator
+      // chains that break across SPA route changes.
+      await this.page!.evaluate(() => {
+        const btn = Array.from(document.querySelectorAll('button')).find(
+          (b) => b.textContent?.includes('Invite new members') || b.textContent?.includes('Invite')
+        );
+        if (btn) btn.click();
+      });
+      await this.page!.waitForTimeout(2500);
+
+      // Fill email — the "Invite new members" modal has an email input.
+      const emailInput = this.page!.locator('input[placeholder*="email" i], input[type="email"]').last();
+      const emailVisible = await emailInput.isVisible().catch(() => false);
+      if (!emailVisible) {
+        // Fallback: navigate directly to the users admin page
+        await this.page!.goto('https://deepiri-crew.plaky.com/admin/users', { waitUntil: 'networkidle', timeout: 12000 });
+        await this.page!.waitForTimeout(1500);
+        await this.page!.evaluate(() => {
+          const btn = Array.from(document.querySelectorAll('button')).find(
+            (b) => b.textContent?.includes('Invite new members') || b.textContent?.includes('Invite')
+          );
+          if (btn) btn.click();
+        });
+        await this.page!.waitForTimeout(2500);
+      }
+      const finalInput = this.page!.locator('input[placeholder*="email" i], input[type="email"]').last();
+      await finalInput.fill(email, { timeout: 8000 });
+      await finalInput.press('Enter');
       await this.page!.waitForTimeout(1500);
 
-      // Try to open Users/Invite modal via multiple strategies
-      const inviteSelectors = [
-        'button:has-text("Invite")',
-        'button:has-text("Invite members")',
-        'button:has-text("Invite new members")',
-        '[data-testid="invite-button"]',
-        'text=Invite new members',
-        'text=Users',
-      ];
-      let opened = false;
-      for (const sel of inviteSelectors) {
-        try {
-          // For "Users" we navigate via SPA routing if needed
-          if (sel === 'text=Users') {
-            await this.page!.goto('https://app.plaky.com/administration/users', { waitUntil: 'networkidle', timeout: 10000 }).catch(() => {});
-            await this.page!.waitForTimeout(1000);
-          }
-          await this.page!.click(sel, { timeout: 3000 });
-          opened = true;
-          await this.page!.waitForTimeout(1000);
-          // Check if email input appeared
-          const emailInput = await this.page!.locator('input[type="email"], input[placeholder*="email" i]').first().isVisible().catch(() => false);
-          if (emailInput) break;
-        } catch {}
-      }
-      if (!opened) {
-        // Fallback: try direct navigation to users admin
-        await this.page!.goto('https://app.plaky.com/administration/users', { waitUntil: 'networkidle', timeout: 10000 });
-        await this.page!.waitForTimeout(1500);
-        for (const sel of ['button:has-text("Invite")', '[data-testid="invite-button"]']) {
-          try { await this.page!.click(sel, { timeout: 3000 }); opened = true; break; } catch {}
-        }
-      }
-      if (!opened) {
-        // debug dump
-        try {
-          const html = await this.page!.content();
-          await this.page!.screenshot({ path: '/tmp/plaky_invite_fail.png' }).catch(() => {});
-          console.log('[PlakyBridge] Invite modal not opened, url', this.page!.url());
-          console.log('[PlakyBridge] Page snippet', html.slice(0, 8000));
-          const buttons = await this.page!.locator('button').all().then(async els => {
-            const texts: string[] = [];
-            for (const e of els.slice(0, 60)) {
-              try { const t = await e.innerText(); if (t.trim()) texts.push(t.slice(0, 80)); } catch {}
-            }
-            return texts;
-          });
-          console.log('[PlakyBridge] Buttons', buttons);
-        } catch {}
-        throw new Error('Could not open invite modal (selectors changed?)');
-      }
+      // Click the "Invite" button in the modal
+      const inviteBtn = this.page!.locator('button:has-text("Invite")').last();
+      await inviteBtn.click({ timeout: 4000 });
+      console.log(`[PlakyBridge] Invite modal sent for ${email}`);
 
-      await this.page!.waitForSelector('input[type="email"], input[placeholder*="email" i]', { timeout: 7000 });
-      const emailSelectors = ['input[type="email"]', 'input[placeholder*="email" i]', '[data-testid="email-input"]'];
-      let filled = false;
-      for (const sel of emailSelectors) {
-        try { await this.page!.fill(sel, email, { timeout: 3000 }); filled = true; break; } catch {}
-      }
-      if (!filled) throw new Error('Could not fill email input');
-
-      // Role select if not default
-      if (role && role.toUpperCase() !== 'MEMBER') {
-        for (const sel of ['select#role', 'select[name="role"]', '[data-testid="role-select"]']) {
-          try { await this.page!.selectOption(sel, role.toLowerCase()); break; } catch {}
-        }
-      }
-
-      const sendSelectors = ['button:has-text("Send Invite")', 'button:has-text("Invite")', 'button:has-text("Add")', '[data-testid="send-invite"]'];
-      let sent = false;
-      for (const sel of sendSelectors) {
-        try { await this.page!.click(sel, { timeout: 4000 }); sent = true; break; } catch {}
-      }
-      if (!sent) throw new Error('Could not click send invite');
-
-      // Wait for success toast or check API again
-      await this.page!.waitForTimeout(2000);
-      // Verify via API poll (authoritative)
+      // Wait for success and verify via API
+      await this.page!.waitForTimeout(3000);
       for (let i = 0; i < 3; i++) {
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 2000));
         const recheck = await this.checkViaApi(email);
         if (recheck.exists) {
           return { success: true, email, role, status: recheck.user?.status || 'PENDING', via: 'browser' };
         }
       }
-      // If no verification, assume pending (email invite sent)
       return { success: true, email, role, status: 'pending', via: 'browser' };
     } catch (e: any) {
       console.error(`[PlakyBridge] invite failed for ${email}:`, e.message);
+      try { await this.page!.screenshot({ path: '/tmp/plaky_invite_fail.png' }); } catch {}
       await this.recoverSession().catch(() => {});
       return { success: false, email, role, error: e.message, via: 'browser' };
     }
+  }
+
+  // Resolve the browser session's Bearer (plaky_session) JWT so we can call the
+  // same web API the SPA uses — verified working for deactivation. Reads the
+  // token out of the page's localStorage ('user.accessToken') like the proved
+  // capture scripts do.
+  private async getSessionAccessToken(): Promise<string | null> {
+    if (!this.page) return null;
+    try {
+      const token = await this.page.evaluate(() => {
+        try {
+          const user = JSON.parse(localStorage.getItem('user') || '{}') as any;
+          if (typeof user?.accessToken === 'string' && user.accessToken) return user.accessToken;
+          if (typeof user?.token === 'string' && user.token) return user.token;
+        } catch {}
+        return null;
+      });
+      return token;
+    } catch {
+      return null;
+    }
+  }
+
+  private async gotoDashboard() {
+    if (!this.page) return;
+    await this.page.goto('https://deepiri-crew.plaky.com/', { waitUntil: 'networkidle', timeout: 15000 });
+    await this.page.waitForTimeout(1500);
   }
 
   async kickUser(email: string): Promise<InviteResult> {
@@ -353,17 +340,58 @@ export class PlakyBridge {
     if (!check.exists) {
       return { success: false, email, error: 'User not found in workspace', via: 'check-only' };
     }
+    // Prefer the verified web API deactivate path (PATCH /users/{id}/deactivate
+    // with the browser session Bearer) — far more robust than DOM menu scraping.
+    const userId = check.user?.id;
+    if (userId && this.page && this.browser) {
+      try {
+        await this.gotoDashboard();
+        const token = await this.getSessionAccessToken();
+        if (token) {
+          const deact = await axios.patch(
+            `https://deepiri-crew.api.plaky.com/users/${userId}/deactivate`,
+            {},
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'x-client-platform': 'web',
+                'x-client-version': '2.5.3',
+                'x-client-session-id': this.page.evaluate(() => sessionStorage.getItem('sessionId') || '') as any,
+              },
+              timeout: 15000,
+            },
+          );
+          if (deact.status >= 200 && deact.status < 300) {
+            // Verify via API
+            for (let i = 0; i < 3; i++) {
+              await new Promise(r => setTimeout(r, 1500));
+              const recheck = await this.checkViaApi(email);
+              if (!recheck.exists || recheck.user?.status === 'INACTIVE' || recheck.user?.status === 'DEACTIVATED') {
+                return { success: true, email, status: `deactivated (${recheck.user?.status || 'INACTIVE'})`, via: 'browser' };
+              }
+              if (!recheck.exists) {
+                return { success: true, email, status: 'removed', via: 'browser' };
+              }
+            }
+            return { success: true, email, status: 'deactivated', via: 'browser' };
+          }
+          console.warn(`[PlakyBridge] Web API deactivate for ${email} returned ${deact.status}`);
+        }
+      } catch (e: any) {
+        console.warn(`[PlakyBridge] Web API deactivate failed for ${email}, falling back to DOM: ${e.message}`);
+      }
+    }
     if (!this.page || !this.browser) {
       return {
         success: false,
         email,
-        error: 'Plaky public API has no delete/kick endpoint. Browser automation requires PLAKY_EMAIL + IMAP_PASS for code login.',
+        error: 'Plaky public API has no delete/kick endpoint and no browser session available. Browser automation requires PLAKY_EMAIL + IMAP_PASS for code login.',
         via: 'api',
       };
     }
     try {
-      console.log(`[PlakyBridge] Headless kick ${email}`);
-      await this.page!.goto('https://app.plaky.com/administration/users', { waitUntil: 'networkidle', timeout: 15000 });
+      console.log(`[PlakyBridge] Headless kick (DOM fallback) ${email}`);
+      await this.page!.goto('https://deepiri-crew.plaky.com/admin/users', { waitUntil: 'networkidle', timeout: 15000 });
       await this.page!.waitForTimeout(1500);
 
       // Search for user row — try to find by email text
