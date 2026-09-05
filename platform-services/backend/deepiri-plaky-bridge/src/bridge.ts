@@ -11,13 +11,23 @@ const PLAKY_PASSWORD = process.env.PLAKY_PASSWORD || '';
 const IMAP_USER = process.env.IMAP_USER || PLAKY_EMAIL;
 const IMAP_PASS = process.env.IMAP_PASS || '';
 
+// Cake Account layer — Deepiri is migrated to CAKE.com account. Invites flow
+// through the Cake members API which is captcha-free and SSO-cookie-authenticated.
+// Verified live: POST /api/organizations/{org}/workspaces/invitations/new-users
+// with a plain Sso-Token cookie returns `{"failedInvitations":{}}` — no
+// Cloudflare Turnstile / reCAPTCHA involved (Plaky's /users/invitation is
+// hard captcha-gated and cannot be automated).
+const CAKE_API_BASE = process.env.CAKE_API_BASE || 'https://account.cake.com/api';
+const CAKE_ORGANIZATION_ID = process.env.CAKE_ORGANIZATION_ID || '691e10dd4d0f05010229ceda';
+const CAKE_WORKSPACE_IDS = (process.env.CAKE_WORKSPACE_IDS || '691e10dd4d0f05010229cede').split(',').filter(Boolean);
+
 export type InviteResult = {
   success: boolean;
   email: string;
   role?: string;
   status?: string;
   error?: string;
-  via: 'api' | 'browser' | 'check-only';
+  via: 'api' | 'browser' | 'cake' | 'check-only';
 };
 
 export class PlakyBridge {
@@ -248,10 +258,15 @@ await this.page.goto('https://deepiri-crew.plaky.com/dashboard', { waitUntil: 'n
       };
     }
 
-    // 3) Browser automation — navigate to the correct SPA domain and use the
-    // proven "Invite new members" modal flow (headless).
+    // 3) Cake Account API invite (captcha-free, SSO cookie) — see inviteUserViaCake.
+    const viaCake = await this.inviteUserViaCake(email);
+    if (viaCake.success) return viaCake;
+    console.warn(`[PlakyBridge] Cake invite failed (${viaCake.error}); falling back to SPA modal then web API check`);
+
+    // 4) Browser automation — navigate to the correct SPA domain and use the
+    // proven "Invite new members" modal flow (headless). Fallback only.
     try {
-      console.log(`[PlakyBridge] Headless invite ${email} role=${role}`);
+      console.log(`[PlakyBridge] Headless invite (SPA fallback) ${email} role=${role}`);
       await this.gotoDashboard();
 
       // Open the Invite new members modal — the SPA renders this button on the
@@ -348,20 +363,36 @@ await this.page.goto('https://deepiri-crew.plaky.com/dashboard', { waitUntil: 'n
         await this.gotoDashboard();
         const token = await this.getSessionAccessToken();
         if (token) {
-          const deact = await axios.patch(
-            `https://deepiri-crew.api.plaky.com/users/${userId}/deactivate`,
-            {},
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'x-client-platform': 'web',
-                'x-client-version': '2.5.3',
-                'x-client-session-id': this.page.evaluate(() => sessionStorage.getItem('sessionId') || '') as any,
-              },
-              timeout: 15000,
-            },
-          );
-          if (deact.status >= 200 && deact.status < 300) {
+          // Deactivate with 429 backoff (verified live: first deactivate hit
+          // TOO_MANY_REQUESTS, succeeded on the retry).
+          let deact: any;
+          for (let tries = 0; tries < 4; tries++) {
+            try {
+              deact = await axios.patch(
+                `https://deepiri-crew.api.plaky.com/users/${userId}/deactivate`,
+                {},
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'x-client-platform': 'web',
+                    'x-client-version': '2.5.3',
+                    'x-client-session-id': this.page.evaluate(() => sessionStorage.getItem('sessionId') || '') as any,
+                  },
+                  timeout: 15000,
+                },
+              );
+              break;
+            } catch (err: any) {
+              if (err?.response?.status === 429 && tries < 3) {
+                const delay = 2500 * (tries + 1);
+                console.warn(`[PlakyBridge] Deactivate rate-limited (429), backing off ${delay}ms before retry`);
+                await new Promise((r) => setTimeout(r, delay));
+                continue;
+              }
+              throw err;
+            }
+          }
+          if (deact && deact.status >= 200 && deact.status < 300) {
             // Verify via API
             for (let i = 0; i < 3; i++) {
               await new Promise(r => setTimeout(r, 1500));
@@ -433,6 +464,142 @@ await this.page.goto('https://deepiri-crew.plaky.com/dashboard', { waitUntil: 'n
       await this.recoverSession().catch(() => {});
       return { success: false, email, error: e.message, via: 'browser' };
     }
+  }
+
+  // ---------- Cake Account API (captcha-free invites) ----------
+
+  // Read the account.cake.com Sso-Token cookie out of the live browser context.
+  private async cakeCookieValue(): Promise<string | null> {
+    if (!this.context) return null;
+    try {
+      const cookies = await this.context.cookies('https://account.cake.com');
+      const sso = cookies.find((c) => c.name === 'Sso-Token');
+      return sso?.value || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The Plaky SSO iframe refreshes the cake Sso-Token cookie when we land on the
+  // plaky app. Navigate there (and, last resort, straight to the cake members
+  // admin) so the cookie is fresh for API calls.
+  private async refreshCakeSession(): Promise<boolean> {
+    if (!this.page) return false;
+    try {
+      await this.page.goto('https://deepiri-crew.plaky.com/', { waitUntil: 'networkidle', timeout: 20000 });
+      await this.page.waitForTimeout(2000);
+      if (await this.cakeCookieValue()) return true;
+      await this.page.goto(`https://account.cake.com/organization/${CAKE_ORGANIZATION_ID}/members/organization-members`, {
+        waitUntil: 'domcontentloaded',
+        timeout: 25000,
+      });
+      await this.page.waitForTimeout(2500);
+      return !!(await this.cakeCookieValue());
+    } catch (e: any) {
+      console.warn(`[PlakyBridge] refreshCakeSession failed: ${e.message}`);
+      return false;
+    }
+  }
+
+  private cakeHeaders(token: string) {
+    return {
+      'Content-Type': 'application/json',
+      'Cookie': `Sso-Token=${token}`,
+      'Origin': 'https://account.cake.com',
+      'Referer': `https://account.cake.com/organization/${CAKE_ORGANIZATION_ID}/members/organization-members`,
+    };
+  }
+
+  // Low-level cake invite. Exact shape captured from the members admin SPA:
+  //   POST {api}/organizations/{org}/workspaces/invitations/new-users
+  //   {"workspaceIds":[...],"invitees":[{"email":...,"name":null,"failedValidations":[]}]}
+  private async cakeInviteEmails(emails: string[]): Promise<{ ok: boolean; failed: Record<string, any> }> {
+    const token = await this.cakeCookieValue();
+    if (!token) throw new Error('No cake Sso-Token cookie in session');
+    const r = await axios.post(
+      `${CAKE_API_BASE}/organizations/${CAKE_ORGANIZATION_ID}/workspaces/invitations/new-users`,
+      {
+        workspaceIds: CAKE_WORKSPACE_IDS,
+        invitees: emails.map((email) => ({ email, name: null, failedValidations: [] })),
+      },
+      { headers: this.cakeHeaders(token), timeout: 20000 },
+    );
+    const failed = (r.data && r.data.failedInvitations) || {};
+    return { ok: r.status === 200, failed };
+  }
+
+  // Find a (possibly PENDING) cake member by email — authoritative post-invite check.
+  private async findCakeUser(email: string): Promise<any | null> {
+    const token = await this.cakeCookieValue();
+    if (!token) return null;
+    try {
+      const r = await axios.get(`${CAKE_API_BASE}/organizations/${CAKE_ORGANIZATION_ID}/users/own`, {
+        headers: this.cakeHeaders(token),
+        params: { page: 0, size: 25, sort: 'name,ASC', search: email, wsRole: '', status: '' },
+        timeout: 15000,
+      });
+      const content: any[] = r.data?.content || [];
+      return content.find((u) => (u.email || '').toLowerCase() === email.toLowerCase()) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Invite via the Cake Account members API — captcha-free, SSO-cookie only.
+  // This bypasses Plaky's hard captcha gate on POST /users/invitation.
+  async inviteUserViaCake(email: string): Promise<InviteResult> {
+    if (!this.context) {
+      return { success: false, email, error: 'No browser session — cannot reach Cake API', via: 'cake' };
+    }
+    if (!(await this.cakeCookieValue())) {
+      await this.refreshCakeSession();
+    }
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const res = await this.cakeInviteEmails([email]);
+        if (res.ok && Object.keys(res.failed).length === 0) {
+          await this.page?.waitForTimeout(1200);
+          const member = await this.findCakeUser(email);
+          return { success: true, email, status: member?.status || 'PENDING', via: 'cake' };
+        }
+        const fail = res.failed[email];
+        const failMsg =
+          (fail && (fail.failedValidations || []).join('; ')) ||
+          (fail && fail.message) ||
+          (fail && JSON.stringify(fail)) ||
+          'unknown (maybe already pending/invited)';
+        return { success: false, email, error: `Cake invite rejected: ${failMsg}`, via: 'cake' };
+      } catch (e: any) {
+        const status = e?.response?.status;
+        if (status === 401 && attempt === 0) {
+          console.warn('[PlakyBridge] Cake Sso-Token expired, refreshing session');
+          await this.refreshCakeSession();
+          continue;
+        }
+        // Cake rate-limits invite bursts (429) — back off and retry.
+        if (status === 429 && attempt < 3) {
+          const delay = 3000 * (attempt + 1);
+          console.warn(`[PlakyBridge] Cake invite rate-limited (429), backing off ${delay}ms before retry`);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+        // Distinguish "already invited / already a member" (409-ish, idempotent
+        // no-op) from genuine failures so the server can map it to 409.
+        const rawMsg =
+          (e?.response?.data && JSON.stringify(e?.response?.data).slice(0, 300)) ||
+          (e?.response && `HTTP ${e.response.status}`) ||
+          e.message;
+        const normalized = (rawMsg || '').replace(/"+/g, '');
+        const already = /already|invited|pending|exist|member/i.test(normalized);
+        return {
+          success: false,
+          email,
+          error: `${already ? 'Already ' : 'Cake invite failed: '}${rawMsg}`.slice(0, 400),
+          via: 'cake',
+        };
+      }
+    }
+    return { success: false, email, error: 'Cake invite failed after session refresh', via: 'cake' };
   }
 
   async recoverSession() {
