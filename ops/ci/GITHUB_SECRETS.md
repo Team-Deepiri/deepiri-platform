@@ -38,6 +38,21 @@ CD workflow: **`.github/workflows/cd-cloud-portal.yml`** — deploys `dev` pushe
 | `VPS_DEPLOY_PATH` | *(optional)* Remote path | `/opt/deepiri/deepiri-platform` |
 | `VPS_ENV_FILE` | *(optional)* Full `ops/k8s/secrets/.env` content — if set, CD overwrites the remote `.env` before build | paste from `cloud-portal-secrets.7z` |
 
+**Plaky/Cake bridge secrets (optional — enable headless invite/kick):**
+
+| Secret | Purpose | Example |
+|--------|---------|---------|
+| `PLAKY_API_KEY` | Public Plaky API key for membership checks | `plk_...` |
+| `PLAKY_EMAIL` | Plaky login email for the bridge browser | `deepiriexternals@gmail.com` |
+| `PLAKY_PASSWORD` | Plaky login password for the bridge browser | — |
+| `IMAP_USER` | Mailbox user for login-code retrieval | `deepiriexternals@gmail.com` |
+| `IMAP_PASS` | Gmail app password for code retrieval | — |
+| `PLAKY_BOT_EMAIL` | *(optional)* Override for `PLAKY_EMAIL` | — |
+| `CAKE_ORGANIZATION_ID` | *(optional)* Cake org id (defaults in bridge.ts) | `691e10dd4d0f05010229ceda` |
+| `CAKE_WORKSPACE_IDS` | *(optional)* Comma-separated Cake workspaces | `691e10dd4d0f05010229cede` |
+
+If unset, the bridge boots read-only (health 200) and invite/kick return instructive errors instead of crashing.
+
 **Setup steps (one-time):**
 1. On your machine: `ssh-keygen -t ed25519 -f ~/.ssh/deepiri-cd -C "deepiri-cd"` (no passphrase).
 2. On VPS: `mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys` then paste `~/.ssh/deepiri-cd.pub`.
