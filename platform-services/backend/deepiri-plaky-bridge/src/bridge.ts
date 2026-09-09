@@ -361,9 +361,36 @@ export class PlakyBridge {
     if (!check.exists) {
       return { success: false, email, error: 'User not found in workspace', via: 'check-only' };
     }
+    const userId = check.user?.id;
+    // PENDING invite (never activated) — deactivate/server deletes the user are
+    // both wrong; the verified cancel endpoint is DELETE /users/{id}/invitation/cancel.
+    if (check.user?.status === 'PENDING' && userId) {
+      try {
+        await this.gotoDashboard();
+        const token = await this.getSessionAccessToken();
+        if (token) {
+          const res = await axios.delete(
+            `https://deepiri-crew.api.plaky.com/users/${userId}/invitation/cancel`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'x-client-platform': 'web',
+                'x-client-version': '2.5.3',
+              },
+              timeout: 15000,
+            },
+          );
+          if (res.status >= 200 && res.status < 300) {
+            return { success: true, email, status: 'invitation-cancelled', via: 'browser' };
+          }
+        }
+      } catch (e: any) {
+        console.warn(`[PlakyBridge] Invitation cancel failed for ${email}: ${e.message}`);
+      }
+      return { success: false, email, error: 'Could not cancel invitation via web API', via: 'browser' };
+    }
     // Prefer the verified web API deactivate path (PATCH /users/{id}/deactivate
     // with the browser session Bearer) — far more robust than DOM menu scraping.
-    const userId = check.user?.id;
     if (userId && this.page && this.browser) {
       try {
         await this.gotoDashboard();
