@@ -1,5 +1,7 @@
 # Deepiri Docker Compose Makefile
-# Makes rebuilding clean and easy
+# COMPOSE_FILE: cloud portal → docker-compose.yml, control plane → docker-compose.dev.yml
+
+COMPOSE_FILE ?= $(shell if grep -q postgres-platform docker-compose.yml 2>/dev/null; then echo docker-compose.yml; else echo docker-compose.dev.yml; fi)
 
 .PHONY: rebuild clean build up down logs health heal rtg-up rtg-down rtg-up-v3-freeze rtg-rollout-v3-freeze rtg-logs rtg-health rtg-heal rtg-watchdog rtg-preflight rtg-smoke rtg-grpc-smoke rtg-failure rtg-gate rtg-gate-full rtg-sugar-up rtg-sugar-down rtg-sugar-logs rtg-sugar-health rtg-sugar-heal rtg-sugar-watchdog rtg-sugar-preflight rtg-sugar-smoke rtg-sugar-grpc-smoke rtg-sugar-failure rtg-sugar-gate rtg-sugar-gate-full
 
@@ -19,17 +21,17 @@ rebuild:
 	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
 		echo "🔍 WSL detected - using docker.exe and docker-compose.exe"; \
 		echo "🧹 Cleaning old images..."; \
-		docker-compose.exe -f docker-compose.dev.yml down --rmi local; \
+		docker-compose.exe -f $(COMPOSE_FILE) down --rmi local; \
 		docker.exe builder prune -af; \
 		echo "🔨 Rebuilding..."; \
-		docker-compose.exe -f docker-compose.dev.yml build --no-cache; \
+		docker-compose.exe -f $(COMPOSE_FILE) build --no-cache; \
 		echo "✅ Rebuild complete!"; \
 	else \
 		echo "🧹 Cleaning old images..."; \
-		docker compose -f docker-compose.dev.yml down --rmi local; \
+		docker compose -f $(COMPOSE_FILE) down --rmi local; \
 		docker builder prune -af; \
 		echo "🔨 Rebuilding..."; \
-		docker compose -f docker-compose.dev.yml build --no-cache; \
+		docker compose -f $(COMPOSE_FILE) build --no-cache; \
 		echo "✅ Rebuild complete!"; \
 	fi
 
@@ -40,17 +42,17 @@ rebuild-service:
 		exit 1; \
 	fi
 	@echo "🧹 Cleaning old image for $(SERVICE)..."
-	docker compose -f docker-compose.dev.yml rm -f -s -v $(SERVICE) 2>/dev/null || true
+	docker compose -f $(COMPOSE_FILE) rm -f -s -v $(SERVICE) 2>/dev/null || true
 	docker rmi deepiri-dev-$(SERVICE):latest 2>/dev/null || true
 	docker builder prune -af
 	@echo "🔨 Rebuilding $(SERVICE)..."
-	docker compose -f docker-compose.dev.yml build --no-cache $(SERVICE)
+	docker compose -f $(COMPOSE_FILE) build --no-cache $(SERVICE)
 	@echo "✅ Rebuild complete!"
 
 # Clean everything (removes containers, images, volumes, cache)
 clean:
 	@echo "🧹 Cleaning Docker resources..."
-	docker compose -f docker-compose.dev.yml down --rmi local -v
+	docker compose -f $(COMPOSE_FILE) down --rmi local -v
 	docker builder prune -af
 	docker image prune -f
 	@echo "✅ Clean complete!"
@@ -58,33 +60,33 @@ clean:
 # Build (normal, with cache) - only rebuilds if needed
 build:
 	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
-		docker-compose.exe -f docker-compose.dev.yml build; \
+		docker-compose.exe -f $(COMPOSE_FILE) build; \
 	else \
-		docker compose -f docker-compose.dev.yml build; \
+		docker compose -f $(COMPOSE_FILE) build; \
 	fi
 
 # Up (normal start - uses existing images, NO rebuild)
 up:
 	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
-		docker-compose.exe -f docker-compose.dev.yml up -d; \
+		docker-compose.exe -f $(COMPOSE_FILE) up -d; \
 	else \
-		docker compose -f docker-compose.dev.yml up -d; \
+		docker compose -f $(COMPOSE_FILE) up -d; \
 	fi
 
 # Down
 down:
 	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
-		docker-compose.exe -f docker-compose.dev.yml down; \
+		docker-compose.exe -f $(COMPOSE_FILE) down; \
 	else \
-		docker compose -f docker-compose.dev.yml down; \
+		docker compose -f $(COMPOSE_FILE) down; \
 	fi
 
 # Logs
 logs:
 	@if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null || [ -n "$$WSL_DISTRO_NAME" ]; then \
-		docker-compose.exe -f docker-compose.dev.yml logs -f; \
+		docker-compose.exe -f $(COMPOSE_FILE) logs -f; \
 	else \
-		docker compose -f docker-compose.dev.yml logs -f; \
+		docker compose -f $(COMPOSE_FILE) logs -f; \
 	fi
 
 # Show disk usage
@@ -93,15 +95,15 @@ df:
 
 # Health check for default dev stack
 health:
-	@echo "🩺 Checking docker-compose.dev.yml service health..."
+	@echo "🩺 Checking $(COMPOSE_FILE) service health..."
 	@set -e; \
-	services=$$(docker compose -f docker-compose.dev.yml ps --services 2>/dev/null || true); \
+	services=$$(docker compose -f $(COMPOSE_FILE) ps --services 2>/dev/null || true); \
 	if [ -z "$$services" ]; then \
-		echo "No docker-compose.dev.yml services are currently running."; \
+		echo "No $(COMPOSE_FILE) services are currently running."; \
 		exit 0; \
 	fi; \
 	for svc in $$services; do \
-		cid=$$(docker compose -f docker-compose.dev.yml ps -q $$svc); \
+		cid=$$(docker compose -f $(COMPOSE_FILE) ps -q $$svc); \
 		if [ -z "$$cid" ]; then \
 			printf "%-24s state=%-10s health=%s\n" "$$svc" "missing" "n/a"; \
 			continue; \
@@ -113,19 +115,19 @@ health:
 
 # Heal default dev stack by restarting non-running or unhealthy services
 heal:
-	@echo "🛠️ Healing docker-compose.dev.yml services (if needed)..."
+	@echo "🛠️ Healing $(COMPOSE_FILE) services (if needed)..."
 	@set -e; \
 	actions=0; \
-	services=$$(docker compose -f docker-compose.dev.yml ps --services 2>/dev/null || true); \
+	services=$$(docker compose -f $(COMPOSE_FILE) ps --services 2>/dev/null || true); \
 	if [ -z "$$services" ]; then \
-		echo "No docker-compose.dev.yml services are currently running."; \
+		echo "No $(COMPOSE_FILE) services are currently running."; \
 		exit 0; \
 	fi; \
 	for svc in $$services; do \
-		cid=$$(docker compose -f docker-compose.dev.yml ps -q $$svc); \
+		cid=$$(docker compose -f $(COMPOSE_FILE) ps -q $$svc); \
 		if [ -z "$$cid" ]; then \
 			echo "↻ $$svc is missing, recreating..."; \
-			docker compose -f docker-compose.dev.yml up -d $$svc; \
+			docker compose -f $(COMPOSE_FILE) up -d $$svc; \
 			actions=$$((actions+1)); \
 			continue; \
 		fi; \
@@ -133,7 +135,7 @@ heal:
 		health=$$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' $$cid 2>/dev/null || echo unknown); \
 		if [ "$$state" != "running" ] || [ "$$health" = "unhealthy" ]; then \
 			echo "↻ restarting $$svc (state=$$state health=$$health)"; \
-			docker compose -f docker-compose.dev.yml restart $$svc || docker compose -f docker-compose.dev.yml up -d $$svc; \
+			docker compose -f $(COMPOSE_FILE) restart $$svc || docker compose -f $(COMPOSE_FILE) up -d $$svc; \
 			actions=$$((actions+1)); \
 		fi; \
 	done; \

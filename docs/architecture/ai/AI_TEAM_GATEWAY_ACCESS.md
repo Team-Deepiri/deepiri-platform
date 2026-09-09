@@ -69,7 +69,7 @@
 2. **Remove language-intelligence-service from AI team submodules**
    - They don't need the code
    - They just use it through gateway
-   - Update `team_submodule_commands/ai-team/pull_submodules.sh`
+   - Update the `submodules` list in `teams/ai-team.yml`
 
 3. **Update IP protection docs**
    - AI Team: `api-gateway` (read-only)

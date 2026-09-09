@@ -3,19 +3,26 @@
 # ===========================
 # DEEPIRI POSTGRESQL BACKUP SCRIPT
 # ===========================
+#
+# Backs up the WHOLE cluster (pg_dumpall), not a single database. The
+# consolidated cheap one-box compose runs one Postgres container hosting 3
+# logical databases (platform_auth, platform_core, platform_intelligence),
+# each with its own role — pg_dumpall in one pass captures all 3 databases
+# plus the roles/passwords needed to recreate them, which a plain per-db
+# pg_dump would miss.
 
 set -e  # Exit on error
 
 # Configuration
 BACKUP_DIR="${BACKUP_DIR:-./backups/postgres}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="deepiri_backup_${TIMESTAMP}.sql"
-BACKUP_FILE_COMPRESSED="deepiri_backup_${TIMESTAMP}.sql.gz"
+BACKUP_FILE="deepiri_cluster_backup_${TIMESTAMP}.sql"
+BACKUP_FILE_COMPRESSED="deepiri_cluster_backup_${TIMESTAMP}.sql.gz"
 
-# Database connection (from environment or defaults)
+# Database connection (from environment or defaults) — connects as the
+# bootstrap superuser, since pg_dumpall needs to read every database/role.
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-POSTGRES_DB="${POSTGRES_DB:-deepiri}"
 POSTGRES_USER="${POSTGRES_USER:-deepiri}"
 
 # Retention policy (keep backups for 30 days by default)
@@ -37,10 +44,9 @@ echo ""
 
 # Check if PostgreSQL is accessible
 echo -e "${YELLOW}📡 Checking PostgreSQL connection...${NC}"
-if ! PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q' 2>/dev/null; then
+if ! PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d postgres -c '\q' 2>/dev/null; then
     echo -e "${RED}❌ Cannot connect to PostgreSQL!${NC}"
     echo -e "${RED}   Host: $POSTGRES_HOST:$POSTGRES_PORT${NC}"
-    echo -e "${RED}   Database: $POSTGRES_DB${NC}"
     echo -e "${RED}   User: $POSTGRES_USER${NC}"
     exit 1
 fi
@@ -48,24 +54,20 @@ echo -e "${GREEN}✅ PostgreSQL connection successful${NC}"
 echo ""
 
 # Perform backup
-echo -e "${YELLOW}💾 Creating backup...${NC}"
+echo -e "${YELLOW}💾 Creating full-cluster backup (pg_dumpall)...${NC}"
 echo -e "   Backup file: ${BACKUP_DIR}/${BACKUP_FILE_COMPRESSED}"
 echo ""
 
-# Use pg_dump to create backup
-PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
+# pg_dumpall covers every database (platform_auth, platform_core,
+# platform_intelligence) plus roles/passwords in a single plain-SQL dump.
+# --clean adds DROP statements so a restore can cleanly replace everything.
+PGPASSWORD="$POSTGRES_PASSWORD" pg_dumpall \
     -h "$POSTGRES_HOST" \
     -p "$POSTGRES_PORT" \
     -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
-    --verbose \
     --clean \
     --if-exists \
-    --format=plain \
-    --no-owner \
-    --no-privileges \
-    --file="${BACKUP_DIR}/${BACKUP_FILE}" \
-    2>&1 | grep -v "NOTICE"
+    --file="${BACKUP_DIR}/${BACKUP_FILE}"
 
 # Compress the backup
 echo -e "${YELLOW}🗜️  Compressing backup...${NC}"
@@ -88,7 +90,7 @@ echo ""
 
 # Clean up old backups based on retention policy
 echo -e "${YELLOW}🧹 Cleaning up old backups (older than ${RETENTION_DAYS} days)...${NC}"
-OLD_BACKUPS=$(find "$BACKUP_DIR" -name "deepiri_backup_*.sql.gz" -type f -mtime +${RETENTION_DAYS})
+OLD_BACKUPS=$(find "$BACKUP_DIR" -name "deepiri_cluster_backup_*.sql.gz" -type f -mtime "+${RETENTION_DAYS}")
 
 if [ -n "$OLD_BACKUPS" ]; then
     echo "$OLD_BACKUPS" | while read -r backup; do
@@ -103,7 +105,7 @@ echo ""
 
 # List recent backups
 echo -e "${YELLOW}📂 Recent backups:${NC}"
-ls -lht "$BACKUP_DIR"/deepiri_backup_*.sql.gz 2>/dev/null | head -5 | awk '{print "   " $9 " (" $5 ") - " $6 " " $7 " " $8}'
+ls -lht "$BACKUP_DIR"/deepiri_cluster_backup_*.sql.gz 2>/dev/null | head -5 | awk '{print "   " $9 " (" $5 ") - " $6 " " $7 " " $8}'
 
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════╗${NC}"
@@ -125,4 +127,3 @@ echo -e "${GREEN}╚════════════════════
 # fi
 
 exit 0
-

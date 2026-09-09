@@ -4,9 +4,8 @@ metadata:
   name: registry-config
   namespace: default
   annotations:
-    description: "ConfigMap for Registry (repo/service catalog) service"
+    description: "Cloud portal Registry — postgres-platform"
+    plane: cloud-portal
 data:
-  NODE_ENV: "development"
+  NODE_ENV: "production"
   PORT: "5003"
-  SYNAPSE_URL: "http://synapse:8002"
-  REALTIME_GATEWAY_URL: "http://realtime-gateway:5008"

@@ -1,0 +1,29 @@
+# Repo: deepiri-control-plane (docker-compose.dev.yml)
+# Platform Engineers — entire compose project + all gitmodules
+id: platform-engineers
+display: Platform Engineers
+
+services: all
+
+submodules: all
+
+build:
+  buildkit: false
+  sequential: true
+  ensure_suite_images: true
+
+start:
+  no_deps: false
+
+pull:
+  all_recursive: true
+  checkout_main: false
+  setup_hooks: true
+
+urls:
+  - "API Gateway: http://localhost:5100"
+  - "Frontend: http://localhost:5173"
+  - "Cyrex: http://localhost:8000"
+  - "Synapse: http://localhost:8002"
+  - "MLflow: http://localhost:5500"
+  - "Adminer: http://localhost:8080"

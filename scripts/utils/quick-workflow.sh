@@ -15,6 +15,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_DIR"
+# shellcheck source=scripts/utils/resolve-compose-file.sh
+source "$PROJECT_DIR/scripts/utils/resolve-compose-file.sh"
+resolve_compose_file "$PROJECT_DIR" || exit 1
 
 # Function to print colored output
 print_info() {
@@ -46,29 +49,29 @@ case "$1" in
     
     run)
         print_info "Starting all containers..."
-        docker compose -f docker-compose.dev.yml up -d
+        docker compose -f "$COMPOSE_FILE" up -d
         print_success "Containers started!"
-        print_info "View logs with: docker compose -f docker-compose.dev.yml logs -f"
+        print_info "View logs with: docker compose -f $COMPOSE_FILE logs -f"
         ;;
     
     stop)
         print_info "Stopping all containers..."
-        docker compose -f docker-compose.dev.yml down
+        docker compose -f "$COMPOSE_FILE" down
         print_success "Containers stopped!"
         ;;
     
     restart)
         print_info "Restarting all containers..."
-        docker compose -f docker-compose.dev.yml down
-        docker compose -f docker-compose.dev.yml up -d
+        docker compose -f "$COMPOSE_FILE" down
+        docker compose -f "$COMPOSE_FILE" up -d
         print_success "Containers restarted!"
         ;;
     
     rebuild)
         print_info "Rebuilding and restarting..."
         skaffold build -f skaffold/skaffold-local.yaml -p dev-compose
-        docker compose -f docker-compose.dev.yml down
-        docker compose -f docker-compose.dev.yml up -d
+        docker compose -f "$COMPOSE_FILE" down
+        docker compose -f "$COMPOSE_FILE" up -d
         print_success "Rebuild and restart complete!"
         ;;
     
@@ -87,11 +90,11 @@ case "$1" in
     
     status)
         print_info "Container status:"
-        docker compose -f docker-compose.dev.yml ps
+        docker compose -f "$COMPOSE_FILE" ps
         ;;
     
     logs)
-        docker compose -f docker-compose.dev.yml logs -f
+        docker compose -f "$COMPOSE_FILE" logs -f
         ;;
     
     *)

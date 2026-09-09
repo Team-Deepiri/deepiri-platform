@@ -1,0 +1,22 @@
+services:
+  proxy:
+    build: .
+    container_name: deepiri-proxy
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${PROXY_PORT:-8888}:8888"
+    logging:
+      driver: "local"
+      options:
+        max-size: "1m"
+        max-file: "1"
+        compress: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 32M
+    mem_limit: 32m
+    cpus: 0.25

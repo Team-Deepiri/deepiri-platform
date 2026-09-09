@@ -7,7 +7,7 @@ metadata:
     description: "ConfigMap for Messaging service — chat, notifications, web push, webhooks"
 data:
   NODE_ENV: "development"
-  PORT: "5009"
+  PORT: "5010"
   SYNAPSE_URL: "http://synapse:8002"
   REALTIME_GATEWAY_URL: "http://realtime-gateway:5008"
   CYREX_URL: "http://cyrex:8000"

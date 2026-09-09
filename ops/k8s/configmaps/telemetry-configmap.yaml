@@ -12,3 +12,4 @@ data:
   INFLUXDB_ORG: "deepiri"
   INFLUXDB_BUCKET: "analytics"
   SYNAPSE_URL: "http://synapse:8002"
+  JOBS_URL: "http://jobs:5007"

@@ -1,12 +1,3 @@
-[submodule "diri-cyrex"]
-	path = diri-cyrex
-	url = git@github.com:Team-Deepiri/diri-cyrex.git
-[submodule "diri-helox"]
-	path = diri-helox
-	url = git@github.com:Team-Deepiri/diri-helox.git
-[submodule "deepiri-modelkit"]
-	path = deepiri-modelkit
-	url = git@github.com:Team-Deepiri/deepiri-modelkit.git
 [submodule "platform-services/backend/deepiri-api-gateway"]
 	path = platform-services/backend/deepiri-api-gateway
 	url = git@github.com:Team-Deepiri/deepiri-api-gateway.git
@@ -19,29 +10,9 @@
 [submodule "platform-services/backend/deepiri-auth-service"]
 	path = platform-services/backend/deepiri-auth-service
 	url = git@github.com:Team-Deepiri/deepiri-auth-service.git
-[submodule "platform-services/backend/deepiri-language-intelligence-service"]
-	path = platform-services/backend/deepiri-language-intelligence-service
-	url = git@github.com:Team-Deepiri/deepiri-language-intelligence-service.git
 [submodule "platform-services/shared/deepiri-shared-utils"]
 	path = platform-services/shared/deepiri-shared-utils
 	url = git@github.com:Team-Deepiri/deepiri-shared-utils.git
-[submodule "platform-services/shared/deepiri-prismpipe"]
-	path = platform-services/shared/deepiri-prismpipe
-	url = git@github.com:Team-Deepiri/deepiri-prismpipe.git
-[submodule "platform-services/shared/deepiri-synapse"]
-	path = platform-services/shared/deepiri-synapse
-	url = git@github.com:Team-Deepiri/deepiri-synapse.git
-	branch = dev
-[submodule "platform-services/shared/deepiri-sugar-glider"]
-	path = platform-services/shared/deepiri-sugar-glider
-	url = git@github.com:Team-Deepiri/deepiri-sugar-glider.git
-	branch = dev
-[submodule "deepiri-ollama-utils"]
-	path = deepiri-ollama-utils
-	url = git@github.com:Team-Deepiri/deepiri-ollama-utils.git
 [submodule "deepiri-suite"]
 	path = deepiri-suite
 	url = git@github.com:Team-Deepiri/deepiri-suite.git
-[submodule "deepiri-logger"]
-	path = deepiri-logger
-	url = git@github.com:Team-Deepiri/deepiri-logger.git

@@ -1,0 +1,74 @@
+# AI Team — compose + submodule inventory
+# **Repo:** deepiri-control-plane (docker-compose.dev.yml)
+# Speech engine: livekit + speech (see docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md)
+id: ai-team
+display: AI Team
+
+services:
+  # DBs cyrex/mlflow/api-gateway actually use (replaces stale bare `postgres`)
+  - postgres-cyrex
+  - postgres-intelligence
+  - postgres-core
+  - redis
+  - influxdb
+  - etcd
+  - minio
+  - milvus
+  - cyrex
+  - cyrex-interface
+  - mlflow
+  - api-gateway
+  - messaging-service
+  - realtime-gateway
+  - ollama
+  - synapse
+  - sugar-glider
+  - livekit
+  - speech
+
+disabled_services:
+  - jupyter          # commented out in docker-compose.dev.yml
+  # challenge-service — removed (not in compose)
+
+submodules:
+  - diri-cyrex
+  - deepiri-ollama-utils
+  - deepiri-modelkit
+  - deepiri-logger
+  - deepiri-suite
+  - platform-services/backend/deepiri-api-gateway
+  - platform-services/backend/deepiri-speech
+  - platform-services/shared/deepiri-prismpipe
+  - platform-services/shared/deepiri-shared-utils
+  - platform-services/shared/deepiri-synapse
+  - platform-services/shared/deepiri-sugar-glider
+
+build:
+  buildkit: true
+  sequential: false
+  ensure_suite_images: true
+  docker_pull:
+    - ollama/ollama:latest
+  # pull_only inherited from teams/all-services.yml
+
+start:
+  no_deps: true
+  exclude_on_mps:
+    - cyrex
+    - ollama
+
+pull:
+  recursive: true
+  checkout_main: true
+  setup_hooks: true
+  optional:
+    - platform-services/shared/deepiri-prismpipe
+    - deepiri-modelkit
+
+urls:
+  - "Cyrex: http://localhost:8000"
+  - "Cyrex Interface: http://localhost:5175"
+  - "Ollama: http://localhost:11434"
+  - "Synapse: http://localhost:8002"
+  - "API Gateway: http://localhost:5100"
+  - "Speech/LiveKit: see docs/architecture/DEEPIRI_SPEECH_INTEGRATION.md"

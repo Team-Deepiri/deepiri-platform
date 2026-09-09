@@ -3,16 +3,23 @@
 # ===========================
 # DEEPIRI POSTGRESQL RESTORE SCRIPT
 # ===========================
+#
+# Restores a full-cluster pg_dumpall backup (see postgres-backup.sh) — not a
+# single database. The dump itself contains DROP/CREATE ROLE and
+# DROP/CREATE DATABASE statements plus \connect switches for
+# platform_auth, platform_core, and platform_intelligence, so it's applied
+# by piping the whole file into psql connected to the `postgres`
+# maintenance database, not by dropping/recreating one target database.
 
 set -e  # Exit on error
 
 # Configuration
 BACKUP_DIR="${BACKUP_DIR:-./backups/postgres}"
 
-# Database connection (from environment or defaults)
+# Database connection (from environment or defaults) — connects as the
+# bootstrap superuser, since the restore recreates roles/databases.
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-POSTGRES_DB="${POSTGRES_DB:-deepiri}"
 POSTGRES_USER="${POSTGRES_USER:-deepiri}"
 
 # Colors for output
@@ -37,7 +44,7 @@ fi
 echo -e "${YELLOW}📂 Available backups:${NC}"
 echo ""
 
-BACKUPS=($(ls -t "$BACKUP_DIR"/deepiri_backup_*.sql.gz 2>/dev/null || true))
+BACKUPS=($(ls -t "$BACKUP_DIR"/deepiri_cluster_backup_*.sql.gz 2>/dev/null || true))
 
 if [ ${#BACKUPS[@]} -eq 0 ]; then
     echo -e "${RED}❌ No backups found in $BACKUP_DIR${NC}"
@@ -68,17 +75,17 @@ if [ -n "$1" ]; then
 else
     # Interactive selection
     read -p "Select backup to restore (1-${#BACKUPS[@]}) or 'q' to quit: " selection
-    
+
     if [ "$selection" = "q" ] || [ "$selection" = "Q" ]; then
         echo -e "${YELLOW}Restore cancelled${NC}"
         exit 0
     fi
-    
+
     if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt ${#BACKUPS[@]} ]; then
         echo -e "${RED}❌ Invalid selection${NC}"
         exit 1
     fi
-    
+
     RESTORE_FILE="${BACKUPS[$((selection-1))]}"
 fi
 
@@ -87,8 +94,8 @@ echo -e "${YELLOW}Selected backup:${NC} $(basename "$RESTORE_FILE")"
 echo ""
 
 # Warning
-echo -e "${RED}⚠️  WARNING: This will COMPLETELY REPLACE the current database!${NC}"
-echo -e "${RED}   Database: ${POSTGRES_DB}${NC}"
+echo -e "${RED}⚠️  WARNING: This will COMPLETELY REPLACE every database and role in the cluster!${NC}"
+echo -e "${RED}   (platform_auth, platform_core, platform_intelligence, and their roles)${NC}"
 echo -e "${RED}   Host: ${POSTGRES_HOST}:${POSTGRES_PORT}${NC}"
 echo ""
 read -p "Are you sure you want to continue? (type 'yes' to confirm): " confirmation
@@ -109,98 +116,110 @@ fi
 echo -e "${GREEN}✅ PostgreSQL connection successful${NC}"
 echo ""
 
-# Create a safety backup before restore
+# Create a safety backup (full cluster) before restore
 SAFETY_BACKUP="${BACKUP_DIR}/pre_restore_safety_$(date +"%Y%m%d_%H%M%S").sql.gz"
 echo -e "${YELLOW}💾 Creating safety backup before restore...${NC}"
 echo -e "   Location: ${SAFETY_BACKUP}"
 
-PGPASSWORD="$POSTGRES_PASSWORD" pg_dump \
+PGPASSWORD="$POSTGRES_PASSWORD" pg_dumpall \
     -h "$POSTGRES_HOST" \
     -p "$POSTGRES_PORT" \
     -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
     --clean \
     --if-exists \
-    --format=plain \
-    --no-owner \
-    --no-privileges \
     2>/dev/null | gzip > "$SAFETY_BACKUP"
 
 echo -e "${GREEN}✅ Safety backup created${NC}"
 echo ""
 
-# Drop existing database (if exists)
-echo -e "${YELLOW}🗑️  Dropping existing database...${NC}"
-PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "postgres" \
-    -c "DROP DATABASE IF EXISTS ${POSTGRES_DB};" \
-    2>&1 | grep -v "NOTICE" || true
-
-# Create fresh database
-echo -e "${YELLOW}🆕 Creating fresh database...${NC}"
-PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "postgres" \
-    -c "CREATE DATABASE ${POSTGRES_DB};" \
-    2>&1 | grep -v "NOTICE" || true
-
-echo -e "${GREEN}✅ Database recreated${NC}"
-echo ""
-
-# Restore from backup
+# Restore from backup — apply the whole cluster dump against the `postgres`
+# maintenance database. The dump's own DROP/CREATE DATABASE and \connect
+# statements handle platform_auth/platform_core/platform_intelligence.
 echo -e "${YELLOW}📥 Restoring from backup...${NC}"
 echo -e "   This may take a few minutes..."
 echo ""
 
-# Decompress and restore
-gunzip -c "$RESTORE_FILE" | PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
-    --set ON_ERROR_STOP=on \
-    2>&1 | grep -E "(ERROR|FATAL|WARNING)" || true
+# pg_dumpall --clean emits `DROP ROLE IF EXISTS <role>;` / `CREATE ROLE <role>;`
+# for every role, including whichever one we connect as to run the restore
+# (POSTGRES_USER). Postgres refuses to let a role drop itself mid-session
+# ("current user cannot be dropped"), so that one DROP always fails, and then
+# CREATE ROLE fails too ("already exists") since the drop never happened.
+# The role already exists with the right attributes either way — the
+# following ALTER ROLE line (password, attributes) still runs and re-syncs
+# it — so it's safe to just strip these two self-referential statements
+# rather than let them hard-fail the whole restore under ON_ERROR_STOP.
+# grep exits 1 on the happy path (no ERROR/FATAL/WARNING lines found) — under
+# `set -e`, grep being last in the pipe and exiting 1 would kill the script
+# right here on every *successful* restore. Appending `|| true` would dodge
+# that, but it also collapses PIPESTATUS down to just `true`'s own trivial
+# status, destroying the real gunzip/sed/psql exit codes we need below —
+# confirmed empirically, not just in theory. Toggling `set -e` off for just
+# this pipeline avoids the kill without touching PIPESTATUS at all.
+set +e
+gunzip -c "$RESTORE_FILE" \
+    | sed -e "/^DROP ROLE IF EXISTS ${POSTGRES_USER};\$/d" -e "/^CREATE ROLE ${POSTGRES_USER};\$/d" \
+    | PGPASSWORD="$POSTGRES_PASSWORD" psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "postgres" \
+        -v ON_ERROR_STOP=1 \
+        2>&1 | grep -E "(ERROR|FATAL|WARNING)"
+# ON_ERROR_STOP=1 makes psql itself exit non-zero on the first real SQL error
+# instead of just printing it and continuing (its default behavior with no
+# flag at all) — gunzip/sed/psql's own exit codes are what actually matter
+# here, not grep's. Must capture the whole array in one statement — it gets
+# overwritten by the very next simple command, so reading each element on
+# separate lines silently loses everything but the first.
+pipe_status=("${PIPESTATUS[@]}")
+set -e
+gunzip_status=${pipe_status[0]}
+psql_status=${pipe_status[2]}
+if [ "$gunzip_status" -ne 0 ] || [ "$psql_status" -ne 0 ]; then
+    echo ""
+    echo -e "${RED}❌ Restore failed (gunzip exit ${gunzip_status}, psql exit ${psql_status})${NC}"
+    exit 1
+fi
 
 echo ""
 echo -e "${GREEN}✅ Restore completed successfully!${NC}"
 echo ""
 
-# Verify restore
+# Verify restore — spot-check each logical database, not just one
 echo -e "${YELLOW}🔍 Verifying restore...${NC}"
-TABLE_COUNT=$(PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
-    -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema IN ('public', 'analytics', 'audit');" \
-    2>/dev/null | tr -d ' ')
-
-USER_COUNT=$(PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
-    -t -c "SELECT COUNT(*) FROM public.users;" \
-    2>/dev/null | tr -d ' ')
-
-echo -e "   Tables restored: ${TABLE_COUNT}"
-echo -e "   Users restored: ${USER_COUNT}"
+for pair in "platform_auth:auth" "platform_core:core" "platform_intelligence:intelligence"; do
+    db="${pair%%:*}"
+    label="${pair##*:}"
+    table_count=$(PGPASSWORD="$POSTGRES_PASSWORD" psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "$db" \
+        -tAc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema')" \
+        2>/dev/null || echo "?")
+    echo -e "   ${label} (${db}): ${table_count} tables"
+done
 echo ""
 
-# Run VACUUM ANALYZE for optimal performance
+# Run VACUUM ANALYZE on each database for optimal performance
 echo -e "${YELLOW}🔧 Running VACUUM ANALYZE...${NC}"
-PGPASSWORD="$POSTGRES_PASSWORD" psql \
-    -h "$POSTGRES_HOST" \
-    -p "$POSTGRES_PORT" \
-    -U "$POSTGRES_USER" \
-    -d "$POSTGRES_DB" \
-    -c "VACUUM ANALYZE;" \
-    2>&1 | grep -v "NOTICE" || true
+for db in platform_auth platform_core platform_intelligence; do
+    PGPASSWORD="$POSTGRES_PASSWORD" psql \
+        -h "$POSTGRES_HOST" \
+        -p "$POSTGRES_PORT" \
+        -U "$POSTGRES_USER" \
+        -d "$db" \
+        -c "VACUUM ANALYZE;" \
+        2>&1 | grep -v "NOTICE" || true
+    # VACUUM ANALYZE output is almost entirely NOTICE lines on a clean run, so
+    # grep -v exiting 1 (nothing left to print) is the normal case, not a
+    # failure — but that also means it can't tell us whether psql itself
+    # failed. Check psql's own exit code directly instead; non-fatal since
+    # this is a post-restore optimization, not the restore itself.
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        echo -e "${YELLOW}⚠️  VACUUM ANALYZE failed on ${db} (non-fatal, restore data is unaffected)${NC}"
+    fi
+done
 
 echo -e "${GREEN}✅ Optimization complete${NC}"
 echo ""
@@ -221,4 +240,3 @@ echo ""
 # fi
 
 exit 0
-

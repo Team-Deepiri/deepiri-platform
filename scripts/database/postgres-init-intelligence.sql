@@ -10,8 +10,10 @@ CREATE EXTENSION IF NOT EXISTS "btree_gin";
 -- Intelligence schema
 CREATE SCHEMA IF NOT EXISTS intelligence;
 
--- Set search path
-SET search_path TO intelligence;
+-- Set search path (keep public so uuid-ossp/pg_trgm/btree_gin functions,
+-- which install into public, remain resolvable without schema-qualifying
+-- every call)
+SET search_path TO intelligence, public;
 
 -- ===========================
 -- INTELLIGENCE TABLES

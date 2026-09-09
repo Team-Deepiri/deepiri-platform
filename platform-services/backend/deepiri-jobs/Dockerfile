@@ -39,7 +39,10 @@ COPY backend/deepiri-jobs/src ./src
 RUN npx prisma generate \
  && npm run build
 
-RUN mkdir -p logs && chown -R nodejs:nodejs /app
+USER root
+RUN apk add --no-cache postgresql16-client gzip \
+ && mkdir -p /backups/postgres logs \
+ && chown -R nodejs:nodejs /app /backups
 
 USER nodejs
 

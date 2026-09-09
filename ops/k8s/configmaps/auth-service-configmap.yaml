@@ -4,20 +4,9 @@ metadata:
   name: auth-service-config
   namespace: default
   annotations:
-    description: "ConfigMap for Auth Service - public configuration"
+    description: "Cloud portal Auth Service — platform DB on postgres-platform"
+    plane: cloud-portal
 data:
-  # Server Configuration
-  NODE_ENV: "development"
+  NODE_ENV: "production"
   PORT: "5001"
-
-  # InfluxDB Configuration
-  INFLUXDB_URL: "http://influxdb:8086"
-  INFLUXDB_ORG: "deepiri"
-  INFLUXDB_BUCKET: "analytics"
-  
-  # Streaming Service Configuration (for publishing auth events)
-  SYNAPSE_URL: "http://synapse:8002"
-  
-  # OAuth Configuration
   GOOGLE_CLIENT_ID: "your-google-client-id.apps.googleusercontent.com"
-

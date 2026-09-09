@@ -1,0 +1,64 @@
+# Repo: deepiri-control-plane (docker-compose.dev.yml)
+# Infrastructure Team — same compose set as backend (canonical build/start; stale stop names dropped)
+id: infrastructure-team
+display: Infrastructure Team
+
+services:
+  - postgres-auth
+  - postgres-core
+  - postgres-intelligence
+  - redis
+  - influxdb
+  - api-gateway
+  - auth-service
+  - truss
+  - registry
+  - telemetry
+  - messaging-service
+  - external-bridge-service
+  - jobs
+  - realtime-gateway
+  - language-intelligence-service
+  - frontend-dev
+  - synapse
+  - sugar-glider
+  - adminer
+
+submodules:
+  - deepiri-logger
+  - deepiri-suite
+  - platform-services/backend/deepiri-api-gateway
+  - platform-services/backend/deepiri-auth-service
+  - platform-services/backend/deepiri-external-bridge-service
+  - platform-services/backend/deepiri-language-intelligence-service
+  - platform-services/shared/deepiri-prismpipe
+  - platform-services/shared/deepiri-shared-utils
+  - platform-services/shared/deepiri-synapse
+  - platform-services/shared/deepiri-sugar-glider
+
+build:
+  buildkit: false
+  sequential: true
+  ensure_suite_images: true
+
+start:
+  no_deps: true
+  require_dockerfile:
+    - api-gateway
+    - auth-service
+    - external-bridge-service
+    - synapse
+    - sugar-glider
+
+pull:
+  recursive: true
+  checkout_main: true
+  setup_hooks: true
+  optional:
+    - platform-services/shared/deepiri-prismpipe
+
+urls:
+  - "Frontend: http://localhost:5173"
+  - "API Gateway: http://localhost:5100"
+  - "Synapse: http://localhost:8002"
+  - "Adminer: http://localhost:8080"

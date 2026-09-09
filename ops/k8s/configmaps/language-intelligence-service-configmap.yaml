@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: language-intelligence-service-config
+  namespace: default
+  annotations:
+    description: "ConfigMap for Language Intelligence Service - public configuration"
+data:
+  # Server Configuration
+  NODE_ENV: "development"
+  PORT: "5003"
+
+  # Database URL (using Docker service names)
+  DATABASE_URL: "postgresql://deepiri_intel:deepiripassword@postgres-intelligence:5432/intelligence_db"
+
+  # Redis
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+
+  # Object storage (MinIO in dev)
+  STORAGE_PROVIDER: "minio"
+  STORAGE_BUCKET: "language-intelligence-documents"
+  STORAGE_REGION: "us-east-1"
+  STORAGE_ENDPOINT: "http://minio:9000"
+
+  # Downstream services
+  CYREX_BASE_URL: "http://cyrex:8000"
+  SYNAPSE_TRANSPORT: "sidecar"
+  SYNAPSE_SUGAR_GLIDER_URL: "http://synapse-sidecar:8081"

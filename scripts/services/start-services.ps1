@@ -3,7 +3,7 @@
 # Usage: .\start-services.ps1 [--compose-file docker-compose.dev.yml] [--skip-checks]
 
 param(
-    [string]$ComposeFile = "docker-compose.dev.yml",
+    [string]$ComposeFile = "",
     [switch]$SkipChecks = $false
 )
 
@@ -25,6 +25,20 @@ Write-Output ""
 # Get script directory and repo root
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
+
+if (-not $ComposeFile) {
+    $cloud = Join-Path $RepoRoot "docker-compose.yml"
+    $dev = Join-Path $RepoRoot "docker-compose.dev.yml"
+    if ((Test-Path $cloud) -and (Select-String -Path $cloud -Pattern 'postgres-platform' -Quiet)) {
+        $ComposeFile = "docker-compose.yml"
+    } elseif ((Test-Path $dev) -and (Select-String -Path $dev -Pattern '^  cyrex:' -Quiet)) {
+        $ComposeFile = "docker-compose.dev.yml"
+    } else {
+        Write-ColorOutput Red "[ERROR] Cannot detect compose file (cloud portal vs control-plane)"
+        exit 1
+    }
+}
+
 $ComposePath = Join-Path $RepoRoot $ComposeFile
 
 if (-not (Test-Path $ComposePath)) {

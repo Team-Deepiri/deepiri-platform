@@ -16,15 +16,12 @@ else
     COMPOSE_CMD="docker-compose"
 fi
 
-COMPOSE_FILE="docker-compose.dev.yml"
+cd "$(dirname "$0")/../.."
+# shellcheck source=scripts/utils/resolve-compose-file.sh
+source "$(dirname "$0")/../utils/resolve-compose-file.sh"
+resolve_compose_file "$(pwd)" || exit 1
 
-# Check if compose file exists
-if [ ! -f "$COMPOSE_FILE" ]; then
-    echo "❌ $COMPOSE_FILE not found. Please run this script from the project root."
-    exit 1
-fi
-
-# CRITICAL: Check if Minikube is running and use its Docker daemon
+echo "🚀 Starting Deepiri ($REPO_ROLE) with Docker Compose..."
 if command -v minikube &> /dev/null; then
     if minikube status &> /dev/null; then
         echo "📋 Minikube is running - using Minikube's Docker daemon (where Skaffold builds images)"
@@ -61,9 +58,14 @@ if [ $? -eq 0 ]; then
     echo "   Restart service:  $COMPOSE_CMD -f $COMPOSE_FILE restart <service-name>"
     echo ""
     echo "🌐 Services available:"
-    echo "   Backend API:      http://localhost:5000"
-    echo "   Cyrex AI:         http://localhost:8000"
-    echo "   Redis:            localhost:6379"
+    if [ "$REPO_ROLE" = "cloud-portal" ]; then
+        echo "   Portal (nginx):   http://localhost"
+        echo "   API Gateway:      internal (api-gateway:5100)"
+    else
+        echo "   Backend API:      http://localhost:5000"
+        echo "   Cyrex AI:         http://localhost:8000"
+        echo "   Redis:            localhost:6379"
+    fi
     echo ""
 else
     echo "❌ Failed to start services"
