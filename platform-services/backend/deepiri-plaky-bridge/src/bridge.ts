@@ -7,7 +7,7 @@ import { fetchPlakyCode } from './emailCodeProvider';
 const PLAKY_API_BASE = process.env.PLAKY_API_BASE || 'https://api.plaky.com/v1/public';
 const PLAKY_API_KEY = process.env.PLAKY_API_KEY || process.env.PLAKY_API_TOKEN || '';
 const PLAKY_EMAIL = process.env.PLAKY_EMAIL || process.env.PLAKY_BOT_EMAIL || process.env.IMAP_USER || '';
-const PLAKY_PASSWORD = process.env.PLAKY_PASSWORD || '';
+const PLAKY_AUTH_API_BASE = process.env.PLAKY_AUTH_API_BASE || 'https://api.plaky.com';
 const IMAP_USER = process.env.IMAP_USER || PLAKY_EMAIL;
 const IMAP_PASS = process.env.IMAP_PASS || '';
 
@@ -128,102 +128,89 @@ export class PlakyBridge {
 
   private async login() {
     if (!this.page || !PLAKY_EMAIL) throw new Error('Missing browser/page or PLAKY_EMAIL');
-    console.log(`[PlakyBridge] Logging in headless as ${PLAKY_EMAIL} (code flow)...`);
-    await this.page.goto('https://deepiri-crew.plaky.com/login', { waitUntil: 'networkidle', timeout: 20000 });
-
-    // Step 1: fill email and request code — handle Cloudflare Turnstile
-    const emailSels = ['input[placeholder*="email" i]', '#email', 'input[type="email"]', 'input[name="email"]', '[data-testid="email"]'];
-    let filled = false;
-    for (const s of emailSels) {
-      try { await this.page.fill(s, PLAKY_EMAIL, { timeout: 5000 }); filled = true; break; } catch {}
-    }
-    if (!filled) throw new Error('Could not find email input');
-
-    // Wait for Turnstile token (cf-turnstile-response) to be populated — without it Plaky won't send code.
-    // 15s was too short for the invisible/managed challenge to finish its passive
-    // browser checks on a headless run -- widened to 45s. If it still never solves,
-    // proceeding anyway is pointless (Plaky silently drops the code-send server-side),
-    // so this is now a hard failure instead of burning a further 90s IMAP wait on a
-    // request that was already rejected.
-    let turnstileSolved = false;
-    try {
-      await this.page.waitForFunction(() => {
-        const el = (globalThis as any).document.querySelector('input[name="cf-turnstile-response"]');
-        return el && el.value && el.value.length > 10;
-      }, { timeout: 45000 });
-      turnstileSolved = true;
-      console.log('[PlakyBridge] Turnstile solved');
-    } catch {
-      console.log('[PlakyBridge] Turnstile not solved in 45s');
-    }
-    if (!turnstileSolved) {
-      throw new Error('Turnstile challenge did not solve -- Plaky will not send a login code for this attempt. Not wasting the 90s IMAP wait on a request that was already rejected.');
-    }
-    await this.page.waitForTimeout(1000);
-
-    const continueSels = ['button:has-text("Continue with email")', 'button:has-text("Continue")', '#login-btn', 'button[type="submit"]', 'button:has-text("Log in")'];
-    let clicked = false;
-    for (const s of continueSels) {
-      try { await this.page.click(s, { timeout: 5000 }); clicked = true; break; } catch {}
-    }
-    if (!clicked) throw new Error('Could not click Continue');
-    await this.page.waitForTimeout(2500);
-    await this.page.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {});
-
-    // If password field appears, it's old flow — try it
-    const hasPassword = await this.page.locator('input[type="password"]').first().isVisible().catch(() => false);
-    if (hasPassword && PLAKY_PASSWORD) {
-      await this.page.fill('input[type="password"]', PLAKY_PASSWORD).catch(() => {});
-      for (const s of ['button:has-text("Log in")', 'button[type="submit"]']) {
-        try { await this.page.click(s, { timeout: 3000 }); break; } catch {}
-      }
-      await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
-      await this.page.waitForTimeout(2000);
-      if (!this.page.url().includes('/login')) {
-        await this.saveSession();
-        console.log('[PlakyBridge] Login success via password');
-        return;
-      }
-    }
-
-    // Step 2: code flow — fetch code from IMAP
     if (!IMAP_PASS) throw new Error('IMAP_PASS not configured — cannot auto-retrieve email code. Set IMAP_PASS for deepiriexternals@gmail.com');
+    console.log(`[PlakyBridge] Logging in headless as ${PLAKY_EMAIL} (captcha-free API OTP flow)...`);
+
+    // Step 0: initiate OTP challenge via Plaky backend API. No Turnstile gate —
+    // verified live that /auth/challenge/initiate/otp does NOT require a captcha
+    // token (the frontend SPA enforces it, the backend does not).
+    let challengeId: number;
+    const challengeStartedAt = new Date();
+    try {
+      const initRes = await axios.post(
+        `${PLAKY_AUTH_API_BASE}/auth/challenge/initiate/otp`,
+        { email: PLAKY_EMAIL, discriminator: 'otp' },
+        { timeout: 15000, headers: { 'Content-Type': 'application/json' } },
+      );
+      challengeId = initRes.data?.id;
+      if (!challengeId) throw new Error(`No challenge id in response: ${JSON.stringify(initRes.data).slice(0, 200)}`);
+      console.log(`[PlakyBridge] OTP challenge initiated: ${challengeId}`);
+    } catch (e: any) {
+      const blocked = e.response?.data?.resendEmailBlockedUntil || e.response?.data?.message || e.message;
+      throw new Error(`OTP initiate failed: ${blocked}`);
+    }
+
+    // Step 1: fetch login code from IMAP, only emails sent after challenge start
     console.log('[PlakyBridge] Waiting for email code via IMAP...');
-    const code = await fetchPlakyCode(90000, 3000);
+    const code = await fetchPlakyCode(90000, 3000, challengeStartedAt);
     console.log(`[PlakyBridge] Code retrieved: ${code.slice(0, 2)}****`);
 
-    const codeSels = ['input[inputmode="numeric"]', 'input[placeholder*="code" i]', 'input[name="code"]', 'input[type="text"][maxlength="6"]', 'input[type="text"]'];
-    // Try 6 inputs (one per digit) or single input
-    const single = await this.page.locator(codeSels.join(',')).first().isVisible().catch(() => false);
-    if (single) {
-      // If 6 boxes, fill sequentially
-      const boxes = this.page.locator('input[inputmode="numeric"], input[maxlength="1"]');
-      const count = await boxes.count().catch(() => 0);
-      if (count >= 6) {
-        for (let i = 0; i < 6; i++) {
-          try { await boxes.nth(i).fill(code[i]); } catch {}
-        }
-      } else {
-        for (const s of codeSels) {
-          try { await this.page.fill(s, code, { timeout: 3000 }); break; } catch {}
-        }
-      }
-    } else {
-      throw new Error('Could not find code input');
+    // Step 2: complete OTP challenge → exchangeToken
+    let exchangeToken: string;
+    try {
+      const completeRes = await axios.post(
+        `${PLAKY_AUTH_API_BASE}/auth/challenge/${challengeId}/complete/otp`,
+        { discriminator: 'otp', code },
+        { timeout: 15000, headers: { 'Content-Type': 'application/json' } },
+      );
+      exchangeToken = completeRes.data?.exchangeToken;
+      if (!exchangeToken) throw new Error(`No exchangeToken in response: ${JSON.stringify(completeRes.data).slice(0, 200)}`);
+      console.log(`[PlakyBridge] OTP challenge complete, exchangeToken len=${exchangeToken.length}`);
+    } catch (e: any) {
+      throw new Error(`OTP complete failed for challenge ${challengeId}: ${e.response?.data?.message || e.message}`);
     }
 
-    const verifySels = ['button:has-text("Verify")', 'button:has-text("Continue")', 'button:has-text("Sign in")', 'button[type="submit"]'];
-    for (const s of verifySels) {
-      try { await this.page.click(s, { timeout: 3000 }); break; } catch {}
+    // Step 3: bootstrap browser session via /oauth2/redirect?token=...
+    // This sets plaky_session AND cake Sso-Token cookies automatically (verified live).
+    await this.page.goto(
+      `https://deepiri-crew.plaky.com/oauth2/redirect?token=${encodeURIComponent(exchangeToken)}`,
+      { waitUntil: 'domcontentloaded', timeout: 30000 },
+    );
+
+    // Wait for SPA to settle out of /login
+    const loggedIn = await this.waitForLoggedOutOfLogin(20000);
+    if (!loggedIn) {
+      const body = await this.page.content().catch(() => '');
+      throw new Error(`Session bootstrap failed, still on login: ${body.slice(0, 800)}`);
     }
-    await this.page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+
+    // Step 4: land on dashboard and verify cookies were set
+    await this.page.goto('https://deepiri-crew.plaky.com/dashboard', { waitUntil: 'domcontentloaded', timeout: 20000 });
     await this.page.waitForTimeout(3000);
-    if (this.page.url().includes('/login')) {
-      const body = await this.page.content();
-      throw new Error(`Code login failed, still on login: ${body.slice(0, 800)}`);
-    }
+    const cookies = await this.context?.cookies().catch(() => []) || [];
+    const hasPlakySession = cookies.some(c => c.name === 'plaky_session');
+    const hasSsoToken = cookies.some(c => c.name === 'Sso-Token' && c.domain.includes('cake.com'));
+    console.log(`[PlakyBridge] Session cookies: plaky_session=${hasPlakySession}, Sso-Token=${hasSsoToken}`);
+    if (!hasPlakySession) throw new Error('plaky_session cookie not set after OTP bootstrap');
+
     await this.saveSession();
-    console.log('[PlakyBridge] Login success via email code');
+    console.log('[PlakyBridge] Login success via API OTP (captcha-free)');
+  }
+
+  private async waitForLoggedOutOfLogin(timeoutMs: number): Promise<boolean> {
+    if (!this.page) return false;
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const url = this.page.url();
+      if (!url.includes('/login') && !url.includes('/oauth2/redirect')) {
+        // Ensure SPA finished routing — check for a telltale body element
+        await this.page.waitForTimeout(2000);
+        const url2 = this.page.url();
+        if (!url2.includes('/login')) return true;
+      }
+      await this.page.waitForTimeout(1500);
+    }
+    return false;
   }
 
   private startSessionRefresh() {
