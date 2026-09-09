@@ -19,13 +19,13 @@ function imapConfig() {
   };
 }
 
-export async function fetchPlakyCode(timeoutMs = 90000, pollIntervalMs = 3000): Promise<string> {
+export async function fetchPlakyCode(timeoutMs = 90000, pollIntervalMs = 3000, minDate?: Date): Promise<string> {
   if (!IMAP_USER || !IMAP_PASS) throw new Error('IMAP_USER/IMAP_PASS not configured for code retrieval');
   const start = Date.now();
   let lastSeenUid: number | null = null;
 
   while (Date.now() - start < timeoutMs) {
-    const code = await pollOnce(lastSeenUid);
+    const code = await pollOnce(lastSeenUid, minDate);
     if (code.code) return code.code;
     if (code.maxUid) lastSeenUid = code.maxUid;
     await new Promise(r => setTimeout(r, pollIntervalMs));
@@ -33,7 +33,8 @@ export async function fetchPlakyCode(timeoutMs = 90000, pollIntervalMs = 3000): 
   throw new Error(`Timed out waiting for Plaky code in ${IMAP_USER} inbox after ${timeoutMs / 1000}s`);
 }
 
-async function pollOnce(afterUid: number | null): Promise<{ code: string | null; maxUid: number | null }> {
+async function pollOnce(afterUid: number | null, minDate?: Date): Promise<{ code: string | null; maxUid: number | null }> {
+  const minMs = minDate ? minDate.getTime() : Date.now() - 24 * 60 * 60 * 1000;
   return new Promise((resolve, reject) => {
     const imap = new (Imap as any)(imapConfig());
     let maxUid: number | null = afterUid;
@@ -72,9 +73,9 @@ async function pollOnce(afterUid: number | null): Promise<{ code: string | null;
                 // Plaky codes are 6 digits, often "Your verification code is 123456" or "Security code"
                 const isPlaky = from.includes('plaky') || from.includes('cake') || subject.includes('plaky') || subject.includes('code') || subject.includes('verify') || combined.toLowerCase().includes('plaky');
                 if (!isPlaky) { pending--; if (pending === 0 && !done) { done = true; imap.end(); resolve({ code: foundCode, maxUid }); } return; }
-                // Only consider messages after start
+                // Only consider messages after minDate (or graceful 24h default)
                 const date = parsed.date ? new Date(parsed.date).getTime() : 0;
-                if (Date.now() - date > 10 * 60 * 1000) { pending--; if (pending === 0 && !done) { done = true; imap.end(); resolve({ code: foundCode, maxUid }); } return; }
+                if (date < minMs - 60 * 1000) { pending--; if (pending === 0 && !done) { done = true; imap.end(); resolve({ code: foundCode, maxUid }); } return; }
                 // Plaky now sends alphanumeric codes like 35NTGH (6 chars A-Z0-9)
                 const codeRegex = /\b([A-Z0-9]{6})\b/i;
                 const m = combined.match(codeRegex) || combined.match(/\b(\d{4,8})\b/);
