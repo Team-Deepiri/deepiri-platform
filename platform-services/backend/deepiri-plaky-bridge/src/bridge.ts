@@ -76,7 +76,16 @@ export class PlakyBridge {
       });
       this.context = await this.browser.newContext({
         viewport: { width: 1920, height: 1080 },
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        locale: 'en-US',
+        timezoneId: 'America/New_York',
+        extraHTTPHeaders: { 'Accept-Language': 'en-US,en;q=0.9' },
+      });
+      await this.context.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+        (window as any).chrome = { runtime: {} };
       });
       this.page = await this.context.newPage();
 
@@ -130,15 +139,25 @@ export class PlakyBridge {
     }
     if (!filled) throw new Error('Could not find email input');
 
-    // Wait for Turnstile token (cf-turnstile-response) to be populated — without it Plaky won't send code
+    // Wait for Turnstile token (cf-turnstile-response) to be populated — without it Plaky won't send code.
+    // 15s was too short for the invisible/managed challenge to finish its passive
+    // browser checks on a headless run -- widened to 45s. If it still never solves,
+    // proceeding anyway is pointless (Plaky silently drops the code-send server-side),
+    // so this is now a hard failure instead of burning a further 90s IMAP wait on a
+    // request that was already rejected.
+    let turnstileSolved = false;
     try {
       await this.page.waitForFunction(() => {
         const el = (globalThis as any).document.querySelector('input[name="cf-turnstile-response"]');
         return el && el.value && el.value.length > 10;
-      }, { timeout: 15000 });
+      }, { timeout: 45000 });
+      turnstileSolved = true;
       console.log('[PlakyBridge] Turnstile solved');
     } catch {
-      console.log('[PlakyBridge] Turnstile not solved in 15s, proceeding anyway');
+      console.log('[PlakyBridge] Turnstile not solved in 45s');
+    }
+    if (!turnstileSolved) {
+      throw new Error('Turnstile challenge did not solve -- Plaky will not send a login code for this attempt. Not wasting the 90s IMAP wait on a request that was already rejected.');
     }
     await this.page.waitForTimeout(1000);
 
