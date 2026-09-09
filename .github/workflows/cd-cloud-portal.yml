@@ -157,11 +157,11 @@ jobs:
           PLAKY_API_KEY=${{ secrets.PLAKY_API_KEY }}
           PLAKY_API_TOKEN=${{ secrets.PLAKY_API_TOKEN }}
           PLAKY_EMAIL=${{ secrets.PLAKY_EMAIL }}
-          PLAKY_PASSWORD=${{ secrets.PLAKY_PASSWORD }}
+          PLAKY_PASSWORD="${{ secrets.PLAKY_PASSWORD }}"
           PLAKY_BOT_EMAIL=${{ secrets.PLAKY_BOT_EMAIL }}
           IMAP_HOST=${{ secrets.IMAP_HOST }}
           IMAP_USER=${{ secrets.IMAP_USER }}
-          IMAP_PASS=${{ secrets.IMAP_PASS }}
+          IMAP_PASS="${{ secrets.IMAP_PASS }}"
           CAKE_ORGANIZATION_ID=${{ secrets.CAKE_ORGANIZATION_ID }}
           CAKE_WORKSPACE_IDS=${{ secrets.CAKE_WORKSPACE_IDS }}
           PLATFORM_ANNOUNCEMENTS_WEBHOOK_SECRET=${{ secrets.PLATFORM_ANNOUNCEMENTS_WEBHOOK_SECRET }}
