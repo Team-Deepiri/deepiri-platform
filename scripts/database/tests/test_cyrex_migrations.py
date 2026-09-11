@@ -98,10 +98,13 @@ class CyrexMigrationTests(unittest.TestCase):
                 (10, "documents"),
                 (20, "artifacts"),
                 (30, "pipeline"),
+                (31, "pipeline_memo_index"),
                 (70, "reckoning"),
                 (80, "pressure"),
                 (110, "learning"),
                 (120, "helox_bridge"),
+                (140, "elkedel_memory"),
+                (141, "elkedel_pressure"),
             ],
         )
 
