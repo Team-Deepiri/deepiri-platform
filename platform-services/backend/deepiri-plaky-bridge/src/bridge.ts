@@ -246,11 +246,101 @@ export class PlakyBridge {
     }
   }
 
+  // Verified live (captured from the admin SPA, same shape as the already-proven
+  // deactivate call): PATCH /users/{id}/activate with the browser session
+  // Bearer reactivates a previously-deactivated member. Mirrors the deactivate
+  // path in kickUser -- same 429 backoff, same post-call recheck-via-API to
+  // confirm the status actually flipped before reporting success.
+  async activateUser(email: string, userId: number | string): Promise<InviteResult> {
+    if (!userId || !this.page || !this.browser) {
+      return {
+        success: false,
+        email,
+        error: 'Cannot reactivate: no browser session available (requires PLAKY_EMAIL + IMAP_PASS for code login).',
+        via: 'api',
+      };
+    }
+    try {
+      await this.gotoDashboard();
+      const token = await this.getSessionAccessToken();
+      if (!token) {
+        return { success: false, email, error: 'Could not resolve session Bearer token for reactivation', via: 'browser' };
+      }
+      // Resolved BEFORE building headers -- an unresolved Promise as a header
+      // value serializes to garbage ("[object Promise]"), an actual bug
+      // caught in review (this file's existing deactivate call above has the
+      // same defect; not touched here since it's separately verified live,
+      // but not repeated in this new code).
+      const sessionId = await this.page.evaluate(() => sessionStorage.getItem('sessionId') || '');
+      let act: any;
+      for (let tries = 0; tries < 4; tries++) {
+        try {
+          act = await axios.patch(
+            `https://deepiri-crew.api.plaky.com/users/${userId}/activate`,
+            {},
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'x-client-platform': 'web',
+                'x-client-version': '2.5.3',
+                'x-client-session-id': sessionId,
+              },
+              timeout: 15000,
+            },
+          );
+          break;
+        } catch (err: any) {
+          if (err?.response?.status === 429 && tries < 3) {
+            const delay = 2500 * (tries + 1);
+            console.warn(`[PlakyBridge] Activate rate-limited (429), backing off ${delay}ms before retry`);
+            await new Promise((r) => setTimeout(r, delay));
+            continue;
+          }
+          throw err;
+        }
+      }
+      if (act && act.status >= 200 && act.status < 300) {
+        // Only report success once the recheck actually confirms ACTIVE --
+        // a real person reads this status as "you have access again", so an
+        // optimistic "probably worked" isn't good enough here even though
+        // the PATCH itself returned 2xx (the account-layer write can lag).
+        for (let i = 0; i < 3; i++) {
+          await new Promise((r) => setTimeout(r, 1500));
+          const recheck = await this.checkViaApi(email);
+          if (recheck.exists && recheck.user?.status === 'ACTIVE') {
+            return { success: true, email, status: 'reactivated', via: 'browser' };
+          }
+        }
+        return {
+          success: false,
+          email,
+          error: 'Reactivation request was accepted (HTTP 2xx) but the account did not confirm ACTIVE status within the recheck window',
+          via: 'browser',
+        };
+      }
+      console.warn(`[PlakyBridge] Web API activate for ${email} returned ${act?.status}`);
+      return { success: false, email, error: `Reactivation returned HTTP ${act?.status}`, via: 'browser' };
+    } catch (e: any) {
+      console.warn(`[PlakyBridge] Web API activate failed for ${email}: ${e.message}`);
+      return { success: false, email, error: `Reactivation failed: ${e.message}`, via: 'browser' };
+    }
+  }
+
   async inviteUser(email: string, role: string = 'MEMBER'): Promise<InviteResult> {
-    // 1) Real API check — if already member, short-circuit
+    // 1) Real API check — if already an ACTIVE member, short-circuit as before.
+    // A DEACTIVATED/INACTIVE member found here is not a dead end any more --
+    // resigning the IPCA (or any other re-invite trigger) now reactivates
+    // them instead of just reporting "already a member" and doing nothing.
+    // PENDING (invited but never accepted) is left as the existing
+    // already-a-member response -- that's a different state than deactivated
+    // and already has its own path (invitation cancel) in kickUser.
     const check = await this.checkViaApi(email);
     if (check.exists) {
-      return { success: false, email, role, error: `Already a workspace member (${check.user?.type}/${check.user?.status})`, via: 'check-only', status: 'exists' };
+      const status = check.user?.status;
+      if ((status === 'INACTIVE' || status === 'DEACTIVATED') && check.user?.id) {
+        return this.activateUser(email, check.user.id);
+      }
+      return { success: false, email, role, error: `Already a workspace member (${check.user?.type}/${status})`, via: 'check-only', status: 'exists' };
     }
 
     // 2) If no browser creds, we cannot automate — return instructive error (real API has no invite endpoint)
