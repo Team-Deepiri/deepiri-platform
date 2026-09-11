@@ -266,6 +266,12 @@ export class PlakyBridge {
       if (!token) {
         return { success: false, email, error: 'Could not resolve session Bearer token for reactivation', via: 'browser' };
       }
+      // Resolved BEFORE building headers -- an unresolved Promise as a header
+      // value serializes to garbage ("[object Promise]"), an actual bug
+      // caught in review (this file's existing deactivate call above has the
+      // same defect; not touched here since it's separately verified live,
+      // but not repeated in this new code).
+      const sessionId = await this.page.evaluate(() => sessionStorage.getItem('sessionId') || '');
       let act: any;
       for (let tries = 0; tries < 4; tries++) {
         try {
@@ -277,7 +283,7 @@ export class PlakyBridge {
                 Authorization: `Bearer ${token}`,
                 'x-client-platform': 'web',
                 'x-client-version': '2.5.3',
-                'x-client-session-id': this.page.evaluate(() => sessionStorage.getItem('sessionId') || '') as any,
+                'x-client-session-id': sessionId,
               },
               timeout: 15000,
             },
@@ -294,6 +300,10 @@ export class PlakyBridge {
         }
       }
       if (act && act.status >= 200 && act.status < 300) {
+        // Only report success once the recheck actually confirms ACTIVE --
+        // a real person reads this status as "you have access again", so an
+        // optimistic "probably worked" isn't good enough here even though
+        // the PATCH itself returned 2xx (the account-layer write can lag).
         for (let i = 0; i < 3; i++) {
           await new Promise((r) => setTimeout(r, 1500));
           const recheck = await this.checkViaApi(email);
@@ -301,7 +311,12 @@ export class PlakyBridge {
             return { success: true, email, status: 'reactivated', via: 'browser' };
           }
         }
-        return { success: true, email, status: 'reactivated', via: 'browser' };
+        return {
+          success: false,
+          email,
+          error: 'Reactivation request was accepted (HTTP 2xx) but the account did not confirm ACTIVE status within the recheck window',
+          via: 'browser',
+        };
       }
       console.warn(`[PlakyBridge] Web API activate for ${email} returned ${act?.status}`);
       return { success: false, email, error: `Reactivation returned HTTP ${act?.status}`, via: 'browser' };
