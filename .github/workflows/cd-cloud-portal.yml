@@ -149,6 +149,21 @@ jobs:
           NOROZO_ANNOUNCEMENTS_WEBHOOK_URL=${{ secrets.NOROZO_ANNOUNCEMENTS_WEBHOOK_URL }}
           NOROZO_WEBHOOK_SECRET=${{ secrets.NOROZO_WEBHOOK_SECRET }}
           PLAKY_POLL_INTERVAL_SEC=${{ secrets.PLAKY_POLL_INTERVAL_SEC }}
+          # Headless Plaky/Cake bridge (deepiri-plaky-bridge). OPTIONAL — the
+          # service boots in read-only mode without them and invite/kick return
+          # instructive errors instead of crashing. Set to enable the captcha-free
+          # Cake invite + web-API kick automation. PLAKY_API_TOKEN is the legacy
+          # alias for PLAKY_API_KEY.
+          PLAKY_API_KEY=${{ secrets.PLAKY_API_KEY }}
+          PLAKY_API_TOKEN=${{ secrets.PLAKY_API_TOKEN }}
+          PLAKY_EMAIL=${{ secrets.PLAKY_EMAIL }}
+          PLAKY_PASSWORD="${{ secrets.PLAKY_PASSWORD }}"
+          PLAKY_BOT_EMAIL=${{ secrets.PLAKY_BOT_EMAIL }}
+          IMAP_HOST=${{ secrets.IMAP_HOST }}
+          IMAP_USER=${{ secrets.IMAP_USER }}
+          IMAP_PASS="${{ secrets.IMAP_PASS }}"
+          CAKE_ORGANIZATION_ID=${{ secrets.CAKE_ORGANIZATION_ID }}
+          CAKE_WORKSPACE_IDS=${{ secrets.CAKE_WORKSPACE_IDS }}
           PLATFORM_ANNOUNCEMENTS_WEBHOOK_SECRET=${{ secrets.PLATFORM_ANNOUNCEMENTS_WEBHOOK_SECRET }}
           PLATFORM_DB_NAME=${{ secrets.PLATFORM_DB_NAME }}
           PLATFORM_DB_PASSWORD=${{ secrets.PLATFORM_DB_PASSWORD }}
@@ -224,7 +239,7 @@ jobs:
           docker compose -f docker-compose.yml pull --ignore-buildable || true
 
           docker compose -f docker-compose.yml build --pull platform-frontend
-          docker compose -f docker-compose.yml build --pull api-gateway auth-service registry jobs external-bridge-service
+          docker compose -f docker-compose.yml build --pull api-gateway auth-service registry jobs external-bridge-service plaky-bridge
           # No --force-recreate: Compose hashes each service's resolved config
           # (image id, env, volumes, command) and recreates ONLY what actually
           # changed. --force-recreate tore down all 12 services on every deploy
