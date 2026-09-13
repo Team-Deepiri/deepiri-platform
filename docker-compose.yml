@@ -226,13 +226,11 @@ services:
       - deepiri-network
 
   plaky-bridge:
-    # Disabled: the service crash-loops (headless Chromium relaunched each cycle,
-    # ~226MB/6.4% CPU) because PLAKY_*/IMAP_* credentials are not present in
-    # ops/k8s/secrets/.env. It reached 27 restarts in prod before being stopped.
-    # Compose skips profiled services unless the profile is explicitly requested,
-    # so this keeps it down across deploys without deleting the service or its
-    # source. To re-enable: add the credentials, then remove this profiles key.
-    profiles: ["disabled"]
+    # Enabled path for the headless Plaky/Cake bridge. Requires PLAKY_API_KEY
+    # (read-only roster checks) plus PLAKY_EMAIL/PLAKY_PASSWORD and IMAP_USER/
+    # IMAP_PASS for the browser automation (invite via Cake Account API + web-API
+    # kick). Without them the service runs in read-only mode (isReady=true) and
+    # invite/kick return instructive errors rather than crashing.
     <<: *default-env
     build:
       context: ./platform-services/backend/deepiri-plaky-bridge
@@ -254,6 +252,9 @@ services:
       IMAP_HOST: ${IMAP_HOST:-imap.gmail.com}
       IMAP_USER: ${IMAP_USER:-}
       IMAP_PASS: ${IMAP_PASS:-}
+      CAKE_API_BASE: ${CAKE_API_BASE:-https://account.cake.com/api}
+      CAKE_ORGANIZATION_ID: ${CAKE_ORGANIZATION_ID:-}
+      CAKE_WORKSPACE_IDS: ${CAKE_WORKSPACE_IDS:-}
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:?INTERNAL_SERVICE_SECRET must be set}
       PLAKY_BRIDGE_DATA_DIR: /app/data
     volumes:
