@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { secureLog } from '@team-deepiri/shared-utils';
@@ -48,6 +49,28 @@ export function resolvePgBackupConfig(): PgBackupConfig {
   };
 }
 
+async function createPgpassFile(config: PgBackupConfig): Promise<string> {
+  const pgpassDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pgpass-'));
+  const pgpassFile = path.join(pgpassDir, 'pgpass');
+  const content = `${config.host}:${config.port}:${config.database}:${config.user}:${config.password}\n`;
+  await fs.writeFile(pgpassFile, content, { mode: 0o600 });
+  return pgpassFile;
+}
+
+async function removePgpassFile(pgpassFile: string): Promise<void> {
+  try {
+    const dir = path.dirname(pgpassFile);
+    await fs.unlink(pgpassFile);
+    await fs.rmdir(dir);
+  } catch { /* best-effort cleanup */ }
+}
+
+function cleanEnv(pgpassFile: string): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { PATH: process.env.PATH };
+  env.PGPASSFILE = pgpassFile;
+  return env;
+}
+
 async function appendJobLog(jobId: string, line: string): Promise<void> {
   try {
     await prisma.jobLog.create({ data: { jobId, line } });
@@ -57,35 +80,45 @@ async function appendJobLog(jobId: string, line: string): Promise<void> {
 }
 
 async function verifyPostgresConnection(config: PgBackupConfig): Promise<void> {
-  await execFileAsync(
-    'psql',
-    ['-h', config.host, '-p', config.port, '-U', config.user, '-d', config.database, '-c', '\\q'],
-    { env: { ...process.env, PGPASSWORD: config.password } },
-  );
+  const pgpassFile = await createPgpassFile(config);
+  try {
+    await execFileAsync(
+      'psql',
+      ['-h', config.host, '-p', config.port, '-U', config.user, '-d', config.database, '-c', '\\q'],
+      { env: cleanEnv(pgpassFile) },
+    );
+  } finally {
+    await removePgpassFile(pgpassFile);
+  }
 }
 
 async function dumpDatabase(config: PgBackupConfig, sqlPath: string): Promise<void> {
-  await execFileAsync(
-    'pg_dump',
-    [
-      '-h',
-      config.host,
-      '-p',
-      config.port,
-      '-U',
-      config.user,
-      '-d',
-      config.database,
-      '--clean',
-      '--if-exists',
-      '--format=plain',
-      '--no-owner',
-      '--no-privileges',
-      '-f',
-      sqlPath,
-    ],
-    { env: { ...process.env, PGPASSWORD: config.password } },
-  );
+  const pgpassFile = await createPgpassFile(config);
+  try {
+    await execFileAsync(
+      'pg_dump',
+      [
+        '-h',
+        config.host,
+        '-p',
+        config.port,
+        '-U',
+        config.user,
+        '-d',
+        config.database,
+        '--clean',
+        '--if-exists',
+        '--format=plain',
+        '--no-owner',
+        '--no-privileges',
+        '-f',
+        sqlPath,
+      ],
+      { env: cleanEnv(pgpassFile) },
+    );
+  } finally {
+    await removePgpassFile(pgpassFile);
+  }
 }
 
 async function compressBackup(sqlPath: string): Promise<string> {

@@ -6,6 +6,10 @@ name: deepiri-platform
 # Full local builder stack → deepiri-control-plane (`docker-compose.dev.yml`).
 #
 # Secrets: ./ops/k8s/secrets/.env
+#
+# TODO: All services run as root. Each service should define a non-root USER
+# for defense-in-depth. See Dockerfile USER directives and appropriate
+# passwd/group entries.
 
 x-logging: &minimal-logging
   driver: "local"
@@ -85,7 +89,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
-    command: sh -c "if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else npx prisma migrate deploy || true; fi && node dist/server.js"
+    command: sh -c "if [ -f /usr/local/bin/prisma-baseline.sh ]; then /usr/local/bin/prisma-baseline.sh; else npx prisma migrate deploy; fi && node dist/server.js"
     depends_on:
       postgres-platform:
         condition: service_healthy

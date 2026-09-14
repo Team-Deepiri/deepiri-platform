@@ -7,6 +7,8 @@ function isSchedulerEnabled(): boolean {
   return process.env.PG_BACKUP_SCHEDULER_ENABLED === 'true';
 }
 
+let scheduledTask: ReturnType<typeof cron.schedule> | null = null;
+
 function scheduledIdempotencyKey(forDate: Date = new Date()): string {
   const day = forDate.toISOString().slice(0, 10);
   return `${PLATFORM_PG_BACKUP_JOB_TYPE}:${day}`;
@@ -53,9 +55,18 @@ export function startBackupScheduler(): void {
     return;
   }
 
-  cron.schedule(schedule, () => {
+  scheduledTask = cron.schedule(schedule, () => {
     void enqueuePlatformPgBackup('schedule');
   });
 
   secureLog('info', `PG backup scheduler active (${schedule})`);
+}
+
+export function stopBackupScheduler(): void {
+  if (scheduledTask) {
+    // node-cron 3.x has no destroy(); stop() clears its recurring timeout.
+    scheduledTask.stop();
+    scheduledTask = null;
+    secureLog('info', 'PG backup scheduler stopped');
+  }
 }

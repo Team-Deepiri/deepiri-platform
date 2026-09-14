@@ -13,9 +13,18 @@ app.use(express.json());
 
 const PORT = parseInt(process.env.PORT || '5009', 10);
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || process.env.PLAKY_BRIDGE_SECRET || '';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 function requireInternalAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (!INTERNAL_SECRET) return next(); // open if no secret configured (dev)
+  if (!INTERNAL_SECRET) {
+    // Fail closed: without a configured secret every protected route is a
+    // silent auth bypass. In production that must be an error, not a pass.
+    if (IS_PRODUCTION) {
+      console.error('[PlakyBridge] INTERNAL_SERVICE_SECRET is not set; rejecting request (auth would otherwise be bypassed)');
+      return res.status(500).json({ success: false, error: 'Internal secret is not configured' });
+    }
+    return next(); // open if no secret configured (dev)
+  }
   const provided = (req.headers['x-internal-secret'] as string) || (req.headers['x-api-key'] as string) || '';
   if (provided !== INTERNAL_SECRET) {
     return res.status(401).json({ success: false, error: 'Invalid internal secret' });
