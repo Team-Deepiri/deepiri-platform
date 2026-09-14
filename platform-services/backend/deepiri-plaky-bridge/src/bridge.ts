@@ -105,6 +105,11 @@ export class PlakyBridge {
     if (!this.context) return;
     const cookies = await this.context.cookies();
     await fs.writeFile(this.sessionPath, JSON.stringify(cookies, null, 2));
+    console.warn(
+      `[PlakyBridge] Session cookies written to disk in PLAINTEXT at ${this.sessionPath} — ` +
+        'the Sso-Token/plaky_session cookies are bearer credentials. Full encryption is a larger ' +
+        'change; until then ensure this path is not readable by other processes and prefer an in-memory volume.'
+    );
   }
 
   private async loadSession(): Promise<boolean> {

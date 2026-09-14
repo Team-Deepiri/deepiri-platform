@@ -2,6 +2,7 @@ import express, { Express, Request, Response, ErrorRequestHandler } from 'expres
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import { Server } from 'node:http';
 import { secureLog } from '@team-deepiri/shared-utils';
 import {
   handleCreateJob,
@@ -13,8 +14,9 @@ import {
   handleQueueStats,
 } from './jobsService';
 import { validateBodyIfPresent } from './middleware/inputValidation';
-import { startBackupScheduler } from './backupScheduler';
-import { connectDatabase } from './db';
+import { requireInternalAuth } from './middleware/requireInternalAuth';
+import { startBackupScheduler, stopBackupScheduler } from './backupScheduler';
+import { connectDatabase, disconnectDatabase } from './db';
 import { PLATFORM_PG_BACKUP_JOB_TYPE } from './platformPgBackup';
 
 dotenv.config();
@@ -36,13 +38,13 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-app.get('/api/jobs', handleListJobs);
-app.post('/api/jobs', handleCreateJob);
-app.get('/api/jobs/:id', handleGetJob);
-app.get('/api/jobs/:id/logs', handleGetJobLogs);
-app.post('/api/jobs/:id/cancel', handleCancelJob);
-app.post('/api/jobs/:id/retry', handleRetryJob);
-app.get('/api/queues/stats', handleQueueStats);
+app.get('/api/jobs', requireInternalAuth, handleListJobs);
+app.post('/api/jobs', requireInternalAuth, handleCreateJob);
+app.get('/api/jobs/:id', requireInternalAuth, handleGetJob);
+app.get('/api/jobs/:id/logs', requireInternalAuth, handleGetJobLogs);
+app.post('/api/jobs/:id/cancel', requireInternalAuth, handleCancelJob);
+app.post('/api/jobs/:id/retry', requireInternalAuth, handleRetryJob);
+app.get('/api/queues/stats', requireInternalAuth, handleQueueStats);
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   secureLog('error', 'Jobs service error:', err);
@@ -50,10 +52,34 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 };
 app.use(errorHandler);
 
-app.listen(PORT, async () => {
+let server: Server | undefined;
+
+async function startServer(): Promise<void> {
   await connectDatabase();
   startBackupScheduler();
-  secureLog('info', `Jobs service running on port ${PORT}`);
+  server = app.listen(PORT, () => {
+    secureLog('info', `Jobs service running on port ${PORT}`);
+  });
+}
+
+async function shutdown(signal: string): Promise<void> {
+  secureLog('info', `Received ${signal}; shutting down jobs service`);
+  stopBackupScheduler();
+  server?.close();
+  await disconnectDatabase();
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});
+
+void startServer().catch((err: Error) => {
+  secureLog('error', 'Jobs service failed to start', err);
+  void disconnectDatabase().finally(() => process.exit(1));
 });
 
 export default app;

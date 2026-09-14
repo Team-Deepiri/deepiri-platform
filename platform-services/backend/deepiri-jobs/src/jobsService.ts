@@ -87,8 +87,19 @@ export async function handleListJobs(req: Request, res: Response): Promise<void>
     }
   }
 
-  const jobs = await prisma.job.findMany({ where, orderBy: { createdAt: 'desc' } });
-  res.json({ jobs: jobs.map(toRecord) });
+  const takeParam = Array.isArray(req.query.take) ? req.query.take[0] : req.query.take;
+  const skipParam = Array.isArray(req.query.skip) ? req.query.skip[0] : req.query.skip;
+  const offsetParam = Array.isArray(req.query.offset) ? req.query.offset[0] : req.query.offset;
+  const parsedTake = Number(takeParam ?? '100');
+  const parsedSkip = Number(skipParam ?? offsetParam ?? '0');
+  const take = Number.isFinite(parsedTake) ? Math.min(Math.max(Math.trunc(parsedTake), 1), 500) : 100;
+  const skip = Number.isFinite(parsedSkip) ? Math.max(Math.trunc(parsedSkip), 0) : 0;
+
+  const [jobs, total] = await Promise.all([
+    prisma.job.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip }),
+    prisma.job.count({ where }),
+  ]);
+  res.json({ jobs: jobs.map(toRecord), total, take, skip });
 }
 
 export async function handleGetJob(req: Request, res: Response): Promise<void> {
@@ -178,7 +189,19 @@ function dispatchJob(job: Job): void {
   }
   if (job.type === PLATFORM_PG_BACKUP_JOB_TYPE) {
     void runPlatformPgBackup(job.id);
+    return;
   }
+  void markUnknownJobTypeFailed(job);
+}
+
+async function markUnknownJobTypeFailed(job: Job): Promise<void> {
+  const message = `Unknown job type: ${job.type}`;
+  await prisma.job.update({
+    where: { id: job.id },
+    data: { status: 'failed', error: message },
+  });
+  await appendJobLog(job.id, `Failed: ${message}`);
+  secureLog('error', 'Refusing to dispatch unknown job type', { jobId: job.id, type: job.type });
 }
 
 function resolveHeloxUrl(): string {
@@ -218,6 +241,7 @@ async function triggerHeloxTraining(jobId: string): Promise<void> {
         ...(process.env.HELOX_API_KEY ? { 'x-api-key': process.env.HELOX_API_KEY } : {}),
       },
       body: JSON.stringify({ jobId: job.id, ...(job.payload as Record<string, unknown>) }),
+      signal: AbortSignal.timeout(300_000),
     });
     const body = await res.json().catch(() => ({}));
     // A job may have been cancelled locally while the Helox request was

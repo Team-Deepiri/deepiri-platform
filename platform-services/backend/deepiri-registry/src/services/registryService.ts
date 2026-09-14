@@ -110,27 +110,33 @@ class RegistryService {
 
   async pollHealth(): Promise<RegistryEntry[]> {
     const rows = await prisma.registeredService.findMany();
-    const results: RegistryEntry[] = [];
 
-    for (const row of rows) {
-      if (!row.healthUrl) continue;
-      const trustedUrl = resolveTrustedHealthUrl(row.healthUrl);
-      if (!trustedUrl) continue;
-      let status: RegistryEntry['status'] = 'down';
-      try {
-        const res = await fetch(trustedUrl, { signal: AbortSignal.timeout(5000) });
-        status = res.ok ? 'healthy' : 'degraded';
-      } catch {
-        status = 'down';
-      }
-      const updated = await prisma.registeredService.update({
-        where: { id: row.id },
-        data: { status, lastSeen: new Date() },
-      });
-      results.push(toEntry(updated));
-    }
+    // Poll every service in parallel instead of serially: a slow or hanging
+    // service should not delay health checks for all the others.
+    const settled = await Promise.allSettled(
+      rows.map(async (row): Promise<RegistryEntry> => {
+        const trustedUrl = row.healthUrl ? resolveTrustedHealthUrl(row.healthUrl) : undefined;
+        if (!trustedUrl) return toEntry(row);
 
-    return results;
+        let status: RegistryEntry['status'] = 'down';
+        try {
+          const res = await fetch(trustedUrl, { signal: AbortSignal.timeout(5000) });
+          status = res.ok ? 'healthy' : 'degraded';
+        } catch {
+          status = 'down';
+        }
+
+        const updated = await prisma.registeredService.update({
+          where: { id: row.id },
+          data: { status, lastSeen: new Date() },
+        });
+        return toEntry(updated);
+      }),
+    );
+
+    // A failed row update shouldn't drop the service from the poll report; fall
+    // back to its last known registry state so results stay 1:1 with the rows.
+    return settled.map((result, i) => (result.status === 'fulfilled' ? result.value : toEntry(rows[i])));
   }
 }
 
