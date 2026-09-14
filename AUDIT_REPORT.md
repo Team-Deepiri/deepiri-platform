@@ -33,7 +33,7 @@ The Deepiri Platform is a substantial microservices system with a functional arc
 
 ## Frontend ↔ Backend Alignment (deepiri-web-frontend)
 
-The deployed portal is built from `deepiri-web-frontend` (personal copy `Quamena123-prog`, PR branch on `Team-Deepiri`). Verified against the monorepo compose (`docker-compose.yml`) and live probes of `platform.deepiri.com`.
+The deployed portal is built from the `deepiri-web-frontend` submodule pinned in this monorepo at `main@0c46037` (Team-Deepiri main); the personal working copy is `Quamena123-prog/deepiri-web-frontend`. Verified against the monorepo compose (`docker-compose.yml`) and live probes of `platform.deepiri.com`.
 
 ### Live probe results (2026-09-14, safe read-only GETs)
 | Endpoint | Result |
@@ -64,6 +64,19 @@ The gateway + Redis + DB are up; the proxied service routes are failing. Registr
 | ID | Sev | File | Fix |
 |----|-----|------|-----|
 | AL-11 | P0 | `deepiri-api-gateway/src/server.ts` | `createProxy(target, pathRewrite, injectInternalSecret)`; `/api/jobs` + `/api/queues` now run behind `userAuthMiddleware` (JWT verified, trusted `x-user-id` set) and forward `x-internal-secret` (from gateway env — set in compose). External callers must be signed in; internal callers keep direct access. |
+
+### Frontend team delivery (PR — `Team-Deepiri/deepiri-web-frontend` #191)
+The fixes above landed on the personal copy (`main`@`ffe197b`). Because the CD pipeline builds the portal from the `Team-Deepiri` frontend submodule (`main@0c46037`, a restructured tree: `AuthContext`/`SocketContext`, `src/api`, no `platformClient`/zustand), they were **ported** to a fresh branch `fix/cloud-alignment-port` off org `main`:
+
+- `src/api/refreshSession.ts` (new): shared single-flight 401-refresh (Bearer-refreshToken per the auth contract), retry-once, local sign-out on refresh failure (replaces the disabled interceptor and the hard `/login` redirect that wiped sessions even with a valid refresh token).
+- `src/api/authApi.ts` + `src/api/axiosInstance.ts`: default base taken from `:5100` → gateway `:5000`; both install the refresh interceptor.
+- `src/contexts/AuthContext.tsx`: persist `refreshToken` on login/register (already cleared on logout).
+- `src/contexts/SocketContext.tsx`: connect only when `VITE_REALTIME_GATEWAY_URL` is set — no more REST-origin fallback + false prod 'Connection lost' toasts.
+- `src/types/lucide-react.d.ts` + `src/types/heroicons.d.ts` (new): `lucide-react@0.562.0` ships a broken `dist/lucide-react.d.ts` (missing) and `@heroicons/react@2.2.0` is untyped → `npm run build` was broken on a clean install; ambient typings unblock it.
+
+Verified: `tsc --noEmit` clean (full tree), `vite build` succeeds, `eslint` 0 errors on changed files, `vitest run` 27 pass / 2 pre-existing `App.test.jsx` (jsdom `localStorage.clear` setup) failures unrelated to this change.
+
+> Deploy: after #191 merges to `main`, bump the `deepiri-web-frontend` submodule pointer here and set `VITE_REALTIME_GATEWAY_URL` when the realtime gateway is provisioned.
 
 ### Alignment issues still OPEN (frontend)
 | ID | Sev | Issue | Note |
@@ -391,4 +404,4 @@ The gateway + Redis + DB are up; the proxied service routes are failing. Registr
 
 ---
 
-*Report generated as part of an active engineering audit. All code changes are limited to the fixes described above; nothing was committed. Review the diff per submodule before pushing.*
+*Report generated as part of an active engineering audit. Fixes are committed to `audit/security-and-alignment-2026-09-14` branches (see PRs listed above); review and merge each submodule PR before the superproject PR #432.*
